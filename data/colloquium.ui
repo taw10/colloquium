@@ -1,0 +1,26 @@
+<ui>
+	<menubar name="displaywindow">
+
+		<menu name="file" action="FileAction">
+			<menuitem name="quit" action="QuitAction" />
+		</menu>
+
+		<menu name="help" action="HelpAction">
+			<menuitem name="about" action="AboutAction" />
+		</menu>
+
+	</menubar>
+
+	<toolbar name="displaywindowtoolbar">
+
+		<toolitem name="add" action="AddSlideAction" />
+		<separator />
+		<toolitem name="first" action="ButtonFirstSlideAction" />
+		<toolitem name="prev" action="ButtonPrevSlideAction" />
+		<toolitem name="next" action="ButtonNextSlideAction" />
+		<toolitem name="last" action="ButtonLastSlideAction" />
+
+	</toolbar>
+
+
+</ui>

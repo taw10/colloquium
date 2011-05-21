@@ -28,9 +28,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gtk/gtk.h>
+#include <assert.h>
 
 #include "presentation.h"
 #include "mainwindow.h"
+#include "slide_render.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -136,6 +138,15 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 }
 
 
+static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
+                                 struct presentation *p)
+{
+	printf("%f %f\n", event->x - p->border_offs_x,
+	                  event->y - p->border_offs_y);
+	return 0;
+}
+
+
 static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
                            struct presentation *p)
 {
@@ -155,15 +166,29 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	gtk_widget_get_allocation(da, &allocation);
 	xoff = (allocation.width - p->slide_width)/2.0;
 	yoff = (allocation.height - p->slide_height)/2.0;
+	p->border_offs_x = xoff;  p->border_offs_y = yoff;
 
 	cairo_translate(cr, xoff, yoff);
-	cairo_rectangle(cr, 0.0, 0.0, p->slide_width, p->slide_height);
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+
+	/* Draw the slide from the cache */
+	cairo_rectangle(cr, event->area.x, event->area.y,
+	                event->area.width, event->area.height);
+	cairo_set_source_surface(cr, p->slides[p->view_slide]->render_cache,
+	                         0.0, 0.0);
 	cairo_fill(cr);
 
 	cairo_destroy(cr);
 
 	return FALSE;
+}
+
+
+static void check_redraw_slide(struct presentation *p, int n)
+{
+	/* Update necessary? */
+	if ( p->slides[n]->object_seq <= p->slides[n]->render_cache_seq ) return;
+
+	render_slide(p->slides[n]);
 }
 
 
@@ -205,11 +230,22 @@ int open_mainwindow(struct presentation *p)
 	                            p->slide_width + 20,
 	                            p->slide_height + 20);
 
+	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
+	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),
+	                      GDK_POINTER_MOTION_HINT_MASK
+	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
+	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
+	g_signal_connect(GTK_OBJECT(p->drawingarea), "button-press-event",
+			 G_CALLBACK(button_press_sig), p);
+
 	g_signal_connect(GTK_OBJECT(p->drawingarea), "expose-event",
 			 G_CALLBACK(expose_sig), p);
 
 	gtk_window_set_default_size(GTK_WINDOW(p->window), 1024+100, 768+100);
 	gtk_window_set_resizable(GTK_WINDOW(p->window), TRUE);
+
+	assert(p->num_slides > 0);
+	check_redraw_slide(p, p->view_slide);
 
 	gtk_widget_show_all(window);
 	return 0;

@@ -31,18 +31,52 @@
 #include <gtk/gtk.h>
 
 
+enum objtype
+{
+	RECTANGLE,
+};
+
+
+struct object
+{
+	enum objtype type;
+};
+
+
+struct slide
+{
+	cairo_surface_t *render_cache;
+	int              render_cache_seq;
+
+	int              n_objects;
+	struct object   *objects;
+	int              object_seq;
+
+	double           slide_width;
+	double           slide_height;
+};
+
+
 struct presentation
 {
-	char *titlebar;
-	char *filename;
+	char            *titlebar;
+	char            *filename;
 
 	GtkWidget       *window;
 	GtkWidget	*drawingarea;
 	GtkUIManager	*ui;
 	GtkActionGroup	*action_group;
 
-	double slide_width;
-	double slide_height;
+	double           slide_width;
+	double           slide_height;
+	double           border_offs_x;
+	double           border_offs_y;
+
+	/* The slide currently being displayed */
+	unsigned int     view_slide;
+
+	unsigned int     num_slides;
+	struct slide   **slides;
 };
 
 

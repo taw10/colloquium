@@ -29,6 +29,38 @@
 #include <string.h>
 
 #include "presentation.h"
+#include "slide_render.h"
+
+
+int add_slide(struct presentation *p)
+{
+	struct slide **try;
+	struct slide *new;
+
+	try = realloc(p->slides, p->num_slides*sizeof(struct slide **));
+	if ( try == NULL ) return 1;
+	p->slides = try;
+
+	new = malloc(sizeof(struct slide));
+	if ( new == NULL ) return 1;
+	/* Doesn't matter that p->slides now has some excess space -
+	 * it'll get corrected the next time a slide is added or deleted. */
+
+	/* No objects to start with */
+	new->n_objects = 0;
+	new->object_seq = 0;
+	new->objects = NULL;
+
+	new->slide_width = p->slide_width;
+	new->slide_height = p->slide_height;
+
+	new->render_cache_seq = 0;
+	new->render_cache = NULL;
+	render_slide(new);  /* Render nothing, just to make the surface exist */
+
+	p->slides[p->num_slides++] = new;
+	return 0;
+}
 
 
 struct presentation *new_presentation()
@@ -46,6 +78,12 @@ struct presentation *new_presentation()
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;
+
+	new->num_slides = 0;
+	new->slides = NULL;
+	add_slide(new);
+
+	new->view_slide = 0;
 
 	return new;
 }

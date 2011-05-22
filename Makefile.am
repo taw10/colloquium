@@ -9,11 +9,12 @@ AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib -I$(top_srcdir)/l
 LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 
 src_colloquium_SOURCES = src/colloquium.c src/presentation.c src/mainwindow.c \
-                         src/slide_render.c
+                         src/slide_render.c src/objects.c
 
 INCLUDES = "-I$(top_srcdir)/data"
 
-EXTRA_DIST += src/presentation.h src/mainwindow.h src/slide_render.h
+EXTRA_DIST += src/presentation.h src/mainwindow.h src/slide_render.h \
+              src/objects.h
 
 colloquiumdir = $(datadir)/colloquium
 colloquium_DATA = data/colloquium.ui

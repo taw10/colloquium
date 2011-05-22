@@ -33,6 +33,7 @@
 #include "presentation.h"
 #include "mainwindow.h"
 #include "slide_render.h"
+#include "objects.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -138,12 +139,82 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 }
 
 
+static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
+                              struct presentation *p)
+{
+	return FALSE;
+}
+
+
+static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
+                              struct presentation *p)
+{
+	gboolean r;
+
+	if ( p->editing_object == NULL ) return FALSE;
+
+	/* Throw the event to the IM context and let it sort things out */
+	gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context), event);
+
+	/* FIXME: Invalidate only the necessary region */
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return FALSE;
+}
+
+
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  struct presentation *p)
 {
-	printf("%f %f\n", event->x - p->border_offs_x,
-	                  event->y - p->border_offs_y);
-	return 0;
+	if ( p->editing_object && p->editing_object->empty ) {
+		delete_object(p->editing_object);
+	}
+
+	p->editing_object = add_text_object(p->view_slide,
+	                                    event->x - p->border_offs_x,
+	                                    event->y - p->border_offs_y);
+
+	gtk_widget_grab_focus(GTK_WIDGET(da));
+
+	/* FIXME: Invalidate only the necessary region */
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return FALSE;
+}
+
+
+static void draw_editing_box(cairo_t *cr, double xmin, double ymin,
+                                          double width, double height)
+{
+	cairo_new_path(cr);
+	cairo_rectangle(cr, xmin, ymin, width, height);
+	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+}
+
+
+static void draw_editing_bits(cairo_t *cr, struct object *o)
+{
+	switch ( o->type ) {
+
+	case TEXT :
+
+		draw_editing_box(cr, o->x - o->bb_width/2.0,
+		                     o->y - o->bb_height/2.0,
+		                     o->bb_width, o->bb_height);
+		break;
+
+	}
+}
+
+
+static void check_redraw_slide(struct slide *s)
+{
+	/* Update necessary? */
+	if ( s->object_seq <= s->render_cache_seq ) return;
+
+	render_slide(s);
 }
 
 
@@ -154,12 +225,14 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	GtkAllocation allocation;
 	double xoff, yoff;
 
+	check_redraw_slide(p->view_slide);
+
 	cr = gdk_cairo_create(da->window);
 
 	/* Overall background */
 	cairo_rectangle(cr, event->area.x, event->area.y,
 	                event->area.width, event->area.height);
-	cairo_set_source_rgb(cr, 0.8, 0.8, 1.0);
+	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
 	/* Get the overall size */
@@ -168,27 +241,22 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	yoff = (allocation.height - p->slide_height)/2.0;
 	p->border_offs_x = xoff;  p->border_offs_y = yoff;
 
-	cairo_translate(cr, xoff, yoff);
-
 	/* Draw the slide from the cache */
 	cairo_rectangle(cr, event->area.x, event->area.y,
 	                event->area.width, event->area.height);
-	cairo_set_source_surface(cr, p->slides[p->view_slide]->render_cache,
-	                         0.0, 0.0);
+	cairo_set_source_surface(cr, p->view_slide->render_cache, xoff, yoff);
 	cairo_fill(cr);
+
+	cairo_translate(cr, xoff, yoff);
+
+	/* Draw editing bits for selected object */
+	if ( p->editing_object != NULL ) {
+		draw_editing_bits(cr, p->editing_object);
+	}
 
 	cairo_destroy(cr);
 
 	return FALSE;
-}
-
-
-static void check_redraw_slide(struct presentation *p, int n)
-{
-	/* Update necessary? */
-	if ( p->slides[n]->object_seq <= p->slides[n]->render_cache_seq ) return;
-
-	render_slide(p->slides[n]);
 }
 
 
@@ -235,17 +303,25 @@ int open_mainwindow(struct presentation *p)
 	                      GDK_POINTER_MOTION_HINT_MASK
 	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
 	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
-	g_signal_connect(GTK_OBJECT(p->drawingarea), "button-press-event",
-			 G_CALLBACK(button_press_sig), p);
 
-	g_signal_connect(GTK_OBJECT(p->drawingarea), "expose-event",
+	g_signal_connect(G_OBJECT(p->drawingarea), "button-press-event",
+			 G_CALLBACK(button_press_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "key-press-event",
+			 G_CALLBACK(key_press_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "expose-event",
 			 G_CALLBACK(expose_sig), p);
+
+	p->im_context = gtk_im_multicontext_new();
+	gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context),
+	                                 p->drawingarea->window);
+	g_signal_connect(G_OBJECT(p->im_context), "commit",
+			 G_CALLBACK(im_commit_sig), p);
 
 	gtk_window_set_default_size(GTK_WINDOW(p->window), 1024+100, 768+100);
 	gtk_window_set_resizable(GTK_WINDOW(p->window), TRUE);
 
 	assert(p->num_slides > 0);
-	check_redraw_slide(p, p->view_slide);
+	check_redraw_slide(p->view_slide);
 
 	gtk_widget_show_all(window);
 	return 0;

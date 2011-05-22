@@ -27,27 +27,29 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "presentation.h"
 #include "slide_render.h"
+#include "objects.h"
 
 
-int add_slide(struct presentation *p)
+struct slide *add_slide(struct presentation *p)
 {
 	struct slide **try;
 	struct slide *new;
 
-	try = realloc(p->slides, p->num_slides*sizeof(struct slide **));
-	if ( try == NULL ) return 1;
+	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
+	if ( try == NULL ) return NULL;
 	p->slides = try;
 
 	new = malloc(sizeof(struct slide));
-	if ( new == NULL ) return 1;
+	if ( new == NULL ) return NULL;
 	/* Doesn't matter that p->slides now has some excess space -
 	 * it'll get corrected the next time a slide is added or deleted. */
 
 	/* No objects to start with */
-	new->n_objects = 0;
+	new->num_objects = 0;
 	new->object_seq = 0;
 	new->objects = NULL;
 
@@ -59,7 +61,52 @@ int add_slide(struct presentation *p)
 	render_slide(new);  /* Render nothing, just to make the surface exist */
 
 	p->slides[p->num_slides++] = new;
+	printf("Now %i slides\n", p->num_slides);
+	return new;
+}
+
+
+int add_object_to_slide(struct slide *s, struct object *o)
+{
+	struct object **try;
+
+	try = realloc(s->objects, (1+s->num_objects)*sizeof(struct object *));
+	if ( try == NULL ) return 1;
+	s->objects = try;
+
+	s->objects[s->num_objects++] = o;
+	o->parent = s;
+
+	printf("Now %i objects in slide %p\n", s->num_objects, s);
+
 	return 0;
+}
+
+
+void remove_object_from_slide(struct slide *s, struct object *o)
+{
+	int i;
+	int found = 0;
+
+	for ( i=0; i<s->num_objects; i++ ) {
+
+		if ( s->objects[i] == o ) {
+			assert(!found);
+			found = 1;
+			continue;
+		}
+
+		if ( found ) {
+			if ( i == s->num_objects-1 ) {
+				s->objects[i] = NULL;
+			} else {
+				s->objects[i] = s->objects[i+1];
+			}
+		}
+
+	}
+
+	s->num_objects--;
 }
 
 
@@ -79,11 +126,13 @@ struct presentation *new_presentation()
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;
 
+	/* Add one blank slide and view it */
 	new->num_slides = 0;
 	new->slides = NULL;
-	add_slide(new);
+	new -> view_slide = add_slide(new);
+	new->view_slide_number = 0;
 
-	new->view_slide = 0;
+	new->editing_object = NULL;
 
 	return new;
 }

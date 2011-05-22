@@ -26,15 +26,40 @@
 #endif
 
 #include <cairo.h>
+#include <pango/pangocairo.h>
 
 #include "slide_render.h"
 #include "presentation.h"
+#include "objects.h"
+
+
+static void render_text_object(cairo_t *cr, struct object *o)
+{
+	PangoLayout *l;
+	PangoFontDescription *d;
+	int width, height;
+
+	l = pango_cairo_create_layout(cr);
+	pango_layout_set_text(l, o->text, -1);
+	d = pango_font_description_from_string("Sans 30");
+	pango_layout_set_font_description(l, d);
+	pango_font_description_free(d);
+
+	pango_cairo_update_layout(cr, l);
+	pango_layout_get_size(l, &width, &height);
+	cairo_move_to(cr, o->x - (width/PANGO_SCALE)/2.0,
+	                  o->y - (height/PANGO_SCALE)/2.0);
+
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	pango_cairo_show_layout(cr, l);
+}
 
 
 int render_slide(struct slide *s)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
+	int i;
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
 	                                  s->slide_width, s->slide_height);
@@ -45,10 +70,23 @@ int render_slide(struct slide *s)
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
+	for ( i=0; i<s->num_objects; i++ ) {
+
+		struct object *o = s->objects[i];
+
+		switch ( o->type ) {
+		case TEXT :
+			render_text_object(cr, o);
+			break;
+		}
+
+	}
+
 	cairo_destroy(cr);
 
 	if ( s->render_cache != NULL ) cairo_surface_destroy(s->render_cache);
 	s->render_cache = surf;
+	s->render_cache_seq = s->object_seq;
 
 	return 0;
 }

@@ -122,6 +122,35 @@ void insert_text(struct object *o, char *t)
 }
 
 
+void handle_text_backspace(struct object *o)
+{
+	size_t ndel;
+	int i;
+
+	assert(o->type == TEXT);
+
+	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
+
+	if ( !(o->text[o->insertion_point-1] & 0x80) ) {
+		/* Simple (ASCII-style) backspace */
+		ndel = 1;
+	} else {
+		ndel = 0;
+		for ( i=1; i<=6; i++ ) {
+			if ( !(o->text[o->insertion_point-i] & 0xC0) ) ndel++;
+		}
+	}
+
+	memmove(o->text+o->insertion_point-ndel,
+	        o->text+o->insertion_point,
+	        o->text_len-o->insertion_point);
+
+	o->insertion_point -= ndel;
+
+	o->parent->object_seq++;
+}
+
+
 void delete_object(struct object *o)
 {
 	remove_object_from_slide(o->parent, o);

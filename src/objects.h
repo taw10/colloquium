@@ -59,6 +59,7 @@ struct object
 
 extern struct object *add_text_object(struct slide *s, double x, double y);
 extern void insert_text(struct object *o, char *t);
+extern void handle_text_backspace(struct object *o);
 
 extern void delete_object(struct object *o);
 

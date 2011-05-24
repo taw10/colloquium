@@ -29,6 +29,7 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <assert.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "presentation.h"
 #include "mainwindow.h"
@@ -157,10 +158,25 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct presentation *p)
 {
+	gboolean r;
+
 	if ( p->editing_object == NULL ) return FALSE;
 
 	/* Throw the event to the IM context and let it sort things out */
-	gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context), event);
+	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context),
+	                                   event);
+
+	if ( r ) return FALSE;  /* IM ate it */
+
+	if ( event->keyval == GDK_KEY_BackSpace ) {
+		if ( (p->editing_object != NULL)
+		  && (p->editing_object->type == TEXT) ) {
+			handle_text_backspace(p->editing_object);
+		}
+	}
+
+	/* FIXME: Invalidate only the necessary region */
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
 
 	return FALSE;
 }

@@ -192,7 +192,7 @@ static void draw_editing_box(cairo_t *cr, double xmin, double ymin,
 	cairo_new_path(cr);
 	cairo_rectangle(cr, xmin-5.0, ymin-5.0, width+10.0, height+10.0);
 	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-	cairo_set_line_width(cr, 1.0);
+	cairo_set_line_width(cr, 0.5);
 	cairo_stroke(cr);
 }
 

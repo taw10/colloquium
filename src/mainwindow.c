@@ -157,8 +157,6 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct presentation *p)
 {
-	gboolean r;
-
 	if ( p->editing_object == NULL ) return FALSE;
 
 	/* Throw the event to the IM context and let it sort things out */

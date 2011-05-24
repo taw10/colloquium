@@ -47,6 +47,10 @@ static void render_text_object(cairo_t *cr, struct object *o)
 
 	pango_cairo_update_layout(cr, l);
 	pango_layout_get_size(l, &width, &height);
+
+	o->bb_width = width/PANGO_SCALE;
+	o->bb_height = height/PANGO_SCALE;
+
 	cairo_move_to(cr, o->x - (width/PANGO_SCALE)/2.0,
 	                  o->y - (height/PANGO_SCALE)/2.0);
 

@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "presentation.h"
 #include "objects.h"
@@ -66,11 +67,58 @@ struct object *add_text_object(struct slide *s, double x, double y)
 	new->x = x;  new->y = y;
 	new->bb_width = 10.0;
 	new->bb_height = 40.0;
-	new->text = "Hello";
+	new->text = malloc(1);
+	new->text[0] = '\0';
+	new->text_len = 1;
+	new->insertion_point = 0;
 
 	s->object_seq++;
 
 	return new;
+}
+
+
+void insert_text(struct object *o, char *t)
+{
+	char *tmp;
+	size_t tlen, olen;
+	int i;
+
+	assert(o->type == TEXT);
+	tlen = strlen(t);
+	olen = strlen(o->text);
+
+	if ( tlen + olen + 1 > o->text_len ) {
+
+		char *try;
+
+		try = realloc(o->text, o->text_len + tlen + 64);
+		if ( try == NULL ) return;  /* Failed to insert */
+		o->text = try;
+		o->text_len += 64;
+		o->text_len += tlen;
+
+	}
+
+	tmp = malloc(o->text_len);
+	if ( tmp == NULL ) return;
+
+	for ( i=0; i<o->insertion_point; i++ ) {
+		tmp[i] = o->text[i];
+	}
+	for ( i=0; i<tlen; i++ ) {
+		tmp[i+o->insertion_point] = t[i];
+	}
+	for ( i=0; i<olen-o->insertion_point; i++ ) {
+		tmp[i+o->insertion_point+tlen] = o->text[i+o->insertion_point];
+	}
+	tmp[olen+tlen] = '\0';
+	memcpy(o->text, tmp, o->text_len);
+	free(tmp);
+
+	o->insertion_point += tlen;
+	o->parent->object_seq++;
+	o->empty = 0;
 }
 
 

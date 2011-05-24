@@ -142,6 +142,14 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
+	if ( p->editing_object == NULL ) return FALSE;
+	if ( p->editing_object->type != TEXT ) return FALSE;
+
+	insert_text(p->editing_object, str);
+
+	/* FIXME: Invalidate only the necessary region */
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
 	return FALSE;
 }
 
@@ -155,9 +163,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	/* Throw the event to the IM context and let it sort things out */
 	gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context), event);
-
-	/* FIXME: Invalidate only the necessary region */
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
 
 	return FALSE;
 }

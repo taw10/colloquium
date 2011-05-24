@@ -52,10 +52,14 @@ struct object
 
 	/* For type TEXT */
 	char          *text;
+	size_t         text_len;
+	int            insertion_point;
 };
 
 
 extern struct object *add_text_object(struct slide *s, double x, double y);
+extern void insert_text(struct object *o, char *t);
+
 extern void delete_object(struct object *o);
 
 

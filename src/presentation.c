@@ -77,8 +77,6 @@ int add_object_to_slide(struct slide *s, struct object *o)
 	s->objects[s->num_objects++] = o;
 	o->parent = s;
 
-	printf("Now %i objects in slide %p\n", s->num_objects, s);
-
 	return 0;
 }
 

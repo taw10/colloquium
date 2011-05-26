@@ -110,6 +110,26 @@ void remove_object_from_slide(struct slide *s, struct object *o)
 }
 
 
+struct object *find_object_at_position(struct slide *s, double x, double y)
+{
+	int i;
+	struct object *o = NULL;
+
+	for ( i=0; i<s->num_objects; i++ ) {
+
+		if ( (x>s->objects[i]->x) && (y>s->objects[i]->y)
+		  && (x<s->objects[i]->x+s->objects[i]->bb_width)
+		  && (y<s->objects[i]->y+s->objects[i]->bb_height) )
+		{
+			o = s->objects[i];
+		}
+
+	}
+
+	return o;
+}
+
+
 struct presentation *new_presentation()
 {
 	struct presentation *new;

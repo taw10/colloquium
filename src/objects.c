@@ -147,6 +147,8 @@ void handle_text_backspace(struct object *o)
 
 	o->insertion_point -= ndel;
 
+	if ( strlen(o->text) == 0 ) o->empty = 1;
+
 	o->parent->object_seq++;
 }
 

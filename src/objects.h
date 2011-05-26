@@ -39,8 +39,7 @@ struct object
 	enum objtype   type;
 	struct slide  *parent;
 
-	/* Position of object, the interpretation of which depends on
-	 * the type of the object */
+	/* Position of corner of object */
 	double         x;
 	double         y;
 

@@ -185,13 +185,29 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  struct presentation *p)
 {
+	struct object *clicked;
+	gdouble x, y;
+
+	x = event->x - p->border_offs_x;
+	y = event->y - p->border_offs_y;
+
 	if ( p->editing_object && p->editing_object->empty ) {
 		delete_object(p->editing_object);
 	}
+	p->editing_object = NULL;
 
-	p->editing_object = add_text_object(p->view_slide,
-	                                    event->x - p->border_offs_x,
-	                                    event->y - p->border_offs_y);
+	if ( (x>0.0) && (x<p->view_slide->slide_width)
+	  && (y>0.0) && (y<p->view_slide->slide_height) )
+	{
+		clicked = find_object_at_position(p->view_slide, x, y);
+		if ( !clicked ) {
+			p->editing_object = add_text_object(p->view_slide,
+			                                    x, y);
+		} else {
+			p->editing_object = clicked;
+		}
+
+	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 
@@ -219,9 +235,7 @@ static void draw_editing_bits(cairo_t *cr, struct object *o)
 
 	case TEXT :
 
-		draw_editing_box(cr, o->x - o->bb_width/2.0,
-		                     o->y - o->bb_height/2.0,
-		                     o->bb_width, o->bb_height);
+		draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
 		break;
 
 	}

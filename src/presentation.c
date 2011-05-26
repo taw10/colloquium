@@ -91,7 +91,6 @@ void remove_object_from_slide(struct slide *s, struct object *o)
 		if ( s->objects[i] == o ) {
 			assert(!found);
 			found = 1;
-			continue;
 		}
 
 		if ( found ) {

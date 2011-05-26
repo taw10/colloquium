@@ -168,10 +168,23 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	if ( r ) return FALSE;  /* IM ate it */
 
-	if ( event->keyval == GDK_KEY_BackSpace ) {
-		if ( (p->editing_object != NULL)
-		  && (p->editing_object->type == TEXT) ) {
+	if ( (p->editing_object != NULL)
+	  && (p->editing_object->type == TEXT) )
+	{
+		switch ( event->keyval ) {
+
+		case GDK_KEY_BackSpace :
 			handle_text_backspace(p->editing_object);
+			break;
+
+		case GDK_KEY_Left :
+			move_cursor_left(p->editing_object);
+			break;
+
+		case GDK_KEY_Right :
+			move_cursor_right(p->editing_object);
+			break;
+
 		}
 	}
 
@@ -231,11 +244,13 @@ static void draw_editing_box(cairo_t *cr, double xmin, double ymin,
 
 static void draw_editing_bits(cairo_t *cr, struct object *o)
 {
+	draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
+
 	switch ( o->type ) {
 
 	case TEXT :
 
-		draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
+		draw_caret(cr, o);
 		break;
 
 	}

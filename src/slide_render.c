@@ -27,6 +27,7 @@
 
 #include <cairo.h>
 #include <pango/pangocairo.h>
+#include <assert.h>
 
 #include "slide_render.h"
 #include "presentation.h"
@@ -35,18 +36,15 @@
 
 static void render_text_object(cairo_t *cr, struct object *o)
 {
-	PangoLayout *l;
-	PangoFontDescription *d;
 	int width, height;
 
-	l = pango_cairo_create_layout(cr);
-	pango_layout_set_text(l, o->text, -1);
-	d = pango_font_description_from_string("Sans 30");
-	pango_layout_set_font_description(l, d);
-	pango_font_description_free(d);
+	o->layout = pango_cairo_create_layout(cr);
+	pango_layout_set_text(o->layout, o->text, -1);
+	o->fontdesc = pango_font_description_from_string("Sans 30");
+	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	pango_cairo_update_layout(cr, l);
-	pango_layout_get_size(l, &width, &height);
+	pango_cairo_update_layout(cr, o->layout);
+	pango_layout_get_size(o->layout, &width, &height);
 
 	o->bb_width = width/PANGO_SCALE;
 	o->bb_height = height/PANGO_SCALE;
@@ -54,7 +52,27 @@ static void render_text_object(cairo_t *cr, struct object *o)
 	cairo_move_to(cr, o->x, o->y);
 
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	pango_cairo_show_layout(cr, l);
+	pango_cairo_show_layout(cr, o->layout);
+}
+
+
+void draw_caret(cairo_t *cr, struct object *o)
+{
+	int line, xpos;
+	double xposd;
+
+	assert(o->type == TEXT);
+
+	pango_layout_index_to_line_x(o->layout, o->insertion_point,
+	                             0, &line, &xpos);
+
+	xposd = xpos/PANGO_SCALE;
+
+	cairo_move_to(cr, o->x+xposd, o->y);
+	cairo_line_to(cr, o->x+xposd, o->y+o->bb_height);
+	cairo_set_source_rgb(cr, 1.0, 0.5, 0.0);
+	cairo_set_line_width(cr, 2.0);
+	cairo_stroke(cr);
 }
 
 

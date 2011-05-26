@@ -37,12 +37,15 @@ static struct object *new_object(enum objtype t)
 {
 	struct object *new;
 
-	new = malloc(sizeof(struct object));
+	new = calloc(1, sizeof(struct object));
 	if ( new == NULL ) return NULL;
 
 	new->type = t;
 	new->empty = 1;
 	new->parent = NULL;
+
+	new->layout = NULL;
+	new->fontdesc = NULL;
 
 	return new;
 }
@@ -50,6 +53,8 @@ static struct object *new_object(enum objtype t)
 
 static void free_object(struct object *o)
 {
+	if ( o->layout != NULL ) g_object_unref(o->layout);
+	if ( o->fontdesc != NULL ) pango_font_description_free(o->fontdesc);
 	free(o);
 }
 
@@ -122,34 +127,76 @@ void insert_text(struct object *o, char *t)
 }
 
 
+static int find_prev_index(const char *t, int p)
+{
+	int i, nback;
+
+	if ( p == 0 ) return 0;
+
+	if ( !(t[p-1] & 0x80) ) {
+		nback = 1;
+	} else {
+		nback = 0;
+		for ( i=1; i<=6; i++ ) {
+			if ( p-i == 0 ) return 0;
+			if ( !(t[p-i] & 0xC0) ) nback++;
+		}
+	}
+
+	return p - nback;
+}
+
+
+static int find_next_index(const char *t, int p)
+{
+	int i, nfor;
+
+	if ( t[p] == '\0' ) return p;
+
+	if ( !(t[p+1] & 0x80) ) {
+		nfor = 1;
+	} else {
+		nfor = 0;
+		for ( i=1; i<=6; i++ ) {
+			if ( t[p+i] == '\0' ) return p+i;
+			if ( !(t[p+i] & 0xC0) ) nfor++;
+		}
+	}
+
+	return p + nfor;
+}
+
+
 void handle_text_backspace(struct object *o)
 {
-	size_t ndel;
-	int i;
+	int prev_index;
 
 	assert(o->type == TEXT);
 
 	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
 
-	if ( !(o->text[o->insertion_point-1] & 0x80) ) {
-		/* Simple (ASCII-style) backspace */
-		ndel = 1;
-	} else {
-		ndel = 0;
-		for ( i=1; i<=6; i++ ) {
-			if ( !(o->text[o->insertion_point-i] & 0xC0) ) ndel++;
-		}
-	}
+	prev_index = find_prev_index(o->text, o->insertion_point);
 
-	memmove(o->text+o->insertion_point-ndel,
-	        o->text+o->insertion_point,
+	memmove(o->text+prev_index, o->text+o->insertion_point,
 	        o->text_len-o->insertion_point);
 
-	o->insertion_point -= ndel;
+	o->insertion_point = prev_index;
 
 	if ( strlen(o->text) == 0 ) o->empty = 1;
 
 	o->parent->object_seq++;
+}
+
+
+void move_cursor_left(struct object *o)
+{
+	o->insertion_point = find_prev_index(o->text, o->insertion_point);
+}
+
+
+void move_cursor_right(struct object *o)
+{
+	o->insertion_point = find_next_index(o->text, o->insertion_point);
 }
 
 

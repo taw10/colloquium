@@ -200,6 +200,24 @@ void move_cursor_right(struct object *o)
 }
 
 
+void position_caret(struct object *o, double x, double y)
+{
+	int idx, trail;
+	int xp, yp;
+	gboolean v;
+
+	assert(o->type == TEXT);
+
+	xp = (x - o->x)*PANGO_SCALE;
+	yp = (y - o->y)*PANGO_SCALE;
+
+	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
+	printf("%i %i %i %i %i\n", v, xp, yp, idx, trail);
+
+	o->insertion_point = idx+trail;
+}
+
+
 void delete_object(struct object *o)
 {
 	remove_object_from_slide(o->parent, o);

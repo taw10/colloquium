@@ -218,6 +218,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			                                    x, y);
 		} else {
 			p->editing_object = clicked;
+			position_caret(clicked, x, y);
 		}
 
 	}

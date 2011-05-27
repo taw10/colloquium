@@ -34,19 +34,14 @@
 #include "objects.h"
 
 
-struct slide *add_slide(struct presentation *p)
+struct slide *add_slide(struct presentation *p, int pos)
 {
 	struct slide **try;
 	struct slide *new;
-
-	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
-	if ( try == NULL ) return NULL;
-	p->slides = try;
+	int i;
 
 	new = malloc(sizeof(struct slide));
 	if ( new == NULL ) return NULL;
-	/* Doesn't matter that p->slides now has some excess space -
-	 * it'll get corrected the next time a slide is added or deleted. */
 
 	/* No objects to start with */
 	new->num_objects = 0;
@@ -60,8 +55,31 @@ struct slide *add_slide(struct presentation *p)
 	new->render_cache = NULL;
 	render_slide(new);  /* Render nothing, just to make the surface exist */
 
-	p->slides[p->num_slides++] = new;
-	printf("Now %i slides\n", p->num_slides);
+	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
+	if ( try == NULL ) {
+		free(new);
+		return NULL;
+	}
+	p->slides = try;
+
+	if ( (p->num_slides>1) && (pos<p->num_slides-1) ) {
+
+		for ( i=p->num_slides; i>pos+1; i-- ) {
+			p->slides[i] = p->slides[i-1];
+		}
+		p->slides[pos+1] = new;
+
+	} else if ( pos == p->num_slides-1 ) {
+
+		p->slides[pos+1] = new;
+
+	} else {
+		assert(pos == 0);
+		p->slides[pos] = new;
+	}
+
+	p->num_slides++;
+
 	return new;
 }
 
@@ -146,7 +164,7 @@ struct presentation *new_presentation()
 	/* Add one blank slide and view it */
 	new->num_slides = 0;
 	new->slides = NULL;
-	new -> view_slide = add_slide(new);
+	new->view_slide = add_slide(new, 0);
 	new->view_slide_number = 0;
 
 	new->editing_object = NULL;

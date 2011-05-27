@@ -72,6 +72,7 @@ struct presentation
 
 
 extern struct presentation *new_presentation(void);
+extern struct slide *add_slide(struct presentation *p, int pos);
 extern int add_object_to_slide(struct slide *s, struct object *o);
 extern void remove_object_from_slide(struct slide *s, struct object *o);
 extern struct object *find_object_at_position(struct slide *s,

@@ -87,6 +87,120 @@ static gint about_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static void update_toolbar(struct presentation *p)
+{
+	GtkWidget *d;
+
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/first");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/prev");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/next");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/last");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+
+	if ( p->view_slide_number == 0 ) {
+
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/first");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/prev");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+
+	}
+
+	if ( p->view_slide_number == p->num_slides-1 ) {
+
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/next");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/last");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+
+	}
+}
+
+
+static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
+{
+	struct slide *new;
+
+	new = add_slide(p, p->view_slide_number);
+	p->view_slide = new;
+	p->view_slide_number++;
+	p->editing_object = NULL;
+
+	update_toolbar(p);
+
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return FALSE;
+}
+
+
+static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
+{
+	p->view_slide_number = 0;
+	p->view_slide = p->slides[0];
+	p->editing_object = NULL;
+
+	update_toolbar(p);
+
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return FALSE;
+}
+
+
+static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
+{
+	if ( p->view_slide_number == 0 ) return FALSE;
+
+	p->view_slide_number--;
+	p->view_slide = p->slides[p->view_slide_number];
+	p->editing_object = NULL;
+
+	update_toolbar(p);
+
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return FALSE;
+}
+
+
+static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
+{
+	if ( p->view_slide_number == p->num_slides-1 ) return FALSE;
+
+	p->view_slide_number++;
+	p->view_slide = p->slides[p->view_slide_number];
+	p->editing_object = NULL;
+
+	update_toolbar(p);
+
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return FALSE;
+}
+
+
+static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
+{
+	p->view_slide_number = p->num_slides-1;
+	p->view_slide = p->slides[p->view_slide_number];
+	p->editing_object = NULL;
+
+	update_toolbar(p);
+
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return FALSE;
+}
+
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
@@ -101,15 +215,15 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL,  G_CALLBACK(about_sig) },
 
 		{ "AddSlideAction", GTK_STOCK_ADD, "Add Slide",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(add_slide_sig) },
 		{ "ButtonFirstSlideAction", GTK_STOCK_GOTO_FIRST, "First Slide",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(first_slide_sig) },
 		{ "ButtonPrevSlideAction", GTK_STOCK_GO_BACK, "Previous Slide",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(prev_slide_sig) },
 		{ "ButtonNextSlideAction", GTK_STOCK_GO_FORWARD, "Next Slide",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(next_slide_sig) },
 		{ "ButtonLastSlideAction", GTK_STOCK_GOTO_LAST, "Last Slide",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(last_slide_sig) },
 
 	};
 	guint n_entries = G_N_ELEMENTS(entries);
@@ -130,6 +244,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	gtk_window_add_accel_group(GTK_WINDOW(p->window),
 				   gtk_ui_manager_get_accel_group(p->ui));
 	gtk_ui_manager_ensure_update(p->ui);
+
+	update_toolbar(p);
 }
 
 

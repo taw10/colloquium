@@ -276,8 +276,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 {
 	gboolean r;
 
-	if ( p->editing_object == NULL ) return FALSE;
-
 	/* Throw the event to the IM context and let it sort things out */
 	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context),
 	                                   event);
@@ -302,6 +300,18 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			break;
 
 		}
+	}
+
+	switch ( event->keyval ) {
+
+	case GDK_KEY_Page_Up :
+		prev_slide_sig(NULL, p);
+		break;
+
+	case GDK_KEY_Page_Down :
+		next_slide_sig(NULL, p);
+		break;
+
 	}
 
 	/* FIXME: Invalidate only the necessary region */
@@ -487,6 +497,8 @@ int open_mainwindow(struct presentation *p)
 
 	assert(p->num_slides > 0);
 	check_redraw_slide(p->view_slide);
+
+	gtk_widget_grab_focus(GTK_WIDGET(p->drawingarea));
 
 	gtk_widget_show_all(window);
 	return 0;

@@ -212,7 +212,6 @@ void position_caret(struct object *o, double x, double y)
 	yp = (y - o->y)*PANGO_SCALE;
 
 	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
-	printf("%i %i %i %i %i\n", v, xp, yp, idx, trail);
 
 	o->insertion_point = idx+trail;
 }

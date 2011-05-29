@@ -157,6 +157,7 @@ struct presentation *new_presentation()
 	new->window = NULL;
 	new->ui = NULL;
 	new->action_group = NULL;
+	new->slideshow = NULL;
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;

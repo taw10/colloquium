@@ -1,5 +1,5 @@
 /*
- * slide_render.h
+ * slideshow.h
  *
  * Colloquium - A tiny presentation program
  *
@@ -20,18 +20,15 @@
  *
  */
 
-#ifndef SLIDE_RENDER_H
-#define SLIDE_RENDER_H
+#ifndef SLIDESHOW_H
+#define SLIDESHOW_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 
-#include "presentation.h"
+extern void try_start_slideshow(struct presentation *p);
 
-extern int render_slide(struct slide *s);
-extern void draw_caret(cairo_t *cr, struct object *o);
-extern void check_redraw_slide(struct slide *s);
 
-#endif	/* SLIDE_RENDER_H */
+#endif	/* SLIDESHOW_H */

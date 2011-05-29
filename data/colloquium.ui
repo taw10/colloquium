@@ -13,12 +13,17 @@
 
 	<toolbar name="displaywindowtoolbar">
 
+		<toolitem name="slideshow" action="SlideshowAction" />
+		<separator />
 		<toolitem name="add" action="AddSlideAction" />
 		<separator />
 		<toolitem name="first" action="ButtonFirstSlideAction" />
 		<toolitem name="prev" action="ButtonPrevSlideAction" />
 		<toolitem name="next" action="ButtonNextSlideAction" />
 		<toolitem name="last" action="ButtonLastSlideAction" />
+		<separator />
+		<toolitem name="select" action="ButtonToolSelectAction" />
+		<toolitem name="text" action="ButtonToolTextAction" />
 
 	</toolbar>
 

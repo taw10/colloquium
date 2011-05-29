@@ -29,6 +29,6 @@
 
 
 extern int open_mainwindow(struct presentation *p);
-
+extern void notify_slide_changed(struct presentation *p);
 
 #endif	/* MAINWINDOW_H */

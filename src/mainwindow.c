@@ -35,6 +35,7 @@
 #include "mainwindow.h"
 #include "slide_render.h"
 #include "objects.h"
+#include "slideshow.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -124,6 +125,21 @@ static void update_toolbar(struct presentation *p)
 }
 
 
+static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
+{
+	try_start_slideshow(p);
+	return FALSE;
+}
+
+
+void notify_slide_changed(struct presentation *p)
+{
+	p->editing_object = NULL;
+	update_toolbar(p);
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+}
+
+
 static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	struct slide *new;
@@ -131,11 +147,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 	new = add_slide(p, p->view_slide_number);
 	p->view_slide = new;
 	p->view_slide_number++;
-	p->editing_object = NULL;
-
-	update_toolbar(p);
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -145,11 +157,7 @@ static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	p->view_slide_number = 0;
 	p->view_slide = p->slides[0];
-	p->editing_object = NULL;
-
-	update_toolbar(p);
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -161,11 +169,7 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 
 	p->view_slide_number--;
 	p->view_slide = p->slides[p->view_slide_number];
-	p->editing_object = NULL;
-
-	update_toolbar(p);
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -177,11 +181,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 
 	p->view_slide_number++;
 	p->view_slide = p->slides[p->view_slide_number];
-	p->editing_object = NULL;
-
-	update_toolbar(p);
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -191,11 +191,7 @@ static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	p->view_slide_number = p->num_slides-1;
 	p->view_slide = p->slides[p->view_slide_number];
-	p->editing_object = NULL;
-
-	update_toolbar(p);
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -214,6 +210,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 		{ "AboutAction", GTK_STOCK_ABOUT, "_About...",
 			NULL, NULL,  G_CALLBACK(about_sig) },
 
+		{ "SlideshowAction", GTK_STOCK_FULLSCREEN, "Start Presentation",
+			NULL, NULL, G_CALLBACK(start_slideshow_sig) },
 		{ "AddSlideAction", GTK_STOCK_ADD, "Add Slide",
 			NULL, NULL, G_CALLBACK(add_slide_sig) },
 		{ "ButtonFirstSlideAction", GTK_STOCK_GOTO_FIRST, "First Slide",
@@ -224,6 +222,10 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, G_CALLBACK(next_slide_sig) },
 		{ "ButtonLastSlideAction", GTK_STOCK_GOTO_LAST, "Last Slide",
 			NULL, NULL, G_CALLBACK(last_slide_sig) },
+		{ "ButtonToolSelectAction", NULL, "Select",
+			NULL, NULL, NULL },
+		{ "ButtonToolTextAction", NULL, "Text",
+			NULL, NULL, NULL },
 
 	};
 	guint n_entries = G_N_ELEMENTS(entries);
@@ -381,15 +383,6 @@ static void draw_editing_bits(cairo_t *cr, struct object *o)
 		break;
 
 	}
-}
-
-
-static void check_redraw_slide(struct slide *s)
-{
-	/* Update necessary? */
-	if ( s->object_seq <= s->render_cache_seq ) return;
-
-	render_slide(s);
 }
 
 

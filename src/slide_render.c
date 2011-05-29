@@ -111,3 +111,12 @@ int render_slide(struct slide *s)
 
 	return 0;
 }
+
+
+void check_redraw_slide(struct slide *s)
+{
+	/* Update necessary? */
+	if ( s->object_seq <= s->render_cache_seq ) return;
+
+	render_slide(s);
+}

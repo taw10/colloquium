@@ -226,9 +226,9 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, G_CALLBACK(next_slide_sig) },
 		{ "ButtonLastSlideAction", GTK_STOCK_GOTO_LAST, "Last Slide",
 			NULL, NULL, G_CALLBACK(last_slide_sig) },
-		{ "ButtonToolSelectAction", NULL, "Select",
+		{ "ButtonToolSelectAction", "colloquium-select", "Select",
 			NULL, NULL, NULL },
-		{ "ButtonToolTextAction", NULL, "Text",
+		{ "ButtonToolTextAction", "colloquium-text", "Text",
 			NULL, NULL, NULL },
 
 	};

@@ -19,4 +19,7 @@ EXTRA_DIST += src/presentation.h src/mainwindow.h src/slide_render.h \
 colloquiumdir = $(datadir)/colloquium
 colloquium_DATA = data/colloquium.ui
 
+iconsdir = $(datadir)/icons/hicolor/scalable/apps
+icons_DATA = data/colloquium-select.svg data/colloquium-text.svg
+
 EXTRA_DIST += $(colloquium_DATA)

@@ -57,6 +57,7 @@ struct presentation
 	GtkIMContext    *im_context;
 	GtkWidget       *slideshow;
 	GtkWidget       *ss_drawingarea;
+	GdkCursor       *blank_cursor;
 
 	double           slide_width;
 	double           slide_height;

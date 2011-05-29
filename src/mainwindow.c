@@ -206,6 +206,10 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 		{ "QuitAction", GTK_STOCK_QUIT, "_Quit", NULL, NULL,
 			G_CALLBACK(quit_sig) },
 
+		{ "ToolsAction", NULL, "_Tools", NULL, NULL, NULL },
+		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start slideshow",
+		        "F5", NULL, G_CALLBACK(start_slideshow_sig) },
+
 		{ "HelpAction", NULL, "_Help", NULL, NULL, NULL },
 		{ "AboutAction", GTK_STOCK_ABOUT, "_About...",
 			NULL, NULL,  G_CALLBACK(about_sig) },

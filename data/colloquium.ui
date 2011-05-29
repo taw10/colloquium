@@ -5,6 +5,10 @@
 			<menuitem name="quit" action="QuitAction" />
 		</menu>
 
+		<menu name="tools" action="ToolsAction">
+			<menuitem name="slideshow" action="TSlideshowAction" />
+		</menu>
+
 		<menu name="help" action="HelpAction">
 			<menuitem name="about" action="AboutAction" />
 		</menu>

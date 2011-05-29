@@ -55,9 +55,12 @@ struct presentation
 	GtkUIManager	*ui;
 	GtkActionGroup	*action_group;
 	GtkIMContext    *im_context;
+
+	/* Slideshow stuff */
 	GtkWidget       *slideshow;
 	GtkWidget       *ss_drawingarea;
 	GdkCursor       *blank_cursor;
+	int              ss_blank;
 
 	double           slide_width;
 	double           slide_height;

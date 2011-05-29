@@ -61,17 +61,22 @@ static gboolean ss_expose_sig(GtkWidget *da, GdkEventExpose *event,
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_fill(cr);
 
-	/* Get the overall size */
-	gtk_widget_get_allocation(da, &allocation);
-	xoff = (allocation.width - p->slide_width)/2.0;
-	yoff = (allocation.height - p->slide_height)/2.0;
-	p->border_offs_x = xoff;  p->border_offs_y = yoff;
+	if ( !p->ss_blank ) {
 
-	/* Draw the slide from the cache */
-	cairo_rectangle(cr, event->area.x, event->area.y,
-	                event->area.width, event->area.height);
-	cairo_set_source_surface(cr, p->view_slide->render_cache, xoff, yoff);
-	cairo_fill(cr);
+		/* Get the overall size */
+		gtk_widget_get_allocation(da, &allocation);
+		xoff = (allocation.width - p->slide_width)/2.0;
+		yoff = (allocation.height - p->slide_height)/2.0;
+		p->border_offs_x = xoff;  p->border_offs_y = yoff;
+
+		/* Draw the slide from the cache */
+		cairo_rectangle(cr, event->area.x, event->area.y,
+			        event->area.width, event->area.height);
+		cairo_set_source_surface(cr, p->view_slide->render_cache,
+		                         xoff, yoff);
+		cairo_fill(cr);
+
+	}
 
 	cairo_destroy(cr);
 
@@ -114,6 +119,13 @@ static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
 {
 	switch ( event->keyval ) {
 
+	case GDK_KEY_B :
+	case GDK_KEY_b :
+		p->ss_blank = 1-p->ss_blank;
+		gdk_window_invalidate_rect(p->ss_drawingarea->window,
+		                           NULL, FALSE);
+		break;
+
 	case GDK_KEY_Page_Up :
 		prev_slide_sig(NULL, p);
 		break;
@@ -148,6 +160,8 @@ void try_start_slideshow(struct presentation *p)
 
 	/* Presentation already running? */
 	if ( p->slideshow != NULL ) return;
+
+	p->ss_blank = 0;
 
 	n = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 

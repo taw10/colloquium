@@ -89,6 +89,7 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 	if ( p->view_slide_number == 0 ) return FALSE;
 
 	p->view_slide_number--;
+	p->ss_blank = 0;
 	p->view_slide = p->slides[p->view_slide_number];
 
 	gdk_window_invalidate_rect(p->ss_drawingarea->window, NULL, FALSE);
@@ -104,6 +105,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 	if ( p->view_slide_number == p->num_slides-1 ) return FALSE;
 
 	p->view_slide_number++;
+	p->ss_blank = 0;
 	p->view_slide = p->slides[p->view_slide_number];
 
 	gdk_window_invalidate_rect(p->ss_drawingarea->window, NULL, FALSE);

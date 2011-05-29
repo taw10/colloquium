@@ -39,6 +39,7 @@
 static gint ss_destroy_sig(GtkWidget *widget, struct presentation *p)
 {
 	p->slideshow = NULL;
+	gdk_cursor_unref(p->blank_cursor);
 	return FALSE;
 }
 
@@ -132,6 +133,15 @@ static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
+static gboolean ss_realize_sig(GtkWidget *w, struct presentation *p)
+{
+	p->blank_cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+	gdk_window_set_cursor(GDK_WINDOW(p->slideshow->window),
+	                      p->blank_cursor);
+	return FALSE;
+}
+
+
 void try_start_slideshow(struct presentation *p)
 {
 	GtkWidget *n;
@@ -153,6 +163,7 @@ void try_start_slideshow(struct presentation *p)
 	g_signal_connect(G_OBJECT(p->ss_drawingarea), "expose-event",
 			 G_CALLBACK(ss_expose_sig), p);
 	g_signal_connect(G_OBJECT(n), "destroy", G_CALLBACK(ss_destroy_sig), p);
+	g_signal_connect(G_OBJECT(n), "realize", G_CALLBACK(ss_realize_sig), p);
 
 	gtk_widget_grab_focus(GTK_WIDGET(p->ss_drawingarea));
 

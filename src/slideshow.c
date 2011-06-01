@@ -152,6 +152,9 @@ static gboolean ss_realize_sig(GtkWidget *w, struct presentation *p)
 	p->blank_cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
 	gdk_window_set_cursor(GDK_WINDOW(p->slideshow->window),
 	                      p->blank_cursor);
+
+	gtk_window_parse_geometry(GTK_WINDOW(w), p->ss_geom);
+
 	return FALSE;
 }
 
@@ -159,6 +162,9 @@ static gboolean ss_realize_sig(GtkWidget *w, struct presentation *p)
 void try_start_slideshow(struct presentation *p)
 {
 	GtkWidget *n;
+	GdkScreen *screen;
+	int n_monitors;
+	int i;
 
 	/* Presentation already running? */
 	if ( p->slideshow != NULL ) return;
@@ -182,6 +188,17 @@ void try_start_slideshow(struct presentation *p)
 	g_signal_connect(G_OBJECT(n), "realize", G_CALLBACK(ss_realize_sig), p);
 
 	gtk_widget_grab_focus(GTK_WIDGET(p->ss_drawingarea));
+
+	screen = gdk_screen_get_default();
+	n_monitors = gdk_screen_get_n_monitors(screen);
+	for ( i=0; i<n_monitors; i++ ) {
+
+		GdkRectangle rect;
+
+		gdk_screen_get_monitor_geometry(screen, i, &rect);
+		snprintf(p->ss_geom, 255, "%ix%i+%i+%i",
+		         rect.width, rect.height, rect.x, rect.y);
+	}
 
 	p->slideshow = n;
 	gtk_window_fullscreen(GTK_WINDOW(n));

@@ -61,6 +61,7 @@ struct presentation
 	GtkWidget       *ss_drawingarea;
 	GdkCursor       *blank_cursor;
 	int              ss_blank;
+	char             ss_geom[256];
 
 	double           slide_width;
 	double           slide_height;

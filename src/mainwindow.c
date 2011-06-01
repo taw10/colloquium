@@ -404,7 +404,11 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	/* Overall background */
 	cairo_rectangle(cr, event->area.x, event->area.y,
 	                event->area.width, event->area.height);
-	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
+	if ( p->slideshow == NULL ) {
+		cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
+	} else {
+		cairo_set_source_rgb(cr, 1.0, 0.3, 0.2);
+	}
 	cairo_fill(cr);
 
 	/* Get the overall size */

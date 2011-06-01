@@ -201,6 +201,21 @@ static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
+                         struct presentation *p)
+{
+	switch ( gtk_radio_action_get_current_value(action) )
+	{
+		case 0 : p->tool = TOOL_SELECT; break;
+		case 1 : p->tool = TOOL_TEXT; break;
+	}
+	p->editing_object = NULL;
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return 0;
+}
+
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
@@ -230,16 +245,22 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, G_CALLBACK(next_slide_sig) },
 		{ "ButtonLastSlideAction", GTK_STOCK_GOTO_LAST, "Last Slide",
 			NULL, NULL, G_CALLBACK(last_slide_sig) },
-		{ "ButtonToolSelectAction", "colloquium-select", "Select",
-			NULL, NULL, NULL },
-		{ "ButtonToolTextAction", "colloquium-text", "Text",
-			NULL, NULL, NULL },
 
 	};
 	guint n_entries = G_N_ELEMENTS(entries);
+	GtkRadioActionEntry tools[] = {
+		{ "ButtonToolSelectAction", "colloquium-select", "Select",
+			NULL, NULL, TOOL_SELECT },
+		{ "ButtonToolTextAction", "colloquium-text", "Text",
+			NULL, NULL, TOOL_TEXT },
+	};
+	guint n_tools = G_N_ELEMENTS(tools);
 
 	p->action_group = gtk_action_group_new("mainwindow");
 	gtk_action_group_add_actions(p->action_group, entries, n_entries, p);
+	gtk_action_group_add_radio_actions(p->action_group, tools, n_tools,
+	                                   TOOL_SELECT,
+	                                   G_CALLBACK(set_tool_sig), p);
 
 	p->ui = gtk_ui_manager_new();
 	gtk_ui_manager_insert_action_group(p->ui, p->action_group, 0);
@@ -354,14 +375,20 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	  && (y>0.0) && (y<p->view_slide->slide_height) )
 	{
 		clicked = find_object_at_position(p->view_slide, x, y);
-		if ( !clicked ) {
-			p->editing_object = add_text_object(p->view_slide,
-			                                    x, y);
-		} else {
-			p->editing_object = clicked;
-			position_caret(clicked, x, y);
+		switch ( p->tool ) {
+		case TOOL_SELECT :
+			break;
+		case TOOL_TEXT :
+			if ( !clicked ) {
+				struct object *n;
+				n = add_text_object(p->view_slide, x, y);
+				p->editing_object = n;
+			} else {
+				p->editing_object = clicked;
+				position_caret(clicked, x, y);
+			}
+			break;
 		}
-
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));

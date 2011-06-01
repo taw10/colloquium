@@ -45,6 +45,13 @@ struct slide
 };
 
 
+enum tool
+{
+	TOOL_SELECT,
+	TOOL_TEXT,
+};
+
+
 struct presentation
 {
 	char            *titlebar;
@@ -72,6 +79,9 @@ struct presentation
 	unsigned int     view_slide_number;
 	struct slide    *view_slide;
 	struct object   *editing_object;
+
+	/* Tool status */
+	enum tool        tool;
 
 	unsigned int     num_slides;
 	struct slide   **slides;

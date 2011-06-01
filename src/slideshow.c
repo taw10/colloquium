@@ -67,7 +67,6 @@ static gboolean ss_expose_sig(GtkWidget *da, GdkEventExpose *event,
 		gtk_widget_get_allocation(da, &allocation);
 		xoff = (allocation.width - p->slide_width)/2.0;
 		yoff = (allocation.height - p->slide_height)/2.0;
-		p->border_offs_x = xoff;  p->border_offs_y = yoff;
 
 		/* Draw the slide from the cache */
 		cairo_rectangle(cr, event->area.x, event->area.y,

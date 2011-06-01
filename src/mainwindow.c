@@ -322,6 +322,11 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		next_slide_sig(NULL, p);
 		break;
 
+	case GDK_KEY_Escape :
+		if ( p->slideshow != NULL ) end_slideshow(p);
+		p->editing_object = NULL;
+		break;
+
 	}
 
 	/* FIXME: Invalidate only the necessary region */

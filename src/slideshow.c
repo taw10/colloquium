@@ -120,6 +120,15 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+void end_slideshow(struct presentation *p)
+{
+	gtk_widget_destroy(p->ss_drawingarea);
+	gtk_widget_destroy(p->slideshow);
+	p->slideshow = NULL;
+	notify_slide_changed(p);
+}
+
+
 static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct presentation *p)
 {
@@ -141,8 +150,7 @@ static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 	case GDK_KEY_Escape :
-		gtk_widget_destroy(p->ss_drawingarea);
-		gtk_widget_destroy(p->slideshow);
+		end_slideshow(p);
 		break;
 
 	}

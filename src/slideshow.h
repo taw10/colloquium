@@ -32,4 +32,6 @@ extern void try_start_slideshow(struct presentation *p);
 
 extern void notify_slideshow_slide_changed(struct presentation *p);
 
+extern void end_slideshow(struct presentation *p);
+
 #endif	/* SLIDESHOW_H */

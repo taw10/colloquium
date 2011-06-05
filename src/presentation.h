@@ -82,6 +82,8 @@ struct presentation
 
 	/* Tool status */
 	enum tool        tool;
+	double           drag_offs_x;
+	double           drag_offs_y;
 
 	unsigned int     num_slides;
 	struct slide   **slides;

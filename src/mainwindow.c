@@ -357,6 +357,36 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
+static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
+                                 struct presentation *p)
+{
+	if ( p->tool == TOOL_SELECT ) {
+
+		if ( p->editing_object != NULL ) {
+
+			gdouble x, y;
+
+			x = event->x - p->border_offs_x;
+			y = event->y - p->border_offs_y;
+
+			p->editing_object->x = x + p->drag_offs_x;
+			p->editing_object->y = y + p->drag_offs_y;
+			p->view_slide->object_seq++;
+
+			/* FIXME: Invalidate only the necessary region */
+			gdk_window_invalidate_rect(p->drawingarea->window,
+			                           NULL, FALSE);
+
+
+		}
+
+	}
+
+	gdk_event_request_motions(event);
+	return FALSE;
+}
+
+
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  struct presentation *p)
 {
@@ -377,6 +407,11 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		clicked = find_object_at_position(p->view_slide, x, y);
 		switch ( p->tool ) {
 		case TOOL_SELECT :
+			if ( clicked ) {
+				p->editing_object = clicked;
+				p->drag_offs_x = clicked->x - x;
+				p->drag_offs_y = clicked->y - y;
+			}
 			break;
 		case TOOL_TEXT :
 			if ( !clicked ) {
@@ -411,7 +446,8 @@ static void draw_editing_box(cairo_t *cr, double xmin, double ymin,
 }
 
 
-static void draw_editing_bits(cairo_t *cr, struct object *o)
+static void draw_editing_bits(cairo_t *cr, struct presentation *p,
+                              struct object *o)
 {
 	draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
 
@@ -419,7 +455,7 @@ static void draw_editing_bits(cairo_t *cr, struct object *o)
 
 	case TEXT :
 
-		draw_caret(cr, o);
+		if ( p->tool == TOOL_TEXT ) draw_caret(cr, o);
 		break;
 
 	}
@@ -463,7 +499,7 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 
 	/* Draw editing bits for selected object */
 	if ( p->editing_object != NULL ) {
-		draw_editing_bits(cr, p->editing_object);
+		draw_editing_bits(cr, p, p->editing_object);
 	}
 
 	cairo_destroy(cr);
@@ -513,6 +549,7 @@ int open_mainwindow(struct presentation *p)
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),
 	                      GDK_POINTER_MOTION_HINT_MASK
+	                       | GDK_BUTTON1_MOTION_MASK
 	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
 	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
 
@@ -522,6 +559,8 @@ int open_mainwindow(struct presentation *p)
 			 G_CALLBACK(key_press_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "expose-event",
 			 G_CALLBACK(expose_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "motion-notify-event",
+			 G_CALLBACK(motion_sig), p);
 
 	p->im_context = gtk_im_multicontext_new();
 	gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context),

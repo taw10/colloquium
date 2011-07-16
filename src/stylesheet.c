@@ -45,12 +45,13 @@ static void do_text(struct _stylesheetwindow *s, GtkWidget *b)
 {
 	GtkWidget *table;
 	GtkWidget *box;
+	GtkWidget *line;
 	GtkWidget *label;
 	GtkWidget *combo;
 	GtkWidget *font;
 	GtkWidget *colour;
 
-	table = gtk_table_new(3, 2, FALSE);
+	table = gtk_table_new(4, 2, FALSE);
 	gtk_box_pack_start(GTK_BOX(b), table, TRUE, TRUE, 5);
 	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
 	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
@@ -62,25 +63,29 @@ static void do_text(struct _stylesheetwindow *s, GtkWidget *b)
 	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 0, 1);
 	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Running text");
 	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Label");
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Title");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Slide title");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
 	gtk_widget_set_size_request(GTK_WIDGET(combo), 300, -1);
-	gtk_table_set_row_spacing(GTK_TABLE(table), 0, 20);
+
+	line = gtk_hseparator_new();
+	gtk_table_attach_defaults(GTK_TABLE(table), line, 0, 4, 1, 2);
+	gtk_table_set_row_spacing(GTK_TABLE(table), 0, 10);
+	gtk_table_set_row_spacing(GTK_TABLE(table), 1, 10);
 
 	label = gtk_label_new("Font:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 2, 3);
 	font = gtk_font_button_new_with_font("Sans 12");
 	box = gtk_hbox_new(FALSE, 0);
-	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 1, 2);
+	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 2, 3);
 	gtk_box_pack_start(GTK_BOX(box), font, FALSE, FALSE, 0);
 
 	label = gtk_label_new("Colour:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 2, 3);
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 3, 4);
 	colour = gtk_color_button_new();
 	box = gtk_hbox_new(FALSE, 0);
-	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 2, 3);
+	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 3, 4);
 	gtk_box_pack_start(GTK_BOX(box), colour, FALSE, FALSE, 0);
 }
 

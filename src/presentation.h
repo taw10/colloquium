@@ -30,6 +30,8 @@
 
 #include <gtk/gtk.h>
 
+#include "stylesheet.h"
+
 
 struct slide
 {
@@ -54,39 +56,42 @@ enum tool
 
 struct presentation
 {
-	char            *titlebar;
-	char            *filename;
+	char             *titlebar;
+	char             *filename;
 
-	GtkWidget       *window;
-	GtkWidget	*drawingarea;
-	GtkUIManager	*ui;
-	GtkActionGroup	*action_group;
-	GtkIMContext    *im_context;
+	GtkWidget        *window;
+	GtkWidget        *drawingarea;
+	GtkUIManager     *ui;
+	GtkActionGroup   *action_group;
+	GtkIMContext     *im_context;
+
+	/* Dialogue boxes */
+	StylesheetWindow *stylesheetwindow;
 
 	/* Slideshow stuff */
-	GtkWidget       *slideshow;
-	GtkWidget       *ss_drawingarea;
-	GdkCursor       *blank_cursor;
-	int              ss_blank;
-	char             ss_geom[256];
+	GtkWidget        *slideshow;
+	GtkWidget        *ss_drawingarea;
+	GdkCursor        *blank_cursor;
+	int               ss_blank;
+	char              ss_geom[256];
 
-	double           slide_width;
-	double           slide_height;
-	double           border_offs_x;
-	double           border_offs_y;
+	double            slide_width;
+	double            slide_height;
+	double            border_offs_x;
+	double            border_offs_y;
 
 	/* The slide currently being displayed */
-	unsigned int     view_slide_number;
-	struct slide    *view_slide;
-	struct object   *editing_object;
+	unsigned int      view_slide_number;
+	struct slide     *view_slide;
+	struct object    *editing_object;
 
 	/* Tool status */
-	enum tool        tool;
-	double           drag_offs_x;
-	double           drag_offs_y;
+	enum tool         tool;
+	double            drag_offs_x;
+	double            drag_offs_y;
 
-	unsigned int     num_slides;
-	struct slide   **slides;
+	unsigned int      num_slides;
+	struct slide    **slides;
 };
 
 

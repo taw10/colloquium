@@ -149,7 +149,7 @@ struct presentation *new_presentation()
 {
 	struct presentation *new;
 
-	new = malloc(sizeof(struct presentation));
+	new = calloc(1, sizeof(struct presentation));
 
 	new->titlebar = strdup("(untitled)");
 	new->filename = NULL;

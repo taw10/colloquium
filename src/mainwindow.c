@@ -36,6 +36,7 @@
 #include "slide_render.h"
 #include "objects.h"
 #include "slideshow.h"
+#include "stylesheet.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -201,6 +202,15 @@ static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint open_stylesheet_sig(GtkWidget *widget, struct presentation *p)
+{
+	if ( p->stylesheetwindow == NULL ) {
+		p->stylesheetwindow = open_stylesheet(p);
+	} /* else already open */
+
+	return FALSE;
+}
+
 static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
                          struct presentation *p)
 {
@@ -222,12 +232,40 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	GtkActionEntry entries[] = {
 
 		{ "FileAction", NULL, "_File", NULL, NULL, NULL },
-		{ "QuitAction", GTK_STOCK_QUIT, "_Quit", NULL, NULL,
-			G_CALLBACK(quit_sig) },
+		{ "NewAction", GTK_STOCK_NEW, "_New",
+			NULL, NULL, NULL },
+		{ "OpenAction", GTK_STOCK_OPEN, "_Open...",
+			NULL, NULL, NULL },
+		{ "SaveAction", GTK_STOCK_SAVE, "_Save",
+			NULL, NULL, NULL },
+		{ "SaveAsAction", GTK_STOCK_SAVE_AS, "Save _As...",
+			NULL, NULL, NULL },
+		{ "SaveStyleAction", GTK_STOCK_SAVE_AS, "Save St_ylesheet",
+			NULL, NULL, NULL },
+		{ "QuitAction", GTK_STOCK_QUIT, "_Quit",
+			NULL, NULL, G_CALLBACK(quit_sig) },
+
+		{ "EditAction", NULL, "_Edit", NULL, NULL, NULL },
+		{ "UndoAction", GTK_STOCK_UNDO, "_Undo",
+			NULL, NULL, NULL },
+		{ "RedoAction", GTK_STOCK_REDO, "_Redo",
+			NULL, NULL, NULL },
+		{ "CutAction", GTK_STOCK_CUT, "Cut",
+			NULL, NULL, NULL },
+		{ "CopyAction", GTK_STOCK_COPY, "Copy",
+			NULL, NULL, NULL },
+		{ "PasteAction", GTK_STOCK_PASTE, "Paste",
+			NULL, NULL, NULL },
+		{ "DeleteAction", GTK_STOCK_DELETE, "Delete",
+			NULL, NULL, NULL },
+		{ "EditStyleAction", NULL, "Stylesheet...",
+			NULL, NULL, G_CALLBACK(open_stylesheet_sig) },
 
 		{ "ToolsAction", NULL, "_Tools", NULL, NULL, NULL },
 		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start slideshow",
-		        "F5", NULL, G_CALLBACK(start_slideshow_sig) },
+			"F5", NULL, G_CALLBACK(start_slideshow_sig) },
+		{ "PrefsAction", GTK_STOCK_PREFERENCES, "_Preferences",
+		        NULL, NULL, NULL },
 
 		{ "HelpAction", NULL, "_Help", NULL, NULL, NULL },
 		{ "AboutAction", GTK_STOCK_ABOUT, "_About...",

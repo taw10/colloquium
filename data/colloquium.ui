@@ -2,11 +2,31 @@
 	<menubar name="displaywindow">
 
 		<menu name="file" action="FileAction">
+			<menuitem name="new" action="NewAction" />
+			<menuitem name="open" action="OpenAction" />
+			<separator />
+			<menuitem name="save" action="SaveAction" />
+			<menuitem name="saveas" action="SaveAsAction" />
+			<menuitem name="savestyle" action="SaveStyleAction" />
+			<separator />
 			<menuitem name="quit" action="QuitAction" />
+		</menu>
+
+		<menu name="edit" action="EditAction">
+			<menuitem name="undo" action="UndoAction" />
+			<menuitem name="redo" action="RedoAction" />
+			<separator />
+			<menuitem name="cut" action="CutAction" />
+			<menuitem name="copy" action="CopyAction" />
+			<menuitem name="paste" action="PasteAction" />
+			<menuitem name="delete" action="DeleteAction" />
+			<separator />
+			<menuitem name="Stylesheet..." action="EditStyleAction" />
 		</menu>
 
 		<menu name="tools" action="ToolsAction">
 			<menuitem name="slideshow" action="TSlideshowAction" />
+			<menuitem name="preferences" action="PrefsAction" />
 		</menu>
 
 		<menu name="help" action="HelpAction">

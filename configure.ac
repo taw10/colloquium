@@ -55,14 +55,20 @@ PKG_CHECK_MODULES([GDK_pixbuf], [gdk-pixbuf], [],
 ])
 
 
+PKG_CHECK_MODULES([LIBCONFIG], [libconfig >= 1.4], [],
+[
+   AC_MSG_ERROR([libconfig is required.])
+])
+
+
 gl_IGNORE_UNUSED_LIBRARIES
 
 
 CFLAGS="$CFLAGS $GTK_CFLAGS -D_GNU_SOURCE $libPNG_CFLAGS $Cairo_CFLAGS"
-CFLAGS="$CFLAGS $GDK_pixbuf_CFLAGS $GDK_pixbuf_2_CFLAGS"
+CFLAGS="$CFLAGS $GDK_pixbuf_CFLAGS $GDK_pixbuf_2_CFLAGS $LIBCONFIG_CFLAGS"
 
 LIBS="$LIBS -lm -lz $GTK_LIBS $libPNG_LIBS $Cairo_LIBS $GDK_pixbuf_LIBS"
-LIBS="$LIBS $GDK_pixbuf_2_LIBS $LDFLAGS"
+LIBS="$LIBS $GDK_pixbuf_2_LIBS $LIBCONFIG_LIBS $LDFLAGS"
 
 
 AC_CONFIG_FILES(Makefile lib/Makefile)

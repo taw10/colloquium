@@ -29,9 +29,12 @@
 
 
 typedef struct _stylesheetwindow StylesheetWindow;
+typedef struct _stylesheet StyleSheet;
 struct presentation;
 
 extern StylesheetWindow *open_stylesheet(struct presentation *p);
 
+extern StyleSheet *new_stylesheet();
+extern StyleSheet *load_stylesheet(const char *filename);
 
 #endif	/* STYLESHEET_H */

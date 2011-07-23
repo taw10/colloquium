@@ -32,6 +32,7 @@
 #include "presentation.h"
 #include "slide_render.h"
 #include "objects.h"
+#include "stylesheet.h"
 
 
 struct slide *add_slide(struct presentation *p, int pos)
@@ -169,6 +170,8 @@ struct presentation *new_presentation()
 	new->view_slide_number = 0;
 
 	new->editing_object = NULL;
+
+	new->ss = new_stylesheet();
 
 	return new;
 }

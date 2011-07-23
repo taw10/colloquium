@@ -65,6 +65,9 @@ struct presentation
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
 
+	/* Stylesheet */
+	StyleSheet       *ss;
+
 	/* Dialogue boxes */
 	StylesheetWindow *stylesheetwindow;
 

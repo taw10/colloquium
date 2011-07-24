@@ -28,6 +28,49 @@
 #endif
 
 
+struct text_style
+{
+	char   *name;
+	char   *font;
+	char   *colour;
+	double  alpha;
+};
+
+
+enum justify
+{
+	J_LEFT,
+	J_CENTER,
+	J_RIGHT,
+};
+
+
+enum vert_pos
+{
+	V_TOP,
+	V_CENTER,
+	V_BOTTOM,
+};
+
+
+struct layout_element
+{
+	char *name;
+	struct text_style *text_style;
+
+	double margin_left;
+	double margin_right;
+	double margin_top;
+	double margin_bottom;
+
+	enum justify just;
+	enum vert_pos vert;
+
+	double offset_x;
+	double offset_y;
+};
+
+
 typedef struct _stylesheetwindow StylesheetWindow;
 typedef struct _stylesheet StyleSheet;
 struct presentation;

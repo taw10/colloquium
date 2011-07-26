@@ -281,8 +281,8 @@ static void default_stylesheet(StyleSheet *ss)
 	ly->margin_right = 20.0;
 	ly->margin_top = 20.0;
 	ly->margin_bottom = 20.0;
-	ly->just = J_CENTER;
-	ly->vert = V_TOP;
+	ly->halign = J_CENTER;
+	ly->valign = V_TOP;
 	ly->offset_x = 0.0;
 	ly->offset_y = 0.0;  /* irrelevant */
 
@@ -294,8 +294,8 @@ static void default_stylesheet(StyleSheet *ss)
 	ly->margin_right = 20.0;
 	ly->margin_top = 20.0;
 	ly->margin_bottom = 20.0;
-	ly->just = J_CENTER;
-	ly->vert = V_CENTER;
+	ly->halign = J_CENTER;
+	ly->valign = V_CENTER;
 	ly->offset_x = -200.0;
 	ly->offset_y = +300.0;
 
@@ -303,13 +303,12 @@ static void default_stylesheet(StyleSheet *ss)
 	st->font = strdup("Sans 30");
 	ly = new_layout_element(ss, st->name);
 	ly->text_style = st;
-	ly->text_style = st;
 	ly->margin_left = 20.0;
 	ly->margin_right = 20.0;
 	ly->margin_top = 20.0;
 	ly->margin_bottom = 20.0;
-	ly->just = J_CENTER;
-	ly->vert = V_CENTER;
+	ly->halign = J_CENTER;
+	ly->valign = V_CENTER;
 	ly->offset_x = +200.0;
 	ly->offset_y = -300.0;
 
@@ -318,13 +317,12 @@ static void default_stylesheet(StyleSheet *ss)
 
 	ly = new_layout_element(ss, "Slide content");
 	ly->text_style = st;
-	ly->text_style = st;
 	ly->margin_left = 20.0;
 	ly->margin_right = 20.0;
 	ly->margin_top = 20.0;
 	ly->margin_bottom = 20.0;
-	ly->just = J_CENTER;
-	ly->vert = V_CENTER;
+	ly->halign = J_CENTER;
+	ly->valign = V_CENTER;
 	ly->offset_x = +200.0;
 	ly->offset_y = -300.0;
 

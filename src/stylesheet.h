@@ -55,19 +55,19 @@ enum vert_pos
 
 struct layout_element
 {
-	char *name;
+	char              *name;
 	struct text_style *text_style;
 
-	double margin_left;
-	double margin_right;
-	double margin_top;
-	double margin_bottom;
+	double             margin_left;
+	double             margin_right;
+	double             margin_top;
+	double             margin_bottom;
 
-	enum justify just;
-	enum vert_pos vert;
+	enum justify       halign;
+	enum vert_pos      valign;
 
-	double offset_x;
-	double offset_y;
+	double             offset_x;
+	double             offset_y;
 };
 
 

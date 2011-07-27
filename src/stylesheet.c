@@ -111,10 +111,14 @@ static void do_text(struct _stylesheetwindow *s, GtkWidget *b)
 	GtkWidget *line;
 	GtkWidget *label;
 	GtkWidget *combo;
+	GtkWidget *vbox;
 	int i;
 
+	vbox = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(b), vbox, TRUE, TRUE, 0);
+
 	table = gtk_table_new(4, 2, FALSE);
-	gtk_box_pack_start(GTK_BOX(b), table, TRUE, TRUE, 5);
+	gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, FALSE, 5);
 	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
 	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
 
@@ -122,7 +126,7 @@ static void do_text(struct _stylesheetwindow *s, GtkWidget *b)
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
 	combo = gtk_combo_box_new_text();
-	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 0, 1);
+	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 4, 0, 1);
 
 	for ( i=0; i<s->ss->n_text_styles; i++ ) {
 		gtk_combo_box_append_text(GTK_COMBO_BOX(combo),
@@ -176,37 +180,120 @@ static void layout_changed_sig(GtkComboBox *combo,
 static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 {
 	GtkWidget *table;
-	GtkWidget *box;
 	GtkWidget *line;
 	GtkWidget *label;
 	GtkWidget *combo;
+	GtkWidget *spin;
+	GtkWidget *box;
+	GtkWidget *vbox;
+	GtkWidget *entry;
 	int i;
 
-	table = gtk_table_new(4, 2, FALSE);
-	gtk_box_pack_start(GTK_BOX(b), table, TRUE, TRUE, 5);
-	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
-	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
-
+	box = gtk_hbox_new(FALSE, 5);
+	gtk_box_pack_start(GTK_BOX(b), box, FALSE, FALSE, 5);
 	label = gtk_label_new("Element:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
+	gtk_box_pack_start(GTK_BOX(box), label, FALSE, FALSE, 0);
 	combo = gtk_combo_box_new_text();
-	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 0, 1);
-
 	for ( i=0; i<s->ss->n_layout_elements; i++ ) {
 		gtk_combo_box_append_text(GTK_COMBO_BOX(combo),
 		                          s->ss->layout_elements[i]->name);
 	}
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
-	gtk_widget_set_size_request(GTK_WIDGET(combo), 300, -1);
 	g_signal_connect(G_OBJECT(combo), "changed",
 	                 G_CALLBACK(layout_changed_sig), s);
+	gtk_box_pack_start(GTK_BOX(box), combo, TRUE, TRUE, 0);
 
 	line = gtk_hseparator_new();
-	gtk_table_attach_defaults(GTK_TABLE(table), line, 0, 4, 1, 2);
-	gtk_table_set_row_spacing(GTK_TABLE(table), 0, 10);
-	gtk_table_set_row_spacing(GTK_TABLE(table), 1, 10);
+	gtk_box_pack_start(GTK_BOX(b), line, FALSE, FALSE, 5);
+
+	box = gtk_hbox_new(TRUE, 30);
+	gtk_box_pack_start(GTK_BOX(b), box, FALSE, FALSE, 5);
+
+	vbox = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(box), vbox, FALSE, FALSE, 0);
+	label = gtk_label_new("Margins:");
+	gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
+	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 5);
+	table = gtk_table_new(3, 3, TRUE);
+	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
+	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
+	gtk_box_pack_start(GTK_BOX(vbox), table, TRUE, TRUE, 0);
+
+	/* Left */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 0, 1, 1, 2);
+
+	/* Up */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 0, 1);
+
+	/* Right */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 2, 3, 1, 2);
+
+	/* Down */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 2, 3);
+
+	vbox = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(box), vbox, FALSE, FALSE, 0);
+	label = gtk_label_new("Offset from centre:");
+	gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
+	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 5);
+	table = gtk_table_new(3, 3, TRUE);
+	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
+	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
+	gtk_box_pack_start(GTK_BOX(vbox), table, TRUE, TRUE, 0);
+
+	/* Left */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 0, 1, 1, 2);
+
+	/* Up */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 0, 1);
+
+	/* Right */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 2, 3, 1, 2);
+
+	/* Down */
+	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 2, 3);
+
+	table = gtk_table_new(3, 2, TRUE);
+	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
+	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
+	gtk_box_pack_start(GTK_BOX(b), table, FALSE, FALSE, 5);
+	label = gtk_label_new("Horizontal alignment:");
+	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
+	combo = gtk_combo_box_new_text();
+	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 0, 1);
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Left");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Centre");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Right");
+	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+
+	label = gtk_label_new("Vertical alignment:");
+	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
+	combo = gtk_combo_box_new_text();
+	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 1, 2);
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Top");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Centre");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Bottom");
+	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+
+	label = gtk_label_new("Maximum width:");
+	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 2, 3);
+	entry = gtk_entry_new_with_max_length(32);
+	gtk_table_attach_defaults(GTK_TABLE(table), entry, 1, 2, 2, 3);
+
 }
+
 
 
 static gint destroy_stylesheet_sig(GtkWidget *w, struct _stylesheetwindow *s)

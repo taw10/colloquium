@@ -241,26 +241,22 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	label = gtk_label_new("Offset from centre:");
 	gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
 	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 5);
-	table = gtk_table_new(3, 3, TRUE);
+	table = gtk_table_new(2, 2, TRUE);
 	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
 	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
 	gtk_box_pack_start(GTK_BOX(vbox), table, TRUE, TRUE, 0);
 
-	/* Left */
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 0, 1, 1, 2);
-
 	/* Up */
+	label = gtk_label_new("Upwards:");
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
 	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
 	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 0, 1);
 
 	/* Right */
+	label = gtk_label_new("Across:");
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
 	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 2, 3, 1, 2);
-
-	/* Down */
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 2, 3);
+	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 1, 2);
 
 	table = gtk_table_new(3, 2, TRUE);
 	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);

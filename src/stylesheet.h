@@ -39,17 +39,17 @@ struct text_style
 
 enum justify
 {
-	J_LEFT,
-	J_CENTER,
-	J_RIGHT,
+	J_LEFT   = 0,
+	J_CENTER = 1,
+	J_RIGHT  = 2,
 };
 
 
 enum vert_pos
 {
-	V_TOP,
-	V_CENTER,
-	V_BOTTOM,
+	V_TOP     = 0,
+	V_CENTER  = 1,
+	V_BOTTOM  = 2,
 };
 
 
@@ -62,6 +62,8 @@ struct layout_element
 	double             margin_right;
 	double             margin_top;
 	double             margin_bottom;
+	double             max_width;
+	int                use_max_width;
 
 	enum justify       halign;
 	enum vert_pos      valign;

@@ -45,6 +45,17 @@ struct _stylesheetwindow
 	GtkWidget           *text_font;
 	GtkWidget           *text_colour;
 
+	GtkWidget           *margin_left;
+	GtkWidget           *margin_right;
+	GtkWidget           *margin_top;
+	GtkWidget           *margin_bottom;
+	GtkWidget           *offset_x;
+	GtkWidget           *offset_y;
+	GtkWidget           *halign;
+	GtkWidget           *valign;
+	GtkWidget           *max_width;
+	GtkWidget           *use_max;
+
 	struct text_style *cur_text_style;
 	struct layout_element *cur_layout_element;
 };
@@ -70,12 +81,16 @@ static void text_changed_sig(GtkComboBox *combo,
                              struct _stylesheetwindow *s)
 {
 	int n;
+	GdkColor col;
 
 	n = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
 	s->cur_text_style = s->ss->text_styles[n];
 
 	gtk_font_button_set_font_name(GTK_FONT_BUTTON(s->text_font),
 	                              s->cur_text_style->font);
+
+	gdk_color_parse(s->cur_text_style->colour, &col);
+	gtk_color_button_set_color(GTK_COLOR_BUTTON(s->text_colour), &col);
 }
 
 
@@ -167,6 +182,81 @@ static void do_text(struct _stylesheetwindow *s, GtkWidget *b)
 }
 
 
+static void margin_left_changed_sig(GtkSpinButton *spin,
+                                    struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->margin_left = gtk_spin_button_get_value(spin);
+}
+
+
+static void margin_right_changed_sig(GtkSpinButton *spin,
+                                     struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->margin_right = gtk_spin_button_get_value(spin);
+}
+
+
+static void margin_top_changed_sig(GtkSpinButton *spin,
+                                   struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->margin_top = gtk_spin_button_get_value(spin);
+}
+
+
+static void margin_bottom_changed_sig(GtkSpinButton *spin,
+                                      struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->margin_bottom = gtk_spin_button_get_value(spin);
+}
+
+
+static void offset_x_changed_sig(GtkSpinButton *spin,
+                                 struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->offset_x = gtk_spin_button_get_value(spin);
+}
+
+
+static void offset_y_changed_sig(GtkSpinButton *spin,
+                                 struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->offset_y = gtk_spin_button_get_value(spin);
+}
+
+
+static void halign_changed_sig(GtkComboBox *combo,
+                                 struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->halign = gtk_combo_box_get_active(combo);
+}
+
+
+static void valign_changed_sig(GtkComboBox *combo,
+                                 struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->valign = gtk_combo_box_get_active(combo);
+}
+
+
+static void max_changed_sig(GtkSpinButton *spin,
+                            struct _stylesheetwindow *s)
+{
+	s->cur_layout_element->max_width = gtk_spin_button_get_value(spin);
+}
+
+
+static void use_max_toggled_sig(GtkToggleButton *combo,
+                                 struct _stylesheetwindow *s)
+{
+	int v;
+
+	v = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(s->use_max));
+	s->cur_layout_element->use_max_width = v;
+	gtk_widget_set_sensitive(s->max_width,
+	                         s->cur_layout_element->use_max_width);
+}
+
+
 static void layout_changed_sig(GtkComboBox *combo,
                                struct _stylesheetwindow *s)
 {
@@ -174,6 +264,31 @@ static void layout_changed_sig(GtkComboBox *combo,
 
 	n = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
 	s->cur_layout_element = s->ss->layout_elements[n];
+
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_left),
+	                          s->cur_layout_element->margin_left);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_right),
+	                          s->cur_layout_element->margin_right);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_bottom),
+	                          s->cur_layout_element->margin_bottom);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_top),
+	                          s->cur_layout_element->margin_top);
+
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->offset_x),
+	                          s->cur_layout_element->offset_x);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->offset_y),
+	                          s->cur_layout_element->offset_y);
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(s->halign),
+	                         s->cur_layout_element->halign);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(s->valign),
+	                         s->cur_layout_element->valign);
+
+	gtk_widget_set_sensitive(s->max_width,
+	                         s->cur_layout_element->use_max_width);
+
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->max_width),
+	                          s->cur_layout_element->max_width);
 }
 
 
@@ -183,10 +298,8 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	GtkWidget *line;
 	GtkWidget *label;
 	GtkWidget *combo;
-	GtkWidget *spin;
 	GtkWidget *box;
 	GtkWidget *vbox;
-	GtkWidget *entry;
 	int i;
 
 	box = gtk_hbox_new(FALSE, 5);
@@ -221,20 +334,32 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	gtk_box_pack_start(GTK_BOX(vbox), table, TRUE, TRUE, 0);
 
 	/* Left */
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 0, 1, 1, 2);
+	s->margin_left = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), s->margin_left,
+	                          0, 1, 1, 2);
+	g_signal_connect(G_OBJECT(s->margin_left), "value-changed",
+	                 G_CALLBACK(margin_left_changed_sig), s);
 
 	/* Up */
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 0, 1);
+	s->margin_top = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), s->margin_top,
+	                          1, 2, 0, 1);
+	g_signal_connect(G_OBJECT(s->margin_top), "value-changed",
+	                 G_CALLBACK(margin_top_changed_sig), s);
 
 	/* Right */
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 2, 3, 1, 2);
+	s->margin_right = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), s->margin_right,
+	                          2, 3, 1, 2);
+	g_signal_connect(G_OBJECT(s->margin_right), "value-changed",
+	                 G_CALLBACK(margin_right_changed_sig), s);
 
 	/* Down */
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 2, 3);
+	s->margin_bottom = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), s->margin_bottom,
+	                          1, 2, 2, 3);
+	g_signal_connect(G_OBJECT(s->margin_bottom), "value-changed",
+	                 G_CALLBACK(margin_bottom_changed_sig), s);
 
 	vbox = gtk_vbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(box), vbox, FALSE, FALSE, 0);
@@ -249,14 +374,18 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	/* Up */
 	label = gtk_label_new("Upwards:");
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 0, 1);
+	s->offset_y = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), s->offset_y, 1, 2, 0, 1);
+	g_signal_connect(G_OBJECT(s->offset_y), "value-changed",
+	                 G_CALLBACK(offset_y_changed_sig), s);
 
 	/* Right */
 	label = gtk_label_new("Across:");
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
-	spin = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
-	gtk_table_attach_defaults(GTK_TABLE(table), spin, 1, 2, 1, 2);
+	s->offset_x = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), s->offset_x, 1, 2, 1, 2);
+	g_signal_connect(G_OBJECT(s->offset_x), "value-changed",
+	                 G_CALLBACK(offset_x_changed_sig), s);
 
 	table = gtk_table_new(3, 2, TRUE);
 	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
@@ -265,29 +394,41 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	label = gtk_label_new("Horizontal alignment:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
-	combo = gtk_combo_box_new_text();
-	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 0, 1);
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Left");
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Centre");
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Right");
-	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+	s->halign = gtk_combo_box_new_text();
+	gtk_table_attach_defaults(GTK_TABLE(table), s->halign, 1, 2, 0, 1);
+	gtk_combo_box_append_text(GTK_COMBO_BOX(s->halign), "Left");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(s->halign), "Centre");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(s->halign), "Right");
+	g_signal_connect(G_OBJECT(s->halign), "changed",
+	                 G_CALLBACK(halign_changed_sig), s);
 
 	label = gtk_label_new("Vertical alignment:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
-	combo = gtk_combo_box_new_text();
-	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 1, 2);
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Top");
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Centre");
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "Bottom");
-	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+	s->valign = gtk_combo_box_new_text();
+	gtk_table_attach_defaults(GTK_TABLE(table), s->valign, 1, 2, 1, 2);
+	gtk_combo_box_append_text(GTK_COMBO_BOX(s->valign), "Top");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(s->valign), "Centre");
+	gtk_combo_box_append_text(GTK_COMBO_BOX(s->valign), "Bottom");
+	g_signal_connect(G_OBJECT(s->valign), "changed",
+	                 G_CALLBACK(valign_changed_sig), s);
 
 	label = gtk_label_new("Maximum width:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 2, 3);
-	entry = gtk_entry_new_with_max_length(32);
-	gtk_table_attach_defaults(GTK_TABLE(table), entry, 1, 2, 2, 3);
+	box = gtk_hbox_new(FALSE, 5.0);
+	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 2, 3);
+	s->use_max = gtk_check_button_new();
+	gtk_box_pack_start(GTK_BOX(box), s->use_max, FALSE, FALSE, 0);
+	s->max_width = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	gtk_box_pack_start(GTK_BOX(box), s->max_width, FALSE, FALSE, 0);
+	g_signal_connect(G_OBJECT(s->use_max), "toggled",
+	                 G_CALLBACK(use_max_toggled_sig), s);
+	g_signal_connect(G_OBJECT(s->max_width), "value-changed",
+	                 G_CALLBACK(max_changed_sig), s);
 
+	/* Force first update */
+	layout_changed_sig(GTK_COMBO_BOX(combo), s);
 }
 
 

@@ -31,6 +31,7 @@
 
 #include "presentation.h"
 #include "objects.h"
+#include "mainwindow.h"
 
 
 static struct object *new_object(enum objtype t, struct layout_element *le)
@@ -224,6 +225,34 @@ void position_caret(struct object *o, double x, double y)
 	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
 
 	o->insertion_point = idx+trail;
+}
+
+
+void notify_style_update(struct presentation *p, struct text_style *ts)
+{
+	int i;
+	int changed = 0;
+
+	for ( i=0; i<p->num_slides; i++ ) {
+
+		int j;
+		struct slide *s;
+
+		s = p->slides[i];
+
+		for ( j=0; j<p->slides[i]->num_objects; j++ ) {
+
+			if ( s->objects[j]->type != TEXT ) continue;
+
+			s->object_seq++;
+			if ( p->view_slide == s ) changed = 1;
+			break;
+
+		}
+
+	}
+
+	if ( changed ) notify_slide_changed(p);
 }
 
 

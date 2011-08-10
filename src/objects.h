@@ -65,6 +65,7 @@ extern struct object *add_text_object(struct slide *s, double x, double y,
                                       struct text_style *ts);
 extern void insert_text(struct object *o, char *t);
 extern void set_text_style(struct object *o, struct text_style *ts);
+extern void notify_style_update(struct presentation *p, struct text_style *ts);
 extern void handle_text_backspace(struct object *o);
 extern void move_cursor_left(struct object *o);
 extern void move_cursor_right(struct object *o);

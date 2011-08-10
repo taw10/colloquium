@@ -86,6 +86,8 @@ static void text_font_set_sig(GtkFontButton *widget,
 	font = gtk_font_button_get_font_name(widget);
 	free(s->cur_text_style->font);
 	s->cur_text_style->font = strdup(font);
+
+	notify_style_update(s->p, s->cur_text_style);
 }
 
 
@@ -100,6 +102,8 @@ static void text_colour_set_sig(GtkColorButton *widget,
 	s->cur_text_style->colour = gdk_color_to_string(&col);
 	al = gtk_color_button_get_alpha(widget);
 	s->cur_text_style->alpha = (double)al / 65535.0;
+
+	notify_style_update(s->p, s->cur_text_style);
 }
 
 

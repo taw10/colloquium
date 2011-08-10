@@ -32,6 +32,7 @@
 #include "slide_render.h"
 #include "presentation.h"
 #include "objects.h"
+#include "stylesheet.h"
 
 
 static void render_text_object(cairo_t *cr, struct object *o)
@@ -40,7 +41,7 @@ static void render_text_object(cairo_t *cr, struct object *o)
 
 	o->layout = pango_cairo_create_layout(cr);
 	pango_layout_set_text(o->layout, o->text, -1);
-	o->fontdesc = pango_font_description_from_string("Sans 30");
+	o->fontdesc = pango_font_description_from_string(o->style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
 	pango_cairo_update_layout(cr, o->layout);

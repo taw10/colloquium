@@ -73,6 +73,22 @@ struct layout_element
 };
 
 
+struct _stylesheet
+{
+	/* Slide layout */
+	struct layout_element **layout_elements;
+	int                     n_layout_elements;
+
+	/* Normal text styles */
+	struct text_style **text_styles;
+	int                 n_text_styles;
+
+	/* Background stuff */
+
+	/* Image styles */
+};
+
+
 typedef struct _stylesheetwindow StylesheetWindow;
 typedef struct _stylesheet StyleSheet;
 struct presentation;

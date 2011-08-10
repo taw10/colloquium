@@ -61,22 +61,6 @@ struct _stylesheetwindow
 };
 
 
-struct _stylesheet
-{
-	/* Slide layout */
-	struct layout_element **layout_elements;
-	int                     n_layout_elements;
-
-	/* Normal text styles */
-	struct text_style **text_styles;
-	int                 n_text_styles;
-
-	/* Background stuff */
-
-	/* Image styles */
-};
-
-
 static void text_changed_sig(GtkComboBox *combo,
                              struct _stylesheetwindow *s)
 {

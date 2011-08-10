@@ -64,9 +64,13 @@ struct presentation
 	GtkUIManager     *ui;
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
+	GtkWidget        *toolbar;
+	GtkWidget        *tbox;
 
 	/* Stylesheet */
-	StyleSheet       *ss;
+	StyleSheet            *ss;
+	struct text_style     *cur_style;
+	struct layout_element *cur_layout;
 
 	/* Dialogue boxes */
 	StylesheetWindow *stylesheetwindow;

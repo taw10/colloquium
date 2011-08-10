@@ -48,8 +48,10 @@
 		<separator />
 		<toolitem name="select" action="ButtonToolSelectAction" />
 		<toolitem name="text" action="ButtonToolTextAction" />
+		<separator />
+		<toolitem name="select" action="ButtonToolSelectAction" />
+		<toolitem name="text" action="ButtonToolTextAction" />
 
 	</toolbar>
-
 
 </ui>

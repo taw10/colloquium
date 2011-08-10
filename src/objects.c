@@ -33,7 +33,7 @@
 #include "objects.h"
 
 
-static struct object *new_object(enum objtype t)
+static struct object *new_object(enum objtype t, struct layout_element *le)
 {
 	struct object *new;
 
@@ -43,9 +43,7 @@ static struct object *new_object(enum objtype t)
 	new->type = t;
 	new->empty = 1;
 	new->parent = NULL;
-
-	new->layout = NULL;
-	new->fontdesc = NULL;
+	new->le = NULL;
 
 	return new;
 }
@@ -59,11 +57,12 @@ static void free_object(struct object *o)
 }
 
 
-struct object *add_text_object(struct slide *s, double x, double y)
+struct object *add_text_object(struct slide *s, double x, double y,
+                               struct layout_element *el, struct text_style *ts)
 {
 	struct object *new;
 
-	new = new_object(TEXT);
+	new = new_object(TEXT, el);
 	if ( add_object_to_slide(s, new) ) {
 		free_object(new);
 		return NULL;
@@ -76,6 +75,9 @@ struct object *add_text_object(struct slide *s, double x, double y)
 	new->text[0] = '\0';
 	new->text_len = 1;
 	new->insertion_point = 0;
+	new->style = ts;
+	new->layout = NULL;
+	new->fontdesc = NULL;
 
 	s->object_seq++;
 
@@ -124,6 +126,14 @@ void insert_text(struct object *o, char *t)
 	o->insertion_point += tlen;
 	o->parent->object_seq++;
 	o->empty = 0;
+}
+
+
+void set_text_style(struct object *o, struct text_style *ts)
+{
+	assert(o->type == TEXT);
+	o->style = ts;
+	o->parent->object_seq++;
 }
 
 

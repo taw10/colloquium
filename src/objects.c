@@ -44,7 +44,7 @@ static struct object *new_object(enum objtype t, struct layout_element *le)
 	new->type = t;
 	new->empty = 1;
 	new->parent = NULL;
-	new->le = NULL;
+	new->le = le;
 
 	return new;
 }
@@ -243,6 +243,7 @@ void notify_style_update(struct presentation *p, struct text_style *ts)
 		for ( j=0; j<p->slides[i]->num_objects; j++ ) {
 
 			if ( s->objects[j]->type != TEXT ) continue;
+			if ( s->objects[j]->style != ts ) continue;
 
 			s->object_seq++;
 			if ( p->view_slide == s ) changed = 1;
@@ -252,7 +253,35 @@ void notify_style_update(struct presentation *p, struct text_style *ts)
 
 	}
 
-	if ( changed ) notify_slide_changed(p);
+	if ( changed ) notify_slide_update(p);
+}
+
+
+void notify_layout_update(struct presentation *p, struct layout_element *le)
+{
+	int i;
+	int changed = 0;
+
+	for ( i=0; i<p->num_slides; i++ ) {
+
+		int j;
+		struct slide *s;
+
+		s = p->slides[i];
+
+		for ( j=0; j<p->slides[i]->num_objects; j++ ) {
+
+			if ( s->objects[j]->le != le ) continue;
+
+			s->object_seq++;
+			if ( p->view_slide == s ) changed = 1;
+			break;
+
+		}
+
+	}
+
+	if ( changed ) notify_slide_update(p);
 }
 
 

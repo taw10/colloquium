@@ -38,17 +38,72 @@
 static void render_text_object(cairo_t *cr, struct object *o)
 {
 	int width, height;
+	double ebottom, eright, mw, mh;
+	double max_width, max_height;
 
 	o->layout = pango_cairo_create_layout(cr);
 	pango_layout_set_text(o->layout, o->text, -1);
 	o->fontdesc = pango_font_description_from_string(o->style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	pango_cairo_update_layout(cr, o->layout);
-	pango_layout_get_size(o->layout, &width, &height);
+	eright = o->parent->slide_width - o->le->margin_right;
+	ebottom = o->parent->slide_height - o->le->margin_bottom;
+	mw = o->parent->slide_width;
+	mh = o->parent->slide_height;
 
+	max_width = mw - o->le->margin_left - o->le->margin_right;
+	if ( o->le->use_max_width && (o->le->max_width < max_width) ) {
+		/* Use provided maximum value if given */
+		max_width = o->le->max_width;
+	}
+
+	max_height = mh - o->le->margin_top - o->le->margin_bottom;
+
+	pango_layout_set_width(o->layout, max_width*PANGO_SCALE);
+	pango_layout_set_height(o->layout, max_height*PANGO_SCALE);
+	pango_layout_set_wrap(o->layout, PANGO_WRAP_WORD_CHAR);
+
+	switch ( o->le->halign ) {
+	case J_LEFT :
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
+		break;
+	case J_RIGHT :
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_RIGHT);
+		break;
+	case J_CENTER :
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_CENTER);
+		break;
+	}
+
+	pango_cairo_update_layout(cr, o->layout);
+
+	pango_layout_get_size(o->layout, &width, &height);
 	o->bb_width = width/PANGO_SCALE;
 	o->bb_height = height/PANGO_SCALE;
+
+	switch ( o->le->halign ) {
+	case J_LEFT :
+		o->x = o->le->margin_left;
+		break;
+	case J_RIGHT :
+		o->x = eright - o->bb_width;
+		break;
+	case J_CENTER :
+		o->x = o->le->offset_x;
+		break;
+	}
+
+	switch ( o->le->valign ) {
+	case V_TOP :
+		o->y = o->le->margin_top;
+		break;
+	case V_BOTTOM :
+		o->y = ebottom - o->bb_height;
+		break;
+	case V_CENTER :
+		o->y = mh/2.0 - o->bb_height/2.0 - o->le->offset_y;
+		break;
+	}
 
 	cairo_move_to(cr, o->x, o->y);
 

@@ -71,6 +71,9 @@ extern void move_cursor_left(struct object *o);
 extern void move_cursor_right(struct object *o);
 extern void position_caret(struct object *o, double x, double y);
 
+extern void notify_layout_update(struct presentation *p,
+                                 struct layout_element *ts);
+
 extern void delete_object(struct object *o);
 
 

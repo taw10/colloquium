@@ -145,6 +145,16 @@ void notify_slide_changed(struct presentation *p)
 }
 
 
+void notify_slide_update(struct presentation *p)
+{
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	if ( p->slideshow != NULL ) {
+		notify_slideshow_slide_changed(p);
+	}
+}
+
+
 static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	struct slide *new;
@@ -571,6 +581,32 @@ static void draw_editing_bits(cairo_t *cr, struct presentation *p,
 
 		if ( p->tool == TOOL_TEXT ) draw_caret(cr, o);
 		break;
+
+	}
+
+	if ( o->le != NULL ) {
+
+		cairo_move_to(cr, o->le->margin_left, -p->border_offs_y);
+		cairo_line_to(cr, o->le->margin_left,
+		                  p->slide_height+p->border_offs_y);
+
+		cairo_move_to(cr, p->slide_width-o->le->margin_right,
+		                  -p->border_offs_y);
+		cairo_line_to(cr, p->slide_width-o->le->margin_right,
+		                  p->slide_height+p->border_offs_y);
+
+		cairo_move_to(cr, -p->border_offs_x, o->le->margin_top);
+		cairo_line_to(cr, p->slide_width+p->border_offs_x,
+		                  o->le->margin_top);
+
+		cairo_move_to(cr, -p->border_offs_x,
+		                  p->slide_height-o->le->margin_bottom);
+		cairo_line_to(cr, p->slide_width+p->border_offs_x,
+		                  p->slide_height-o->le->margin_bottom);
+
+		cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
+		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
 
 	}
 }

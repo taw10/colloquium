@@ -33,6 +33,7 @@
 
 #include "presentation.h"
 #include "stylesheet.h"
+#include "objects.h"
 
 
 struct _stylesheetwindow
@@ -174,6 +175,7 @@ static void margin_left_changed_sig(GtkSpinButton *spin,
                                     struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->margin_left = gtk_spin_button_get_value(spin);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -181,6 +183,7 @@ static void margin_right_changed_sig(GtkSpinButton *spin,
                                      struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->margin_right = gtk_spin_button_get_value(spin);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -188,6 +191,7 @@ static void margin_top_changed_sig(GtkSpinButton *spin,
                                    struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->margin_top = gtk_spin_button_get_value(spin);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -195,6 +199,7 @@ static void margin_bottom_changed_sig(GtkSpinButton *spin,
                                       struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->margin_bottom = gtk_spin_button_get_value(spin);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -202,6 +207,7 @@ static void offset_x_changed_sig(GtkSpinButton *spin,
                                  struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->offset_x = gtk_spin_button_get_value(spin);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -209,6 +215,7 @@ static void offset_y_changed_sig(GtkSpinButton *spin,
                                  struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->offset_y = gtk_spin_button_get_value(spin);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -216,6 +223,7 @@ static void halign_changed_sig(GtkComboBox *combo,
                                  struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->halign = gtk_combo_box_get_active(combo);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -223,6 +231,7 @@ static void valign_changed_sig(GtkComboBox *combo,
                                  struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->valign = gtk_combo_box_get_active(combo);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -230,6 +239,7 @@ static void max_changed_sig(GtkSpinButton *spin,
                             struct _stylesheetwindow *s)
 {
 	s->cur_layout_element->max_width = gtk_spin_button_get_value(spin);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 
@@ -362,7 +372,8 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	/* Up */
 	label = gtk_label_new("Upwards:");
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
-	s->offset_y = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	s->offset_y = gtk_spin_button_new_with_range(-s->p->slide_height,
+	                                             +s->p->slide_height, 1.0);
 	gtk_table_attach_defaults(GTK_TABLE(table), s->offset_y, 1, 2, 0, 1);
 	g_signal_connect(G_OBJECT(s->offset_y), "value-changed",
 	                 G_CALLBACK(offset_y_changed_sig), s);
@@ -370,7 +381,8 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	/* Right */
 	label = gtk_label_new("Across:");
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
-	s->offset_x = gtk_spin_button_new_with_range(0.0, 1024.0, 1.0);
+	s->offset_x = gtk_spin_button_new_with_range(-s->p->slide_width,
+	                                             +s->p->slide_width, 1.0);
 	gtk_table_attach_defaults(GTK_TABLE(table), s->offset_x, 1, 2, 1, 2);
 	g_signal_connect(G_OBJECT(s->offset_x), "value-changed",
 	                 G_CALLBACK(offset_x_changed_sig), s);

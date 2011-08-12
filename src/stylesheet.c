@@ -252,6 +252,7 @@ static void use_max_toggled_sig(GtkToggleButton *combo,
 	s->cur_layout_element->use_max_width = v;
 	gtk_widget_set_sensitive(s->max_width,
 	                         s->cur_layout_element->use_max_width);
+	notify_layout_update(s->p, s->cur_layout_element);
 }
 
 

@@ -37,9 +37,10 @@
 
 static void render_text_object(cairo_t *cr, struct object *o)
 {
-	int width, height;
 	double ebottom, eright, mw, mh;
 	double max_width, max_height;
+	double xo, yo;
+	PangoRectangle ink, logical;
 
 	o->layout = pango_cairo_create_layout(cr);
 	pango_layout_set_text(o->layout, o->text, -1);
@@ -52,8 +53,9 @@ static void render_text_object(cairo_t *cr, struct object *o)
 	mh = o->parent->slide_height;
 
 	max_width = mw - o->le->margin_left - o->le->margin_right;
+
+	/* Use the provided maximum width if it exists and is smaller */
 	if ( o->le->use_max_width && (o->le->max_width < max_width) ) {
-		/* Use provided maximum value if given */
 		max_width = o->le->max_width;
 	}
 
@@ -62,6 +64,7 @@ static void render_text_object(cairo_t *cr, struct object *o)
 	pango_layout_set_width(o->layout, max_width*PANGO_SCALE);
 	pango_layout_set_height(o->layout, max_height*PANGO_SCALE);
 	pango_layout_set_wrap(o->layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_ellipsize(o->layout, PANGO_ELLIPSIZE_MIDDLE);
 
 	switch ( o->le->halign ) {
 	case J_LEFT :
@@ -77,20 +80,32 @@ static void render_text_object(cairo_t *cr, struct object *o)
 
 	pango_cairo_update_layout(cr, o->layout);
 
-	pango_layout_get_size(o->layout, &width, &height);
-	o->bb_width = width/PANGO_SCALE;
-	o->bb_height = height/PANGO_SCALE;
+	pango_layout_get_extents(o->layout, &ink, &logical);
+	o->bb_width = ink.width / PANGO_SCALE;
+	o->bb_height = logical.height/PANGO_SCALE;
+	xo = ink.x/PANGO_SCALE;  yo = logical.y/PANGO_SCALE;
 
 	switch ( o->le->halign ) {
 	case J_LEFT :
-		o->x = o->le->margin_left;
+		o->x = -xo + o->le->margin_left;
 		break;
 	case J_RIGHT :
-		o->x = eright - o->bb_width;
+		o->x = -xo + eright - o->bb_width;
 		break;
 	case J_CENTER :
-		o->x = o->le->offset_x;
+		o->x = mw/2.0 - o->bb_width/2.0 - xo + o->le->offset_x;
 		break;
+	}
+
+	if ( o->le->halign == J_CENTER ) {
+
+		if ( o->x+xo < o->le->margin_left ) {
+			o->x = o->le->margin_left - xo;
+		}
+
+		if ( o->x+xo + o->bb_width > mw-o->le->margin_right ) {
+			o->x = mw-o->le->margin_right - xo - o->bb_width;
+		}
 	}
 
 	switch ( o->le->valign ) {
@@ -101,14 +116,27 @@ static void render_text_object(cairo_t *cr, struct object *o)
 		o->y = ebottom - o->bb_height;
 		break;
 	case V_CENTER :
-		o->y = mh/2.0 - o->bb_height/2.0 - o->le->offset_y;
+		o->y = mh/2.0 - o->bb_height/2.0 + yo - o->le->offset_y;
 		break;
 	}
 
-	cairo_move_to(cr, o->x, o->y);
+	if ( o->le->valign == V_CENTER ) {
 
+		if ( o->y < o->le->margin_top ) {
+			o->y = o->le->margin_top;
+		}
+
+		if ( o->y+yo + o->bb_height > mh - o->le->margin_bottom ) {
+			o->y = mh-o->le->margin_bottom - yo - o->bb_height;
+		}
+	}
+
+	cairo_move_to(cr, o->x, o->y);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	pango_cairo_show_layout(cr, o->layout);
+
+	o->x += xo;
+	o->y += yo;
 }
 
 

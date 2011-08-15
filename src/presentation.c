@@ -49,6 +49,9 @@ struct slide *add_slide(struct presentation *p, int pos)
 	new->object_seq = 0;
 	new->objects = NULL;
 
+	p->completely_empty = 0;
+	new->parent = p;
+
 	new->slide_width = p->slide_width;
 	new->slide_height = p->slide_height;
 
@@ -95,6 +98,8 @@ int add_object_to_slide(struct slide *s, struct object *o)
 
 	s->objects[s->num_objects++] = o;
 	o->parent = s;
+
+	s->parent->completely_empty = 0;
 
 	return 0;
 }
@@ -146,14 +151,61 @@ struct object *find_object_at_position(struct slide *s, double x, double y)
 }
 
 
+static char *safe_basename(const char *in)
+{
+	int i;
+	char *cpy;
+	char *res;
+
+	cpy = strdup(in);
+
+	/* Get rid of any trailing slashes */
+	for ( i=strlen(cpy)-1; i>0; i-- ) {
+		if ( cpy[i] == '/' ) {
+			cpy[i] = '\0';
+		} else {
+			break;
+		}
+	}
+
+	/* Find the base name */
+	for ( i=strlen(cpy)-1; i>0; i-- ) {
+		if ( cpy[i] == '/' ) {
+			i++;
+			break;
+		}
+	}
+
+	res = strdup(cpy+i);
+	/* If we didn't find a previous slash, i==0 so res==cpy */
+
+	free(cpy);
+
+	return res;
+}
+
+
+static void update_titlebar(struct presentation *p)
+{
+	free(p->titlebar);
+
+	if ( p->filename == NULL ) {
+		p->titlebar = strdup("(untitled)");
+	} else {
+		p->titlebar = safe_basename(p->filename);
+	}
+}
+
+
 struct presentation *new_presentation()
 {
 	struct presentation *new;
 
 	new = calloc(1, sizeof(struct presentation));
 
-	new->titlebar = strdup("(untitled)");
 	new->filename = NULL;
+	new->titlebar = NULL;
+	update_titlebar(new);
 
 	new->window = NULL;
 	new->ui = NULL;
@@ -170,6 +222,7 @@ struct presentation *new_presentation()
 	new->view_slide_number = 0;
 
 	new->editing_object = NULL;
+	new->completely_empty = 1;
 
 	new->ss = new_stylesheet();
 

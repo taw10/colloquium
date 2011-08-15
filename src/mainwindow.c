@@ -37,6 +37,7 @@
 #include "objects.h"
 #include "slideshow.h"
 #include "stylesheet.h"
+#include "loadsave.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -51,7 +52,138 @@ static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
 
 static gint quit_sig(GtkWidget *widget, struct presentation *p)
 {
-	gtk_main_quit();
+	return 0;
+}
+
+
+static void show_error(struct presentation *p, const char *message)
+{
+	GtkWidget *window;
+
+	window = gtk_message_dialog_new(GTK_WINDOW(p->window),
+					GTK_DIALOG_DESTROY_WITH_PARENT,
+					GTK_MESSAGE_WARNING,
+					GTK_BUTTONS_CLOSE, message);
+	gtk_window_set_title(GTK_WINDOW(window), "Error");
+
+	g_signal_connect_swapped(window, "response",
+				 G_CALLBACK(gtk_widget_destroy), window);
+	gtk_widget_show(window);
+}
+
+
+static gint open_response_sig(GtkWidget *d, gint response,
+                              struct presentation *p)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+
+		if ( p->completely_empty ) {
+			if ( load_presentation(p, filename) ) {
+				show_error(p, "Failed to open presentation");
+			} else {
+				open_mainwindow(p);
+			}
+		} else {
+			struct presentation *p;
+			p = new_presentation();
+			if ( load_presentation(p, filename) ) {
+				show_error(p, "Failed to open presentation");
+			} else {
+				open_mainwindow(p);
+			}
+		}
+
+		g_free(filename);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static gint open_sig(GtkWidget *widget, struct presentation *p)
+{
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new("Open Presentation",
+	                                GTK_WINDOW(p->window),
+	                                GTK_FILE_CHOOSER_ACTION_OPEN,
+	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(open_response_sig), p);
+
+	gtk_widget_show_all(d);
+
+	return 0;
+}
+
+
+static gint saveas_response_sig(GtkWidget *d, gint response,
+                              struct presentation *p)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+
+		if ( save_presentation(p, filename) ) {
+			show_error(p, "Failed to save presentation");
+		}
+
+		g_free(filename);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static gint saveas_sig(GtkWidget *widget, struct presentation *p)
+{
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new("Save Presentation",
+	                                GTK_WINDOW(p->window),
+	                                GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(saveas_response_sig), p);
+
+	gtk_widget_show_all(d);
+
+	return 0;
+}
+
+
+static gint save_sig(GtkWidget *widget, struct presentation *p)
+{
+	if ( p->filename == NULL ) {
+		return saveas_sig(widget, p);
+	}
+
+	save_presentation(p, p->filename);
+
+	return 0;
+}
+
+
+static gint save_ss_sig(GtkWidget *widget, struct presentation *p)
+{
 	return 0;
 }
 
@@ -281,13 +413,13 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 		{ "NewAction", GTK_STOCK_NEW, "_New",
 			NULL, NULL, NULL },
 		{ "OpenAction", GTK_STOCK_OPEN, "_Open...",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(open_sig) },
 		{ "SaveAction", GTK_STOCK_SAVE, "_Save",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(save_sig) },
 		{ "SaveAsAction", GTK_STOCK_SAVE_AS, "Save _As...",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(saveas_sig) },
 		{ "SaveStyleAction", GTK_STOCK_SAVE_AS, "Save St_ylesheet",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(save_ss_sig) },
 		{ "QuitAction", GTK_STOCK_QUIT, "_Quit",
 			NULL, NULL, G_CALLBACK(quit_sig) },
 

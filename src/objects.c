@@ -253,6 +253,7 @@ void notify_style_update(struct presentation *p, struct text_style *ts)
 
 	}
 
+	p->completely_empty = 0;
 	if ( changed ) notify_slide_update(p);
 }
 
@@ -281,6 +282,7 @@ void notify_layout_update(struct presentation *p, struct layout_element *le)
 
 	}
 
+	p->completely_empty = 0;
 	if ( changed ) notify_slide_update(p);
 }
 

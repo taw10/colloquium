@@ -35,6 +35,8 @@
 
 struct slide
 {
+	struct presentation *parent;
+
 	cairo_surface_t *render_cache;
 	int              render_cache_seq;
 
@@ -58,6 +60,7 @@ struct presentation
 {
 	char             *titlebar;
 	char             *filename;
+	int               completely_empty;
 
 	GtkWidget        *window;
 	GtkWidget        *drawingarea;

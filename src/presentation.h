@@ -69,6 +69,8 @@ struct presentation
 	GtkIMContext     *im_context;
 	GtkWidget        *toolbar;
 	GtkWidget        *tbox;
+	int               drag_preview_pending;
+	int               have_drag_data;
 
 	/* Stylesheet */
 	StyleSheet            *ss;

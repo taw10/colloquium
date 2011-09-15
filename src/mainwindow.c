@@ -790,12 +790,73 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 }
 
 
+static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
+                           gint x, gint y, guint time, struct presentation *p)
+{
+	GdkAtom target;
+
+	if ( !p->drag_preview_pending && !p->have_drag_data ) {
+		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
+		gtk_drag_get_data(widget, drag_context, target, time);
+		p->drag_preview_pending = 1;
+	}
+
+	return TRUE;
+}
+
+
+static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
+                           gint x, gint y, guint time, struct presentation *p)
+{
+	GdkAtom target;
+
+	target = gtk_drag_dest_find_target(widget, drag_context, NULL);
+	gtk_drag_get_data(widget, drag_context, target, time);
+
+	return TRUE;
+}
+
+
+static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
+                        gint x, gint y, GtkSelectionData *seldata,
+                        guint info, guint time, struct presentation *p)
+{
+	if ( p->drag_preview_pending ) {
+
+		printf("Preview: %s\n", seldata->data);
+		p->have_drag_data = 1;
+		gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
+		p->drag_preview_pending = 0;
+
+		/* FIXME: Check if it's a usable image, get and store size,
+		 * draw a nice box, take account of margins */
+
+	} else {
+
+		printf("Drop: '%s'\n", seldata->data);
+		gtk_drag_finish(drag_context, TRUE, FALSE, time);
+
+		/* FIXME: Create a new image object according to image size and
+		 * current margins, consistent with box drawn for the preview */
+
+	}
+}
+
+
+static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
+                      guint time, struct presentation *p)
+{
+	p->have_drag_data = 0;
+}
+
+
 int open_mainwindow(struct presentation *p)
 {
 	GtkWidget *window;
 	GtkWidget *vbox;
 	char *title;
 	GtkWidget *sw;
+	GtkTargetEntry targets[1];
 
 	if ( p->window != NULL ) {
 		fprintf(stderr, "Presentation window is already open!\n");
@@ -843,6 +904,22 @@ int open_mainwindow(struct presentation *p)
 			 G_CALLBACK(expose_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "motion-notify-event",
 			 G_CALLBACK(motion_sig), p);
+
+	/* Drag and drop */
+	targets[0].target = "text/uri-list";
+	targets[0].flags = 0;
+	targets[0].info = 1;
+	gtk_drag_dest_set(p->drawingarea, GTK_DEST_DEFAULT_HIGHLIGHT, targets, 1,
+	                  GDK_ACTION_LINK);
+	g_signal_connect(p->drawingarea, "drag-data-received",
+	                 G_CALLBACK(dnd_receive), p);
+	g_signal_connect(p->drawingarea, "drag-motion",
+	                 G_CALLBACK(dnd_motion), p);
+	g_signal_connect(p->drawingarea, "drag-drop",
+	                 G_CALLBACK(dnd_drop), p);
+	g_signal_connect(p->drawingarea, "drag-leave",
+	                 G_CALLBACK(dnd_leave), p);
+	/* Input method */
 
 	p->im_context = gtk_im_multicontext_new();
 	gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context),

@@ -784,6 +784,13 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 		draw_editing_bits(cr, p, p->editing_object);
 	}
 
+	/* Draw dragging box if necessary */
+	if ( p->draw_drag_box ) {
+		draw_editing_box(cr, p->drag_x-(p->drag_width/2.0),
+		                     p->drag_y-(p->drag_height/2.0),
+		                     p->drag_width, p->drag_height);
+	}
+
 	cairo_destroy(cr);
 
 	return FALSE;
@@ -799,6 +806,23 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
 		gtk_drag_get_data(widget, drag_context, target, time);
 		p->drag_preview_pending = 1;
+	}
+
+	if ( p->have_drag_data && !p->draw_drag_box ) {
+		return FALSE;
+	}
+
+	gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
+
+	if ( p->draw_drag_box ) {
+
+		/* FIXME: Honour margins */
+		p->drag_x = x;
+		p->drag_y = y;
+
+		/* FIXME: Invalidate only the necessary region */
+		gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
 	}
 
 	return TRUE;
@@ -817,19 +841,74 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
 }
 
 
+static void chomp(char *s)
+{
+	size_t i;
+
+	if ( !s ) return;
+
+	for ( i=0; i<strlen(s); i++ ) {
+		if ( (s[i] == '\n') || (s[i] == '\r') ) {
+			s[i] = '\0';
+			return;
+		}
+	}
+}
+
+
 static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
                         gint x, gint y, GtkSelectionData *seldata,
                         guint info, guint time, struct presentation *p)
 {
 	if ( p->drag_preview_pending ) {
 
-		printf("Preview: %s\n", seldata->data);
+		gchar *filename;
+		GError *error = NULL;
+		GdkPixbufFormat *f;
+
 		p->have_drag_data = 1;
-		gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
 		p->drag_preview_pending = 0;
 
-		/* FIXME: Check if it's a usable image, get and store size,
-		 * draw a nice box, take account of margins */
+		filename = g_filename_from_uri(seldata->data, NULL, &error);
+		if ( filename == NULL ) {
+
+			/* This doesn't even look like a sensible URI.
+			 * Bail out. */
+			gdk_drag_status(drag_context, 0, time);
+			if ( p->drag_highlight ) {
+				gtk_drag_unhighlight(widget);
+				p->drag_highlight = 0;
+			}
+			return;
+
+		}
+		chomp(filename);
+
+		f = gdk_pixbuf_get_file_info(filename, &p->drag_width,
+		                                       &p->drag_height);
+		g_free(filename);
+		if ( f == NULL ) {
+
+			gdk_drag_status(drag_context, 0, time);
+			if ( p->drag_highlight ) {
+				gtk_drag_unhighlight(widget);
+				p->drag_highlight = 0;
+			}
+
+		} else {
+
+			/* Looks like a sensible image */
+
+			gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
+
+			if ( !p->drag_highlight ) {
+				gtk_drag_highlight(widget);
+				p->drag_highlight = 1;
+			}
+
+			p->draw_drag_box = 1;
+
+		}
 
 	} else {
 
@@ -846,7 +925,12 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
                       guint time, struct presentation *p)
 {
+	if ( p->drag_highlight ) {
+		gtk_drag_unhighlight(widget);
+	}
 	p->have_drag_data = 0;
+	p->drag_highlight = 0;
+	p->draw_drag_box = 0;
 }
 
 
@@ -909,8 +993,7 @@ int open_mainwindow(struct presentation *p)
 	targets[0].target = "text/uri-list";
 	targets[0].flags = 0;
 	targets[0].info = 1;
-	gtk_drag_dest_set(p->drawingarea, GTK_DEST_DEFAULT_HIGHLIGHT, targets, 1,
-	                  GDK_ACTION_LINK);
+	gtk_drag_dest_set(p->drawingarea, 0, targets, 1, GDK_ACTION_LINK);
 	g_signal_connect(p->drawingarea, "drag-data-received",
 	                 G_CALLBACK(dnd_receive), p);
 	g_signal_connect(p->drawingarea, "drag-motion",

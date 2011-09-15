@@ -71,6 +71,12 @@ struct presentation
 	GtkWidget        *tbox;
 	int               drag_preview_pending;
 	int               have_drag_data;
+	int               drag_highlight;
+	int               drag_width;
+	int               drag_height;
+	int               draw_drag_box;
+	int               drag_x;
+	int               drag_y;
 
 	/* Stylesheet */
 	StyleSheet            *ss;

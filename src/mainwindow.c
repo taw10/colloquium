@@ -906,6 +906,23 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 				p->drag_highlight = 1;
 			}
 
+			/* Scale the image down if it's a silly size */
+			if ( p->drag_width > p->slide_width ) {
+				int new_drag_width;
+				new_drag_width = p->slide_width/2;
+				p->drag_height = (new_drag_width*p->drag_height)
+				                  / p->drag_width;
+				p->drag_width = new_drag_width;
+			}
+
+			if ( p->drag_height > p->slide_height ) {
+				int new_drag_height;
+				new_drag_height = p->slide_height/2;
+				p->drag_width = (new_drag_height*p->drag_width)
+				                 / p->drag_height;
+				p->drag_height = new_drag_height;
+			}
+
 			p->draw_drag_box = 1;
 
 		}

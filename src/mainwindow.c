@@ -865,11 +865,13 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		gchar *filename;
 		GError *error = NULL;
 		GdkPixbufFormat *f;
+		const gchar *uri;
 
 		p->have_drag_data = 1;
 		p->drag_preview_pending = 0;
+		uri = (gchar *)seldata->data;
 
-		filename = g_filename_from_uri(seldata->data, NULL, &error);
+		filename = g_filename_from_uri(uri, NULL, &error);
 		if ( filename == NULL ) {
 
 			/* This doesn't even look like a sensible URI.

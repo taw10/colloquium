@@ -38,6 +38,7 @@
 #include "slideshow.h"
 #include "stylesheet.h"
 #include "loadsave.h"
+#include "tool_text.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -255,6 +256,8 @@ static void update_toolbar(struct presentation *p)
 		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
 
 	}
+
+
 }
 
 
@@ -369,44 +372,11 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
 }
 
 
-static void layout_changed_sig(GtkComboBox *combo, struct presentation *p)
-{
-	int n;
-
-	if ( p->editing_object != NULL ) {
-		printf("Can't change layout element!\n");
-		return;
-	}
-
-	n = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
-	p->cur_layout = p->ss->layout_elements[n];
-
-
-}
-
-
-static void text_style_changed_sig(GtkComboBox *combo, struct presentation *p)
-{
-	int n;
-
-	n = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
-	p->cur_style = p->ss->text_styles[n];
-
-	if ( p->editing_object != NULL ) {
-		set_text_style(p->editing_object, p->cur_style);
-		gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
-	}
-}
-
-
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
-	GtkWidget *label;
-	GtkWidget *combo;
 	GtkToolItem *titem;
-	GtkWidget *box;
-	int i;
+	GtkWidget *toolbar;
 	GtkActionEntry entries[] = {
 
 		{ "FileAction", NULL, "_File", NULL, NULL, NULL },
@@ -438,6 +408,10 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, NULL },
 		{ "EditStyleAction", NULL, "Stylesheet...",
 			NULL, NULL, G_CALLBACK(open_stylesheet_sig) },
+
+		{ "InsertAction", NULL, "_Insert", NULL, NULL, NULL },
+		{ "NewSlideAction", GTK_STOCK_ADD, "_New Slide",
+			NULL, NULL, G_CALLBACK(add_slide_sig) },
 
 		{ "ToolsAction", NULL, "_Tools", NULL, NULL, NULL },
 		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start slideshow",
@@ -492,43 +466,15 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 				   gtk_ui_manager_get_accel_group(p->ui));
 	gtk_ui_manager_ensure_update(p->ui);
 
-	p->toolbar = gtk_ui_manager_get_widget(p->ui,
-	                                       "/ui/displaywindowtoolbar");
-
+	toolbar = gtk_ui_manager_get_widget(p->ui,
+                                       "/ui/displaywindowtoolbar");
 	titem = gtk_separator_tool_item_new();
-	gtk_toolbar_insert(GTK_TOOLBAR(p->toolbar), titem, -1);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), titem, -1);
 
-	box = gtk_vbox_new(FALSE, 0.0);
 	p->tbox = gtk_hbox_new(FALSE, 0.0);
 	titem = gtk_tool_item_new();
-	gtk_box_pack_start(GTK_BOX(box), p->tbox, FALSE, FALSE, 5.0);
-	gtk_container_add(GTK_CONTAINER(titem), box);
-	gtk_toolbar_insert(GTK_TOOLBAR(p->toolbar), titem, -1);
-	label = gtk_label_new("Layout element:");
-	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-	gtk_box_pack_start(GTK_BOX(p->tbox), label, FALSE, FALSE, 5.0);
-	combo = gtk_combo_box_new_text();
-	for ( i=0; i<p->ss->n_layout_elements; i++ ) {
-		gtk_combo_box_append_text(GTK_COMBO_BOX(combo),
-		                          p->ss->layout_elements[i]->name);
-	}
-	gtk_box_pack_start(GTK_BOX(p->tbox), combo, FALSE, FALSE, 5.0);
-	g_signal_connect(G_OBJECT(combo), "changed",
-	                 G_CALLBACK(layout_changed_sig), p);
-	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
-
-	label = gtk_label_new("Text style:");
-	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-	gtk_box_pack_start(GTK_BOX(p->tbox), label, FALSE, FALSE, 5.0);
-	combo = gtk_combo_box_new_text();
-	for ( i=0; i<p->ss->n_text_styles; i++ ) {
-		gtk_combo_box_append_text(GTK_COMBO_BOX(combo),
-		                          p->ss->text_styles[i]->name);
-	}
-	gtk_box_pack_start(GTK_BOX(p->tbox), combo, FALSE, FALSE, 5.0);
-	g_signal_connect(G_OBJECT(combo), "changed",
-	                 G_CALLBACK(text_style_changed_sig), p);
-	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+	gtk_container_add(GTK_CONTAINER(titem), p->tbox);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), titem, -1);
 
 	update_toolbar(p);
 }
@@ -670,9 +616,10 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		case TOOL_TEXT :
 			if ( !clicked ) {
 				struct object *n;
+				/* FIXME: Insert ESP here and possibly
+				 * select a different style */
 				n = add_text_object(p->view_slide, x, y,
-				                    p->cur_layout,
-				                    p->cur_style);
+				                    p->ss->styles[0]);
 				p->editing_object = n;
 			} else {
 				p->editing_object = clicked;
@@ -707,6 +654,7 @@ static void draw_editing_bits(cairo_t *cr, struct presentation *p,
 {
 	draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
 
+	/* FIXME: Dispatch table */
 	switch ( o->type ) {
 
 	case TEXT :
@@ -716,31 +664,27 @@ static void draw_editing_bits(cairo_t *cr, struct presentation *p,
 
 	}
 
-	if ( o->le != NULL ) {
+	cairo_move_to(cr, o->style->margin_left, -p->border_offs_y);
+	cairo_line_to(cr, o->style->margin_left,
+	                  p->slide_height+p->border_offs_y);
 
-		cairo_move_to(cr, o->le->margin_left, -p->border_offs_y);
-		cairo_line_to(cr, o->le->margin_left,
-		                  p->slide_height+p->border_offs_y);
+	cairo_move_to(cr, p->slide_width-o->style->margin_right,
+	                  -p->border_offs_y);
+	cairo_line_to(cr, p->slide_width-o->style->margin_right,
+	                  p->slide_height+p->border_offs_y);
 
-		cairo_move_to(cr, p->slide_width-o->le->margin_right,
-		                  -p->border_offs_y);
-		cairo_line_to(cr, p->slide_width-o->le->margin_right,
-		                  p->slide_height+p->border_offs_y);
+	cairo_move_to(cr, -p->border_offs_x, o->style->margin_top);
+	cairo_line_to(cr, p->slide_width+p->border_offs_x,
+	                  o->style->margin_top);
 
-		cairo_move_to(cr, -p->border_offs_x, o->le->margin_top);
-		cairo_line_to(cr, p->slide_width+p->border_offs_x,
-		                  o->le->margin_top);
+	cairo_move_to(cr, -p->border_offs_x,
+	                  p->slide_height-o->style->margin_bottom);
+	cairo_line_to(cr, p->slide_width+p->border_offs_x,
+	                  p->slide_height-o->style->margin_bottom);
 
-		cairo_move_to(cr, -p->border_offs_x,
-		                  p->slide_height-o->le->margin_bottom);
-		cairo_line_to(cr, p->slide_width+p->border_offs_x,
-		                  p->slide_height-o->le->margin_bottom);
-
-		cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
-		cairo_set_line_width(cr, 1.0);
-		cairo_stroke(cr);
-
-	}
+	cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
 }
 
 

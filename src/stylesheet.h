@@ -28,15 +28,6 @@
 #endif
 
 
-struct text_style
-{
-	char   *name;
-	char   *font;
-	char   *colour;
-	double  alpha;
-};
-
-
 enum justify
 {
 	J_LEFT   = 0,
@@ -53,10 +44,9 @@ enum vert_pos
 };
 
 
-struct layout_element
+struct style
 {
 	char              *name;
-	struct text_style *text_style;
 
 	double             margin_left;
 	double             margin_right;
@@ -70,22 +60,19 @@ struct layout_element
 
 	double             offset_x;
 	double             offset_y;
+
+	char              *font;
+	char              *colour;
+	double             alpha;
 };
 
 
 struct _stylesheet
 {
-	/* Slide layout */
-	struct layout_element **layout_elements;
-	int                     n_layout_elements;
-
-	/* Normal text styles */
-	struct text_style **text_styles;
-	int                 n_text_styles;
+	struct style **styles;
+	int            n_styles;
 
 	/* Background stuff */
-
-	/* Image styles */
 };
 
 

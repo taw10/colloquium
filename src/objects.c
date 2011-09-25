@@ -34,7 +34,7 @@
 #include "mainwindow.h"
 
 
-static struct object *new_object(enum objtype t, struct layout_element *le)
+struct object *new_object(enum objtype t, struct style *sty)
 {
 	struct object *new;
 
@@ -44,13 +44,13 @@ static struct object *new_object(enum objtype t, struct layout_element *le)
 	new->type = t;
 	new->empty = 1;
 	new->parent = NULL;
-	new->le = le;
+	new->style = sty;
 
 	return new;
 }
 
 
-static void free_object(struct object *o)
+void free_object(struct object *o)
 {
 	if ( o->layout != NULL ) g_object_unref(o->layout);
 	if ( o->fontdesc != NULL ) pango_font_description_free(o->fontdesc);
@@ -58,177 +58,29 @@ static void free_object(struct object *o)
 }
 
 
-struct object *add_text_object(struct slide *s, double x, double y,
-                               struct layout_element *el, struct text_style *ts)
+struct object *add_image_object(struct slide *s, double x, double y,
+                                const char *filename,
+                                double width, double height)
 {
 	struct object *new;
 
-	new = new_object(TEXT, el);
+	new = new_object(IMAGE, NULL);
+
+	new->x = x;  new->y = y;
+	new->bb_width = width;
+	new->bb_height = height;
+
 	if ( add_object_to_slide(s, new) ) {
 		free_object(new);
 		return NULL;
 	}
-
-	new->x = x;  new->y = y;
-	new->bb_width = 10.0;
-	new->bb_height = 40.0;
-	new->text = malloc(1);
-	new->text[0] = '\0';
-	new->text_len = 1;
-	new->insertion_point = 0;
-	new->style = ts;
-	new->layout = NULL;
-	new->fontdesc = NULL;
-
 	s->object_seq++;
 
 	return new;
 }
 
 
-void insert_text(struct object *o, char *t)
-{
-	char *tmp;
-	size_t tlen, olen;
-	int i;
-
-	assert(o->type == TEXT);
-	tlen = strlen(t);
-	olen = strlen(o->text);
-
-	if ( tlen + olen + 1 > o->text_len ) {
-
-		char *try;
-
-		try = realloc(o->text, o->text_len + tlen + 64);
-		if ( try == NULL ) return;  /* Failed to insert */
-		o->text = try;
-		o->text_len += 64;
-		o->text_len += tlen;
-
-	}
-
-	tmp = malloc(o->text_len);
-	if ( tmp == NULL ) return;
-
-	for ( i=0; i<o->insertion_point; i++ ) {
-		tmp[i] = o->text[i];
-	}
-	for ( i=0; i<tlen; i++ ) {
-		tmp[i+o->insertion_point] = t[i];
-	}
-	for ( i=0; i<olen-o->insertion_point; i++ ) {
-		tmp[i+o->insertion_point+tlen] = o->text[i+o->insertion_point];
-	}
-	tmp[olen+tlen] = '\0';
-	memcpy(o->text, tmp, o->text_len);
-	free(tmp);
-
-	o->insertion_point += tlen;
-	o->parent->object_seq++;
-	o->empty = 0;
-}
-
-
-void set_text_style(struct object *o, struct text_style *ts)
-{
-	assert(o->type == TEXT);
-	o->style = ts;
-	o->parent->object_seq++;
-}
-
-
-static int find_prev_index(const char *t, int p)
-{
-	int i, nback;
-
-	if ( p == 0 ) return 0;
-
-	if ( !(t[p-1] & 0x80) ) {
-		nback = 1;
-	} else {
-		nback = 0;
-		for ( i=1; i<=6; i++ ) {
-			if ( p-i == 0 ) return 0;
-			if ( !(t[p-i] & 0xC0) ) nback++;
-		}
-	}
-
-	return p - nback;
-}
-
-
-static int find_next_index(const char *t, int p)
-{
-	int i, nfor;
-
-	if ( t[p] == '\0' ) return p;
-
-	if ( !(t[p+1] & 0x80) ) {
-		nfor = 1;
-	} else {
-		nfor = 0;
-		for ( i=1; i<=6; i++ ) {
-			if ( t[p+i] == '\0' ) return p+i;
-			if ( !(t[p+i] & 0xC0) ) nfor++;
-		}
-	}
-
-	return p + nfor;
-}
-
-
-void handle_text_backspace(struct object *o)
-{
-	int prev_index;
-
-	assert(o->type == TEXT);
-
-	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
-
-	prev_index = find_prev_index(o->text, o->insertion_point);
-
-	memmove(o->text+prev_index, o->text+o->insertion_point,
-	        o->text_len-o->insertion_point);
-
-	o->insertion_point = prev_index;
-
-	if ( strlen(o->text) == 0 ) o->empty = 1;
-
-	o->parent->object_seq++;
-}
-
-
-void move_cursor_left(struct object *o)
-{
-	o->insertion_point = find_prev_index(o->text, o->insertion_point);
-}
-
-
-void move_cursor_right(struct object *o)
-{
-	o->insertion_point = find_next_index(o->text, o->insertion_point);
-}
-
-
-void position_caret(struct object *o, double x, double y)
-{
-	int idx, trail;
-	int xp, yp;
-	gboolean v;
-
-	assert(o->type == TEXT);
-
-	xp = (x - o->x)*PANGO_SCALE;
-	yp = (y - o->y)*PANGO_SCALE;
-
-	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
-
-	o->insertion_point = idx+trail;
-}
-
-
-void notify_style_update(struct presentation *p, struct text_style *ts)
+void notify_style_update(struct presentation *p, struct style *sty)
 {
 	int i;
 	int changed = 0;
@@ -242,37 +94,7 @@ void notify_style_update(struct presentation *p, struct text_style *ts)
 
 		for ( j=0; j<p->slides[i]->num_objects; j++ ) {
 
-			if ( s->objects[j]->type != TEXT ) continue;
-			if ( s->objects[j]->style != ts ) continue;
-
-			s->object_seq++;
-			if ( p->view_slide == s ) changed = 1;
-			break;
-
-		}
-
-	}
-
-	p->completely_empty = 0;
-	if ( changed ) notify_slide_update(p);
-}
-
-
-void notify_layout_update(struct presentation *p, struct layout_element *le)
-{
-	int i;
-	int changed = 0;
-
-	for ( i=0; i<p->num_slides; i++ ) {
-
-		int j;
-		struct slide *s;
-
-		s = p->slides[i];
-
-		for ( j=0; j<p->slides[i]->num_objects; j++ ) {
-
-			if ( s->objects[j]->le != le ) continue;
+			if ( s->objects[j]->style != sty ) continue;
 
 			s->object_seq++;
 			if ( p->view_slide == s ) changed = 1;

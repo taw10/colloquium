@@ -67,7 +67,6 @@ struct presentation
 	GtkUIManager     *ui;
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
-	GtkWidget        *toolbar;
 	GtkWidget        *tbox;
 	int               drag_preview_pending;
 	int               have_drag_data;
@@ -79,9 +78,8 @@ struct presentation
 	int               drag_y;
 
 	/* Stylesheet */
-	StyleSheet            *ss;
-	struct text_style     *cur_style;
-	struct layout_element *cur_layout;
+	StyleSheet       *ss;
+	struct style     *default_style;
 
 	/* Dialogue boxes */
 	StylesheetWindow *stylesheetwindow;

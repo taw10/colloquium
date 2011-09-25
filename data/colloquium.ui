@@ -24,6 +24,11 @@
 			<menuitem name="Stylesheet..." action="EditStyleAction" />
 		</menu>
 
+		<menu name="insert" action="InsertAction">
+			<menuitem name="newslide" action="NewSlideAction" />
+			<separator />
+		</menu>
+
 		<menu name="tools" action="ToolsAction">
 			<menuitem name="slideshow" action="TSlideshowAction" />
 			<menuitem name="preferences" action="PrefsAction" />

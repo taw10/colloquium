@@ -31,6 +31,7 @@
 enum objtype
 {
 	TEXT,
+	IMAGE,
 };
 
 
@@ -38,7 +39,7 @@ struct object
 {
 	enum objtype   type;
 	struct slide  *parent;
-	struct layout_element *le;
+	struct style  *style;
 
 	/* Position of corner of object */
 	double         x;
@@ -56,23 +57,17 @@ struct object
 	int            insertion_point;
 	PangoLayout   *layout;
 	PangoFontDescription *fontdesc;
-	struct text_style *style;
 };
 
+extern struct object *new_object(enum objtype t, struct style *sty);
+extern void free_object(struct object *o);
+extern struct object *add_image_object(struct slide *s, double x, double y,
+                                       const char *filename,
+                                       double width, double height);
 
-extern struct object *add_text_object(struct slide *s, double x, double y,
-                                      struct layout_element *el,
-                                      struct text_style *ts);
-extern void insert_text(struct object *o, char *t);
-extern void set_text_style(struct object *o, struct text_style *ts);
-extern void notify_style_update(struct presentation *p, struct text_style *ts);
-extern void handle_text_backspace(struct object *o);
-extern void move_cursor_left(struct object *o);
-extern void move_cursor_right(struct object *o);
-extern void position_caret(struct object *o, double x, double y);
 
-extern void notify_layout_update(struct presentation *p,
-                                 struct layout_element *ts);
+extern void notify_style_update(struct presentation *p,
+                                 struct style *sty);
 
 extern void delete_object(struct object *o);
 

@@ -63,6 +63,9 @@ int save_presentation(struct presentation *p, const char *filename)
 	fprintf(fh, "# Colloquium presentation file\n");
 	fprintf(fh, "version=0\n");
 
+	fprintf(fh, "width=%.2f\n", p->slide_width);
+	fprintf(fh, "height=%.2f\n", p->slide_height);
+
 	write_stylesheet(p->ss, fh);
 
 	for ( i=0; i<p->num_slides; i++ ) {
@@ -73,8 +76,6 @@ int save_presentation(struct presentation *p, const char *filename)
 		s = p->slides[i];
 
 		fprintf(fh, "++slide\n");
-		fprintf(fh, "width=%.2f\n", s->slide_width);
-		fprintf(fh, "height=%.2f\n", s->slide_height);
 
 		for ( j=0; j<s->num_objects; j++ ) {
 

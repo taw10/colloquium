@@ -372,11 +372,34 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
 }
 
 
+static gint add_furniture(GtkWidget *widget, struct presentation *p)
+{
+	gchar *name;
+	struct style *sty;
+	struct object *n;
+
+	g_object_get(G_OBJECT(widget), "label", &name, NULL);
+	sty = find_style(p->ss, name);
+	g_free(name);
+	if ( sty == NULL ) return 0;
+
+	n = add_text_object(p->view_slide, 0.0, 0.0, sty);
+	p->editing_object = n;
+
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+
+	return 0;
+}
+
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
 	GtkToolItem *titem;
 	GtkWidget *toolbar;
+	GtkWidget *menu;
+	GtkWidget *item;
+	int i;
 	GtkActionEntry entries[] = {
 
 		{ "FileAction", NULL, "_File", NULL, NULL, NULL },
@@ -466,8 +489,7 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 				   gtk_ui_manager_get_accel_group(p->ui));
 	gtk_ui_manager_ensure_update(p->ui);
 
-	toolbar = gtk_ui_manager_get_widget(p->ui,
-                                       "/ui/displaywindowtoolbar");
+	toolbar = gtk_ui_manager_get_widget(p->ui, "/displaywindowtoolbar");
 	titem = gtk_separator_tool_item_new();
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), titem, -1);
 
@@ -476,6 +498,21 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	gtk_container_add(GTK_CONTAINER(titem), p->tbox);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), titem, -1);
 
+	/* Add the styles to the "Insert" menu */
+	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
+	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
+	item = gtk_separator_menu_item_new();
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+	for ( i=1; i<p->ss->n_styles; i++ )
+	{
+		char *name;
+		name = p->ss->styles[i]->name;
+		item = gtk_menu_item_new_with_label(name);
+		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+		g_signal_connect(G_OBJECT(item), "activate",
+	                         G_CALLBACK(add_furniture), p);
+
+	}
 	update_toolbar(p);
 }
 
@@ -487,6 +524,14 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 }
 
 
+static void redraw_object(struct object *o)
+{
+	if ( o == NULL ) return;
+	gdk_window_invalidate_rect(o->parent->parent->drawingarea->window,
+	                           NULL, FALSE);
+}
+
+
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
@@ -495,8 +540,7 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 
 	insert_text(p->editing_object, str);
 
-	/* FIXME: Invalidate only the necessary region */
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	redraw_object(p->editing_object);
 
 	return FALSE;
 }
@@ -520,14 +564,17 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_BackSpace :
 			handle_text_backspace(p->editing_object);
+			redraw_object(p->editing_object);
 			break;
 
 		case GDK_KEY_Left :
 			move_cursor_left(p->editing_object);
+			redraw_object(p->editing_object);
 			break;
 
 		case GDK_KEY_Right :
 			move_cursor_right(p->editing_object);
+			redraw_object(p->editing_object);
 			break;
 
 		}
@@ -545,13 +592,11 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	case GDK_KEY_Escape :
 		if ( p->slideshow != NULL ) end_slideshow(p);
+		redraw_object(p->editing_object);
 		p->editing_object = NULL;
 		break;
 
 	}
-
-	/* FIXME: Invalidate only the necessary region */
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
 
 	return FALSE;
 }
@@ -601,8 +646,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	}
 	p->editing_object = NULL;
 
-	if ( (x>0.0) && (x<p->view_slide->slide_width)
-	  && (y>0.0) && (y<p->view_slide->slide_height) )
+	if ( (x>0.0) && (x<p->slide_width)
+	  && (y>0.0) && (y<p->slide_height) )
 	{
 		clicked = find_object_at_position(p->view_slide, x, y);
 		switch ( p->tool ) {
@@ -630,10 +675,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
-
-	/* FIXME: Invalidate only the necessary region */
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
-
+	redraw_object(p->editing_object);
 	return FALSE;
 }
 

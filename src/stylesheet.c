@@ -183,7 +183,22 @@ static void style_changed_sig(GtkComboBox *combo,
 
 	n = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
 	s->cur_style = s->ss->styles[n];
-	/* FIXME: Handle default style */
+
+	if ( n == 0 ) {
+		gtk_widget_set_sensitive(s->offset_x, FALSE);
+		gtk_widget_set_sensitive(s->offset_y, FALSE);
+		gtk_widget_set_sensitive(s->use_max, FALSE);
+		gtk_widget_set_sensitive(s->max_width, FALSE);
+		gtk_widget_set_sensitive(s->halign, FALSE);
+		gtk_widget_set_sensitive(s->valign, FALSE);
+	} else {
+		gtk_widget_set_sensitive(s->offset_x, TRUE);
+		gtk_widget_set_sensitive(s->offset_y, TRUE);
+		gtk_widget_set_sensitive(s->use_max, TRUE);
+		gtk_widget_set_sensitive(s->max_width, TRUE);
+		gtk_widget_set_sensitive(s->halign, TRUE);
+		gtk_widget_set_sensitive(s->valign, TRUE);
+	}
 
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_left),
 	                          s->cur_style->margin_left);
@@ -204,8 +219,9 @@ static void style_changed_sig(GtkComboBox *combo,
 	gtk_combo_box_set_active(GTK_COMBO_BOX(s->valign),
 	                         s->cur_style->valign);
 
-	gtk_widget_set_sensitive(s->max_width,
-	                         s->cur_style->use_max_width);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(s->use_max),
+	                             s->cur_style->use_max_width);
+	gtk_widget_set_sensitive(s->max_width, s->cur_style->use_max_width);
 
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->max_width),
 	                          s->cur_style->max_width);
@@ -233,7 +249,7 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 
 	box = gtk_hbox_new(FALSE, 5);
 	gtk_box_pack_start(GTK_BOX(b), box, FALSE, FALSE, 5);
-	label = gtk_label_new("Element:");
+	label = gtk_label_new("Style:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
 	gtk_box_pack_start(GTK_BOX(box), label, FALSE, FALSE, 0);
 	combo = gtk_combo_box_new_text();
@@ -359,27 +375,22 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	                 G_CALLBACK(max_changed_sig), s);
 
 	/* Font/colour stuff */
-	table = gtk_table_new(3, 2, FALSE);
-	gtk_box_pack_start(GTK_BOX(vbox), table, FALSE, FALSE, 5);
-	gtk_table_set_row_spacings(GTK_TABLE(table), 5.0);
-	gtk_table_set_col_spacings(GTK_TABLE(table), 5.0);
-
 	label = gtk_label_new("Font:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 3, 4);
 	s->text_font = gtk_font_button_new_with_font("Sans 12");
 	box = gtk_hbox_new(FALSE, 0);
-	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 0, 1);
+	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 3, 4);
 	gtk_box_pack_start(GTK_BOX(box), s->text_font, FALSE, FALSE, 0);
 	g_signal_connect(G_OBJECT(s->text_font), "font-set",
 	                 G_CALLBACK(text_font_set_sig), s);
 
 	label = gtk_label_new("Colour:");
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
-	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 4, 5);
 	s->text_colour = gtk_color_button_new();
 	box = gtk_hbox_new(FALSE, 0);
-	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 1, 2);
+	gtk_table_attach_defaults(GTK_TABLE(table), box, 1, 2, 4, 5);
 	gtk_box_pack_start(GTK_BOX(box), s->text_colour, FALSE, FALSE, 0);
 	g_signal_connect(G_OBJECT(s->text_colour), "color-set",
 	                 G_CALLBACK(text_colour_set_sig), s);
@@ -407,9 +418,12 @@ static struct style *new_style(StyleSheet *ss, const char *name)
 	sty = malloc(sizeof(*sty));
 	if ( sty == NULL ) return NULL;
 
+	sty->name = strdup(name);
+
 	n = ss->n_styles;
 	styles_new = realloc(ss->styles, (n+1)*sizeof(sty));
 	if ( styles_new == NULL ) {
+		free(sty->name);
 		free(sty);
 		return NULL;
 	}
@@ -452,6 +466,45 @@ static void default_stylesheet(StyleSheet *ss)
 	sty->offset_x = 0.0;
 	sty->offset_y = 0.0;  /* irrelevant */
 
+	sty = new_style(ss, "Slide credit");
+	sty->font = strdup("Sans 30");
+	sty->colour = strdup("#000000000000");  /* Black */
+	sty->alpha = 1.0;
+	sty->margin_left = 20.0;
+	sty->margin_right = 20.0;
+	sty->margin_top = 20.0;
+	sty->margin_bottom = 20.0;
+	sty->halign = J_CENTER;
+	sty->valign = V_CENTER;
+	sty->offset_x = +200.0;
+	sty->offset_y = -300.0;
+
+	sty = new_style(ss, "Slide date");
+	sty->font = strdup("Sans 30");
+	sty->colour = strdup("#000000000000");  /* Black */
+	sty->alpha = 1.0;
+	sty->margin_left = 20.0;
+	sty->margin_right = 20.0;
+	sty->margin_top = 20.0;
+	sty->margin_bottom = 20.0;
+	sty->halign = J_CENTER;
+	sty->valign = V_CENTER;
+	sty->offset_x = +200.0;
+	sty->offset_y = -300.0;
+
+	sty = new_style(ss, "Slide number");
+	sty->font = strdup("Sans 30");
+	sty->colour = strdup("#000000000000");  /* Black */
+	sty->alpha = 1.0;
+	sty->margin_left = 20.0;
+	sty->margin_right = 20.0;
+	sty->margin_top = 20.0;
+	sty->margin_bottom = 20.0;
+	sty->halign = J_CENTER;
+	sty->valign = V_CENTER;
+	sty->offset_x = +200.0;
+	sty->offset_y = -300.0;
+
 	sty = new_style(ss, "Presentation title");
 	sty->font = strdup("Sans 50");
 	sty->colour = strdup("#000000000000");  /* Black */
@@ -466,6 +519,19 @@ static void default_stylesheet(StyleSheet *ss)
 	sty->offset_y = +300.0;
 
 	sty = new_style(ss, "Presentation author");
+	sty->font = strdup("Sans 30");
+	sty->colour = strdup("#000000000000");  /* Black */
+	sty->alpha = 1.0;
+	sty->margin_left = 20.0;
+	sty->margin_right = 20.0;
+	sty->margin_top = 20.0;
+	sty->margin_bottom = 20.0;
+	sty->halign = J_CENTER;
+	sty->valign = V_CENTER;
+	sty->offset_x = +200.0;
+	sty->offset_y = -300.0;
+
+	sty = new_style(ss, "Presentation date");
 	sty->font = strdup("Sans 30");
 	sty->colour = strdup("#000000000000");  /* Black */
 	sty->alpha = 1.0;
@@ -563,7 +629,7 @@ StylesheetWindow *open_stylesheet(struct presentation *p)
 	text_box = gtk_vbox_new(FALSE, 0);
 	gtk_container_set_border_width(GTK_CONTAINER(text_box), 12);
 	gtk_notebook_append_page(GTK_NOTEBOOK(nb), text_box,
-	                         gtk_label_new("Slide layout"));
+	                         gtk_label_new("Styles"));
 	do_layout(s, text_box);
 
 	background_box = gtk_vbox_new(FALSE, 0);
@@ -579,4 +645,17 @@ StylesheetWindow *open_stylesheet(struct presentation *p)
 	gtk_widget_show_all(s->window);
 
 	return s;
+}
+
+
+struct style *find_style(StyleSheet *ss, const char *name)
+{
+	int i;
+	for ( i=0; i<ss->n_styles; i++ ) {
+		if ( strcmp(ss->styles[i]->name, name) == 0 ) {
+			return ss->styles[i];
+		}
+	}
+
+	return NULL;
 }

@@ -43,9 +43,6 @@ struct slide
 	int              num_objects;
 	struct object  **objects;
 	int              object_seq;
-
-	double           slide_width;
-	double           slide_height;
 };
 
 

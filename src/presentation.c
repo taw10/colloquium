@@ -52,9 +52,6 @@ struct slide *add_slide(struct presentation *p, int pos)
 	p->completely_empty = 0;
 	new->parent = p;
 
-	new->slide_width = p->slide_width;
-	new->slide_height = p->slide_height;
-
 	new->render_cache_seq = 0;
 	new->render_cache = NULL;
 	render_slide(new);  /* Render nothing, just to make the surface exist */

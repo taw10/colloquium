@@ -42,10 +42,10 @@ static void calculate_size_from_style(struct object *o,
 	double max_width, max_height;
 	double ebottom, eright, mw, mh;
 
-	eright = o->parent->slide_width - o->style->margin_right;
-	ebottom = o->parent->slide_height - o->style->margin_bottom;
-	mw = o->parent->slide_width;
-	mh = o->parent->slide_height;
+	eright = o->parent->parent->slide_width - o->style->margin_right;
+	ebottom = o->parent->parent->slide_height - o->style->margin_bottom;
+	mw = o->parent->parent->slide_width;
+	mh = o->parent->parent->slide_height;
 
 	*peright = eright;  *pebottom = ebottom;
 	*pmw = mw;  *pmh = mh;
@@ -81,7 +81,8 @@ static void calculate_size_from_style(struct object *o,
 
 static void calculate_position_from_style(struct object *o,
                                           double eright, double ebottom,
-                                          double mw, double mh)
+                                          double mw, double mh,
+                                          double *pxo, double *pyo)
 {
 	double xo, yo;
 	PangoRectangle ink, logical;
@@ -101,8 +102,8 @@ static void calculate_position_from_style(struct object *o,
 		break;
 	}
 
-	if ( o->style->halign == J_CENTER ) {
-
+	if ( o->style->halign == J_CENTER )
+	{
 		if ( o->x+xo < o->style->margin_left ) {
 			o->x = o->style->margin_left - xo;
 		}
@@ -135,8 +136,7 @@ static void calculate_position_from_style(struct object *o,
 		}
 	}
 
-	o->x += xo;
-	o->y += yo;
+	*pxo = xo;  *pyo = yo;
 }
 
 
@@ -144,32 +144,39 @@ static void render_text_object(cairo_t *cr, struct object *o)
 {
 	PangoRectangle ink, logical;
 	double eright, ebottom, mw, mh;
+	double xo, yo;
+	int furniture = 0;
+
+	printf("%f, %f\n", o->x, o->y);
+
+	furniture = o->style != o->parent->parent->ss->styles[0];
 
 	o->layout = pango_cairo_create_layout(cr);
 	pango_layout_set_text(o->layout, o->text, -1);
 	o->fontdesc = pango_font_description_from_string(o->style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	if ( o->style != o->parent->parent->ss->styles[0] )
-	{
-		calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
-	}
+	calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
 
 	pango_cairo_update_layout(cr, o->layout);
-
 	pango_layout_get_extents(o->layout, &ink, &logical);
 	o->bb_width = ink.width / PANGO_SCALE;
 	o->bb_height = logical.height/PANGO_SCALE;
 
-	if ( o->style != o->parent->parent->ss->styles[0] )
-	{
-		calculate_position_from_style(o, eright, ebottom, mw, mh);
+	if ( furniture ) {
+		calculate_position_from_style(o, eright, ebottom,
+		                              mw, mh, &xo, &yo);
 	}
 
+	printf("--- %f, %f\n", o->x, o->y);
 	cairo_move_to(cr, o->x, o->y);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	pango_cairo_show_layout(cr, o->layout);
 
+	if ( furniture ) {
+		o->x += xo;
+		o->y += yo;
+	}
 }
 
 
@@ -200,11 +207,13 @@ int render_slide(struct slide *s)
 	int i;
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-	                                  s->slide_width, s->slide_height);
+	                                  s->parent->slide_width,
+	                                  s->parent->slide_height);
 
 	cr = cairo_create(surf);
 
-	cairo_rectangle(cr, 0.0, 0.0, s->slide_width, s->slide_height);
+	cairo_rectangle(cr, 0.0, 0.0,
+	                s->parent->slide_width, s->parent->slide_height);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 

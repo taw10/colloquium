@@ -149,6 +149,7 @@ static void render_text_object(cairo_t *cr, struct object *o)
 	double mh = 0.0;
 	double xo, yo;
 	int furniture = 0;
+	GdkColor col;
 
 	furniture = o->style != o->parent->parent->ss->styles[0];
 
@@ -174,7 +175,8 @@ static void render_text_object(cairo_t *cr, struct object *o)
 	}
 
 	cairo_move_to(cr, o->x, o->y);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	gdk_color_parse(o->style->colour, &col);
+	gdk_cairo_set_source_color(cr, &col);
 	pango_cairo_show_layout(cr, o->layout);
 
 	if ( furniture ) {

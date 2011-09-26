@@ -176,7 +176,7 @@ static void render_text_object(cairo_t *cr, struct object *o)
 
 	cairo_move_to(cr, o->x, o->y);
 	gdk_color_parse(o->style->colour, &col);
-	gdk_cairo_set_source_color(cr, &col);
+	gdk_cairo_set_source_color(cr, &col);  /* FIXME: Honour alpha as well */
 	pango_cairo_show_layout(cr, o->layout);
 
 	if ( furniture ) {

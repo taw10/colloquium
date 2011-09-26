@@ -143,11 +143,12 @@ static void calculate_position_from_style(struct object *o,
 static void render_text_object(cairo_t *cr, struct object *o)
 {
 	PangoRectangle ink, logical;
-	double eright, ebottom, mw, mh;
+	double eright = 0.0;
+	double ebottom = 0.0;
+	double mw = 0.0;
+	double mh = 0.0;
 	double xo, yo;
 	int furniture = 0;
-
-	printf("%f, %f\n", o->x, o->y);
 
 	furniture = o->style != o->parent->parent->ss->styles[0];
 
@@ -156,7 +157,11 @@ static void render_text_object(cairo_t *cr, struct object *o)
 	o->fontdesc = pango_font_description_from_string(o->style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
+	if ( furniture ) {
+		calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
+	} else {
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
+	}
 
 	pango_cairo_update_layout(cr, o->layout);
 	pango_layout_get_extents(o->layout, &ink, &logical);
@@ -168,7 +173,6 @@ static void render_text_object(cairo_t *cr, struct object *o)
 		                              mw, mh, &xo, &yo);
 	}
 
-	printf("--- %f, %f\n", o->x, o->y);
 	cairo_move_to(cr, o->x, o->y);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	pango_cairo_show_layout(cr, o->layout);

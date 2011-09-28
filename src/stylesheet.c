@@ -468,12 +468,12 @@ static void default_stylesheet(StyleSheet *ss)
 
 	sty = new_style(ss, "Slide credit");
 	sty->font = strdup("Sans 14");
-	sty->colour = strdup("#777777777777");  /* Grey */
+	sty->colour = strdup("#000000000000");  /* Black */
 	sty->alpha = 1.0;
 	sty->margin_left = 20.0;
 	sty->margin_right = 20.0;
 	sty->margin_top = 20.0;
-	sty->margin_bottom = 30.0;
+	sty->margin_bottom = 35.0;
 	sty->halign = J_RIGHT;
 	sty->valign = V_BOTTOM;
 	sty->offset_x = 0.0;
@@ -485,7 +485,7 @@ static void default_stylesheet(StyleSheet *ss)
 	sty->alpha = 1.0;
 	sty->margin_left = 600.0;
 	sty->margin_right = 100.0;
-	sty->margin_top = 600.0;
+	sty->margin_top = 745.0;
 	sty->margin_bottom = 5.0;
 	sty->halign = J_RIGHT;
 	sty->valign = V_BOTTOM;
@@ -498,7 +498,7 @@ static void default_stylesheet(StyleSheet *ss)
 	sty->alpha = 1.0;
 	sty->margin_left = 600.0;
 	sty->margin_right = 5.0;
-	sty->margin_top = 600.0;
+	sty->margin_top = 745.0;
 	sty->margin_bottom = 5.0;
 	sty->halign = J_RIGHT;
 	sty->valign = V_BOTTOM;
@@ -511,7 +511,7 @@ static void default_stylesheet(StyleSheet *ss)
 	sty->alpha = 1.0;
 	sty->margin_left = 5.0;
 	sty->margin_right = 600.0;
-	sty->margin_top = 600.0;
+	sty->margin_top = 745.0;
 	sty->margin_bottom = 5.0;
 	sty->halign = J_LEFT;
 	sty->valign = V_BOTTOM;

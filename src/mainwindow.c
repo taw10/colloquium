@@ -696,16 +696,9 @@ static void draw_editing_bits(cairo_t *cr, struct presentation *p,
 {
 	draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
 
-	/* FIXME: Dispatch table */
-	switch ( o->type ) {
+	o->draw_editing_overlay(cr, o);
 
-	case TEXT :
-
-		if ( p->tool == TOOL_TEXT ) draw_caret(cr, o);
-		break;
-
-	}
-
+	/* Draw margins */
 	cairo_move_to(cr, o->style->margin_left, -p->border_offs_y);
 	cairo_line_to(cr, o->style->margin_left,
 	                  p->slide_height+p->border_offs_y);

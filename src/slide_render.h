@@ -31,7 +31,6 @@
 #include "presentation.h"
 
 extern int render_slide(struct slide *s);
-extern void draw_caret(cairo_t *cr, struct object *o);
 extern void check_redraw_slide(struct slide *s);
 
 #endif	/* SLIDE_RENDER_H */

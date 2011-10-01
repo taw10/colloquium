@@ -51,6 +51,9 @@ struct object
 
 	int            empty;
 
+	void           (*render_object)(cairo_t *cr, struct object *o);
+	void           (*draw_editing_overlay)(cairo_t *cr, struct object *o);
+
 	/* For type TEXT */
 	char          *text;
 	size_t         text_len;

@@ -46,10 +46,17 @@ struct slide
 };
 
 
-enum tool
+struct toolinfo
 {
-	TOOL_SELECT,
-	TOOL_TEXT,
+	void (*click_create)(struct presentation *p, struct toolinfo *tip,
+	                     double x, double y);
+	void (*click_select)(struct presentation *p, struct toolinfo *tip,
+	                     double x, double y);
+	void (*create_default)(struct presentation *p, struct style *sty);
+	void (*select)(struct object *o, struct toolinfo *tip);
+	void (*deselect)(struct object *o, struct toolinfo *tip);
+	void (*drag_object)(struct toolinfo *tip, struct presentation *p,
+	                    struct object *o, double x, double y);
 };
 
 
@@ -58,6 +65,9 @@ struct presentation
 	char             *titlebar;
 	char             *filename;
 	int               completely_empty;
+
+	struct toolinfo  *select_tool;
+	struct toolinfo  *text_tool;
 
 	GtkWidget        *window;
 	GtkWidget        *drawingarea;
@@ -99,7 +109,7 @@ struct presentation
 	struct object    *editing_object;
 
 	/* Tool status */
-	enum tool         tool;
+	struct toolinfo  *cur_tool;
 	double            drag_offs_x;
 	double            drag_offs_y;
 

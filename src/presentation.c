@@ -33,6 +33,8 @@
 #include "slide_render.h"
 #include "objects.h"
 #include "stylesheet.h"
+#include "tool_text.h"
+#include "tool_select.h"
 
 
 struct slide *add_slide(struct presentation *p, int pos)
@@ -211,6 +213,10 @@ struct presentation *new_presentation()
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;
+
+	new->select_tool = initialise_select_tool();
+	new->text_tool = initialise_text_tool();
+	new->cur_tool = new->select_tool;
 
 	/* Add one blank slide and view it */
 	new->num_slides = 0;

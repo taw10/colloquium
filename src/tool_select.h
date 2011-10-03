@@ -1,5 +1,5 @@
 /*
- * tool_text.h
+ * tool_select.h
  *
  * Colloquium - A tiny presentation program
  *
@@ -20,19 +20,15 @@
  *
  */
 
-#ifndef TOOL_TEXT_H
-#define TOOL_TEXT_H
+#ifndef TOOL_SELECT_H
+#define TOOL_SELECT_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-extern void insert_text(struct object *o, char *t);
-extern void handle_text_backspace(struct object *o);
-extern void move_cursor_left(struct object *o);
-extern void move_cursor_right(struct object *o);
 
-extern struct toolinfo *initialise_text_tool(void);
+extern struct toolinfo *initialise_select_tool(void);
 
 
-#endif	/* TOOL_TEXT_H */
+#endif	/* TOOL_SELECT_H */

@@ -357,15 +357,30 @@ static gint open_stylesheet_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+enum tool_id
+{
+	TOOL_SELECT,
+	TOOL_TEXT,
+};
+
+
 static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
                          struct presentation *p)
 {
+	if ( p->editing_object != NULL ) {
+		p->cur_tool->deselect(p->editing_object, p->cur_tool);
+	}
+
 	switch ( gtk_radio_action_get_current_value(action) )
 	{
-		case 0 : p->tool = TOOL_SELECT; break;
-		case 1 : p->tool = TOOL_TEXT; break;
+		case TOOL_SELECT : p->cur_tool = p->select_tool; break;
+		case TOOL_TEXT : p->cur_tool = p->text_tool; break;
 	}
-	p->editing_object = NULL;
+
+	if ( p->editing_object != NULL ) {
+		p->cur_tool->select(p->editing_object, p->cur_tool);
+	}
+
 	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
 
 	return 0;
@@ -376,17 +391,13 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 {
 	gchar *name;
 	struct style *sty;
-	struct object *n;
 
 	g_object_get(G_OBJECT(widget), "label", &name, NULL);
 	sty = find_style(p->ss, name);
 	g_free(name);
 	if ( sty == NULL ) return 0;
 
-	n = add_text_object(p->view_slide, 0.0, 0.0, sty);
-	p->editing_object = n;
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	p->text_tool->create_default(p, sty);
 
 	return 0;
 }
@@ -605,26 +616,10 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
                                  struct presentation *p)
 {
-	if ( p->tool == TOOL_SELECT ) {
-
-		if ( p->editing_object != NULL ) {
-
-			gdouble x, y;
-
-			x = event->x - p->border_offs_x;
-			y = event->y - p->border_offs_y;
-
-			p->editing_object->x = x + p->drag_offs_x;
-			p->editing_object->y = y + p->drag_offs_y;
-			p->view_slide->object_seq++;
-
-			/* FIXME: Invalidate only the necessary region */
-			gdk_window_invalidate_rect(p->drawingarea->window,
-			                           NULL, FALSE);
-
-
-		}
-
+	if ( p->editing_object != NULL ) {
+		p->cur_tool->drag_object(p->cur_tool, p, p->editing_object,
+		                         event->x - p->border_offs_x,
+		                         event->y - p->border_offs_y);
 	}
 
 	gdk_event_request_motions(event);
@@ -641,37 +636,26 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
+	clicked = find_object_at_position(p->view_slide, x, y);
+
+	if ( clicked == NULL ) {
+
+		if ( p->editing_object != NULL ) {
+			p->cur_tool->deselect(p->editing_object, p->cur_tool);
+			p->editing_object = NULL;
+		}
+		p->cur_tool->click_create(p, p->cur_tool, x, y);
+
+	} else {
+
+		p->editing_object = clicked;
+		p->cur_tool->click_select(p, p->cur_tool, x, y);
+
+	}
+
+	/* FIXME: Tool is responsible for this */
 	if ( p->editing_object && p->editing_object->empty ) {
 		delete_object(p->editing_object);
-	}
-	p->editing_object = NULL;
-
-	if ( (x>0.0) && (x<p->slide_width)
-	  && (y>0.0) && (y<p->slide_height) )
-	{
-		clicked = find_object_at_position(p->view_slide, x, y);
-		switch ( p->tool ) {
-		case TOOL_SELECT :
-			if ( clicked ) {
-				p->editing_object = clicked;
-				p->drag_offs_x = clicked->x - x;
-				p->drag_offs_y = clicked->y - y;
-			}
-			break;
-		case TOOL_TEXT :
-			if ( !clicked ) {
-				struct object *n;
-				/* FIXME: Insert ESP here and possibly
-				 * select a different style */
-				n = add_text_object(p->view_slide, x, y,
-				                    p->ss->styles[0]);
-				p->editing_object = n;
-			} else {
-				p->editing_object = clicked;
-				position_caret(clicked, x, y);
-			}
-			break;
-		}
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
@@ -685,7 +669,7 @@ static void draw_editing_box(cairo_t *cr, double xmin, double ymin,
 {
 	cairo_new_path(cr);
 	cairo_rectangle(cr, xmin-5.0, ymin-5.0, width+10.0, height+10.0);
-	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+	cairo_set_source_rgb(cr, 0.0, 0.69, 1.0);
 	cairo_set_line_width(cr, 0.5);
 	cairo_stroke(cr);
 }

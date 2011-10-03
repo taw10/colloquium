@@ -34,6 +34,11 @@
 #include "mainwindow.h"
 
 
+struct text_toolinfo
+{
+	struct toolinfo base;
+};
+
 void insert_text(struct object *o, char *t)
 {
 	char *tmp;
@@ -156,23 +161,6 @@ void move_cursor_left(struct object *o)
 void move_cursor_right(struct object *o)
 {
 	o->insertion_point = find_next_index(o->text, o->insertion_point);
-}
-
-
-void position_caret(struct object *o, double x, double y)
-{
-	int idx, trail;
-	int xp, yp;
-	gboolean v;
-
-	assert(o->type == TEXT);
-
-	xp = (x - o->x)*PANGO_SCALE;
-	yp = (y - o->y)*PANGO_SCALE;
-
-	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
-
-	o->insertion_point = idx+trail;
 }
 
 
@@ -330,19 +318,36 @@ static void render_text_object(cairo_t *cr, struct object *o)
 static void draw_caret(cairo_t *cr, struct object *o)
 {
 	int line, xpos;
-	double xposd;
+	double xposd, cx;
+	double clow, chigh;
+	const double t = 1.8;
 
 	assert(o->type == TEXT);
+
 
 	pango_layout_index_to_line_x(o->layout, o->insertion_point,
 	                             0, &line, &xpos);
 
 	xposd = xpos/PANGO_SCALE;
+	cx = o->x+xposd;
+	clow = o->y;
+	chigh = o->y+o->bb_height;
 
-	cairo_move_to(cr, o->x+xposd, o->y);
-	cairo_line_to(cr, o->x+xposd, o->y+o->bb_height);
-	cairo_set_source_rgb(cr, 1.0, 0.5, 0.0);
-	cairo_set_line_width(cr, 2.0);
+	cairo_move_to(cr, cx, clow);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_move_to(cr, cx-t, clow-t);
+	cairo_line_to(cr, cx, clow);
+	cairo_move_to(cr, cx+t, clow-t);
+	cairo_line_to(cr, cx, clow);
+
+	cairo_move_to(cr, cx-t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+	cairo_move_to(cr, cx+t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 }
 
@@ -375,4 +380,81 @@ struct object *add_text_object(struct slide *s, double x, double y,
 	s->object_seq++;
 
 	return new;
+}
+
+
+static void click_create(struct presentation *p, struct toolinfo *tip,
+                         double x, double y)
+{
+	struct object *n;
+
+	/* FIXME: Insert ESP here and possibly select a different style */
+	n = add_text_object(p->view_slide, x, y, p->ss->styles[0]);
+	p->editing_object = n;
+}
+
+
+static void click_select(struct presentation *p, struct toolinfo *tip,
+                         double x, double y)
+{
+	int xp, yp;
+	gboolean v;
+	struct object *o = p->editing_object;
+	int idx, trail;
+
+	assert(o->type == TEXT);
+
+	xp = (x - o->x)*PANGO_SCALE;
+	yp = (y - o->y)*PANGO_SCALE;
+
+	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
+
+	o->insertion_point = idx+trail;
+}
+
+
+
+static void drag_object(struct toolinfo *tip, struct presentation *p,
+                        struct object *o, double x, double y)
+{
+	/* Do nothing */
+}
+
+
+static void create_default(struct presentation *p, struct style *sty)
+{
+	struct object *n;
+
+	n = add_text_object(p->view_slide, 0.0, 0.0, sty);
+	p->editing_object = n;
+
+}
+
+
+static void select_object(struct object *o,struct toolinfo *tip)
+{
+	/* Do nothing */
+}
+
+
+static void deselect_object(struct object *o,struct toolinfo *tip)
+{
+	/* Do nothing */
+}
+
+
+struct toolinfo *initialise_text_tool()
+{
+	struct text_toolinfo *ti;
+
+	ti = malloc(sizeof(*ti));
+
+	ti->base.click_create = click_create;
+	ti->base.click_select = click_select;
+	ti->base.create_default = create_default;
+	ti->base.select = select_object;
+	ti->base.deselect = deselect_object;
+	ti->base.drag_object = drag_object;
+
+	return (struct toolinfo *)ti;
 }

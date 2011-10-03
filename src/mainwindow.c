@@ -38,6 +38,7 @@
 #include "slideshow.h"
 #include "stylesheet.h"
 #include "loadsave.h"
+#include "tool_select.h"
 #include "tool_text.h"
 
 
@@ -397,7 +398,7 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	g_free(name);
 	if ( sty == NULL ) return 0;
 
-	p->text_tool->create_default(p, sty);
+	p->text_tool->create_default(p, sty, p->text_tool);
 
 	return 0;
 }
@@ -543,6 +544,12 @@ static void redraw_object(struct object *o)
 }
 
 
+static void redraw_overlay(struct presentation *p)
+{
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+}
+
+
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
@@ -653,34 +660,16 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 	}
 
-	/* FIXME: Tool is responsible for this */
-	if ( p->editing_object && p->editing_object->empty ) {
-		delete_object(p->editing_object);
-	}
-
 	gtk_widget_grab_focus(GTK_WIDGET(da));
-	redraw_object(p->editing_object);
+	redraw_overlay(p);
 	return FALSE;
-}
-
-
-static void draw_editing_box(cairo_t *cr, double xmin, double ymin,
-                                          double width, double height)
-{
-	cairo_new_path(cr);
-	cairo_rectangle(cr, xmin-5.0, ymin-5.0, width+10.0, height+10.0);
-	cairo_set_source_rgb(cr, 0.0, 0.69, 1.0);
-	cairo_set_line_width(cr, 0.5);
-	cairo_stroke(cr);
 }
 
 
 static void draw_editing_bits(cairo_t *cr, struct presentation *p,
                               struct object *o)
 {
-	draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
-
-	o->draw_editing_overlay(cr, o);
+	p->cur_tool->draw_editing_overlay(cr, o);
 
 	/* Draw margins */
 	cairo_move_to(cr, o->style->margin_left, -p->border_offs_y);
@@ -954,6 +943,10 @@ int open_mainwindow(struct presentation *p)
 	gtk_widget_set_size_request(GTK_WIDGET(p->drawingarea),
 	                            p->slide_width + 20,
 	                            p->slide_height + 20);
+
+	p->select_tool = initialise_select_tool();
+	p->text_tool = initialise_text_tool(p->drawingarea);
+	p->cur_tool = p->select_tool;
 
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),

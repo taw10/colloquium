@@ -52,18 +52,9 @@ struct object
 	int            empty;
 
 	void           (*render_object)(cairo_t *cr, struct object *o);
-	void           (*draw_editing_overlay)(cairo_t *cr, struct object *o);
-
-	/* For type TEXT */
-	char          *text;
-	size_t         text_len;
-	int            insertion_point;
-	PangoLayout   *layout;
-	PangoFontDescription *fontdesc;
+	void           (*delete_object)(struct object *o);
 };
 
-extern struct object *new_object(enum objtype t, struct style *sty);
-extern void free_object(struct object *o);
 extern struct object *add_image_object(struct slide *s, double x, double y,
                                        const char *filename,
                                        double width, double height);

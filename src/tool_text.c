@@ -32,20 +32,192 @@
 #include "presentation.h"
 #include "objects.h"
 #include "mainwindow.h"
+#include "slide_render.h"
 
 
 struct text_toolinfo
 {
-	struct toolinfo base;
+	struct toolinfo  base;
+	PangoContext    *pc;
 };
 
-void insert_text(struct object *o, char *t)
+
+struct text_object
 {
+	struct object        base;
+
+	char                 *text;
+	size_t                text_len;
+	int                   insertion_point;
+	PangoLayout          *layout;
+	PangoFontDescription *fontdesc;
+};
+
+
+static void calculate_size_from_style(struct text_object *o,
+                                      double *peright, double *pebottom,
+                                      double *pmw, double *pmh)
+{
+	double max_width, max_height;
+	double ebottom, eright, mw, mh;
+
+	eright = o->base.parent->parent->slide_width
+	                      - o->base.style->margin_right;
+	ebottom = o->base.parent->parent->slide_height
+	                      - o->base.style->margin_bottom;
+	mw = o->base.parent->parent->slide_width;
+	mh = o->base.parent->parent->slide_height;
+
+	*peright = eright;  *pebottom = ebottom;
+	*pmw = mw;  *pmh = mh;
+
+	max_width = mw - o->base.style->margin_left
+	                      - o->base.style->margin_right;
+
+	/* Use the provided maximum width if it exists and is smaller */
+	if ( o->base.style->use_max_width
+	     && (o->base.style->max_width < max_width) )
+	{
+		max_width = o->base.style->max_width;
+	}
+
+	max_height = mh - o->base.style->margin_top
+	                           - o->base.style->margin_bottom;
+
+	pango_layout_set_width(o->layout, max_width*PANGO_SCALE);
+	pango_layout_set_height(o->layout, max_height*PANGO_SCALE);
+	pango_layout_set_wrap(o->layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_ellipsize(o->layout, PANGO_ELLIPSIZE_MIDDLE);
+
+	switch ( o->base.style->halign ) {
+	case J_LEFT :
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
+		break;
+	case J_RIGHT :
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_RIGHT);
+		break;
+	case J_CENTER :
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_CENTER);
+		break;
+	}
+}
+
+
+static void calculate_position_from_style(struct text_object *o,
+                                          double eright, double ebottom,
+                                          double mw, double mh,
+                                          double *pxo, double *pyo)
+{
+	double xo, yo;
+	PangoRectangle ink, logical;
+
+	pango_layout_get_extents(o->layout, &ink, &logical);
+	xo = ink.x/PANGO_SCALE;  yo = logical.y/PANGO_SCALE;
+
+	switch ( o->base.style->halign ) {
+	case J_LEFT :
+		o->base.x = -xo + o->base.style->margin_left;
+		break;
+	case J_RIGHT :
+		o->base.x = -xo + eright - o->base.bb_width;
+		break;
+	case J_CENTER :
+		o->base.x = mw/2.0 - o->base.bb_width/2.0
+		                   - xo + o->base.style->offset_x;
+		break;
+	}
+
+	if ( o->base.style->halign == J_CENTER )
+	{
+		if ( o->base.x+xo < o->base.style->margin_left ) {
+			o->base.x = o->base.style->margin_left - xo;
+		}
+
+		if ( o->base.x+xo + o->base.bb_width >
+		                       mw-o->base.style->margin_right )
+		{
+			o->base.x = mw-o->base.style->margin_right
+			              - xo - o->base.bb_width;
+		}
+	}
+
+	switch ( o->base.style->valign ) {
+	case V_TOP :
+		o->base.y = o->base.style->margin_top;
+		break;
+	case V_BOTTOM :
+		o->base.y = ebottom - o->base.bb_height;
+		break;
+	case V_CENTER :
+		o->base.y = mh/2.0 - o->base.bb_height/2.0 + yo
+		                       - o->base.style->offset_y;
+		break;
+	}
+
+	if ( o->base.style->valign == V_CENTER ) {
+
+		if ( o->base.y < o->base.style->margin_top ) {
+			o->base.y = o->base.style->margin_top;
+		}
+
+		if ( o->base.y+yo + o->base.bb_height > mh
+		             - o->base.style->margin_bottom )
+		{
+			o->base.y = mh-o->base.style->margin_bottom
+			               - yo - o->base.bb_height;
+		}
+	}
+
+	*pxo = xo;  *pyo = yo;
+}
+
+
+static void update_text(struct text_object *o)
+{
+	PangoRectangle ink, logical;
+	double eright = 0.0;
+	double ebottom = 0.0;
+	double mw = 0.0;
+	double mh = 0.0;
+	double xo, yo;
+	int furniture = 0;
+
+	furniture = o->base.style != o->base.parent->parent->ss->styles[0];
+
+	pango_layout_set_text(o->layout, o->text, -1);
+	o->fontdesc = pango_font_description_from_string(o->base.style->font);
+	pango_layout_set_font_description(o->layout, o->fontdesc);
+
+	if ( furniture ) {
+		calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
+	} else {
+		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
+	}
+
+	pango_layout_get_extents(o->layout, &ink, &logical);
+	o->base.bb_width = ink.width / PANGO_SCALE;
+	o->base.bb_height = logical.height/PANGO_SCALE;
+
+	if ( furniture ) {
+		calculate_position_from_style(o, eright, ebottom,
+		                              mw, mh, &xo, &yo);
+	}
+
+	if ( furniture ) {
+		o->base.x += xo;
+		o->base.y += yo;
+	}
+}
+
+
+void insert_text(struct object *op, char *t)
+{
+	struct text_object *o = (struct text_object *)op;
 	char *tmp;
 	size_t tlen, olen;
 	int i;
 
-	assert(o->type == TEXT);
+	assert(o->base.type == TEXT);
 	tlen = strlen(t);
 	olen = strlen(o->text);
 
@@ -77,17 +249,10 @@ void insert_text(struct object *o, char *t)
 	memcpy(o->text, tmp, o->text_len);
 	free(tmp);
 
+	update_text(o);
 	o->insertion_point += tlen;
-	o->parent->object_seq++;
-	o->empty = 0;
-}
-
-
-void set_text_style(struct object *o, struct style *sty)
-{
-	assert(o->type == TEXT);
-	o->style = sty;
-	o->parent->object_seq++;
+	o->base.parent->object_seq++;
+	o->base.empty = 0;
 }
 
 
@@ -131,11 +296,12 @@ static int find_next_index(const char *t, int p)
 }
 
 
-void handle_text_backspace(struct object *o)
+void handle_text_backspace(struct object *op)
 {
 	int prev_index;
+	struct text_object *o = (struct text_object *)op;
 
-	assert(o->type == TEXT);
+	assert(o->base.type == TEXT);
 
 	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
 
@@ -146,192 +312,57 @@ void handle_text_backspace(struct object *o)
 
 	o->insertion_point = prev_index;
 
-	if ( strlen(o->text) == 0 ) o->empty = 1;
+	if ( strlen(o->text) == 0 ) o->base.empty = 1;
 
-	o->parent->object_seq++;
+	update_text(o);
+	o->base.parent->object_seq++;
 }
 
 
-void move_cursor_left(struct object *o)
+void move_cursor_left(struct object *op)
 {
+	struct text_object *o = (struct text_object *)op;
 	o->insertion_point = find_prev_index(o->text, o->insertion_point);
 }
 
 
-void move_cursor_right(struct object *o)
+void move_cursor_right(struct object *op)
 {
+	struct text_object *o = (struct text_object *)op;
 	o->insertion_point = find_next_index(o->text, o->insertion_point);
 }
 
 
-static void calculate_size_from_style(struct object *o,
-                                      double *peright, double *pebottom,
-                                      double *pmw, double *pmh)
+static void render_text_object(cairo_t *cr, struct object *op)
 {
-	double max_width, max_height;
-	double ebottom, eright, mw, mh;
-
-	eright = o->parent->parent->slide_width - o->style->margin_right;
-	ebottom = o->parent->parent->slide_height - o->style->margin_bottom;
-	mw = o->parent->parent->slide_width;
-	mh = o->parent->parent->slide_height;
-
-	*peright = eright;  *pebottom = ebottom;
-	*pmw = mw;  *pmh = mh;
-
-	max_width = mw - o->style->margin_left - o->style->margin_right;
-
-	/* Use the provided maximum width if it exists and is smaller */
-	if ( o->style->use_max_width && (o->style->max_width < max_width) )
-	{
-		max_width = o->style->max_width;
-	}
-
-	max_height = mh - o->style->margin_top - o->style->margin_bottom;
-
-	pango_layout_set_width(o->layout, max_width*PANGO_SCALE);
-	pango_layout_set_height(o->layout, max_height*PANGO_SCALE);
-	pango_layout_set_wrap(o->layout, PANGO_WRAP_WORD_CHAR);
-	pango_layout_set_ellipsize(o->layout, PANGO_ELLIPSIZE_MIDDLE);
-
-	switch ( o->style->halign ) {
-	case J_LEFT :
-		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
-		break;
-	case J_RIGHT :
-		pango_layout_set_alignment(o->layout, PANGO_ALIGN_RIGHT);
-		break;
-	case J_CENTER :
-		pango_layout_set_alignment(o->layout, PANGO_ALIGN_CENTER);
-		break;
-	}
-}
-
-
-static void calculate_position_from_style(struct object *o,
-                                          double eright, double ebottom,
-                                          double mw, double mh,
-                                          double *pxo, double *pyo)
-{
-	double xo, yo;
-	PangoRectangle ink, logical;
-
-	pango_layout_get_extents(o->layout, &ink, &logical);
-	xo = ink.x/PANGO_SCALE;  yo = logical.y/PANGO_SCALE;
-
-	switch ( o->style->halign ) {
-	case J_LEFT :
-		o->x = -xo + o->style->margin_left;
-		break;
-	case J_RIGHT :
-		o->x = -xo + eright - o->bb_width;
-		break;
-	case J_CENTER :
-		o->x = mw/2.0 - o->bb_width/2.0 - xo + o->style->offset_x;
-		break;
-	}
-
-	if ( o->style->halign == J_CENTER )
-	{
-		if ( o->x+xo < o->style->margin_left ) {
-			o->x = o->style->margin_left - xo;
-		}
-
-		if ( o->x+xo + o->bb_width > mw-o->style->margin_right ) {
-			o->x = mw-o->style->margin_right - xo - o->bb_width;
-		}
-	}
-
-	switch ( o->style->valign ) {
-	case V_TOP :
-		o->y = o->style->margin_top;
-		break;
-	case V_BOTTOM :
-		o->y = ebottom - o->bb_height;
-		break;
-	case V_CENTER :
-		o->y = mh/2.0 - o->bb_height/2.0 + yo - o->style->offset_y;
-		break;
-	}
-
-	if ( o->style->valign == V_CENTER ) {
-
-		if ( o->y < o->style->margin_top ) {
-			o->y = o->style->margin_top;
-		}
-
-		if ( o->y+yo + o->bb_height > mh - o->style->margin_bottom ) {
-			o->y = mh-o->style->margin_bottom - yo - o->bb_height;
-		}
-	}
-
-	*pxo = xo;  *pyo = yo;
-}
-
-
-static void render_text_object(cairo_t *cr, struct object *o)
-{
-	PangoRectangle ink, logical;
-	double eright = 0.0;
-	double ebottom = 0.0;
-	double mw = 0.0;
-	double mh = 0.0;
-	double xo, yo;
-	int furniture = 0;
+	struct text_object *o = (struct text_object *)op;
 	GdkColor col;
 
-	furniture = o->style != o->parent->parent->ss->styles[0];
-
-	o->layout = pango_cairo_create_layout(cr);
-	pango_layout_set_text(o->layout, o->text, -1);
-	o->fontdesc = pango_font_description_from_string(o->style->font);
-	pango_layout_set_font_description(o->layout, o->fontdesc);
-
-	if ( furniture ) {
-		calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
-	} else {
-		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
-	}
-
-	pango_cairo_update_layout(cr, o->layout);
-	pango_layout_get_extents(o->layout, &ink, &logical);
-	o->bb_width = ink.width / PANGO_SCALE;
-	o->bb_height = logical.height/PANGO_SCALE;
-
-	if ( furniture ) {
-		calculate_position_from_style(o, eright, ebottom,
-		                              mw, mh, &xo, &yo);
-	}
-
-	cairo_move_to(cr, o->x, o->y);
-	gdk_color_parse(o->style->colour, &col);
+	cairo_move_to(cr, o->base.x, o->base.y);
+	gdk_color_parse(o->base.style->colour, &col);
 	gdk_cairo_set_source_color(cr, &col);  /* FIXME: Honour alpha as well */
+	pango_cairo_update_layout(cr, o->layout);
 	pango_cairo_show_layout(cr, o->layout);
-
-	if ( furniture ) {
-		o->x += xo;
-		o->y += yo;
-	}
 }
 
 
-static void draw_caret(cairo_t *cr, struct object *o)
+static void draw_caret(cairo_t *cr, struct object *op)
 {
 	int line, xpos;
 	double xposd, cx;
 	double clow, chigh;
 	const double t = 1.8;
+	struct text_object *o = (struct text_object *)op;
 
-	assert(o->type == TEXT);
-
+	assert(o->base.type == TEXT);
 
 	pango_layout_index_to_line_x(o->layout, o->insertion_point,
 	                             0, &line, &xpos);
 
 	xposd = xpos/PANGO_SCALE;
-	cx = o->x+xposd;
-	clow = o->y;
-	chigh = o->y+o->bb_height;
+	cx = o->base.x+xposd;
+	clow = o->base.y;
+	chigh = o->base.y+o->base.bb_height;
 
 	cairo_move_to(cr, cx, clow);
 	cairo_line_to(cr, cx, chigh);
@@ -352,34 +383,52 @@ static void draw_caret(cairo_t *cr, struct object *o)
 }
 
 
-struct object *add_text_object(struct slide *s, double x, double y,
-                               struct style *sty)
+static void delete_text_object(struct object *op)
 {
-	struct object *new;
+	struct text_object *o = (struct text_object *)op;
 
-	new = new_object(TEXT, sty);
+	if ( o->layout != NULL ) g_object_unref(o->layout);
+	if ( o->fontdesc != NULL ) pango_font_description_free(o->fontdesc);
+}
 
-	new->x = x;  new->y = y;
-	new->bb_width = 10.0;
-	new->bb_height = 40.0;
+
+static struct object *add_text_object(struct slide *s, double x, double y,
+                                      struct style *sty,
+                                      struct text_toolinfo *ti)
+{
+	struct text_object *new;
+
+	new = calloc(1, sizeof(*new));
+	if ( new == NULL ) return NULL;
+
+	/* Base properties */
+	new->base.x = x;  new->base.y = y;
+	new->base.bb_width = 10.0;
+	new->base.bb_height = 40.0;
+	new->base.type = TEXT;
+	new->base.empty = 1;
+	new->base.parent = NULL;
+	new->base.style = sty;
+
+	/* Text-specific stuff */
 	new->text = malloc(1);
 	new->text[0] = '\0';
 	new->text_len = 1;
 	new->insertion_point = 0;
-	new->layout = NULL;
+	new->layout = pango_layout_new(ti->pc);
 	new->fontdesc = NULL;
 
 	/* Methods for this object */
-	new->render_object = render_text_object;
-	new->draw_editing_overlay = draw_caret;
+	new->base.render_object = render_text_object;
+	new->base.delete_object = delete_text_object;
 
-	if ( add_object_to_slide(s, new) ) {
-		free_object(new);
+	if ( add_object_to_slide(s, (struct object *)new) ) {
+		delete_object((struct object *)new);
 		return NULL;
 	}
 	s->object_seq++;
 
-	return new;
+	return (struct object *)new;
 }
 
 
@@ -387,9 +436,10 @@ static void click_create(struct presentation *p, struct toolinfo *tip,
                          double x, double y)
 {
 	struct object *n;
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
 	/* FIXME: Insert ESP here and possibly select a different style */
-	n = add_text_object(p->view_slide, x, y, p->ss->styles[0]);
+	n = add_text_object(p->view_slide, x, y, p->ss->styles[0], ti);
 	p->editing_object = n;
 }
 
@@ -399,19 +449,18 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 {
 	int xp, yp;
 	gboolean v;
-	struct object *o = p->editing_object;
+	struct text_object *o = (struct text_object *)p->editing_object;
 	int idx, trail;
 
-	assert(o->type == TEXT);
+	assert(o->base.type == TEXT);
 
-	xp = (x - o->x)*PANGO_SCALE;
-	yp = (y - o->y)*PANGO_SCALE;
+	xp = (x - o->base.x)*PANGO_SCALE;
+	yp = (y - o->base.y)*PANGO_SCALE;
 
 	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
 
 	o->insertion_point = idx+trail;
 }
-
 
 
 static void drag_object(struct toolinfo *tip, struct presentation *p,
@@ -421,13 +470,14 @@ static void drag_object(struct toolinfo *tip, struct presentation *p,
 }
 
 
-static void create_default(struct presentation *p, struct style *sty)
+static void create_default(struct presentation *p, struct style *sty,
+                           struct toolinfo *tip)
 {
 	struct object *n;
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
-	n = add_text_object(p->view_slide, 0.0, 0.0, sty);
+	n = add_text_object(p->view_slide, 0.0, 0.0, sty, ti);
 	p->editing_object = n;
-
 }
 
 
@@ -439,15 +489,27 @@ static void select_object(struct object *o,struct toolinfo *tip)
 
 static void deselect_object(struct object *o,struct toolinfo *tip)
 {
-	/* Do nothing */
+	if ( (o != NULL) && o->empty ) {
+		delete_object(o);
+	}
 }
 
 
-struct toolinfo *initialise_text_tool()
+static void draw_overlay(cairo_t *cr, struct object *o)
+{
+	draw_editing_box(cr, o->x, o->y,
+	                     o->bb_width, o->bb_height);
+	draw_caret(cr, o);
+}
+
+
+struct toolinfo *initialise_text_tool(GtkWidget *w)
 {
 	struct text_toolinfo *ti;
 
 	ti = malloc(sizeof(*ti));
+
+	ti->pc = gtk_widget_get_pango_context(w);
 
 	ti->base.click_create = click_create;
 	ti->base.click_select = click_select;
@@ -455,6 +517,7 @@ struct toolinfo *initialise_text_tool()
 	ti->base.select = select_object;
 	ti->base.deselect = deselect_object;
 	ti->base.drag_object = drag_object;
+	ti->base.draw_editing_overlay = draw_overlay;
 
 	return (struct toolinfo *)ti;
 }

@@ -32,6 +32,7 @@
 #include "presentation.h"
 #include "objects.h"
 #include "mainwindow.h"
+#include "slide_render.h"
 
 
 struct select_toolinfo
@@ -44,12 +45,6 @@ struct select_toolinfo
 
 static void click_create(struct presentation *p, struct toolinfo *tip,
                          double x, double y)
-{
-	/* Do absolutely nothing */
-}
-
-
-static void create_default(struct presentation *p, struct style *sty)
 {
 	/* Do absolutely nothing */
 }
@@ -76,9 +71,7 @@ static void drag_object(struct toolinfo *tip, struct presentation *p,
 
 	p->view_slide->object_seq++;
 
-	/* FIXME: Invalidate only the necessary region */
-	gdk_window_invalidate_rect(p->drawingarea->window,
-	                           NULL, FALSE);
+	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
 }
 
 
@@ -94,6 +87,12 @@ static void deselect_object(struct object *o,struct toolinfo *tip)
 }
 
 
+static void draw_overlay(cairo_t *cr, struct object *o)
+{
+	draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
+}
+
+
 struct toolinfo *initialise_select_tool()
 {
 	struct select_toolinfo *ti;
@@ -102,10 +101,11 @@ struct toolinfo *initialise_select_tool()
 
 	ti->base.click_create = click_create;
 	ti->base.click_select = click_select;
-	ti->base.create_default = create_default;
+	ti->base.create_default = NULL;
 	ti->base.select = select_object;
 	ti->base.deselect = deselect_object;
 	ti->base.drag_object = drag_object;
+	ti->base.draw_editing_overlay = draw_overlay;
 
 	return (struct toolinfo *)ti;
 }

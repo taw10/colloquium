@@ -34,44 +34,20 @@
 #include "mainwindow.h"
 
 
-struct object *new_object(enum objtype t, struct style *sty)
-{
-	struct object *new;
-
-	new = calloc(1, sizeof(struct object));
-	if ( new == NULL ) return NULL;
-
-	new->type = t;
-	new->empty = 1;
-	new->parent = NULL;
-	new->style = sty;
-
-	return new;
-}
-
-
-void free_object(struct object *o)
-{
-	if ( o->layout != NULL ) g_object_unref(o->layout);
-	if ( o->fontdesc != NULL ) pango_font_description_free(o->fontdesc);
-	free(o);
-}
-
-
 struct object *add_image_object(struct slide *s, double x, double y,
                                 const char *filename,
                                 double width, double height)
 {
 	struct object *new;
 
-	new = new_object(IMAGE, NULL);
+	new = NULL; /* FIXME! Generally */
 
 	new->x = x;  new->y = y;
 	new->bb_width = width;
 	new->bb_height = height;
 
 	if ( add_object_to_slide(s, new) ) {
-		free_object(new);
+		delete_object(new);
 		return NULL;
 	}
 	s->object_seq++;
@@ -111,6 +87,7 @@ void notify_style_update(struct presentation *p, struct style *sty)
 
 void delete_object(struct object *o)
 {
-	remove_object_from_slide(o->parent, o);
-	free_object(o);
+	if ( o->parent != NULL ) remove_object_from_slide(o->parent, o);
+	o->delete_object(o);
+	free(o);
 }

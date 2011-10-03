@@ -52,11 +52,13 @@ struct toolinfo
 	                     double x, double y);
 	void (*click_select)(struct presentation *p, struct toolinfo *tip,
 	                     double x, double y);
-	void (*create_default)(struct presentation *p, struct style *sty);
+	void (*create_default)(struct presentation *p, struct style *sty,
+	                       struct toolinfo *tip);
 	void (*select)(struct object *o, struct toolinfo *tip);
 	void (*deselect)(struct object *o, struct toolinfo *tip);
 	void (*drag_object)(struct toolinfo *tip, struct presentation *p,
 	                    struct object *o, double x, double y);
+	void (*draw_editing_overlay)(cairo_t *cr, struct object *o);
 };
 
 

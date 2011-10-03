@@ -33,4 +33,7 @@
 extern int render_slide(struct slide *s);
 extern void check_redraw_slide(struct slide *s);
 
+extern void draw_editing_box(cairo_t *cr, double xmin, double ymin,
+                             double width, double height);
+
 #endif	/* SLIDE_RENDER_H */

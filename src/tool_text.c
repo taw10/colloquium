@@ -51,6 +51,8 @@ struct text_object
 	int                   insertion_point;
 	PangoLayout          *layout;
 	PangoFontDescription *fontdesc;
+	double                offs_x;
+	double                offs_y;
 };
 
 
@@ -105,39 +107,33 @@ static void calculate_size_from_style(struct text_object *o,
 
 static void calculate_position_from_style(struct text_object *o,
                                           double eright, double ebottom,
-                                          double mw, double mh,
-                                          double *pxo, double *pyo)
+                                          double mw, double mh)
 {
 	double xo, yo;
-	PangoRectangle ink, logical;
 
-	pango_layout_get_extents(o->layout, &ink, &logical);
-	xo = ink.x/PANGO_SCALE;  yo = logical.y/PANGO_SCALE;
+	xo = o->base.bb_width;  yo = o->base.bb_height;
 
 	switch ( o->base.style->halign ) {
 	case J_LEFT :
-		o->base.x = -xo + o->base.style->margin_left;
+		o->base.x = o->base.style->margin_left;
 		break;
 	case J_RIGHT :
-		o->base.x = -xo + eright - o->base.bb_width;
+		o->base.x = eright - xo;
 		break;
 	case J_CENTER :
-		o->base.x = mw/2.0 - o->base.bb_width/2.0
-		                   - xo + o->base.style->offset_x;
+		o->base.x = mw/2.0 - xo/2.0 + o->base.style->offset_x;
 		break;
 	}
 
+	/* Correct if centering crashes into opposite margin */
 	if ( o->base.style->halign == J_CENTER )
 	{
-		if ( o->base.x+xo < o->base.style->margin_left ) {
-			o->base.x = o->base.style->margin_left - xo;
+		if ( o->base.x < o->base.style->margin_left ) {
+			o->base.x = o->base.style->margin_left;
 		}
 
-		if ( o->base.x+xo + o->base.bb_width >
-		                       mw-o->base.style->margin_right )
-		{
-			o->base.x = mw-o->base.style->margin_right
-			              - xo - o->base.bb_width;
+		if ( o->base.x + xo > eright ) {
+			o->base.x = eright - xo;
 		}
 	}
 
@@ -167,19 +163,16 @@ static void calculate_position_from_style(struct text_object *o,
 			               - yo - o->base.bb_height;
 		}
 	}
-
-	*pxo = xo;  *pyo = yo;
 }
 
 
 static void update_text(struct text_object *o)
 {
-	PangoRectangle ink, logical;
+	PangoRectangle logical;
 	double eright = 0.0;
 	double ebottom = 0.0;
 	double mw = 0.0;
 	double mh = 0.0;
-	double xo, yo;
 	int furniture = 0;
 
 	furniture = o->base.style != o->base.parent->parent->ss->styles[0];
@@ -194,18 +187,14 @@ static void update_text(struct text_object *o)
 		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
 	}
 
-	pango_layout_get_extents(o->layout, &ink, &logical);
-	o->base.bb_width = ink.width / PANGO_SCALE;
-	o->base.bb_height = logical.height/PANGO_SCALE;
+	pango_layout_get_extents(o->layout, NULL, &logical);
+	o->base.bb_width = logical.width / PANGO_SCALE;
+	o->base.bb_height = logical.height / PANGO_SCALE;
+	o->offs_x = logical.x / PANGO_SCALE;
+	o->offs_y = logical.y / PANGO_SCALE;
 
 	if ( furniture ) {
-		calculate_position_from_style(o, eright, ebottom,
-		                              mw, mh, &xo, &yo);
-	}
-
-	if ( furniture ) {
-		o->base.x += xo;
-		o->base.y += yo;
+		calculate_position_from_style(o, eright, ebottom, mw, mh);
 	}
 }
 
@@ -338,7 +327,7 @@ static void render_text_object(cairo_t *cr, struct object *op)
 	struct text_object *o = (struct text_object *)op;
 	GdkColor col;
 
-	cairo_move_to(cr, o->base.x, o->base.y);
+	cairo_move_to(cr, o->base.x - o->offs_x, o->base.y - o->offs_y);
 	gdk_color_parse(o->base.style->colour, &col);
 	gdk_cairo_set_source_color(cr, &col);  /* FIXME: Honour alpha as well */
 	pango_cairo_update_layout(cr, o->layout);
@@ -454,8 +443,8 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 
 	assert(o->base.type == TEXT);
 
-	xp = (x - o->base.x)*PANGO_SCALE;
-	yp = (y - o->base.y)*PANGO_SCALE;
+	xp = (x - o->base.x + o->offs_x)*PANGO_SCALE;
+	yp = (y - o->base.y + o->offs_y)*PANGO_SCALE;
 
 	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
 

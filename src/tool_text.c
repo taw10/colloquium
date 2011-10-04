@@ -49,6 +49,7 @@ struct text_object
 	char                 *text;
 	size_t                text_len;
 	int                   insertion_point;
+	int                   insertion_trail;
 	PangoLayout          *layout;
 	PangoFontDescription *fontdesc;
 	double                offs_x;
@@ -245,31 +246,31 @@ void insert_text(struct object *op, char *t)
 }
 
 
-void move_cursor_left(struct object *op)
+void move_cursor(struct object *op, int dir)
 {
 	struct text_object *o = (struct text_object *)op;
 	int new_idx, new_trail;
 
 	pango_layout_move_cursor_visually(o->layout, TRUE, o->insertion_point,
-	                           0,  -1, &new_idx, &new_trail);
+	                           o->insertion_trail,
+	                           dir, &new_idx, &new_trail);
 
 	if ( (new_idx >= 0) && (new_idx < G_MAXINT) ) {
 		o->insertion_point = new_idx;
+		o->insertion_trail = new_trail;
 	}
+}
+
+
+void move_cursor_left(struct object *op)
+{
+	move_cursor(op, -1);
 }
 
 
 void move_cursor_right(struct object *op)
 {
-	struct text_object *o = (struct text_object *)op;
-	int new_idx, new_trail;
-
-	pango_layout_move_cursor_visually(o->layout, TRUE, o->insertion_point,
-	                                  0, +1, &new_idx, &new_trail);
-
-	if ( (new_idx >= 0) && (new_idx < G_MAXINT) ) {
-		o->insertion_point = new_idx;
-	}
+	move_cursor(op, +1);
 }
 
 
@@ -319,7 +320,9 @@ static void draw_caret(cairo_t *cr, struct object *op)
 
 	assert(o->base.type == TEXT);
 
-	pango_layout_get_cursor_pos(o->layout, o->insertion_point, &pos, NULL);
+	pango_layout_get_cursor_pos(o->layout,
+	                            o->insertion_point+o->insertion_trail,
+	                            &pos, NULL);
 
 	xposd = pos.x/PANGO_SCALE;
 	cx = o->base.x - o->offs_x + xposd;
@@ -378,6 +381,7 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 	new->text[0] = '\0';
 	new->text_len = 1;
 	new->insertion_point = 0;
+	new->insertion_trail = 0;
 	new->layout = pango_layout_new(ti->pc);
 	new->fontdesc = NULL;
 

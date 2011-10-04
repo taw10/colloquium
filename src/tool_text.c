@@ -245,80 +245,54 @@ void insert_text(struct object *op, char *t)
 }
 
 
-static int find_prev_index(const char *t, int p)
-{
-	int i, nback;
-
-	if ( p == 0 ) return 0;
-
-	if ( !(t[p-1] & 0x80) ) {
-		nback = 1;
-	} else {
-		nback = 0;
-		for ( i=1; i<=6; i++ ) {
-			if ( p-i == 0 ) return 0;
-			if ( !(t[p-i] & 0xC0) ) nback++;
-		}
-	}
-
-	return p - nback;
-}
-
-
-static int find_next_index(const char *t, int p)
-{
-	int i, nfor;
-
-	if ( t[p] == '\0' ) return p;
-
-	if ( !(t[p+1] & 0x80) ) {
-		nfor = 1;
-	} else {
-		nfor = 0;
-		for ( i=1; i<=6; i++ ) {
-			if ( t[p+i] == '\0' ) return p+i;
-			if ( !(t[p+i] & 0xC0) ) nfor++;
-		}
-	}
-
-	return p + nfor;
-}
-
-
-void handle_text_backspace(struct object *op)
-{
-	int prev_index;
-	struct text_object *o = (struct text_object *)op;
-
-	assert(o->base.type == TEXT);
-
-	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
-
-	prev_index = find_prev_index(o->text, o->insertion_point);
-
-	memmove(o->text+prev_index, o->text+o->insertion_point,
-	        o->text_len-o->insertion_point);
-
-	o->insertion_point = prev_index;
-
-	if ( strlen(o->text) == 0 ) o->base.empty = 1;
-
-	update_text(o);
-	o->base.parent->object_seq++;
-}
-
-
 void move_cursor_left(struct object *op)
 {
 	struct text_object *o = (struct text_object *)op;
-	o->insertion_point = find_prev_index(o->text, o->insertion_point);
+	int new_idx, new_trail;
+
+	pango_layout_move_cursor_visually(o->layout, TRUE, o->insertion_point,
+	                           0,  +1, &new_idx, &new_trail);
+
+	if ( (new_idx > 0) && (new_idx < G_MAXINT) ) {
+		o->insertion_point = new_idx;
+	}
 }
 
 
 void move_cursor_right(struct object *op)
 {
 	struct text_object *o = (struct text_object *)op;
-	o->insertion_point = find_next_index(o->text, o->insertion_point);
+	int new_idx, new_trail;
+
+	pango_layout_move_cursor_visually(o->layout, TRUE, o->insertion_point,
+	                                  0, -1, &new_idx, &new_trail);
+
+	if ( (new_idx > 0) && (new_idx < G_MAXINT) ) {
+		o->insertion_point = new_idx;
+	}
+}
+
+
+void handle_text_backspace(struct object *op)
+{
+	int old_idx, new_idx;
+	struct text_object *o = (struct text_object *)op;
+
+	assert(o->base.type == TEXT);
+
+	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
+
+	old_idx = o->insertion_point;
+	move_cursor_left(op);
+	new_idx = o->insertion_point;
+
+	memmove(o->text+new_idx, o->text+old_idx,
+	        o->text_len-new_idx);
+
+	if ( strlen(o->text) == 0 ) o->base.empty = 1;
+
+	update_text(o);
+	o->base.parent->object_seq++;
 }
 
 
@@ -337,21 +311,23 @@ static void render_text_object(cairo_t *cr, struct object *op)
 
 static void draw_caret(cairo_t *cr, struct object *op)
 {
-	int line, xpos;
-	double xposd, cx;
+	double xposd, yposd, cx;
 	double clow, chigh;
+	PangoRectangle pos;
 	const double t = 1.8;
 	struct text_object *o = (struct text_object *)op;
 
 	assert(o->base.type == TEXT);
 
-	pango_layout_index_to_line_x(o->layout, o->insertion_point,
-	                             0, &line, &xpos);
+	pango_layout_get_cursor_pos(o->layout, o->insertion_point, &pos, NULL);
 
-	xposd = xpos/PANGO_SCALE;
-	cx = o->base.x+xposd;
-	clow = o->base.y;
-	chigh = o->base.y+o->base.bb_height;
+	xposd = pos.x/PANGO_SCALE;
+	cx = o->base.x + xposd;
+	yposd = pos.y/PANGO_SCALE;
+	clow = o->base.y + yposd;
+	chigh = clow + (pos.height/PANGO_SCALE);
+
+	printf("Cursor %f, %f-%f\n", cx, clow, chigh);
 
 	cairo_move_to(cr, cx, clow);
 	cairo_line_to(cr, cx, chigh);

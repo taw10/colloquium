@@ -29,10 +29,6 @@
 
 #include <gtk/gtk.h>
 
-extern void insert_text(struct object *o, char *t);
-extern void handle_text_backspace(struct object *o);
-extern void move_cursor_left(struct object *o);
-extern void move_cursor_right(struct object *o);
 
 extern struct toolinfo *initialise_text_tool(GtkWidget *w);
 

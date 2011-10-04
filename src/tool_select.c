@@ -94,6 +94,18 @@ static void draw_overlay(cairo_t *cr, struct object *o)
 }
 
 
+static void key_pressed(struct object *o, guint keyval, struct toolinfo *tip)
+{
+	/* Do nothing */
+}
+
+
+static void im_commit(struct object *o, gchar *str, struct toolinfo *tip)
+{
+	/* Do nothing */
+}
+
+
 struct toolinfo *initialise_select_tool()
 {
 	struct select_toolinfo *ti;
@@ -107,6 +119,8 @@ struct toolinfo *initialise_select_tool()
 	ti->base.deselect = deselect_object;
 	ti->base.drag_object = drag_object;
 	ti->base.draw_editing_overlay = draw_overlay;
+	ti->base.key_pressed = key_pressed;
+	ti->base.im_commit = im_commit;
 
 	return (struct toolinfo *)ti;
 }

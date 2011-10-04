@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "presentation.h"
 #include "objects.h"
@@ -452,13 +453,13 @@ static void create_default(struct presentation *p, struct style *sty,
 }
 
 
-static void select_object(struct object *o,struct toolinfo *tip)
+static void select_object(struct object *o, struct toolinfo *tip)
 {
 	/* Do nothing */
 }
 
 
-static int deselect_object(struct object *o,struct toolinfo *tip)
+static int deselect_object(struct object *o, struct toolinfo *tip)
 {
 	if ( (o != NULL) && o->empty ) {
 		delete_object(o);
@@ -477,6 +478,34 @@ static void draw_overlay(cairo_t *cr, struct object *o)
 }
 
 
+static void key_pressed(struct object *o, guint keyval, struct toolinfo *tip)
+{
+	if ( o == NULL ) return;
+
+	switch ( keyval ) {
+
+	case GDK_KEY_BackSpace :
+		handle_text_backspace(o);
+		break;
+
+	case GDK_KEY_Left :
+		move_cursor_left(o);
+		break;
+
+	case GDK_KEY_Right :
+		move_cursor_right(o);
+		break;
+
+	}
+}
+
+
+static void im_commit(struct object *o, gchar *str, struct toolinfo *tip)
+{
+	insert_text(o, str);
+}
+
+
 struct toolinfo *initialise_text_tool(GtkWidget *w)
 {
 	struct text_toolinfo *ti;
@@ -492,6 +521,8 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	ti->base.deselect = deselect_object;
 	ti->base.drag_object = drag_object;
 	ti->base.draw_editing_overlay = draw_overlay;
+	ti->base.key_pressed = key_pressed;
+	ti->base.im_commit = im_commit;
 
 	return (struct toolinfo *)ti;
 }

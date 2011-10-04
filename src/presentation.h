@@ -59,6 +59,9 @@ struct toolinfo
 	void (*drag_object)(struct toolinfo *tip, struct presentation *p,
 	                    struct object *o, double x, double y);
 	void (*draw_editing_overlay)(cairo_t *cr, struct object *o);
+	void (*key_pressed)(struct object *o, guint keyval,
+	                    struct toolinfo *tip);
+	void (*im_commit)(struct object *o, gchar *str, struct toolinfo *tip);
 };
 
 

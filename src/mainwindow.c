@@ -557,7 +557,7 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 	if ( p->editing_object == NULL ) return FALSE;
 	if ( p->editing_object->type != TEXT ) return FALSE;
 
-	insert_text(p->editing_object, str);
+	p->cur_tool->im_commit(p->editing_object, str, p->cur_tool);
 
 	redraw_object(p->editing_object);
 
@@ -573,31 +573,9 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 	/* Throw the event to the IM context and let it sort things out */
 	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context),
 	                                   event);
-
 	if ( r ) return FALSE;  /* IM ate it */
 
-	if ( (p->editing_object != NULL)
-	  && (p->editing_object->type == TEXT) )
-	{
-		switch ( event->keyval ) {
-
-		case GDK_KEY_BackSpace :
-			handle_text_backspace(p->editing_object);
-			redraw_object(p->editing_object);
-			break;
-
-		case GDK_KEY_Left :
-			move_cursor_left(p->editing_object);
-			redraw_object(p->editing_object);
-			break;
-
-		case GDK_KEY_Right :
-			move_cursor_right(p->editing_object);
-			redraw_object(p->editing_object);
-			break;
-
-		}
-	}
+	p->cur_tool->key_pressed(p->editing_object, event->keyval, p->cur_tool);
 
 	switch ( event->keyval ) {
 

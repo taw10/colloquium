@@ -59,7 +59,7 @@ struct text_object
 
 static void calculate_size_from_style(struct text_object *o,
                                       double *peright, double *pebottom,
-                                      double *pmw, double *pmh)
+                                      double *pmw, double *pmh, int furniture)
 {
 	double max_width, max_height;
 	double ebottom, eright, mw, mh;
@@ -74,8 +74,12 @@ static void calculate_size_from_style(struct text_object *o,
 	*peright = eright;  *pebottom = ebottom;
 	*pmw = mw;  *pmh = mh;
 
-	max_width = mw - o->base.style->margin_left
-	                      - o->base.style->margin_right;
+	if ( furniture ) {
+		max_width = mw - o->base.style->margin_left
+		                      - o->base.style->margin_right;
+	} else {
+		max_width = eright - o->base.x;
+	}
 
 	/* Use the provided maximum width if it exists and is smaller */
 	if ( o->base.style->use_max_width
@@ -84,8 +88,12 @@ static void calculate_size_from_style(struct text_object *o,
 		max_width = o->base.style->max_width;
 	}
 
-	max_height = mh - o->base.style->margin_top
-	                           - o->base.style->margin_bottom;
+	if ( furniture ) {
+		max_height = mh - o->base.style->margin_top
+		                           - o->base.style->margin_bottom;
+	} else {
+		max_height = ebottom - o->base.y;
+	}
 
 	pango_layout_set_width(o->layout, max_width*PANGO_SCALE);
 	pango_layout_set_height(o->layout, max_height*PANGO_SCALE);
@@ -179,7 +187,7 @@ static void update_text(struct text_object *o)
 	o->fontdesc = pango_font_description_from_string(o->base.style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
+	calculate_size_from_style(o, &eright, &ebottom, &mw, &mh, furniture);
 
 	pango_layout_get_extents(o->layout, NULL, &logical);
 	o->base.bb_width = logical.width / PANGO_SCALE;

@@ -278,9 +278,9 @@ void handle_text_backspace(struct object *op)
 
 	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
 
-	old_idx = o->insertion_point;
+	old_idx = o->insertion_point + o->insertion_trail;
 	move_cursor_left(op);
-	new_idx = o->insertion_point;
+	new_idx = o->insertion_point + o->insertion_trail;
 
 	memmove(o->text+new_idx, o->text+old_idx,
 	        o->text_len-new_idx);

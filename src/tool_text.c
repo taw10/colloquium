@@ -251,9 +251,9 @@ void move_cursor_left(struct object *op)
 	int new_idx, new_trail;
 
 	pango_layout_move_cursor_visually(o->layout, TRUE, o->insertion_point,
-	                           0,  +1, &new_idx, &new_trail);
+	                           0,  -1, &new_idx, &new_trail);
 
-	if ( (new_idx > 0) && (new_idx < G_MAXINT) ) {
+	if ( (new_idx >= 0) && (new_idx < G_MAXINT) ) {
 		o->insertion_point = new_idx;
 	}
 }
@@ -265,9 +265,9 @@ void move_cursor_right(struct object *op)
 	int new_idx, new_trail;
 
 	pango_layout_move_cursor_visually(o->layout, TRUE, o->insertion_point,
-	                                  0, -1, &new_idx, &new_trail);
+	                                  0, +1, &new_idx, &new_trail);
 
-	if ( (new_idx > 0) && (new_idx < G_MAXINT) ) {
+	if ( (new_idx >= 0) && (new_idx < G_MAXINT) ) {
 		o->insertion_point = new_idx;
 	}
 }
@@ -322,12 +322,10 @@ static void draw_caret(cairo_t *cr, struct object *op)
 	pango_layout_get_cursor_pos(o->layout, o->insertion_point, &pos, NULL);
 
 	xposd = pos.x/PANGO_SCALE;
-	cx = o->base.x + xposd;
+	cx = o->base.x - o->offs_x + xposd;
 	yposd = pos.y/PANGO_SCALE;
-	clow = o->base.y + yposd;
+	clow = o->base.y - o->offs_y + yposd;
 	chigh = clow + (pos.height/PANGO_SCALE);
-
-	printf("Cursor %f, %f-%f\n", cx, clow, chigh);
 
 	cairo_move_to(cr, cx, clow);
 	cairo_line_to(cr, cx, chigh);

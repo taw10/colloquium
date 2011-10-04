@@ -197,7 +197,7 @@ void insert_text(struct object *op, char *t)
 {
 	struct text_object *o = (struct text_object *)op;
 	char *tmp;
-	size_t tlen, olen;
+	size_t tlen, olen, offs;
 	int i;
 
 	assert(o->base.type == TEXT);
@@ -219,14 +219,16 @@ void insert_text(struct object *op, char *t)
 	tmp = malloc(o->text_len);
 	if ( tmp == NULL ) return;
 
-	for ( i=0; i<o->insertion_point; i++ ) {
+	offs = o->insertion_point + o->insertion_trail;
+
+	for ( i=0; i<offs; i++ ) {
 		tmp[i] = o->text[i];
 	}
 	for ( i=0; i<tlen; i++ ) {
-		tmp[i+o->insertion_point] = t[i];
+		tmp[i+offs] = t[i];
 	}
 	for ( i=0; i<olen-o->insertion_point; i++ ) {
-		tmp[i+o->insertion_point+tlen] = o->text[i+o->insertion_point];
+		tmp[i+offs+tlen] = o->text[i+offs];
 	}
 	tmp[olen+tlen] = '\0';
 	memcpy(o->text, tmp, o->text_len);
@@ -419,7 +421,8 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 
 	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
 
-	o->insertion_point = idx+trail;
+	o->insertion_point = idx;
+	o->insertion_trail = trail;
 }
 
 

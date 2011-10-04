@@ -143,11 +143,10 @@ static void calculate_position_from_style(struct text_object *o,
 		o->base.y = o->base.style->margin_top;
 		break;
 	case V_BOTTOM :
-		o->base.y = ebottom - o->base.bb_height;
+		o->base.y = ebottom - yo;
 		break;
 	case V_CENTER :
-		o->base.y = mh/2.0 - o->base.bb_height/2.0 + yo
-		                       - o->base.style->offset_y;
+		o->base.y = mh/2.0 - yo/2.0 + o->base.style->offset_y;
 		break;
 	}
 
@@ -157,11 +156,9 @@ static void calculate_position_from_style(struct text_object *o,
 			o->base.y = o->base.style->margin_top;
 		}
 
-		if ( o->base.y+yo + o->base.bb_height > mh
-		             - o->base.style->margin_bottom )
+		if ( o->base.y+yo + yo > ebottom )
 		{
-			o->base.y = mh-o->base.style->margin_bottom
-			               - yo - o->base.bb_height;
+			o->base.y = ebottom - yo;
 		}
 	}
 }

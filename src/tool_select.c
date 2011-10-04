@@ -81,9 +81,10 @@ static void select_object(struct object *o,struct toolinfo *tip)
 }
 
 
-static void deselect_object(struct object *o,struct toolinfo *tip)
+static int deselect_object(struct object *o,struct toolinfo *tip)
 {
 	/* Do nothing */
+	return 0;
 }
 
 

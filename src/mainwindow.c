@@ -369,7 +369,8 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
                          struct presentation *p)
 {
 	if ( p->editing_object != NULL ) {
-		p->cur_tool->deselect(p->editing_object, p->cur_tool);
+		int d = p->cur_tool->deselect(p->editing_object, p->cur_tool);
+		if ( d ) p->editing_object = NULL;
 	}
 
 	switch ( gtk_radio_action_get_current_value(action) )

@@ -55,7 +55,7 @@ struct toolinfo
 	void (*create_default)(struct presentation *p, struct style *sty,
 	                       struct toolinfo *tip);
 	void (*select)(struct object *o, struct toolinfo *tip);
-	void (*deselect)(struct object *o, struct toolinfo *tip);
+	int  (*deselect)(struct object *o, struct toolinfo *tip);
 	void (*drag_object)(struct toolinfo *tip, struct presentation *p,
 	                    struct object *o, double x, double y);
 	void (*draw_editing_overlay)(cairo_t *cr, struct object *o);

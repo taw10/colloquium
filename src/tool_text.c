@@ -179,11 +179,7 @@ static void update_text(struct text_object *o)
 	o->fontdesc = pango_font_description_from_string(o->base.style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	if ( furniture ) {
-		calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
-	} else {
-		pango_layout_set_alignment(o->layout, PANGO_ALIGN_LEFT);
-	}
+	calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
 
 	pango_layout_get_extents(o->layout, NULL, &logical);
 	o->base.bb_width = logical.width / PANGO_SCALE;
@@ -451,11 +447,14 @@ static void select_object(struct object *o,struct toolinfo *tip)
 }
 
 
-static void deselect_object(struct object *o,struct toolinfo *tip)
+static int deselect_object(struct object *o,struct toolinfo *tip)
 {
 	if ( (o != NULL) && o->empty ) {
 		delete_object(o);
+		return 1;
 	}
+
+	return 0;
 }
 
 

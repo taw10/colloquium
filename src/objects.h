@@ -52,6 +52,7 @@ struct object
 	int            empty;
 
 	void           (*render_object)(cairo_t *cr, struct object *o);
+	void           (*update_object)(struct object *o);
 	void           (*delete_object)(struct object *o);
 };
 

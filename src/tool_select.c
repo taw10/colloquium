@@ -65,10 +65,20 @@ static void drag_object(struct toolinfo *tip, struct presentation *p,
                         struct object *o, double x, double y)
 {
 	struct select_toolinfo *ti = (struct select_toolinfo *)tip;
+	double eright, ebottom;
 
 	o->x = x + ti->drag_offs_x;
 	o->y = y + ti->drag_offs_y;
 
+	/* Enforce margins */
+	eright = o->parent->parent->slide_width - o->style->margin_right;
+	ebottom = o->parent->parent->slide_height - o->style->margin_bottom;
+	if ( o->x < o->style->margin_left ) o->x = o->style->margin_left;
+	if ( o->y < o->style->margin_top ) o->y = o->style->margin_top;
+	if ( o->x+o->bb_width > eright ) o->x = eright - o->bb_width;
+	if ( o->y+o->bb_height > ebottom ) o->y = ebottom - o->bb_height;
+
+	o->update_object(o);
 	p->view_slide->object_seq++;
 
 	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);

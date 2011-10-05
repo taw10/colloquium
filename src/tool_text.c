@@ -269,12 +269,14 @@ void move_cursor(struct object *op, int dir)
 void move_cursor_left(struct object *op)
 {
 	move_cursor(op, -1);
+	redraw_overlay(op->parent->parent);
 }
 
 
 void move_cursor_right(struct object *op)
 {
 	move_cursor(op, +1);
+	redraw_overlay(op->parent->parent);
 }
 
 
@@ -298,6 +300,8 @@ void handle_text_backspace(struct object *op)
 
 	update_text(o);
 	o->base.parent->object_seq++;
+
+	redraw_overlay(op->parent->parent);
 }
 
 
@@ -353,6 +357,13 @@ static void draw_caret(cairo_t *cr, struct object *op)
 }
 
 
+static void update_text_object(struct object *op)
+{
+	struct text_object *o = (struct text_object *)op;
+	update_text(o);
+}
+
+
 static void delete_text_object(struct object *op)
 {
 	struct text_object *o = (struct text_object *)op;
@@ -392,6 +403,7 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 	/* Methods for this object */
 	new->base.render_object = render_text_object;
 	new->base.delete_object = delete_text_object;
+	new->base.update_object = update_text_object;
 
 	if ( add_object_to_slide(s, (struct object *)new) ) {
 		delete_object((struct object *)new);

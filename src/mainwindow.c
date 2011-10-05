@@ -545,7 +545,7 @@ static void redraw_object(struct object *o)
 }
 
 
-static void redraw_overlay(struct presentation *p)
+void redraw_overlay(struct presentation *p)
 {
 	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
 }

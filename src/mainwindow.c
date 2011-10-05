@@ -272,6 +272,7 @@ static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
 void notify_slide_changed(struct presentation *p)
 {
 	p->editing_object = NULL;
+	update_toolbar(p);
 	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
 
 	if ( p->slideshow != NULL ) {

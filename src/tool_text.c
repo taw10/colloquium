@@ -423,6 +423,7 @@ static void click_create(struct presentation *p, struct toolinfo *tip,
 
 	/* FIXME: Insert ESP here and possibly select a different style */
 	n = add_text_object(p->view_slide, x, y, p->ss->styles[0], ti);
+	update_text((struct text_object *)n);
 	p->editing_object = n;
 }
 

@@ -72,6 +72,7 @@ void notify_style_update(struct presentation *p, struct style *sty)
 
 			if ( s->objects[j]->style != sty ) continue;
 
+			s->objects[j]->update_object(s->objects[j]);
 			s->object_seq++;
 			if ( p->view_slide == s ) changed = 1;
 			break;

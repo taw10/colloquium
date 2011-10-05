@@ -461,6 +461,7 @@ static void create_default(struct presentation *p, struct style *sty,
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
 	n = add_text_object(p->view_slide, 0.0, 0.0, sty, ti);
+	update_text((struct text_object *)n);
 	p->editing_object = n;
 }
 

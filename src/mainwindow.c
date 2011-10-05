@@ -389,6 +389,15 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
 }
 
 
+static void force_tool(struct presentation *p, enum tool_id tool)
+{
+	GtkAction *action;
+	action = gtk_ui_manager_get_action(p->ui,
+	                                   "/ui/displaywindowtoolbar/select");
+	gtk_radio_action_set_current_value(GTK_RADIO_ACTION(action), tool);
+}
+
+
 static gint add_furniture(GtkWidget *widget, struct presentation *p)
 {
 	gchar *name;
@@ -399,6 +408,7 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	g_free(name);
 	if ( sty == NULL ) return 0;
 
+	force_tool(p, TOOL_TEXT);
 	p->text_tool->create_default(p, sty, p->text_tool);
 
 	return 0;

@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include <gdk/gdkkeysyms.h>
 
 #include "presentation.h"
@@ -55,6 +56,7 @@ struct text_object
 	PangoFontDescription *fontdesc;
 	double                offs_x;
 	double                offs_y;
+	int                   size_fixed;
 };
 
 
@@ -188,13 +190,26 @@ static void update_text(struct text_object *o)
 	o->fontdesc = pango_font_description_from_string(o->base.style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	calculate_size_from_style(o, &eright, &ebottom, &mw, &mh, furniture);
+	if ( !o->size_fixed ) {
 
-	pango_layout_get_extents(o->layout, NULL, &logical);
-	o->base.bb_width = logical.width / PANGO_SCALE;
-	o->base.bb_height = logical.height / PANGO_SCALE;
-	o->offs_x = logical.x / PANGO_SCALE;
-	o->offs_y = logical.y / PANGO_SCALE;
+		calculate_size_from_style(o, &eright, &ebottom,
+		                          &mw, &mh, furniture);
+
+		pango_layout_get_extents(o->layout, NULL, &logical);
+
+		o->base.bb_width = logical.width / PANGO_SCALE;
+		o->base.bb_height = logical.height / PANGO_SCALE;
+		o->offs_x = logical.x / PANGO_SCALE;
+		o->offs_y = logical.y / PANGO_SCALE;
+
+	} else {
+
+		pango_layout_set_width(o->layout, o->base.bb_width*PANGO_SCALE);
+		pango_layout_set_height(o->layout, o->base.bb_height*PANGO_SCALE);
+		pango_layout_set_wrap(o->layout, PANGO_WRAP_WORD_CHAR);
+		pango_layout_set_ellipsize(o->layout, PANGO_ELLIPSIZE_MIDDLE);
+
+	}
 
 	if ( furniture ) {
 		calculate_position_from_style(o, eright, ebottom, mw, mh);
@@ -470,7 +485,21 @@ static void create_default(struct presentation *p, struct style *sty,
 static void create_region(struct toolinfo *tip, struct presentation *p,
                           double x1, double y1, double x2, double y2)
 {
-	printf("Create %5.2f %5.2f %5.2f %5.2f\n", x1, y1, x2, y2);
+	struct object *n;
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
+	struct text_object *o;
+
+	n = add_text_object(p->view_slide, 0.0, 0.0, p->ss->styles[0], ti);
+	n->x = x1<x2 ? x1 : x2;
+	n->y = y1<y2 ? y1 : y2;
+	n->bb_width = fabs(x1-x2);
+	n->bb_height = fabs(y1-y2);
+
+	o = (struct text_object *)n;
+	o->size_fixed = 1;
+
+	update_text(o);
+	p->editing_object = n;
 }
 
 

@@ -610,12 +610,36 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 
 static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
-                                 struct presentation *p)
+                           struct presentation *p)
 {
-	if ( p->editing_object != NULL ) {
+	switch ( p->drag_reason ) {
+
+	case DRAG_REASON_NONE :
+		/* If there was no reason before, now there is */
+		p->drag_reason = DRAG_REASON_CREATE;
+
+		/* Start the drag, and send the first drag event */
+		p->cur_tool->start_drag_create(p->cur_tool, p,
+		                               p->start_create_drag_x,
+		                               p->start_create_drag_y);
+		p->cur_tool->drag_create(p->cur_tool, p,
+		                         event->x - p->border_offs_x,
+		                         event->y - p->border_offs_y);
+		break;
+
+	case DRAG_REASON_MOVE :
 		p->cur_tool->drag_object(p->cur_tool, p, p->editing_object,
 		                         event->x - p->border_offs_x,
 		                         event->y - p->border_offs_y);
+		break;
+
+	case DRAG_REASON_CREATE :
+		p->cur_tool->drag_create(p->cur_tool, p,
+		                         event->x - p->border_offs_x,
+		                         event->y - p->border_offs_y);
+
+		break;
+
 	}
 
 	gdk_event_request_motions(event);
@@ -640,12 +664,18 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			p->cur_tool->deselect(p->editing_object, p->cur_tool);
 			p->editing_object = NULL;
 		}
-		p->cur_tool->click_create(p, p->cur_tool, x, y);
+		p->start_create_drag_x = x;
+		p->start_create_drag_y = y;
+		p->drag_reason = DRAG_REASON_NONE;
 
 	} else {
 
+		if ( p->editing_object != NULL ) {
+			p->cur_tool->deselect(p->editing_object, p->cur_tool);
+		}
 		p->editing_object = clicked;
 		p->cur_tool->click_select(p, p->cur_tool, x, y);
+		p->drag_reason = DRAG_REASON_MOVE;
 
 	}
 
@@ -655,33 +685,66 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
-static void draw_editing_bits(cairo_t *cr, struct presentation *p,
-                              struct object *o)
+static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
+                                   struct presentation *p)
 {
-	p->cur_tool->draw_editing_overlay(cr, o);
+	gdouble x, y;
 
-	/* Draw margins */
-	cairo_move_to(cr, o->style->margin_left, -p->border_offs_y);
-	cairo_line_to(cr, o->style->margin_left,
-	                  p->slide_height+p->border_offs_y);
+	x = event->x - p->border_offs_x;
+	y = event->y - p->border_offs_y;
 
-	cairo_move_to(cr, p->slide_width-o->style->margin_right,
-	                  -p->border_offs_y);
-	cairo_line_to(cr, p->slide_width-o->style->margin_right,
-	                  p->slide_height+p->border_offs_y);
+	switch ( p->drag_reason ) {
 
-	cairo_move_to(cr, -p->border_offs_x, o->style->margin_top);
-	cairo_line_to(cr, p->slide_width+p->border_offs_x,
-	                  o->style->margin_top);
+	case DRAG_REASON_NONE :
+		p->cur_tool->click_create(p, p->cur_tool, x, y);
+		break;
 
-	cairo_move_to(cr, -p->border_offs_x,
-	                  p->slide_height-o->style->margin_bottom);
-	cairo_line_to(cr, p->slide_width+p->border_offs_x,
-	                  p->slide_height-o->style->margin_bottom);
+	case DRAG_REASON_CREATE :
+		p->cur_tool->finish_drag_create(p->cur_tool, p, x, y);
+		break;
 
-	cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
-	cairo_set_line_width(cr, 1.0);
-	cairo_stroke(cr);
+	case DRAG_REASON_MOVE :
+		/* FIXME: Update presentation and other stuff? */
+		break;
+
+	}
+
+	gtk_widget_grab_focus(GTK_WIDGET(da));
+	redraw_overlay(p);
+	return FALSE;
+}
+
+
+static void draw_overlay(cairo_t *cr, struct presentation *p)
+{
+	struct object *o = p->editing_object;
+
+	p->cur_tool->draw_editing_overlay(p->cur_tool, cr, o);
+
+	if ( o != NULL ) {
+		/* Draw margins */
+		cairo_move_to(cr, o->style->margin_left, -p->border_offs_y);
+		cairo_line_to(cr, o->style->margin_left,
+			          p->slide_height+p->border_offs_y);
+
+		cairo_move_to(cr, p->slide_width-o->style->margin_right,
+			          -p->border_offs_y);
+		cairo_line_to(cr, p->slide_width-o->style->margin_right,
+			          p->slide_height+p->border_offs_y);
+
+		cairo_move_to(cr, -p->border_offs_x, o->style->margin_top);
+		cairo_line_to(cr, p->slide_width+p->border_offs_x,
+			          o->style->margin_top);
+
+		cairo_move_to(cr, -p->border_offs_x,
+			          p->slide_height-o->style->margin_bottom);
+		cairo_line_to(cr, p->slide_width+p->border_offs_x,
+			          p->slide_height-o->style->margin_bottom);
+
+		cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
+		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
+	}
 }
 
 
@@ -720,10 +783,7 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 
 	cairo_translate(cr, xoff, yoff);
 
-	/* Draw editing bits for selected object */
-	if ( p->editing_object != NULL ) {
-		draw_editing_bits(cr, p, p->editing_object);
-	}
+	draw_overlay(cr, p);
 
 	/* Draw dragging box if necessary */
 	if ( p->draw_drag_box ) {
@@ -946,6 +1006,8 @@ int open_mainwindow(struct presentation *p)
 
 	g_signal_connect(G_OBJECT(p->drawingarea), "button-press-event",
 			 G_CALLBACK(button_press_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "button-release-event",
+			 G_CALLBACK(button_release_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "key-press-event",
 			 G_CALLBACK(key_press_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "expose-event",

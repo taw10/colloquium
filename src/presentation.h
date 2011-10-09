@@ -46,6 +46,14 @@ struct slide
 };
 
 
+enum drag_reason
+{
+	DRAG_REASON_NONE,
+	DRAG_REASON_CREATE,
+	DRAG_REASON_MOVE,
+};
+
+
 struct toolinfo
 {
 	void (*click_create)(struct presentation *p, struct toolinfo *tip,
@@ -58,7 +66,16 @@ struct toolinfo
 	int  (*deselect)(struct object *o, struct toolinfo *tip);
 	void (*drag_object)(struct toolinfo *tip, struct presentation *p,
 	                    struct object *o, double x, double y);
-	void (*draw_editing_overlay)(cairo_t *cr, struct object *o);
+
+	void (*start_drag_create)(struct toolinfo *tip, struct presentation *p,
+	                          double x, double y);
+	void (*drag_create)(struct toolinfo *tip, struct presentation *p,
+	                    double x, double y);
+	void (*finish_drag_create)(struct toolinfo *tip, struct presentation *p,
+	                           double x, double y);
+
+	void (*draw_editing_overlay)(struct toolinfo *tip, cairo_t *cr,
+	                             struct object *o);
 	void (*key_pressed)(struct object *o, guint keyval,
 	                    struct toolinfo *tip);
 	void (*im_commit)(struct object *o, gchar *str, struct toolinfo *tip);
@@ -117,6 +134,9 @@ struct presentation
 	struct toolinfo  *cur_tool;
 	double            drag_offs_x;
 	double            drag_offs_y;
+	double            start_create_drag_x;
+	double            start_create_drag_y;
+	enum drag_reason  drag_reason;
 
 	unsigned int      num_slides;
 	struct slide    **slides;

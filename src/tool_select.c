@@ -85,6 +85,27 @@ static void drag_object(struct toolinfo *tip, struct presentation *p,
 }
 
 
+static void start_drag_create(struct toolinfo *tip, struct presentation *p,
+                              double x, double y)
+{
+	/* Do nothing */
+}
+
+
+static void drag_create(struct toolinfo *tip, struct presentation *p,
+                        double x, double y)
+{
+	/* Do nothing */
+}
+
+
+static void finish_drag_create(struct toolinfo *tip, struct presentation *p,
+                               double x, double y)
+{
+	/* Do nothing */
+}
+
+
 static void select_object(struct object *o,struct toolinfo *tip)
 {
 	/* Do nothing */
@@ -98,9 +119,11 @@ static int deselect_object(struct object *o,struct toolinfo *tip)
 }
 
 
-static void draw_overlay(cairo_t *cr, struct object *o)
+static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *o)
 {
-	draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
+	if ( o != NULL ) {
+		draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
+	}
 }
 
 
@@ -128,6 +151,9 @@ struct toolinfo *initialise_select_tool()
 	ti->base.select = select_object;
 	ti->base.deselect = deselect_object;
 	ti->base.drag_object = drag_object;
+	ti->base.start_drag_create = start_drag_create;
+	ti->base.drag_create = drag_create;
+	ti->base.finish_drag_create = finish_drag_create;
 	ti->base.draw_editing_overlay = draw_overlay;
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;

@@ -609,6 +609,34 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
+static void start_drag_create(struct presentation *p, double x, double y)
+{
+	p->start_corner_x = x;
+	p->start_corner_y = y;
+	p->create_dragging = 1;
+}
+
+
+static void drag_create(struct presentation *p, double x, double y)
+{
+	p->drag_corner_x = x;
+	p->drag_corner_y = y;
+	redraw_overlay(p);
+}
+
+
+static void finish_drag_create(struct presentation *p, double x, double y)
+{
+	p->drag_corner_x = x;
+	p->drag_corner_y = y;
+	p->create_dragging = 0;
+	redraw_overlay(p);
+	p->cur_tool->create_region(p->cur_tool, p,
+	                           p->start_corner_x, p->start_corner_y,
+	                           p->drag_corner_x, p->drag_corner_y);
+}
+
+
 static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
                            struct presentation *p)
 {
@@ -619,12 +647,10 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		p->drag_reason = DRAG_REASON_CREATE;
 
 		/* Start the drag, and send the first drag event */
-		p->cur_tool->start_drag_create(p->cur_tool, p,
-		                               p->start_create_drag_x,
-		                               p->start_create_drag_y);
-		p->cur_tool->drag_create(p->cur_tool, p,
-		                         event->x - p->border_offs_x,
-		                         event->y - p->border_offs_y);
+		start_drag_create(p, p->start_create_drag_x,
+		                     p->start_create_drag_y);
+		drag_create(p, event->x - p->border_offs_x,
+		               event->y - p->border_offs_y);
 		break;
 
 	case DRAG_REASON_MOVE :
@@ -634,9 +660,8 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		break;
 
 	case DRAG_REASON_CREATE :
-		p->cur_tool->drag_create(p->cur_tool, p,
-		                         event->x - p->border_offs_x,
-		                         event->y - p->border_offs_y);
+		drag_create(p, event->x - p->border_offs_x,
+		               event->y - p->border_offs_y);
 
 		break;
 
@@ -700,7 +725,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		break;
 
 	case DRAG_REASON_CREATE :
-		p->cur_tool->finish_drag_create(p->cur_tool, p, x, y);
+		finish_drag_create(p, x, y);
 		break;
 
 	case DRAG_REASON_MOVE :
@@ -743,6 +768,16 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 
 		cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
 		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
+	}
+
+	if ( p->create_dragging ) {
+		cairo_new_path(cr);
+		cairo_rectangle(cr, p->start_corner_x, p->start_corner_y,
+		                    p->drag_corner_x - p->start_corner_x,
+		                    p->drag_corner_y - p->start_corner_y);
+		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+		cairo_set_line_width(cr, 0.5);
 		cairo_stroke(cr);
 	}
 }

@@ -67,12 +67,8 @@ struct toolinfo
 	void (*drag_object)(struct toolinfo *tip, struct presentation *p,
 	                    struct object *o, double x, double y);
 
-	void (*start_drag_create)(struct toolinfo *tip, struct presentation *p,
-	                          double x, double y);
-	void (*drag_create)(struct toolinfo *tip, struct presentation *p,
-	                    double x, double y);
-	void (*finish_drag_create)(struct toolinfo *tip, struct presentation *p,
-	                           double x, double y);
+	void (*create_region)(struct toolinfo *tip, struct presentation *p,
+	                      double x1, double y1, double x2, double y2);
 
 	void (*draw_editing_overlay)(struct toolinfo *tip, cairo_t *cr,
 	                             struct object *o);
@@ -136,6 +132,11 @@ struct presentation
 	double            drag_offs_y;
 	double            start_create_drag_x;
 	double            start_create_drag_y;
+	int               create_dragging;
+	double            start_corner_x;
+	double            start_corner_y;
+	double            drag_corner_x;
+	double            drag_corner_y;
 	enum drag_reason  drag_reason;
 
 	unsigned int      num_slides;

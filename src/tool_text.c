@@ -40,12 +40,6 @@ struct text_toolinfo
 {
 	struct toolinfo  base;
 	PangoContext    *pc;
-
-	int              create_dragging;
-	double           start_corner_x;
-	double           start_corner_y;
-	double           drag_corner_x;
-	double           drag_corner_y;
 };
 
 
@@ -461,42 +455,6 @@ static void drag_object(struct toolinfo *tip, struct presentation *p,
 }
 
 
-static void start_drag_create(struct toolinfo *tip, struct presentation *p,
-                              double x, double y)
-{
-	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
-
-	ti->start_corner_x = x;
-	ti->start_corner_y = y;
-	ti->create_dragging = 1;
-}
-
-
-static void drag_create(struct toolinfo *tip, struct presentation *p,
-                        double x, double y)
-{
-	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
-
-	ti->drag_corner_x = x;
-	ti->drag_corner_y = y;
-
-	redraw_overlay(p);
-}
-
-
-static void finish_drag_create(struct toolinfo *tip, struct presentation *p,
-                               double x, double y)
-{
-	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
-
-	ti->drag_corner_x = x;
-	ti->drag_corner_y = y;
-	ti->create_dragging = 0;
-
-	redraw_overlay(p);
-}
-
-
 static void create_default(struct presentation *p, struct style *sty,
                            struct toolinfo *tip)
 {
@@ -506,6 +464,13 @@ static void create_default(struct presentation *p, struct style *sty,
 	n = add_text_object(p->view_slide, 0.0, 0.0, sty, ti);
 	update_text((struct text_object *)n);
 	p->editing_object = n;
+}
+
+
+static void create_region(struct toolinfo *tip, struct presentation *p,
+                          double x1, double y1, double x2, double y2)
+{
+	printf("Create %5.2f %5.2f %5.2f %5.2f\n", x1, y1, x2, y2);
 }
 
 
@@ -528,21 +493,9 @@ static int deselect_object(struct object *o, struct toolinfo *tip)
 
 static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *o)
 {
-	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
-
 	if ( o != NULL ) {
 		draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
 		draw_caret(cr, o);
-	}
-
-	if ( ti->create_dragging ) {
-		cairo_new_path(cr);
-		cairo_rectangle(cr, ti->start_corner_x, ti->start_corner_y,
-		                    ti->drag_corner_x - ti->start_corner_x,
-		                    ti->drag_corner_y - ti->start_corner_y);
-		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
-		cairo_set_line_width(cr, 0.5);
-		cairo_stroke(cr);
 	}
 }
 
@@ -589,9 +542,7 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	ti->base.select = select_object;
 	ti->base.deselect = deselect_object;
 	ti->base.drag_object = drag_object;
-	ti->base.start_drag_create = start_drag_create;
-	ti->base.drag_create = drag_create;
-	ti->base.finish_drag_create = finish_drag_create;
+	ti->base.create_region = create_region;
 	ti->base.draw_editing_overlay = draw_overlay;
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;

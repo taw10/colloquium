@@ -85,24 +85,10 @@ static void drag_object(struct toolinfo *tip, struct presentation *p,
 }
 
 
-static void start_drag_create(struct toolinfo *tip, struct presentation *p,
-                              double x, double y)
+static void create_region(struct toolinfo *tip, struct presentation *p,
+                          double x1, double y1, double x2, double y2)
 {
-	/* Do nothing */
-}
-
-
-static void drag_create(struct toolinfo *tip, struct presentation *p,
-                        double x, double y)
-{
-	/* Do nothing */
-}
-
-
-static void finish_drag_create(struct toolinfo *tip, struct presentation *p,
-                               double x, double y)
-{
-	/* Do nothing */
+	printf("Create %5.2f %5.2f %5.2f %5.2f\n", x1, y1, x2, y2);
 }
 
 
@@ -151,9 +137,7 @@ struct toolinfo *initialise_select_tool()
 	ti->base.select = select_object;
 	ti->base.deselect = deselect_object;
 	ti->base.drag_object = drag_object;
-	ti->base.start_drag_create = start_drag_create;
-	ti->base.drag_create = drag_create;
-	ti->base.finish_drag_create = finish_drag_create;
+	ti->base.create_region = create_region;
 	ti->base.draw_editing_overlay = draw_overlay;
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;

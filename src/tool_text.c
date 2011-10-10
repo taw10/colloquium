@@ -204,8 +204,10 @@ static void update_text(struct text_object *o)
 
 	} else {
 
-		pango_layout_set_width(o->layout, o->base.bb_width*PANGO_SCALE);
-		pango_layout_set_height(o->layout, o->base.bb_height*PANGO_SCALE);
+		pango_layout_set_width(o->layout,
+		                       o->base.bb_width*PANGO_SCALE);
+		pango_layout_set_height(o->layout,
+		                        o->base.bb_height*PANGO_SCALE);
 		pango_layout_set_wrap(o->layout, PANGO_WRAP_WORD_CHAR);
 		pango_layout_set_ellipsize(o->layout, PANGO_ELLIPSIZE_MIDDLE);
 

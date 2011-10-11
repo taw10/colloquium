@@ -220,6 +220,7 @@ struct presentation *new_presentation()
 
 	new->editing_object = NULL;
 	new->completely_empty = 1;
+	new->drag_status = DRAG_STATUS_NONE;
 
 	new->ss = new_stylesheet();
 

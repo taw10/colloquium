@@ -82,9 +82,20 @@ void check_redraw_slide(struct slide *s)
 void draw_editing_box(cairo_t *cr, double xmin, double ymin,
                       double width, double height)
 {
+	const double dash[] = {2.0, 2.0};
+
 	cairo_new_path(cr);
 	cairo_rectangle(cr, xmin-5.0, ymin-5.0, width+10.0, height+10.0);
 	cairo_set_source_rgb(cr, 0.0, 0.69, 1.0);
 	cairo_set_line_width(cr, 0.5);
 	cairo_stroke(cr);
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, xmin, ymin, width, height);
+	cairo_set_dash(cr, dash, 2, 0.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 0.1);
+	cairo_stroke(cr);
+
+	cairo_set_dash(cr, NULL, 0, 0.0);
 }

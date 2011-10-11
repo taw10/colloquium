@@ -50,7 +50,15 @@ enum drag_reason
 {
 	DRAG_REASON_NONE,
 	DRAG_REASON_CREATE,
-	DRAG_REASON_MOVE,
+	DRAG_REASON_TOOL,
+};
+
+
+enum drag_status
+{
+	DRAG_STATUS_NONE,
+	DRAG_STATUS_COULD_DRAG,
+	DRAG_STATUS_DRAGGING,
 };
 
 
@@ -59,13 +67,17 @@ struct toolinfo
 	void (*click_create)(struct presentation *p, struct toolinfo *tip,
 	                     double x, double y);
 	void (*click_select)(struct presentation *p, struct toolinfo *tip,
-	                     double x, double y);
+	                     double x, double y, GdkEventButton *event,
+	                     enum drag_status *drag_status,
+	                     enum drag_reason *drag_reason);
 	void (*create_default)(struct presentation *p, struct style *sty,
 	                       struct toolinfo *tip);
 	void (*select)(struct object *o, struct toolinfo *tip);
 	int  (*deselect)(struct object *o, struct toolinfo *tip);
-	void (*drag_object)(struct toolinfo *tip, struct presentation *p,
-	                    struct object *o, double x, double y);
+	void (*drag)(struct toolinfo *tip, struct presentation *p,
+	             struct object *o, double x, double y);
+	void (*end_drag)(struct toolinfo *tip, struct presentation *p,
+	                 struct object *o, double x, double y);
 
 	void (*create_region)(struct toolinfo *tip, struct presentation *p,
 	                      double x1, double y1, double x2, double y2);
@@ -128,16 +140,14 @@ struct presentation
 
 	/* Tool status */
 	struct toolinfo  *cur_tool;
-	double            drag_offs_x;
-	double            drag_offs_y;
-	double            start_create_drag_x;
-	double            start_create_drag_y;
-	int               create_dragging;
+
+	/* Rubber band boxes and related stuff */
 	double            start_corner_x;
 	double            start_corner_y;
 	double            drag_corner_x;
 	double            drag_corner_y;
 	enum drag_reason  drag_reason;
+	enum drag_status  drag_status;
 
 	unsigned int      num_slides;
 	struct slide    **slides;

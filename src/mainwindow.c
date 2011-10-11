@@ -609,69 +609,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
-static void start_drag_create(struct presentation *p, double x, double y)
-{
-	p->start_corner_x = x;
-	p->start_corner_y = y;
-	p->create_dragging = 1;
-}
-
-
-static void drag_create(struct presentation *p, double x, double y)
-{
-	p->drag_corner_x = x;
-	p->drag_corner_y = y;
-	redraw_overlay(p);
-}
-
-
-static void finish_drag_create(struct presentation *p, double x, double y)
-{
-	p->drag_corner_x = x;
-	p->drag_corner_y = y;
-	p->create_dragging = 0;
-	redraw_overlay(p);
-	p->cur_tool->create_region(p->cur_tool, p,
-	                           p->start_corner_x, p->start_corner_y,
-	                           p->drag_corner_x, p->drag_corner_y);
-}
-
-
-static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
-                           struct presentation *p)
-{
-	switch ( p->drag_reason ) {
-
-	case DRAG_REASON_NONE :
-		/* If there was no reason before, now there is */
-		p->drag_reason = DRAG_REASON_CREATE;
-
-		/* Start the drag, and send the first drag event */
-		start_drag_create(p, p->start_create_drag_x,
-		                     p->start_create_drag_y);
-		drag_create(p, event->x - p->border_offs_x,
-		               event->y - p->border_offs_y);
-		break;
-
-	case DRAG_REASON_MOVE :
-		p->cur_tool->drag_object(p->cur_tool, p, p->editing_object,
-		                         event->x - p->border_offs_x,
-		                         event->y - p->border_offs_y);
-		break;
-
-	case DRAG_REASON_CREATE :
-		drag_create(p, event->x - p->border_offs_x,
-		               event->y - p->border_offs_y);
-
-		break;
-
-	}
-
-	gdk_event_request_motions(event);
-	return FALSE;
-}
-
-
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  struct presentation *p)
 {
@@ -685,27 +622,72 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 	if ( clicked == NULL ) {
 
+		/* Clicked no object. Deselect old object and set up for
+		 * (maybe) creating a new one. */
+
 		if ( p->editing_object != NULL ) {
 			p->cur_tool->deselect(p->editing_object, p->cur_tool);
 			p->editing_object = NULL;
 		}
-		p->start_create_drag_x = x;
-		p->start_create_drag_y = y;
-		p->drag_reason = DRAG_REASON_NONE;
+		p->start_corner_x = event->x - p->border_offs_x;
+		p->start_corner_y = event->y - p->border_offs_y;
+		p->drag_status = DRAG_STATUS_COULD_DRAG;
+		p->drag_reason = DRAG_REASON_CREATE;
 
 	} else {
 
-		if ( p->editing_object != NULL ) {
+		/* If the clicked object is not the same as the previously
+		 * selected one, deselect the old one. */
+		if ( p->editing_object != clicked ) {
 			p->cur_tool->deselect(p->editing_object, p->cur_tool);
+			p->editing_object = NULL;
 		}
-		p->editing_object = clicked;
-		p->cur_tool->click_select(p, p->cur_tool, x, y);
-		p->drag_reason = DRAG_REASON_MOVE;
 
+		p->editing_object = clicked;
+		p->drag_status = DRAG_STATUS_NONE;
+		p->drag_reason = DRAG_REASON_NONE;
+		p->cur_tool->click_select(p, p->cur_tool, x, y, event,
+		                          &p->drag_status,
+		                          &p->drag_reason);
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 	redraw_overlay(p);
+	return FALSE;
+}
+
+
+static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
+                           struct presentation *p)
+{
+	if ( p->drag_status == DRAG_STATUS_COULD_DRAG ) {
+
+		/* We just got a motion signal, and the status was "could drag",
+		 * therefore the drag has started. */
+		p->drag_status = DRAG_STATUS_DRAGGING;
+
+	}
+
+	switch ( p->drag_reason ) {
+
+	case DRAG_REASON_NONE :
+		break;
+
+	case DRAG_REASON_CREATE :
+		p->drag_corner_x = event->x - p->border_offs_x;
+		p->drag_corner_y = event->y - p->border_offs_y;
+		redraw_overlay(p);
+		break;
+
+	case DRAG_REASON_TOOL :
+		p->cur_tool->drag(p->cur_tool, p, p->editing_object,
+		                  event->x - p->border_offs_x,
+		                  event->y - p->border_offs_y);
+		break;
+
+	}
+
+	gdk_event_request_motions(event);
 	return FALSE;
 }
 
@@ -718,21 +700,36 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
-	switch ( p->drag_reason ) {
+	/* Not dragging?  Then I don't care. */
+	if ( p->drag_status != DRAG_STATUS_DRAGGING ) return FALSE;
+
+	p->drag_corner_x = x;
+	p->drag_corner_y = y;
+	p->drag_status = DRAG_STATUS_NONE;
+
+	switch ( p->drag_reason )
+	{
 
 	case DRAG_REASON_NONE :
-		p->cur_tool->click_create(p, p->cur_tool, x, y);
+		printf("Release on pointless drag.\n");
 		break;
 
 	case DRAG_REASON_CREATE :
-		finish_drag_create(p, x, y);
-		break;
+		redraw_overlay(p);
+		p->cur_tool->create_region(p->cur_tool, p,
+					   p->start_corner_x,
+					   p->start_corner_y,
+					   p->drag_corner_x,
+					   p->drag_corner_y);
+	break;
 
-	case DRAG_REASON_MOVE :
-		/* FIXME: Update presentation and other stuff? */
+	case DRAG_REASON_TOOL :
+		p->cur_tool->end_drag(p->cur_tool, p, p->editing_object, x, y);
 		break;
 
 	}
+
+	p->drag_reason = DRAG_REASON_NONE;
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 	redraw_overlay(p);
@@ -771,7 +768,9 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 		cairo_stroke(cr);
 	}
 
-	if ( p->create_dragging ) {
+	if ( (p->drag_status == DRAG_STATUS_DRAGGING)
+	  && (p->drag_reason == DRAG_REASON_CREATE) ) {
+
 		cairo_new_path(cr);
 		cairo_rectangle(cr, p->start_corner_x, p->start_corner_y,
 		                    p->drag_corner_x - p->start_corner_x,
@@ -779,6 +778,7 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
 		cairo_set_line_width(cr, 0.5);
 		cairo_stroke(cr);
+
 	}
 }
 

@@ -37,10 +37,24 @@
 #include "slide_render.h"
 
 
+enum text_drag_reason
+{
+	TEXT_DRAG_REASON_NONE,
+	TEXT_DRAG_REASON_RESIZE,
+};
+
+
 struct text_toolinfo
 {
-	struct toolinfo  base;
-	PangoContext    *pc;
+	struct toolinfo        base;
+	PangoContext          *pc;
+	enum text_drag_reason  drag_reason;
+	double                 box_x;
+	double                 box_y;
+	double                 box_width;
+	double                 box_height;
+	double                 drag_offset_x;
+	double                 drag_offset_y;
 };
 
 
@@ -446,17 +460,48 @@ static void click_create(struct presentation *p, struct toolinfo *tip,
 
 
 static void click_select(struct presentation *p, struct toolinfo *tip,
-                         double x, double y)
+                         double x, double y, GdkEventButton *event,
+                         enum drag_status *drag_status,
+	                 enum drag_reason *drag_reason)
 {
 	int xp, yp;
+	double xo, yo;
 	gboolean v;
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 	struct text_object *o = (struct text_object *)p->editing_object;
 	int idx, trail;
 
 	assert(o->base.type == TEXT);
 
-	xp = (x - o->base.x + o->offs_x)*PANGO_SCALE;
-	yp = (y - o->base.y + o->offs_y)*PANGO_SCALE;
+	xo = x - o->base.x;  yo = y - o->base.y;
+
+	/* Within the resizing region? */
+	if ( (xo > o->base.bb_width - 20.0) && (yo > o->base.bb_height - 20.0) )
+	{
+		double cx, cy;
+
+		ti->drag_reason = TEXT_DRAG_REASON_RESIZE;
+
+		/* Initial size of rubber band box */
+		ti->box_x = o->base.x;  ti->box_y = o->base.y;
+		ti->box_width = o->base.bb_width;
+		ti->box_height = o->base.bb_height;
+
+		/* Coordinates of the bottom right corner */
+		cx = o->base.x + o->base.bb_width;
+		cy = o->base.y + o->base.bb_height;
+
+		ti->drag_offset_x = x - cx;
+		ti->drag_offset_y = y - cy;
+
+		/* Tell the MCP what we did, and return */
+		*drag_status = DRAG_STATUS_DRAGGING;
+		*drag_reason = DRAG_REASON_TOOL;
+		return;
+	}
+
+	xp = (xo + o->offs_x)*PANGO_SCALE;
+	yp = (yo + o->offs_y)*PANGO_SCALE;
 
 	v = pango_layout_xy_to_index(o->layout, xp, yp, &idx, &trail);
 
@@ -465,10 +510,37 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 }
 
 
-static void drag_object(struct toolinfo *tip, struct presentation *p,
-                        struct object *o, double x, double y)
+static void drag(struct toolinfo *tip, struct presentation *p,
+                 struct object *o, double x, double y)
 {
-	/* Do nothing */
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
+
+	ti->box_width = x - ti->drag_offset_x - ti->box_x;
+	ti->box_height = y - ti->drag_offset_y - ti->box_y;
+	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
+	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+
+	redraw_overlay(p);
+}
+
+
+static void end_drag(struct toolinfo *tip, struct presentation *p,
+                     struct object *o, double x, double y)
+{
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
+
+	ti->box_width = x - ti->drag_offset_x - ti->box_x;
+	ti->box_height = y - ti->drag_offset_y - ti->box_y;
+	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
+	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+
+	o->bb_width = ti->box_width;
+	o->bb_height = ti->box_height;
+	update_text((struct text_object *)o);
+	o->parent->object_seq++;
+
+	ti->drag_reason = TEXT_DRAG_REASON_NONE;
+	redraw_overlay(p);
 }
 
 
@@ -524,10 +596,33 @@ static int deselect_object(struct object *o, struct toolinfo *tip)
 
 static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *o)
 {
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
+
 	if ( o != NULL ) {
+
 		draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
+
+		cairo_new_path(cr);
+		cairo_rectangle(cr, o->x+o->bb_width-20.0,
+		                    o->y+o->bb_height-20.0, 20.0, 20.0);
+		cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.2);
+		cairo_fill(cr);
+
 		draw_caret(cr, o);
 	}
+
+	if ( ti->drag_reason == TEXT_DRAG_REASON_RESIZE ) {
+
+		/* FIXME: Use common draw_rubberband_box() routine */
+		cairo_new_path(cr);
+		cairo_rectangle(cr, ti->box_x, ti->box_y,
+		                    ti->box_width, ti->box_height);
+		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+		cairo_set_line_width(cr, 0.5);
+		cairo_stroke(cr);
+
+	}
+
 }
 
 
@@ -572,7 +667,8 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	ti->base.create_default = create_default;
 	ti->base.select = select_object;
 	ti->base.deselect = deselect_object;
-	ti->base.drag_object = drag_object;
+	ti->base.drag = drag;
+	ti->base.end_drag = end_drag;
 	ti->base.create_region = create_region;
 	ti->base.draw_editing_overlay = draw_overlay;
 	ti->base.key_pressed = key_pressed;

@@ -51,18 +51,23 @@ static void click_create(struct presentation *p, struct toolinfo *tip,
 
 
 static void click_select(struct presentation *p, struct toolinfo *tip,
-                         double x, double y)
+                         double x, double y, GdkEventButton *event,
+                         enum drag_status *drag_status,
+	                 enum drag_reason *drag_reason)
 {
 	struct select_toolinfo *ti = (struct select_toolinfo *)tip;
 	struct object *clicked = p->editing_object;
 
 	ti->drag_offs_x = clicked->x - x;
 	ti->drag_offs_y = clicked->y - y;
+
+	*drag_status = DRAG_STATUS_COULD_DRAG;
+	*drag_reason = DRAG_REASON_TOOL;
 }
 
 
-static void drag_object(struct toolinfo *tip, struct presentation *p,
-                        struct object *o, double x, double y)
+static void drag(struct toolinfo *tip, struct presentation *p,
+                 struct object *o, double x, double y)
 {
 	struct select_toolinfo *ti = (struct select_toolinfo *)tip;
 	double eright, ebottom;
@@ -82,6 +87,13 @@ static void drag_object(struct toolinfo *tip, struct presentation *p,
 	p->view_slide->object_seq++;
 
 	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+}
+
+
+static void end_drag(struct toolinfo *tip, struct presentation *p,
+                     struct object *o, double x, double y)
+{
+	/* FIXME: Update projection or something? */
 }
 
 
@@ -136,7 +148,8 @@ struct toolinfo *initialise_select_tool()
 	ti->base.create_default = NULL;
 	ti->base.select = select_object;
 	ti->base.deselect = deselect_object;
-	ti->base.drag_object = drag_object;
+	ti->base.drag = drag;
+	ti->base.end_drag = end_drag;
 	ti->base.create_region = create_region;
 	ti->base.draw_editing_overlay = draw_overlay;
 	ti->base.key_pressed = key_pressed;

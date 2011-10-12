@@ -70,13 +70,13 @@ struct text_object
 	PangoFontDescription *fontdesc;
 	double                offs_x;
 	double                offs_y;
-	int                   size_fixed;
+	int                   furniture;
 };
 
 
 static void calculate_size_from_style(struct text_object *o,
                                       double *peright, double *pebottom,
-                                      double *pmw, double *pmh, int furniture)
+                                      double *pmw, double *pmh)
 {
 	double max_width, max_height;
 	double ebottom, eright, mw, mh;
@@ -91,12 +91,9 @@ static void calculate_size_from_style(struct text_object *o,
 	*peright = eright;  *pebottom = ebottom;
 	*pmw = mw;  *pmh = mh;
 
-	if ( furniture ) {
-		max_width = mw - o->base.style->margin_left
+	max_width = mw - o->base.style->margin_left
 		                      - o->base.style->margin_right;
-	} else {
-		max_width = eright - o->base.x;
-	}
+
 
 	/* Use the provided maximum width if it exists and is smaller */
 	if ( o->base.style->use_max_width
@@ -105,12 +102,8 @@ static void calculate_size_from_style(struct text_object *o,
 		max_width = o->base.style->max_width;
 	}
 
-	if ( furniture ) {
-		max_height = mh - o->base.style->margin_top
+	max_height = mh - o->base.style->margin_top
 		                           - o->base.style->margin_bottom;
-	} else {
-		max_height = ebottom - o->base.y;
-	}
 
 	pango_layout_set_width(o->layout, max_width*PANGO_SCALE);
 	pango_layout_set_height(o->layout, max_height*PANGO_SCALE);
@@ -204,10 +197,9 @@ static void update_text(struct text_object *o)
 	o->fontdesc = pango_font_description_from_string(o->base.style->font);
 	pango_layout_set_font_description(o->layout, o->fontdesc);
 
-	if ( !o->size_fixed ) {
+	if ( o->furniture ) {
 
-		calculate_size_from_style(o, &eright, &ebottom,
-		                          &mw, &mh, furniture);
+		calculate_size_from_style(o, &eright, &ebottom, &mw, &mh);
 
 		pango_layout_get_extents(o->layout, NULL, &logical);
 
@@ -227,7 +219,7 @@ static void update_text(struct text_object *o)
 
 	}
 
-	if ( furniture ) {
+	if ( o->furniture ) {
 		calculate_position_from_style(o, eright, ebottom, mw, mh);
 	}
 }
@@ -349,13 +341,12 @@ static void render_text_object(cairo_t *cr, struct object *op)
 }
 
 
-static void draw_caret(cairo_t *cr, struct object *op)
+static void draw_caret(cairo_t *cr, struct text_object *o)
 {
 	double xposd, yposd, cx;
 	double clow, chigh;
 	PangoRectangle pos;
 	const double t = 1.8;
-	struct text_object *o = (struct text_object *)op;
 
 	assert(o->base.type == TEXT);
 
@@ -446,19 +437,6 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 }
 
 
-static void click_create(struct presentation *p, struct toolinfo *tip,
-                         double x, double y)
-{
-	struct object *n;
-	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
-
-	/* FIXME: Insert ESP here and possibly select a different style */
-	n = add_text_object(p->view_slide, x, y, p->ss->styles[0], ti);
-	update_text((struct text_object *)n);
-	p->editing_object = n;
-}
-
-
 static void click_select(struct presentation *p, struct toolinfo *tip,
                          double x, double y, GdkEventButton *event,
                          enum drag_status *drag_status,
@@ -476,7 +454,8 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 	xo = x - o->base.x;  yo = y - o->base.y;
 
 	/* Within the resizing region? */
-	if ( (xo > o->base.bb_width - 20.0) && (yo > o->base.bb_height - 20.0) )
+	if ( (xo > o->base.bb_width - 20.0) && (yo > o->base.bb_height - 20.0)
+	  && (!o->furniture) )
 	{
 		double cx, cy;
 
@@ -548,10 +527,13 @@ static void create_default(struct presentation *p, struct style *sty,
                            struct toolinfo *tip)
 {
 	struct object *n;
+	struct text_object *o;
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
 	n = add_text_object(p->view_slide, 0.0, 0.0, sty, ti);
-	update_text((struct text_object *)n);
+	o = (struct text_object *)n;
+	o->furniture = 1;
+	update_text(o);
 	p->editing_object = n;
 }
 
@@ -570,7 +552,7 @@ static void create_region(struct toolinfo *tip, struct presentation *p,
 	n->bb_height = fabs(y1-y2);
 
 	o = (struct text_object *)n;
-	o->size_fixed = 1;
+	o->furniture = 0;
 
 	update_text(o);
 	p->editing_object = n;
@@ -594,19 +576,25 @@ static int deselect_object(struct object *o, struct toolinfo *tip)
 }
 
 
-static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *o)
+static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *n)
 {
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
+	struct text_object *o = (struct text_object *)n;
 
-	if ( o != NULL ) {
+	if ( n != NULL ) {
 
-		draw_editing_box(cr, o->x, o->y, o->bb_width, o->bb_height);
+		draw_editing_box(cr, n->x, n->y, n->bb_width, n->bb_height);
 
-		cairo_new_path(cr);
-		cairo_rectangle(cr, o->x+o->bb_width-20.0,
-		                    o->y+o->bb_height-20.0, 20.0, 20.0);
-		cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.2);
-		cairo_fill(cr);
+		if ( !o->furniture ) {
+
+			/* Draw resize handle */
+			cairo_new_path(cr);
+			cairo_rectangle(cr, n->x+n->bb_width-20.0,
+				            n->y+n->bb_height-20.0, 20.0, 20.0);
+			cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
+			cairo_fill(cr);
+
+		}
 
 		draw_caret(cr, o);
 	}
@@ -662,7 +650,6 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 
 	ti->pc = gtk_widget_get_pango_context(w);
 
-	ti->base.click_create = click_create;
 	ti->base.click_select = click_select;
 	ti->base.create_default = create_default;
 	ti->base.select = select_object;

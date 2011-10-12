@@ -43,13 +43,6 @@ struct select_toolinfo
 };
 
 
-static void click_create(struct presentation *p, struct toolinfo *tip,
-                         double x, double y)
-{
-	/* Do absolutely nothing */
-}
-
-
 static void click_select(struct presentation *p, struct toolinfo *tip,
                          double x, double y, GdkEventButton *event,
                          enum drag_status *drag_status,
@@ -143,7 +136,6 @@ struct toolinfo *initialise_select_tool()
 
 	ti = malloc(sizeof(*ti));
 
-	ti->base.click_create = click_create;
 	ti->base.click_select = click_select;
 	ti->base.create_default = NULL;
 	ti->base.select = select_object;

@@ -64,8 +64,6 @@ enum drag_status
 
 struct toolinfo
 {
-	void (*click_create)(struct presentation *p, struct toolinfo *tip,
-	                     double x, double y);
 	void (*click_select)(struct presentation *p, struct toolinfo *tip,
 	                     double x, double y, GdkEventButton *event,
 	                     enum drag_status *drag_status,

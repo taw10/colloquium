@@ -1002,14 +1002,19 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		filename = g_filename_from_uri(uri, NULL, &error);
 		if ( filename != NULL ) {
 
+			struct object *o;
+
 			gtk_drag_finish(drag_context, TRUE, FALSE, time);
 			chomp(filename);
-			add_image_object(p->view_slide,
-				         p->start_corner_x, p->start_corner_y,
-				         p->import_width, p->import_height,
-				         filename,
-				         p->ss->styles[0], p->image_store,
-				         p->image_tool);
+			o = add_image_object(p->view_slide,
+				             p->start_corner_x,
+				             p->start_corner_y,
+				             p->import_width, p->import_height,
+				             filename,
+				             p->ss->styles[0], p->image_store,
+				             p->image_tool);
+			p->editing_object = o;
+			redraw_object(o);
 
 			/* Don't free "filename" - it's now owned by the
 			 * image store. */

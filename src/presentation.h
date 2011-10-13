@@ -86,6 +86,8 @@ struct toolinfo
 	void (*key_pressed)(struct object *o, guint keyval,
 	                    struct toolinfo *tip);
 	void (*im_commit)(struct object *o, gchar *str, struct toolinfo *tip);
+
+	int (*valid_object)(struct object *o);
 };
 
 

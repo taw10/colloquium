@@ -642,6 +642,13 @@ static void im_commit(struct object *o, gchar *str, struct toolinfo *tip)
 }
 
 
+static int valid_object(struct object *o)
+{
+	if ( o->type == TEXT ) return 1;
+	return 0;
+}
+
+
 struct toolinfo *initialise_text_tool(GtkWidget *w)
 {
 	struct text_toolinfo *ti;
@@ -660,6 +667,7 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	ti->base.draw_editing_overlay = draw_overlay;
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;
+	ti->base.valid_object = valid_object;
 
 	return (struct toolinfo *)ti;
 }

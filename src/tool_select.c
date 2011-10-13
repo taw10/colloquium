@@ -130,6 +130,12 @@ static void im_commit(struct object *o, gchar *str, struct toolinfo *tip)
 }
 
 
+static int valid_object(struct object *o)
+{
+	return 1;
+}
+
+
 struct toolinfo *initialise_select_tool()
 {
 	struct select_toolinfo *ti;
@@ -146,6 +152,7 @@ struct toolinfo *initialise_select_tool()
 	ti->base.draw_editing_overlay = draw_overlay;
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;
+	ti->base.valid_object = valid_object;
 
 	return (struct toolinfo *)ti;
 }

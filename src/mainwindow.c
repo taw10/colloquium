@@ -382,7 +382,11 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
 	}
 
 	if ( p->editing_object != NULL ) {
-		p->cur_tool->select(p->editing_object, p->cur_tool);
+		if ( p->cur_tool->valid_object(p->editing_object) ) {
+			p->cur_tool->select(p->editing_object, p->cur_tool);
+		} else {
+			p->editing_object = NULL;
+		}
 	}
 
 	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
@@ -645,12 +649,16 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			p->editing_object = NULL;
 		}
 
-		p->editing_object = clicked;
 		p->drag_status = DRAG_STATUS_NONE;
 		p->drag_reason = DRAG_REASON_NONE;
-		p->cur_tool->click_select(p, p->cur_tool, x, y, event,
-		                          &p->drag_status,
-		                          &p->drag_reason);
+
+		if ( p->cur_tool->valid_object(clicked) ) {
+			p->editing_object = clicked;
+			p->cur_tool->click_select(p, p->cur_tool, x, y, event,
+			                          &p->drag_status,
+			                          &p->drag_reason);
+		}
+
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));

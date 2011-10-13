@@ -1080,8 +1080,8 @@ int open_mainwindow(struct presentation *p)
 	                 G_CALLBACK(dnd_drop), p);
 	g_signal_connect(p->drawingarea, "drag-leave",
 	                 G_CALLBACK(dnd_leave), p);
-	/* Input method */
 
+	/* Input method */
 	p->im_context = gtk_im_multicontext_new();
 	gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context),
 	                                 p->drawingarea->window);

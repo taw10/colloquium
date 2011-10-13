@@ -53,9 +53,7 @@
 		<separator />
 		<toolitem name="select" action="ButtonToolSelectAction" />
 		<toolitem name="text" action="ButtonToolTextAction" />
-		<separator />
-		<toolitem name="select" action="ButtonToolSelectAction" />
-		<toolitem name="text" action="ButtonToolTextAction" />
+		<toolitem name="image" action="ButtonToolImageAction" />
 
 	</toolbar>
 

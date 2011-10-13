@@ -23,6 +23,7 @@ colloquiumdir = $(datadir)/colloquium
 colloquium_DATA = data/colloquium.ui
 
 iconsdir = $(datadir)/icons/hicolor/scalable/apps
-icons_DATA = data/colloquium-select.svg data/colloquium-text.svg
+icons_DATA = data/colloquium-select.svg data/colloquium-text.svg \
+             data/colloquium-image.svg
 
 EXTRA_DIST += $(colloquium_DATA)

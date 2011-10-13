@@ -364,6 +364,7 @@ enum tool_id
 {
 	TOOL_SELECT,
 	TOOL_TEXT,
+	TOOL_IMAGE,
 };
 
 
@@ -379,6 +380,7 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
 	{
 		case TOOL_SELECT : p->cur_tool = p->select_tool; break;
 		case TOOL_TEXT : p->cur_tool = p->text_tool; break;
+		case TOOL_IMAGE : p->cur_tool = p->image_tool; break;
 	}
 
 	if ( p->editing_object != NULL ) {
@@ -495,6 +497,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, TOOL_SELECT },
 		{ "ButtonToolTextAction", "colloquium-text", "Text",
 			NULL, NULL, TOOL_TEXT },
+		{ "ButtonToolImageAction", "colloquium-image", "Image",
+			NULL, NULL, TOOL_IMAGE },
 	};
 	guint n_tools = G_N_ELEMENTS(tools);
 

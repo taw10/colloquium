@@ -1017,6 +1017,8 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 				             filename,
 				             p->ss->styles[0], p->image_store,
 				             p->image_tool);
+
+			force_tool(p, TOOL_IMAGE);
 			p->editing_object = o;
 			redraw_object(o);
 

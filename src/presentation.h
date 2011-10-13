@@ -97,6 +97,7 @@ struct presentation
 
 	struct toolinfo  *select_tool;
 	struct toolinfo  *text_tool;
+	struct toolinfo  *image_tool;
 
 	GtkWidget        *window;
 	GtkWidget        *drawingarea;
@@ -147,6 +148,9 @@ struct presentation
 	double            import_width;
 	double            import_height;
 	int               import_acceptable;
+
+	/* All the images used in the presentation */
+	struct image_store *image_store;
 
 	unsigned int      num_slides;
 	struct slide    **slides;

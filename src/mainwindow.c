@@ -30,6 +30,7 @@
 #include <gtk/gtk.h>
 #include <assert.h>
 #include <gdk/gdkkeysyms.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "presentation.h"
 #include "mainwindow.h"
@@ -40,6 +41,7 @@
 #include "loadsave.h"
 #include "tool_select.h"
 #include "tool_text.h"
+#include "tool_image.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -983,11 +985,27 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 	} else {
 
-		printf("Drop: '%s'\n", seldata->data);
-		gtk_drag_finish(drag_context, TRUE, FALSE, time);
+		gchar *uri;
+		char *filename;
+		GError *error = NULL;
 
-		/* FIXME: Create a new image object according to image size and
-		 * current margins, consistent with box drawn for the preview */
+		uri = (gchar *)seldata->data;
+
+		filename = g_filename_from_uri(uri, NULL, &error);
+		if ( filename != NULL ) {
+
+			gtk_drag_finish(drag_context, TRUE, FALSE, time);
+			chomp(filename);
+			add_image_object(p->view_slide,
+				         p->start_corner_x, p->start_corner_y,
+				         p->import_width, p->import_height,
+				         filename,
+				         p->ss->styles[0], p->image_store,
+				         p->image_tool);
+
+			/* Don't free "filename" - it's now owned by the
+			 * image store. */
+		}
 
 	}
 }
@@ -1047,6 +1065,7 @@ int open_mainwindow(struct presentation *p)
 
 	p->select_tool = initialise_select_tool();
 	p->text_tool = initialise_text_tool(p->drawingarea);
+	p->image_tool = initialise_image_tool();
 	p->cur_tool = p->select_tool;
 
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);

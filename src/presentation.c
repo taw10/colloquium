@@ -223,6 +223,7 @@ struct presentation *new_presentation()
 	new->drag_status = DRAG_STATUS_NONE;
 
 	new->ss = new_stylesheet();
+	new->image_store = image_store_new();
 
 	return new;
 }

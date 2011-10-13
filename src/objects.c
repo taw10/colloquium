@@ -28,31 +28,93 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "presentation.h"
 #include "objects.h"
 #include "mainwindow.h"
 
 
-struct object *add_image_object(struct slide *s, double x, double y,
-                                const char *filename,
-                                double width, double height)
+struct image_store
 {
-	struct object *new;
+	int n_images;
+	struct image *images;
+};
 
-	new = NULL; /* FIXME! Generally */
 
-	new->x = x;  new->y = y;
-	new->bb_width = width;
-	new->bb_height = height;
+static struct image *add_image_to_store(struct image_store *is, char *filename)
+{
+	struct image *images_new;
+	int idx;
+	GError *error = NULL;
+	int w, h;
 
-	if ( add_object_to_slide(s, new) ) {
-		delete_object(new);
+	images_new = realloc(is->images, (is->n_images+1)*sizeof(struct image));
+	if ( images_new == NULL ) {
+		fprintf(stderr, "Couldn't allocate memory for image.\n");
 		return NULL;
 	}
-	s->object_seq++;
+	is->images = images_new;
+	idx = is->n_images++;
 
-	return new;
+	gdk_pixbuf_get_file_info(filename, &w, &h);
+
+	/* FIXME: If image is huge, load a smaller version */
+	is->images[idx].pb = gdk_pixbuf_new_from_file(filename, &error);
+	if ( is->images[idx].pb == NULL ) {
+		fprintf(stderr, "Failed to load image '%s'\n", filename);
+		is->n_images--;
+		return NULL;
+	}
+	is->images[idx].filename = filename;
+	is->images[idx].refcount = 1;
+	is->images[idx].width = w;
+	is->images[idx].height = h;
+
+	return &is->images[idx];
+}
+
+
+static struct image *find_filename(struct image_store *is, const char *filename)
+{
+	int i;
+
+	for ( i=0; i<is->n_images; i++ ) {
+		if ( strcmp(is->images[i].filename, filename) == 0 ) {
+			return &is->images[i];
+		}
+	}
+
+	return NULL;
+}
+
+
+struct image *get_image(struct image_store *is, char *filename)
+{
+	struct image *image;
+
+	image = find_filename(is, filename);
+	if ( image == NULL ) {
+		image = add_image_to_store(is, filename);
+	} else {
+		image->refcount++;
+	}
+
+	return image;
+}
+
+
+struct image_store *image_store_new()
+{
+	struct image_store *is;
+
+	is = calloc(1, sizeof(*is));
+	if ( is == NULL ) return NULL;
+
+	is->images = NULL;
+	is->n_images = 0;
+
+	return is;
 }
 
 

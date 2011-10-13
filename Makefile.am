@@ -11,7 +11,7 @@ LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 src_colloquium_SOURCES = src/colloquium.c src/presentation.c src/mainwindow.c \
                          src/slide_render.c src/objects.c src/slideshow.c \
                          src/stylesheet.c src/loadsave.c src/tool_text.c \
-                         src/tool_select.c
+                         src/tool_select.c src/tool_image.c
 
 INCLUDES = "-I$(top_srcdir)/data"
 

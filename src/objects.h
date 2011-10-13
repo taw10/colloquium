@@ -56,10 +56,22 @@ struct object
 	void           (*delete_object)(struct object *o);
 };
 
-extern struct object *add_image_object(struct slide *s, double x, double y,
-                                       const char *filename,
-                                       double width, double height);
 
+struct image_store;
+
+struct image
+{
+	char       *filename;
+	GdkPixbuf  *pb;
+	int         width;
+	int         height;
+
+	int refcount;
+};
+
+
+extern struct image *get_image(struct image_store *is, char *filename);
+extern struct image_store *image_store_new(void);
 
 extern void notify_style_update(struct presentation *p,
                                  struct style *sty);

@@ -38,18 +38,23 @@
 struct image_store
 {
 	int n_images;
-	struct image *images;
+	struct image **images;
 };
 
 
 static struct image *add_image_to_store(struct image_store *is, char *filename)
 {
-	struct image *images_new;
+	struct image **images_new;
+	struct image *i_new;
 	int idx;
 	GError *error = NULL;
 	int w, h;
 
-	images_new = realloc(is->images, (is->n_images+1)*sizeof(struct image));
+	i_new = calloc(1, sizeof(struct image));
+	if ( i_new == NULL ) return NULL;
+
+	images_new = realloc(is->images,
+	                     (is->n_images+1)*sizeof(struct image *));
 	if ( images_new == NULL ) {
 		fprintf(stderr, "Couldn't allocate memory for image.\n");
 		return NULL;
@@ -60,18 +65,20 @@ static struct image *add_image_to_store(struct image_store *is, char *filename)
 	gdk_pixbuf_get_file_info(filename, &w, &h);
 
 	/* FIXME: If image is huge, load a smaller version */
-	is->images[idx].pb = gdk_pixbuf_new_from_file(filename, &error);
-	if ( is->images[idx].pb == NULL ) {
+	i_new->pb = gdk_pixbuf_new_from_file(filename, &error);
+	if ( i_new->pb == NULL ) {
 		fprintf(stderr, "Failed to load image '%s'\n", filename);
 		is->n_images--;
 		return NULL;
 	}
-	is->images[idx].filename = filename;
-	is->images[idx].refcount = 1;
-	is->images[idx].width = w;
-	is->images[idx].height = h;
+	i_new->filename = filename;
+	i_new->refcount = 1;
+	i_new->width = w;
+	i_new->height = h;
 
-	return &is->images[idx];
+	is->images[idx] = i_new;
+
+	return i_new;
 }
 
 
@@ -80,8 +87,8 @@ static struct image *find_filename(struct image_store *is, const char *filename)
 	int i;
 
 	for ( i=0; i<is->n_images; i++ ) {
-		if ( strcmp(is->images[i].filename, filename) == 0 ) {
-			return &is->images[i];
+		if ( strcmp(is->images[i]->filename, filename) == 0 ) {
+			return is->images[i];
 		}
 	}
 

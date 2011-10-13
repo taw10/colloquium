@@ -50,6 +50,7 @@ enum drag_reason
 {
 	DRAG_REASON_NONE,
 	DRAG_REASON_CREATE,
+	DRAG_REASON_IMPORT,
 	DRAG_REASON_TOOL,
 };
 
@@ -103,14 +104,6 @@ struct presentation
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
 	GtkWidget        *tbox;
-	int               drag_preview_pending;
-	int               have_drag_data;
-	int               drag_highlight;
-	int               drag_width;
-	int               drag_height;
-	int               draw_drag_box;
-	int               drag_x;
-	int               drag_y;
 
 	/* Stylesheet */
 	StyleSheet       *ss;
@@ -146,6 +139,14 @@ struct presentation
 	double            drag_corner_y;
 	enum drag_reason  drag_reason;
 	enum drag_status  drag_status;
+
+	/* Stuff to do with drag and drop import of "content" */
+	int               drag_preview_pending;
+	int               have_drag_data;
+	int               drag_highlight;
+	double            import_width;
+	double            import_height;
+	int               import_acceptable;
 
 	unsigned int      num_slides;
 	struct slide    **slides;

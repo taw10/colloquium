@@ -679,6 +679,10 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		redraw_overlay(p);
 		break;
 
+	case DRAG_REASON_IMPORT :
+		/* Do nothing, handled by dnd_motion() */
+		break;
+
 	case DRAG_REASON_TOOL :
 		p->cur_tool->drag(p->cur_tool, p, p->editing_object,
 		                  event->x - p->border_offs_x,
@@ -721,11 +725,16 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 					   p->start_corner_y,
 					   p->drag_corner_x,
 					   p->drag_corner_y);
-	break;
+		break;
+
+	case DRAG_REASON_IMPORT :
+		/* Do nothing, handled in dnd_drop() or dnd_leave() */
+		break;
 
 	case DRAG_REASON_TOOL :
 		p->cur_tool->end_drag(p->cur_tool, p, p->editing_object, x, y);
 		break;
+
 
 	}
 
@@ -769,7 +778,8 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 	}
 
 	if ( (p->drag_status == DRAG_STATUS_DRAGGING)
-	  && (p->drag_reason == DRAG_REASON_CREATE) ) {
+	  && ((p->drag_reason == DRAG_REASON_CREATE)
+	      || (p->drag_reason == DRAG_REASON_IMPORT)) ) {
 
 		cairo_new_path(cr);
 		cairo_rectangle(cr, p->start_corner_x, p->start_corner_y,
@@ -820,13 +830,6 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 
 	draw_overlay(cr, p);
 
-	/* Draw dragging box if necessary */
-	if ( p->draw_drag_box ) {
-		draw_editing_box(cr, p->drag_x-(p->drag_width/2.0),
-		                     p->drag_y-(p->drag_height/2.0),
-		                     p->drag_width, p->drag_height);
-	}
-
 	cairo_destroy(cr);
 
 	return FALSE;
@@ -838,26 +841,21 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 {
 	GdkAtom target;
 
+	/* If we haven't already requested the data, do so now */
 	if ( !p->drag_preview_pending && !p->have_drag_data ) {
 		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
 		gtk_drag_get_data(widget, drag_context, target, time);
 		p->drag_preview_pending = 1;
 	}
 
-	if ( p->have_drag_data && !p->draw_drag_box ) {
-		return FALSE;
-	}
+	if ( p->have_drag_data && p->import_acceptable ) {
 
-	gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
-
-	if ( p->draw_drag_box ) {
-
-		/* FIXME: Honour margins */
-		p->drag_x = x;
-		p->drag_y = y;
-
-		/* FIXME: Invalidate only the necessary region */
-		gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+		gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
+		p->start_corner_x = x - p->import_width/2.0;
+		p->start_corner_y = y - p->import_height/2.0;
+		p->drag_corner_x = x + p->import_width/2.0;
+		p->drag_corner_y = y + p->import_height/2.0;
+		redraw_overlay(p);
 
 	}
 
@@ -892,6 +890,31 @@ static void chomp(char *s)
 }
 
 
+/* Scale the image down if it's a silly size */
+static void check_import_size(struct presentation *p)
+{
+	if ( p->import_width > p->slide_width ) {
+
+		int new_import_width;
+
+		new_import_width = p->slide_width/2;
+		p->import_height = (new_import_width *p->import_height)
+		                     / p->import_width;
+		p->import_width = new_import_width;
+	}
+
+	if ( p->import_height > p->slide_height ) {
+
+		int new_import_height;
+
+		new_import_height = p->slide_height/2;
+		p->import_width = (new_import_height*p->import_width)
+		                    / p->import_height;
+		p->import_height = new_import_height;
+	}
+}
+
+
 static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
                         gint x, gint y, GtkSelectionData *seldata,
                         guint info, guint time, struct presentation *p)
@@ -902,6 +925,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		GError *error = NULL;
 		GdkPixbufFormat *f;
 		const gchar *uri;
+		int w, h;
 
 		p->have_drag_data = 1;
 		p->drag_preview_pending = 0;
@@ -917,14 +941,18 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 				gtk_drag_unhighlight(widget);
 				p->drag_highlight = 0;
 			}
+			p->import_acceptable = 0;
 			return;
 
 		}
 		chomp(filename);
 
-		f = gdk_pixbuf_get_file_info(filename, &p->drag_width,
-		                                       &p->drag_height);
+		f = gdk_pixbuf_get_file_info(filename, &w, &h);
 		g_free(filename);
+
+		p->import_width = w;
+		p->import_height = h;
+
 		if ( f == NULL ) {
 
 			gdk_drag_status(drag_context, 0, time);
@@ -932,36 +960,24 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 				gtk_drag_unhighlight(widget);
 				p->drag_highlight = 0;
 			}
+			p->drag_status = DRAG_STATUS_NONE;
+			p->drag_reason = DRAG_REASON_NONE;
+			p->import_acceptable = 0;
 
 		} else {
 
 			/* Looks like a sensible image */
-
 			gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
+			p->import_acceptable = 1;
 
 			if ( !p->drag_highlight ) {
 				gtk_drag_highlight(widget);
 				p->drag_highlight = 1;
 			}
 
-			/* Scale the image down if it's a silly size */
-			if ( p->drag_width > p->slide_width ) {
-				int new_drag_width;
-				new_drag_width = p->slide_width/2;
-				p->drag_height = (new_drag_width*p->drag_height)
-				                  / p->drag_width;
-				p->drag_width = new_drag_width;
-			}
-
-			if ( p->drag_height > p->slide_height ) {
-				int new_drag_height;
-				new_drag_height = p->slide_height/2;
-				p->drag_width = (new_drag_height*p->drag_width)
-				                 / p->drag_height;
-				p->drag_height = new_drag_height;
-			}
-
-			p->draw_drag_box = 1;
+			check_import_size(p);
+			p->drag_reason = DRAG_REASON_IMPORT;
+			p->drag_status = DRAG_STATUS_DRAGGING;
 
 		}
 
@@ -985,7 +1001,8 @@ static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
 	}
 	p->have_drag_data = 0;
 	p->drag_highlight = 0;
-	p->draw_drag_box = 0;
+	p->drag_status = DRAG_STATUS_NONE;
+	p->drag_reason = DRAG_REASON_NONE;
 }
 
 

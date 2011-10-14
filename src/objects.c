@@ -111,6 +111,16 @@ struct image *get_image(struct image_store *is, char *filename)
 }
 
 
+void unref_image(struct image *i)
+{
+	i->refcount--;
+
+	if ( i->refcount == 0 ) {
+		/* FIXME: Delete image */
+	}
+}
+
+
 struct image_store *image_store_new()
 {
 	struct image_store *is;

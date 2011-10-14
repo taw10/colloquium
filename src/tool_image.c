@@ -62,12 +62,30 @@ struct image_object
 	struct object        base;
 
 	struct image        *image;
+	GdkPixbuf           *scaled_pb;
+	int                  scaled_w;
+	int                  scaled_h;
 };
 
 
 static void update_image(struct image_object *o)
 {
-	/* FIXME: Implement this */
+	struct image *i = o->image;
+	int w, h;
+
+	/* Fit the width and calculate the height */
+	w = o->base.bb_width;
+	h = ((double)i->height / i->width) * o->base.bb_width;
+	if ( h > o->base.bb_height ) {
+		h = o->base.bb_height;
+		w = ((double)i->width / i->height) * o->base.bb_height;
+	}
+
+	if ( (o->scaled_w != w) || (o->scaled_h != h) ) {
+		if ( o->scaled_pb != NULL ) gdk_pixbuf_unref(o->scaled_pb);
+		o->scaled_pb = gdk_pixbuf_scale_simple(i->pb, w, h,
+			                               GDK_INTERP_BILINEAR);
+	} /* else the size didn't change */
 }
 
 
@@ -77,7 +95,7 @@ static void render_image_object(cairo_t *cr, struct object *op)
 
 	cairo_new_path(cr);
 	cairo_rectangle(cr, op->x, op->y, op->bb_width, op->bb_height);
-	gdk_cairo_set_source_pixbuf(cr, o->image->pb, op->x, op->y);
+	gdk_cairo_set_source_pixbuf(cr, o->scaled_pb, op->x, op->y);
 	cairo_fill(cr);
 }
 
@@ -92,7 +110,9 @@ static void update_image_object(struct object *op)
 
 static void delete_image_object(struct object *op)
 {
-	//struct image_object *o = (struct image_object *)op;
+	struct image_object *o = (struct image_object *)op;
+	if ( o->scaled_pb != NULL ) gdk_pixbuf_unref(o->scaled_pb);
+	unref_image(o->image);
 }
 
 
@@ -116,6 +136,7 @@ struct object *add_image_object(struct slide *s, double x, double y,
 	new->base.parent = NULL;
 	new->base.style = sty;
 
+	new->scaled_pb = NULL;
 	new->image = get_image(is, filename);
 	if ( new->image == NULL ) {
 		free(new);

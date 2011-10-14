@@ -72,6 +72,7 @@ struct image
 
 extern struct image *get_image(struct image_store *is, char *filename);
 extern struct image_store *image_store_new(void);
+extern void unref_image(struct image *i);
 
 extern void notify_style_update(struct presentation *p,
                                  struct style *sty);

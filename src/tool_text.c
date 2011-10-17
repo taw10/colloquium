@@ -222,6 +222,8 @@ static void update_text(struct text_object *o)
 	if ( o->furniture ) {
 		calculate_position_from_style(o, eright, ebottom, mw, mh);
 	}
+
+	redraw_slide(((struct object *)o)->parent);
 }
 
 
@@ -268,7 +270,6 @@ void insert_text(struct object *op, char *t)
 
 	update_text(o);
 	o->insertion_point += tlen;
-	o->base.parent->object_seq++;
 	o->base.empty = 0;
 }
 
@@ -322,9 +323,6 @@ void handle_text_backspace(struct object *op)
 	if ( strlen(o->text) == 0 ) o->base.empty = 1;
 
 	update_text(o);
-	o->base.parent->object_seq++;
-
-	redraw_overlay(op->parent->parent);
 }
 
 
@@ -431,7 +429,8 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 		delete_object((struct object *)new);
 		return NULL;
 	}
-	s->object_seq++;
+
+	redraw_slide(((struct object *)new)->parent);
 
 	return (struct object *)new;
 }
@@ -516,10 +515,8 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 	o->bb_width = ti->box_width;
 	o->bb_height = ti->box_height;
 	update_text((struct text_object *)o);
-	o->parent->object_seq++;
 
 	ti->drag_reason = TEXT_DRAG_REASON_NONE;
-	redraw_overlay(p);
 }
 
 
@@ -530,7 +527,7 @@ static void create_default(struct presentation *p, struct style *sty,
 	struct text_object *o;
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
-	n = add_text_object(p->view_slide, 0.0, 0.0, sty, ti);
+	n = add_text_object(p->cur_edit_slide, 0.0, 0.0, sty, ti);
 	o = (struct text_object *)n;
 	o->furniture = 1;
 	update_text(o);
@@ -545,7 +542,7 @@ static void create_region(struct toolinfo *tip, struct presentation *p,
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 	struct text_object *o;
 
-	n = add_text_object(p->view_slide, 0.0, 0.0, p->ss->styles[0], ti);
+	n = add_text_object(p->cur_edit_slide, 0.0, 0.0, p->ss->styles[0], ti);
 	n->x = x1<x2 ? x1 : x2;
 	n->y = y1<y2 ? y1 : y2;
 	n->bb_width = fabs(x1-x2);

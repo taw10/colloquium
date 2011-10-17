@@ -37,12 +37,15 @@ struct slide
 {
 	struct presentation *parent;
 
-	cairo_surface_t *render_cache;
-	int              render_cache_seq;
+	/* Any of these may be NULL */
+	cairo_surface_t *rendered_proj;
+	cairo_surface_t *rendered_edit;
+
+	/* This should always be present (and up to date). */
+	cairo_surface_t *rendered_thumb;
 
 	int              num_objects;
 	struct object  **objects;
-	int              object_seq;
 };
 
 
@@ -108,6 +111,28 @@ struct presentation
 	GtkIMContext     *im_context;
 	GtkWidget        *tbox;
 
+	/* Pointers to the current "editing" and "projection" slides */
+	struct slide     *cur_edit_slide;
+	struct slide     *cur_proj_slide;
+
+	/* This is the "native" size of the slide.  It only exists to give
+	 * font size some meaning in the context of a somewhat arbitrary DPI */
+	double            slide_width;
+	double            slide_height;
+
+	/* Width of a slide in the editor, projector or thumbnail (pixels) */
+	int               edit_slide_width;
+	int               proj_slide_width;
+	int               thumb_slide_width;
+
+	/* This is just to help with rendering the slides within the
+	 * editing window. */
+	double            border_offs_x;
+	double            border_offs_y;
+
+	/* FIXME: Might have more than one object selected at a time. */
+	struct object    *editing_object;
+
 	/* Stylesheet */
 	StyleSheet       *ss;
 	struct style     *default_style;
@@ -121,16 +146,6 @@ struct presentation
 	GdkCursor        *blank_cursor;
 	int               ss_blank;
 	char              ss_geom[256];
-
-	double            slide_width;
-	double            slide_height;
-	double            border_offs_x;
-	double            border_offs_y;
-
-	/* The slide currently being displayed */
-	unsigned int      view_slide_number;
-	struct slide     *view_slide;
-	struct object    *editing_object;
 
 	/* Tool status */
 	struct toolinfo  *cur_tool;
@@ -165,5 +180,7 @@ extern int add_object_to_slide(struct slide *s, struct object *o);
 extern void remove_object_from_slide(struct slide *s, struct object *o);
 extern struct object *find_object_at_position(struct slide *s,
                                               double x, double y);
+
+extern int slide_number(struct presentation *p, struct slide *s);
 
 #endif	/* PRESENTATION_H */

@@ -76,10 +76,8 @@ static void drag(struct toolinfo *tip, struct presentation *p,
 	if ( o->x+o->bb_width > eright ) o->x = eright - o->bb_width;
 	if ( o->y+o->bb_height > ebottom ) o->y = ebottom - o->bb_height;
 
-	o->update_object(o);
-	p->view_slide->object_seq++;
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
+	o->update_object(o); /* Object method is responsible for requesting
+	                      * a redraw */
 }
 
 

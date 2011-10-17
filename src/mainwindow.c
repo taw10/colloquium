@@ -228,6 +228,7 @@ static gint about_sig(GtkWidget *widget, struct presentation *p)
 static void update_toolbar(struct presentation *p)
 {
 	GtkWidget *d;
+	int cur_slide_number;
 
 	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/first");
 	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
@@ -238,7 +239,8 @@ static void update_toolbar(struct presentation *p)
 	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/last");
 	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
 
-	if ( p->view_slide_number == 0 ) {
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
+	if ( cur_slide_number == 0 ) {
 
 		d = gtk_ui_manager_get_widget(p->ui,
 					"/ui/displaywindowtoolbar/first");
@@ -249,7 +251,7 @@ static void update_toolbar(struct presentation *p)
 
 	}
 
-	if ( p->view_slide_number == p->num_slides-1 ) {
+	if ( cur_slide_number == p->num_slides-1 ) {
 
 		d = gtk_ui_manager_get_widget(p->ui,
 					"/ui/displaywindowtoolbar/next");
@@ -296,10 +298,12 @@ void notify_slide_update(struct presentation *p)
 static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	struct slide *new;
+	int cur_slide_number;
 
-	new = add_slide(p, p->view_slide_number);
-	p->view_slide = new;
-	p->view_slide_number++;
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
+
+	new = add_slide(p, cur_slide_number);
+	p->cur_edit_slide = new;
 	notify_slide_changed(p);
 
 	return FALSE;
@@ -308,8 +312,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	p->view_slide_number = 0;
-	p->view_slide = p->slides[0];
+	p->cur_edit_slide = p->slides[0];
 	notify_slide_changed(p);
 
 	return FALSE;
@@ -318,10 +321,12 @@ static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	if ( p->view_slide_number == 0 ) return FALSE;
+	int cur_slide_number;
 
-	p->view_slide_number--;
-	p->view_slide = p->slides[p->view_slide_number];
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
+	if ( cur_slide_number == 0 ) return FALSE;
+
+	p->cur_edit_slide = p->slides[cur_slide_number-1];
 	notify_slide_changed(p);
 
 	return FALSE;
@@ -330,10 +335,12 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	if ( p->view_slide_number == p->num_slides-1 ) return FALSE;
+	int cur_slide_number;
 
-	p->view_slide_number++;
-	p->view_slide = p->slides[p->view_slide_number];
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
+	if ( cur_slide_number == p->num_slides-1 ) return FALSE;
+
+	p->cur_edit_slide = p->slides[cur_slide_number+1];
 	notify_slide_changed(p);
 
 	return FALSE;
@@ -342,8 +349,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	p->view_slide_number = p->num_slides-1;
-	p->view_slide = p->slides[p->view_slide_number];
+	p->cur_edit_slide = p->slides[p->num_slides-1];
 	notify_slide_changed(p);
 
 	return FALSE;
@@ -628,7 +634,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
-	clicked = find_object_at_position(p->view_slide, x, y);
+	clicked = find_object_at_position(p->cur_edit_slide, x, y);
 
 	if ( clicked == NULL ) {
 
@@ -814,8 +820,6 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	GtkAllocation allocation;
 	double xoff, yoff;
 
-	check_redraw_slide(p->view_slide);
-
 	cr = gdk_cairo_create(da->window);
 
 	/* Overall background */
@@ -837,7 +841,8 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	/* Draw the slide from the cache */
 	cairo_rectangle(cr, event->area.x, event->area.y,
 	                event->area.width, event->area.height);
-	cairo_set_source_surface(cr, p->view_slide->render_cache, xoff, yoff);
+	cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
+	                         xoff, yoff);
 	cairo_fill(cr);
 
 	cairo_translate(cr, xoff, yoff);
@@ -1010,7 +1015,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 			gtk_drag_finish(drag_context, TRUE, FALSE, time);
 			chomp(filename);
-			o = add_image_object(p->view_slide,
+			o = add_image_object(p->cur_edit_slide,
 				             p->start_corner_x,
 				             p->start_corner_y,
 				             p->import_width, p->import_height,
@@ -1131,10 +1136,15 @@ int open_mainwindow(struct presentation *p)
 	gtk_window_set_resizable(GTK_WINDOW(p->window), TRUE);
 
 	assert(p->num_slides > 0);
-	check_redraw_slide(p->view_slide);
 
 	gtk_widget_grab_focus(GTK_WIDGET(p->drawingarea));
 
 	gtk_widget_show_all(window);
+
+	p->edit_slide_width = 1024;
+	p->proj_slide_width = 2048;
+	p->thumb_slide_width = 320;  /* FIXME: Completely made up */
+	redraw_slide(p->cur_edit_slide);
+
 	return 0;
 }

@@ -41,20 +41,19 @@ struct slide *add_slide(struct presentation *p, int pos)
 	struct slide *new;
 	int i;
 
-	new = malloc(sizeof(struct slide));
+	new = calloc(1, sizeof(struct slide));
 	if ( new == NULL ) return NULL;
 
 	/* No objects to start with */
 	new->num_objects = 0;
-	new->object_seq = 0;
 	new->objects = NULL;
 
 	p->completely_empty = 0;
 	new->parent = p;
 
-	new->render_cache_seq = 0;
-	new->render_cache = NULL;
-	render_slide(new);  /* Render nothing, just to make the surface exist */
+	new->rendered_edit = NULL;
+	new->rendered_proj = NULL;
+	new->rendered_thumb = NULL;
 
 	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
 	if ( try == NULL ) {
@@ -63,6 +62,7 @@ struct slide *add_slide(struct presentation *p, int pos)
 	}
 	p->slides = try;
 
+	/* Insert into list.  Yuk yuk yuk etc. */
 	if ( (p->num_slides>1) && (pos<p->num_slides-1) ) {
 
 		for ( i=p->num_slides; i>pos+1; i-- ) {
@@ -194,6 +194,13 @@ static void update_titlebar(struct presentation *p)
 }
 
 
+int slide_number(struct presentation *p, struct slide *s)
+{
+	/* FIXME: Implement this */
+	return 0;
+}
+
+
 struct presentation *new_presentation()
 {
 	struct presentation *new;
@@ -215,8 +222,8 @@ struct presentation *new_presentation()
 	/* Add one blank slide and view it */
 	new->num_slides = 0;
 	new->slides = NULL;
-	new->view_slide = add_slide(new, 0);
-	new->view_slide_number = 0;
+	new->cur_edit_slide = add_slide(new, 0);
+	new->cur_proj_slide = NULL;
 
 	new->editing_object = NULL;
 	new->completely_empty = 1;

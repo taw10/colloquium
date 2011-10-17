@@ -86,6 +86,8 @@ static void update_image(struct image_object *o)
 		o->scaled_pb = gdk_pixbuf_scale_simple(i->pb, w, h,
 			                               GDK_INTERP_BILINEAR);
 	} /* else the size didn't change */
+
+	redraw_slide(((struct object *)o)->parent);
 }
 
 
@@ -153,7 +155,6 @@ struct object *add_image_object(struct slide *s, double x, double y,
 		free(new);
 		return NULL;
 	}
-	s->object_seq++;
 
 	update_image(new);
 
@@ -228,10 +229,8 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 	o->bb_width = ti->box_width;
 	o->bb_height = ti->box_height;
 	update_image((struct image_object *)o);
-	o->parent->object_seq++;
 
 	ti->drag_reason = IMAGE_DRAG_REASON_NONE;
-	redraw_overlay(p);
 }
 
 

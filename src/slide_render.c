@@ -35,22 +35,21 @@
 #include "stylesheet.h"
 
 
-int render_slide(struct slide *s)
+static cairo_surface_t *render_slide(struct slide *s, int w, int h)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
 	int i;
 
-	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-	                                  s->parent->slide_width,
-	                                  s->parent->slide_height);
+	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 
 	cr = cairo_create(surf);
 
-	cairo_rectangle(cr, 0.0, 0.0,
-	                s->parent->slide_width, s->parent->slide_height);
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
+
+	/* FIXME: Set scale such that nominal size fits */
 
 	for ( i=0; i<s->num_objects; i++ ) {
 
@@ -62,20 +61,54 @@ int render_slide(struct slide *s)
 
 	cairo_destroy(cr);
 
-	if ( s->render_cache != NULL ) cairo_surface_destroy(s->render_cache);
-	s->render_cache = surf;
-	s->render_cache_seq = s->object_seq;
-
-	return 0;
+	return surf;
 }
 
 
-void check_redraw_slide(struct slide *s)
+void redraw_slide(struct slide *s)
 {
-	/* Update necessary? */
-	if ( s->object_seq <= s->render_cache_seq ) return;
+	int w, h;
 
-	render_slide(s);
+	if ( s->rendered_thumb != NULL ) {
+		cairo_surface_destroy(s->rendered_thumb);
+	}
+
+	w = s->parent->thumb_slide_width;
+	h = (s->parent->slide_height/s->parent->slide_width) * w;
+	s->rendered_thumb = render_slide(s, w, h);
+	/* FIXME: Request redraw for slide sorter if open */
+
+	/* Is this slide currently open in the editor? */
+	if ( s == s->parent->cur_edit_slide ) {
+
+		if ( s->rendered_edit != NULL ) {
+			cairo_surface_destroy(s->rendered_edit);
+		}
+
+		w = s->parent->edit_slide_width;
+		h = (s->parent->slide_height/s->parent->slide_width) * w;
+		s->rendered_edit = render_slide(s, w, h);
+
+		gdk_window_invalidate_rect(s->parent->drawingarea->window,
+		                           NULL, FALSE);
+
+	}
+
+	/* Is this slide currently being displayed on the projector? */
+	if ( s == s->parent->cur_proj_slide ) {
+
+		if ( s->rendered_proj != NULL ) {
+			cairo_surface_destroy(s->rendered_proj);
+		}
+
+		w = s->parent->proj_slide_width;
+		h = (s->parent->slide_height/s->parent->slide_width) * w;
+		s->rendered_proj = render_slide(s, w, h);
+
+		gdk_window_invalidate_rect(s->parent->ss_drawingarea->window,
+		                           NULL, FALSE);
+
+	}
 }
 
 

@@ -51,8 +51,6 @@ static gboolean ss_expose_sig(GtkWidget *da, GdkEventExpose *event,
 	GtkAllocation allocation;
 	double xoff, yoff;
 
-	check_redraw_slide(p->view_slide);
-
 	cr = gdk_cairo_create(da->window);
 
 	/* Overall background */
@@ -71,7 +69,7 @@ static gboolean ss_expose_sig(GtkWidget *da, GdkEventExpose *event,
 		/* Draw the slide from the cache */
 		cairo_rectangle(cr, event->area.x, event->area.y,
 			        event->area.width, event->area.height);
-		cairo_set_source_surface(cr, p->view_slide->render_cache,
+		cairo_set_source_surface(cr, p->cur_proj_slide->rendered_proj,
 		                         xoff, yoff);
 		cairo_fill(cr);
 
@@ -91,14 +89,16 @@ void notify_slideshow_slide_changed(struct presentation *p)
 
 static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	if ( p->view_slide_number == 0 ) return FALSE;
+	int cur_slide_number;
 
-	p->view_slide_number--;
+	cur_slide_number = slide_number(p, p->cur_proj_slide);
+
+	if ( cur_slide_number == 0 ) return FALSE;
+
 	p->ss_blank = 0;
-	p->view_slide = p->slides[p->view_slide_number];
+	p->cur_proj_slide = p->slides[cur_slide_number-1];
 
 	notify_slideshow_slide_changed(p);
-	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -106,14 +106,16 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	if ( p->view_slide_number == p->num_slides-1 ) return FALSE;
+	int cur_slide_number;
 
-	p->view_slide_number++;
+	cur_slide_number = slide_number(p, p->cur_proj_slide);
+
+	if ( cur_slide_number == p->num_slides-1 ) return FALSE;
+
 	p->ss_blank = 0;
-	p->view_slide = p->slides[p->view_slide_number];
+	p->cur_proj_slide = p->slides[cur_slide_number+1];
 
 	notify_slideshow_slide_changed(p);
-	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -124,6 +126,7 @@ void end_slideshow(struct presentation *p)
 	gtk_widget_destroy(p->ss_drawingarea);
 	gtk_widget_destroy(p->slideshow);
 	p->slideshow = NULL;
+	p->cur_proj_slide = NULL;
 	notify_slide_changed(p);
 }
 
@@ -214,4 +217,7 @@ void try_start_slideshow(struct presentation *p)
 	p->slideshow = n;
 	gtk_window_fullscreen(GTK_WINDOW(n));
 	gtk_widget_show_all(GTK_WIDGET(n));
+
+	p->cur_proj_slide = p->cur_edit_slide;
+	redraw_slide(p->cur_proj_slide);
 }

@@ -30,8 +30,7 @@
 
 #include "presentation.h"
 
-extern int render_slide(struct slide *s);
-extern void check_redraw_slide(struct slide *s);
+extern void redraw_slide(struct slide *s);
 
 extern void draw_editing_box(cairo_t *cr, double xmin, double ymin,
                              double width, double height);

@@ -160,7 +160,7 @@ void notify_style_update(struct presentation *p, struct style *sty)
 	}
 
 	p->completely_empty = 0;
-	if ( changed ) notify_slide_update(p);
+	if ( changed ) notify_slide_changed(p);  /* Trigger redraw etc */
 }
 
 

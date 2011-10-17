@@ -87,7 +87,7 @@ static gboolean ss_expose_sig(GtkWidget *da, GdkEventExpose *event,
 
 void notify_slideshow_slide_changed(struct presentation *p)
 {
-	gdk_window_invalidate_rect(p->ss_drawingarea->window, NULL, FALSE);
+	redraw_slide(p->cur_proj_slide);
 }
 
 

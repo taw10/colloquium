@@ -196,7 +196,14 @@ static void update_titlebar(struct presentation *p)
 
 int slide_number(struct presentation *p, struct slide *s)
 {
-	/* FIXME: Implement this */
+	int i;
+
+	for ( i=0; i<p->num_slides; i++ ) {
+		if ( p->slides[i] == s ) return i;
+	}
+
+	fprintf(stderr, "Sorry, this point is never reached.\n");
+	fprintf(stderr, "Please report a bug.\n");
 	return 0;
 }
 

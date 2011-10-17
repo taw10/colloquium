@@ -61,10 +61,14 @@ static gboolean ss_expose_sig(GtkWidget *da, GdkEventExpose *event,
 
 	if ( !p->ss_blank ) {
 
+		int h;
+
+		h = p->proj_slide_width * p->slide_height / p->slide_width;
+
 		/* Get the overall size */
 		gtk_widget_get_allocation(da, &allocation);
-		xoff = (allocation.width - p->slide_width)/2.0;
-		yoff = (allocation.height - p->slide_height)/2.0;
+		xoff = (allocation.width - p->proj_slide_width)/2.0;
+		yoff = (allocation.height - h)/2.0;
 
 		/* Draw the slide from the cache */
 		cairo_rectangle(cr, event->area.x, event->area.y,
@@ -208,11 +212,17 @@ void try_start_slideshow(struct presentation *p)
 	for ( i=0; i<n_monitors; i++ ) {
 
 		GdkRectangle rect;
+		int w;
 
 		gdk_screen_get_monitor_geometry(screen, i, &rect);
 		snprintf(p->ss_geom, 255, "%ix%i+%i+%i",
 		         rect.width, rect.height, rect.x, rect.y);
-	}
+
+		w = rect.height * p->slide_width/p->slide_height;
+		if ( w > rect.width ) w = rect.width;
+		p->proj_slide_width = w;
+
+	} /* FIXME: Sensible (configurable) choice of monitor */
 
 	p->slideshow = n;
 	gtk_window_fullscreen(GTK_WINDOW(n));

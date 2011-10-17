@@ -49,7 +49,7 @@ static cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
-	/* FIXME: Set scale such that nominal size fits */
+	cairo_scale(cr, w/s->parent->slide_width, h/s->parent->slide_height);
 
 	for ( i=0; i<s->num_objects; i++ ) {
 

@@ -148,10 +148,12 @@ static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 	case GDK_KEY_Page_Up :
+	case GDK_KEY_Up :
 		prev_slide_sig(NULL, p);
 		break;
 
 	case GDK_KEY_Page_Down :
+	case GDK_KEY_Down :
 		next_slide_sig(NULL, p);
 		break;
 

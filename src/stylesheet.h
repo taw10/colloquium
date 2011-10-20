@@ -28,6 +28,9 @@
 #endif
 
 
+#include "loadsave.h"
+
+
 enum justify
 {
 	J_LEFT   = 0,
@@ -86,5 +89,7 @@ extern StyleSheet *new_stylesheet();
 extern StyleSheet *load_stylesheet(const char *filename);
 
 extern struct style *find_style(StyleSheet *ss, const char *name);
+
+extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
 
 #endif	/* STYLESHEET_H */

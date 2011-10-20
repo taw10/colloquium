@@ -29,11 +29,11 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <assert.h>
-#include <libconfig.h>
 
 #include "presentation.h"
 #include "stylesheet.h"
 #include "objects.h"
+#include "loadsave.h"
 
 
 struct _stylesheetwindow
@@ -576,38 +576,15 @@ StyleSheet *new_stylesheet()
 
 void save_stylesheet(StyleSheet *ss, const char *filename)
 {
-	config_t config;
-
-	config_init(&config);
-
-	if ( config_write_file(&config, filename) == CONFIG_FALSE ) {
-		printf("Couldn't save style sheet to '%s'\n", filename);
-	}
-	config_destroy(&config);
 }
 
 
 StyleSheet *load_stylesheet(const char *filename)
 {
 	StyleSheet *ss;
-	config_t config;
 
 	ss = new_stylesheet();
 	if ( ss == NULL ) return NULL;
-
-	config_init(&config);
-	if ( config_read_file(&config, filename) != CONFIG_TRUE ) {
-		printf("Style sheet parse error: %s at line %i.\n",
-		        config_error_text(&config),
-		        config_error_line(&config));
-		config_destroy(&config);
-		default_stylesheet(ss);
-		return ss;
-	}
-
-
-
-	config_destroy(&config);
 
 	return ss;
 }
@@ -658,6 +635,62 @@ StylesheetWindow *open_stylesheet(struct presentation *p)
 	gtk_widget_show_all(s->window);
 
 	return s;
+}
+
+
+static const char *str_halign(enum justify halign)
+{
+	switch ( halign ) {
+		case J_LEFT   : return "left";
+		case J_RIGHT  : return "right";
+		case J_CENTER : return "center";
+		default : return "???";
+	}
+}
+
+
+static const char *str_valign(enum vert_pos valign)
+{
+	switch ( valign ) {
+		case V_TOP    : return "top";
+		case V_BOTTOM : return "bottom";
+		case V_CENTER : return "center";
+		default : return "???";
+	}
+}
+
+
+void write_stylesheet(StyleSheet *ss, struct serializer *ser)
+{
+	int i;
+
+	serialize_start(ser, "styles");
+	for ( i=0; i<ss->n_styles; i++ ) {
+
+		struct style *s = ss->styles[i];
+		char id[32];
+
+		snprintf(id, 31, "%i", i);
+
+		serialize_start(ser, id);
+		serialize_s(ser, "name", s->name);
+		serialize_f(ser, "margin_left", s->margin_left);
+		serialize_f(ser, "margin_right", s->margin_right);
+		serialize_f(ser, "margin_top", s->margin_top);
+		serialize_f(ser, "margin_bottom", s->margin_bottom);
+		serialize_b(ser, "use_max_width", s->use_max_width);
+		serialize_f(ser, "max_width", s->max_width);
+		serialize_f(ser, "offset_x", s->offset_x);
+		serialize_f(ser, "offset_y", s->offset_y);
+		serialize_s(ser, "font", s->font);
+		serialize_s(ser, "colour", s->colour);
+		serialize_f(ser, "alpha", s->alpha);
+		serialize_s(ser, "halign", str_halign(s->halign));
+		serialize_s(ser, "valign", str_valign(s->valign));
+		serialize_end(ser);
+
+	}
+	serialize_end(ser);
 }
 
 

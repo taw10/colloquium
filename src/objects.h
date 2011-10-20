@@ -28,6 +28,9 @@
 #endif
 
 
+#include "loadsave.h"
+
+
 enum objtype
 {
 	TEXT,
@@ -54,6 +57,7 @@ struct object
 	void           (*render_object)(cairo_t *cr, struct object *o);
 	void           (*update_object)(struct object *o);
 	void           (*delete_object)(struct object *o);
+	void           (*serialize)(struct object *o, struct serializer *ser);
 };
 
 

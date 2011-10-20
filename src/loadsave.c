@@ -25,10 +25,25 @@
 #include <config.h>
 #endif
 
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "presentation.h"
 #include "objects.h"
 #include "stylesheet.h"
+
+
+struct serializer
+{
+	FILE *fh;
+
+	char *stack[32];
+	int stack_depth;
+	char *prefix;
+	int empty_set;
+	int blank_written;
+};
 
 
 int load_presentation(struct presentation *p, const char *filename)
@@ -47,8 +62,70 @@ static const char *type_text(enum objtype t)
 }
 
 
-static void write_stylesheet(StyleSheet *ss, FILE *fh)
+static void rebuild_prefix(struct serializer *ser)
 {
+	int i;
+	size_t sz = 1;  /* Space for terminator */
+
+	for ( i=0; i<ser->stack_depth; i++ ) {
+		sz += strlen(ser->stack[i]) + 1;
+	}
+
+	free(ser->prefix);
+	ser->prefix = malloc(sz);
+	if ( ser->prefix == NULL ) return;  /* Probably bad! */
+
+	ser->prefix[0] = '\0';
+	for ( i=0; i<ser->stack_depth; i++ ) {
+		if ( i != 0 ) strcat(ser->prefix, "/");
+		strcat(ser->prefix, ser->stack[i]);
+	}
+}
+
+
+void serialize_start(struct serializer *ser, const char *id)
+{
+	ser->stack[ser->stack_depth++] = strdup(id);
+	rebuild_prefix(ser);
+	ser->empty_set = 1;
+}
+
+
+static void check_prefix_output(struct serializer *ser)
+{
+	if ( ser->empty_set ) {
+		ser->empty_set = 0;
+		fprintf(ser->fh, "\n");
+		fprintf(ser->fh, "[%s]\n", ser->prefix);
+	}
+}
+
+
+void serialize_s(struct serializer *ser, const char *key, const char *val)
+{
+	check_prefix_output(ser);
+	fprintf(ser->fh, "%s = \"%s\"\n", key, val);
+}
+
+
+void serialize_f(struct serializer *ser, const char *key, double val)
+{
+	check_prefix_output(ser);
+	fprintf(ser->fh, "%s = %.2ff\n", key, val);
+}
+
+
+void serialize_b(struct serializer *ser, const char *key, int val)
+{
+	check_prefix_output(ser);
+	fprintf(ser->fh, "%s = %i\n", key, val);
+}
+
+
+void serialize_end(struct serializer *ser)
+{
+	free(ser->stack[--ser->stack_depth]);
+	rebuild_prefix(ser);
 }
 
 
@@ -56,47 +133,57 @@ int save_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
 	int i;
+	struct serializer ser;
 
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
 
+	/* Set up the serializer */
+	ser.fh = fh;
+	ser.stack_depth = 0;
+	ser.prefix = NULL;
+
 	fprintf(fh, "# Colloquium presentation file\n");
-	fprintf(fh, "version=0\n");
+	serialize_f(&ser, "version", 0.1);
 
-	fprintf(fh, "width=%.2f\n", p->slide_width);
-	fprintf(fh, "height=%.2f\n", p->slide_height);
+	serialize_start(&ser, "slide-properties");
+	serialize_f(&ser, "width", p->slide_width);
+	serialize_f(&ser, "height", p->slide_height);
+	serialize_end(&ser);
 
-	write_stylesheet(p->ss, fh);
+	serialize_start(&ser, "stylesheet");
+	write_stylesheet(p->ss, &ser);
+	serialize_end(&ser);
 
+	serialize_start(&ser, "slides");
 	for ( i=0; i<p->num_slides; i++ ) {
 
 		int j;
 		struct slide *s;
+		char s_id[32];
 
 		s = p->slides[i];
 
-		fprintf(fh, "++slide\n");
-
+		snprintf(s_id, 31, "%i", i);
+		serialize_start(&ser, s_id);
 		for ( j=0; j<s->num_objects; j++ ) {
 
-			struct object *o;
-
-			o = s->objects[j];
+			struct object *o = s->objects[j];
+			char o_id[32];
 
 			if ( o->empty ) continue;
+			snprintf(o_id, 31, "%i", j);
 
-			fprintf(fh, "++object\n");
-			fprintf(fh, "type=%s\n", type_text(o->type));
-			fprintf(fh, "x=%.2f\n", o->x);
-			fprintf(fh, "y=%.2f\n", o->y);
-			fprintf(fh, "w=%.2f\n", o->bb_width);
-			fprintf(fh, "h=%.2f\n", o->bb_height);
-			fprintf(fh, "--object\n");
+			serialize_start(&ser, o_id);
+			serialize_s(&ser, "type", type_text(o->type));
+			//o->serialize(o, &ser);
+			serialize_end(&ser);
+
 		}
-
-		fprintf(fh, "--slide\n");
+		serialize_end(&ser);
 
 	}
+	serialize_end(&ser);
 
 	fclose(fh);
 	return 0;

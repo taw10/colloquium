@@ -415,7 +415,7 @@ static struct style *new_style(StyleSheet *ss, const char *name)
 	int n;
 	struct style **styles_new;
 
-	sty = malloc(sizeof(*sty));
+	sty = calloc(1, sizeof(*sty));
 	if ( sty == NULL ) return NULL;
 
 	sty->name = strdup(name);

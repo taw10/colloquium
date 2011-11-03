@@ -1,5 +1,5 @@
 /*
- * loadsave.v
+ * loadsave.c
  *
  * Colloquium - A tiny presentation program
  *
@@ -28,26 +28,296 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "presentation.h"
 #include "objects.h"
 #include "stylesheet.h"
 
 
-struct serializer
+struct ds_node
 {
-	FILE *fh;
-
-	char *stack[32];
-	int stack_depth;
-	char *prefix;
-	int empty_set;
-	int blank_written;
+	char *key;
+	char *value;
+	struct ds_node **children;
+	int n_children;
+	int max_children;
 };
+
+
+static int alloc_children(struct ds_node *node)
+{
+	struct ds_node **new;
+
+	new = realloc(node->children,
+	              node->max_children*sizeof(*node->children));
+	if ( new == NULL ) return 1;
+
+	node->children = new;
+	return 0;
+}
+
+
+static struct ds_node *new_ds_node(const char *key, const char *value)
+{
+	struct ds_node *new;
+
+	new = malloc(sizeof(*new));
+	if ( new == NULL ) return NULL;
+
+	new->key = NULL;
+	new->value = NULL;
+	new->n_children = 0;
+	new->max_children = 32;
+	new->children = NULL;
+
+	if ( alloc_children(new) ) {
+		free(new);
+		return NULL;
+	}
+
+	return new;
+}
+
+
+static struct ds_node *add_child(struct ds_node *node, const char *key)
+{
+	struct ds_node *new;
+
+	new = new_ds_node(key, NULL);
+	if ( new == NULL ) return NULL;
+	new->key = strdup(key);
+	if ( new->key == NULL ) return NULL;
+
+	if ( node->n_children >= new->max_children ) {
+		new->max_children += 32;
+		if ( alloc_children(node) ) {
+			free(new);
+			return NULL;
+		}
+	}
+
+	node->children[node->n_children++] = new;
+
+	return new;
+}
+
+
+static void show_tree(struct ds_node *root)
+{
+	int i;
+
+	for ( i=0; i<root->n_children; i++ ) {
+		printf("%3i: %s => %s\n", i, root->children[i]->key,
+		                             root->children[i]->value);
+	}
+
+	for ( i=0; i<root->n_children; i++ ) {
+		if ( root->children[i]->n_children > 0 ) {
+			printf("\n");
+			printf("%s:\n", root->children[i]->key);
+			show_tree(root->children[i]);
+		}
+	}
+}
+
+
+static struct ds_node *find_node(struct ds_node *root, const char *path)
+{
+	size_t start, len;
+	char element[1024];
+	struct ds_node *cur = root;
+
+	len = strlen(path);
+	printf("looking for '%s' in %s\n", path, root->key);
+
+	start = 0;
+	while ( start < len ) {
+
+		size_t pos, i;
+		int child;
+		int found = 0;
+
+		pos = 0;
+		for ( i=start; i<len; i++ ) {
+
+			if ( path[i] == '/' ) break;
+			element[pos++] = path[i];
+
+		}
+		element[pos++] = '\0';
+		if ( element[0] == '\0' ) {
+			printf("done.\n");
+			goto out;
+		}
+		start = i;
+		printf("got '%s' (%i %i)\n", element, start, pos);
+
+		for ( child=0; child<cur->n_children; child++ ) {
+
+			const char *this_key = cur->children[child]->key;
+
+			if ( strcmp(this_key, element) == 0 ) {
+				cur = cur->children[child];
+				found = 1;
+				break;
+			}
+
+		}
+
+		if ( !found ) {
+
+			cur = add_child(cur, element);
+			printf("Adding %s to %s\n", element, cur->key);
+			if ( cur == NULL ) {
+				return NULL;  /* Error */
+			}
+
+		}
+
+	}
+
+out:
+	return cur;
+}
+
+
+static int deserialize_file(FILE *fh, struct ds_node *root)
+{
+	char *rval = NULL;
+	struct ds_node *cur_node = root;
+
+	do {
+		size_t i;
+		char line[1024];
+		size_t len, s_start;
+		size_t s_equals = 0;
+		size_t s_val = 0;
+		size_t s_openbracket = 0;
+		size_t s_closebracket = 0;
+		int h_start = 0;
+		int h_equals = 0;
+		int h_val = 0;
+		int h_openbracket = 0;
+		int h_closebracket = 0;
+
+		rval = fgets(line, 1023, fh);
+		if ( rval == NULL ) {
+			printf("Error!\n");
+			continue;
+		}
+
+		len = strlen(line);
+		s_start = len-1;
+
+		for ( i=0; i<len-1; i++ ) {
+			if ( !h_start && !isspace(line[i]) ) {
+				s_start = i;
+				h_start = 1;
+			}
+			if ( !h_val && h_equals && !isspace(line[i]) ) {
+				s_val = i;
+				h_val = 1;
+			}
+			if ( !h_equals && (line[i] == '=') ) {
+				s_equals = i;
+				h_equals = 1;
+			}
+			if ( !h_openbracket && (line[i] == '[') ) {
+				s_openbracket = i;
+				h_openbracket = 1;
+			}
+			if ( h_openbracket && !h_closebracket
+			     && (line[i] == ']') )
+			{
+				s_closebracket = i;
+				h_closebracket = 1;
+			}
+		}
+
+		if ( (h_openbracket && !h_closebracket)
+		  || (!h_openbracket && h_closebracket) )
+		{
+			fprintf(stderr, "Mismatched square brackets: %s", line);
+			continue;
+		}
+
+		if ( !h_openbracket && !h_equals ) continue;
+
+		if ( !h_openbracket && (!h_start || !h_val || !h_equals) ) {
+			fprintf(stderr, "Incomplete assignment: %s", line);
+			continue;
+		}
+
+		if ( h_equals && (h_openbracket || h_closebracket) ) {
+			fprintf(stderr, "Brackets and equals: %s", line);
+			continue;
+		}
+
+		if ( !h_openbracket ) {
+
+			size_t pos = 0;
+			char key[1024];
+			char value[1024];
+			struct ds_node *node;
+
+			for ( i=s_start; i<s_equals; i++ ) {
+				if ( !isspace(line[i]) ) key[pos++] = line[i];
+			}
+			key[pos] = '\0';
+
+			pos = 0;
+			for ( i=s_val; i<len; i++ ) {
+				if ( line[i] != '\n' ) value[pos++] = line[i];
+			}
+			value[pos] = '\0';
+
+			node = find_node(cur_node, key);
+			node->value = strdup(value);
+
+		} else {
+
+			size_t pos = 0;
+			char path[1024];
+
+			for ( i=s_openbracket+1; i<s_closebracket; i++ ) {
+				if ( !isspace(line[i]) ) path[pos++] = line[i];
+			}
+			path[pos] = '\0';
+			printf("descending to %s\n", path);
+			cur_node = find_node(root, path);
+			printf("cur_node->key = '%s'\n", cur_node->key);
+
+		}
+
+	} while ( rval != NULL );
+
+	show_tree(root);
+
+	return 0;
+}
 
 
 int load_presentation(struct presentation *p, const char *filename)
 {
+	FILE *fh;
+	struct ds_node *root;
+
+	fh = fopen(filename, "r");
+	if ( fh == NULL ) return 1;
+
+	root = new_ds_node(NULL, NULL);
+	if ( root == NULL ) return 1;
+
+	if ( deserialize_file(fh, root) ) {
+		fclose(fh);
+		return 1;
+	}
+
+	fclose(fh);
+
+	p->cur_edit_slide = p->slides[0];
+
 	return 0;
 }
 
@@ -95,8 +365,10 @@ static void check_prefix_output(struct serializer *ser)
 {
 	if ( ser->empty_set ) {
 		ser->empty_set = 0;
-		fprintf(ser->fh, "\n");
-		fprintf(ser->fh, "[%s]\n", ser->prefix);
+		if ( ser->prefix != NULL ) {
+			fprintf(ser->fh, "\n");
+			fprintf(ser->fh, "[%s]\n", ser->prefix);
+		}
 	}
 }
 
@@ -111,7 +383,7 @@ void serialize_s(struct serializer *ser, const char *key, const char *val)
 void serialize_f(struct serializer *ser, const char *key, double val)
 {
 	check_prefix_output(ser);
-	fprintf(ser->fh, "%s = %.2ff\n", key, val);
+	fprintf(ser->fh, "%s = %.2f\n", key, val);
 }
 
 
@@ -176,7 +448,7 @@ int save_presentation(struct presentation *p, const char *filename)
 
 			serialize_start(&ser, o_id);
 			serialize_s(&ser, "type", type_text(o->type));
-			//o->serialize(o, &ser);
+			o->serialize(o, &ser);
 			serialize_end(&ser);
 
 		}

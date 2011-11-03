@@ -35,6 +35,7 @@
 #include "objects.h"
 #include "mainwindow.h"
 #include "slide_render.h"
+#include "loadsave.h"
 
 
 enum text_drag_reason
@@ -393,6 +394,22 @@ static void delete_text_object(struct object *op)
 }
 
 
+static void serialize(struct object *op, struct serializer *ser)
+{
+	struct text_object *o = (struct text_object *)op;
+
+	serialize_s(ser, "style", op->style->name);
+	if ( op->style == op->parent->parent->ss->styles[0] ) {
+		serialize_f(ser, "x", op->x);
+		serialize_f(ser, "y", op->y);
+		serialize_f(ser, "w", op->bb_width);
+		serialize_f(ser, "h", op->bb_height);
+	}
+
+	serialize_s(ser, "text", o->text);
+}
+
+
 static struct object *add_text_object(struct slide *s, double x, double y,
                                       struct style *sty,
                                       struct text_toolinfo *ti)
@@ -424,6 +441,7 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 	new->base.render_object = render_text_object;
 	new->base.delete_object = delete_text_object;
 	new->base.update_object = update_text_object;
+	new->base.serialize = serialize;
 
 	if ( add_object_to_slide(s, (struct object *)new) ) {
 		delete_object((struct object *)new);

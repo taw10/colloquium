@@ -574,8 +574,27 @@ StyleSheet *new_stylesheet()
 }
 
 
-void save_stylesheet(StyleSheet *ss, const char *filename)
+int save_stylesheet(StyleSheet *ss, const char *filename)
 {
+	FILE *fh;
+	struct serializer ser;
+
+	fh = fopen(filename, "w");
+	if ( fh == NULL ) return 1;
+
+	/* Set up the serializer */
+	ser.fh = fh;
+	ser.stack_depth = 0;
+	ser.prefix = NULL;
+
+	fprintf(fh, "# Colloquium style sheet file\n");
+	serialize_f(&ser, "version", 0.1);
+
+	serialize_start(&ser, "stylesheet");
+	write_stylesheet(ss, &ser);
+	serialize_end(&ser);
+
+	return 0;
 }
 
 

@@ -30,8 +30,17 @@
 /* Forward declaration */
 struct presentation;
 
-/* Opaque structure */
-struct serializer;
+/* Would be opaque if I could be bothered to write the constructor */
+struct serializer
+{
+	FILE *fh;
+
+	char *stack[32];
+	int stack_depth;
+	char *prefix;
+	int empty_set;
+	int blank_written;
+};
 
 extern void serialize_start(struct serializer *s, const char *id);
 extern void serialize_s(struct serializer *s, const char *key, const char *val);

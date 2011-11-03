@@ -89,7 +89,7 @@ static gint open_response_sig(GtkWidget *d, gint response,
 			if ( load_presentation(p, filename) ) {
 				show_error(p, "Failed to open presentation");
 			} else {
-				open_mainwindow(p);
+				redraw_slide(p->cur_edit_slide);
 			}
 		} else {
 			struct presentation *p;
@@ -186,8 +186,45 @@ static gint save_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint save_ss_response_sig(GtkWidget *d, gint response,
+                              struct presentation *p)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+
+		if ( save_stylesheet(p->ss, filename) ) {
+			show_error(p, "Failed to save style sheet");
+		}
+
+		g_free(filename);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
 static gint save_ss_sig(GtkWidget *widget, struct presentation *p)
 {
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new("Save Style sheet",
+	                                GTK_WINDOW(p->window),
+	                                GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(save_ss_response_sig), p);
+
+	gtk_widget_show_all(d);
+
 	return 0;
 }
 

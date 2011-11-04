@@ -58,14 +58,19 @@ static int alloc_children(struct ds_node *node)
 }
 
 
-static struct ds_node *new_ds_node(const char *key, const char *value)
+static struct ds_node *new_ds_node(const char *key)
 {
 	struct ds_node *new;
 
 	new = malloc(sizeof(*new));
 	if ( new == NULL ) return NULL;
 
-	new->key = NULL;
+	new->key = strdup(key);
+	if ( new->key == NULL ) {
+		free(new);
+		return NULL;
+	}
+
 	new->value = NULL;
 	new->n_children = 0;
 	new->max_children = 32;
@@ -84,10 +89,8 @@ static struct ds_node *add_child(struct ds_node *node, const char *key)
 {
 	struct ds_node *new;
 
-	new = new_ds_node(key, NULL);
+	new = new_ds_node(key);
 	if ( new == NULL ) return NULL;
-	new->key = strdup(key);
-	if ( new->key == NULL ) return NULL;
 
 	if ( node->n_children >= new->max_children ) {
 		new->max_children += 32;
@@ -103,20 +106,23 @@ static struct ds_node *add_child(struct ds_node *node, const char *key)
 }
 
 
-static void show_tree(struct ds_node *root)
+static void show_tree(struct ds_node *root, const char *path)
 {
+	char newpath[1024];
 	int i;
 
+	snprintf(newpath, 1023, "%s%s/", path, root->key);
+
+	printf("%s\n", newpath);
 	for ( i=0; i<root->n_children; i++ ) {
-		printf("%3i: %s => %s\n", i, root->children[i]->key,
-		                             root->children[i]->value);
+		printf("     %s => %s\n", root->children[i]->key,
+		                          root->children[i]->value);
 	}
 
 	for ( i=0; i<root->n_children; i++ ) {
 		if ( root->children[i]->n_children > 0 ) {
 			printf("\n");
-			printf("%s:\n", root->children[i]->key);
-			show_tree(root->children[i]);
+			show_tree(root->children[i], newpath);
 		}
 	}
 }
@@ -129,7 +135,6 @@ static struct ds_node *find_node(struct ds_node *root, const char *path)
 	struct ds_node *cur = root;
 
 	len = strlen(path);
-	printf("looking for '%s' in %s\n", path, root->key);
 
 	start = 0;
 	while ( start < len ) {
@@ -147,11 +152,9 @@ static struct ds_node *find_node(struct ds_node *root, const char *path)
 		}
 		element[pos++] = '\0';
 		if ( element[0] == '\0' ) {
-			printf("done.\n");
 			goto out;
 		}
-		start = i;
-		printf("got '%s' (%i %i)\n", element, start, pos);
+		start = i+1;
 
 		for ( child=0; child<cur->n_children; child++ ) {
 
@@ -168,7 +171,6 @@ static struct ds_node *find_node(struct ds_node *root, const char *path)
 		if ( !found ) {
 
 			cur = add_child(cur, element);
-			printf("Adding %s to %s\n", element, cur->key);
 			if ( cur == NULL ) {
 				return NULL;  /* Error */
 			}
@@ -203,7 +205,7 @@ static int deserialize_file(FILE *fh, struct ds_node *root)
 
 		rval = fgets(line, 1023, fh);
 		if ( rval == NULL ) {
-			printf("Error!\n");
+			if ( ferror(fh) ) printf("Read error!\n");
 			continue;
 		}
 
@@ -284,15 +286,13 @@ static int deserialize_file(FILE *fh, struct ds_node *root)
 				if ( !isspace(line[i]) ) path[pos++] = line[i];
 			}
 			path[pos] = '\0';
-			printf("descending to %s\n", path);
 			cur_node = find_node(root, path);
-			printf("cur_node->key = '%s'\n", cur_node->key);
 
 		}
 
 	} while ( rval != NULL );
 
-	show_tree(root);
+	show_tree(root, "");
 
 	return 0;
 }
@@ -306,7 +306,7 @@ int load_presentation(struct presentation *p, const char *filename)
 	fh = fopen(filename, "r");
 	if ( fh == NULL ) return 1;
 
-	root = new_ds_node(NULL, NULL);
+	root = new_ds_node("root");
 	if ( root == NULL ) return 1;
 
 	if ( deserialize_file(fh, root) ) {

@@ -87,9 +87,18 @@ extern StylesheetWindow *open_stylesheet(struct presentation *p);
 
 extern StyleSheet *new_stylesheet();
 extern StyleSheet *load_stylesheet(const char *filename);
+extern void free_stylesheet(StyleSheet *ss);
+extern void default_stylesheet(StyleSheet *ss);
+
+extern struct style *new_style(StyleSheet *ss, const char *name);
+
 extern int save_stylesheet(StyleSheet *ss, const char *filename);
 
 extern struct style *find_style(StyleSheet *ss, const char *name);
+
+extern enum justify str_to_halign(char *halign);
+extern enum vert_pos str_to_valign(char *valign);
+
 
 extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
 

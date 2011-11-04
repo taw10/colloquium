@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "presentation.h"
 #include "objects.h"
@@ -106,7 +107,7 @@ static struct ds_node *add_child(struct ds_node *node, const char *key)
 }
 
 
-static void show_tree(struct ds_node *root, const char *path)
+static void UNUSED show_tree(struct ds_node *root, const char *path)
 {
 	char newpath[1024];
 	int i;
@@ -292,7 +293,234 @@ static int deserialize_file(FILE *fh, struct ds_node *root)
 
 	} while ( rval != NULL );
 
-	show_tree(root, "");
+	return 0;
+}
+
+
+static void free_ds_tree(struct ds_node *root)
+{
+	int i;
+
+	for ( i=0; i<root->n_children; i++ ) {
+		if ( root->children[i]->n_children > 0 ) {
+			free_ds_tree(root->children[i]);
+		}
+	}
+
+	free(root->key);
+	free(root->value);  /* Might free(NULL), but that's fine */
+	free(root);
+}
+
+
+static int get_field_f(struct ds_node *root, const char *key, double *val)
+{
+	struct ds_node *node;
+	double v;
+	char *check;
+
+	node = find_node(root, key);
+	if ( node == NULL ) {
+		fprintf(stderr, "Couldn't find field '%s'\n", key);
+		return 1;
+	}
+
+	v = strtod(node->value, &check);
+	if ( check == node->value ) {
+		fprintf(stderr, "Invalid value for '%s'\n", key);
+		return 1;
+	}
+
+	*val = v;
+
+	return 0;
+}
+
+
+static int get_field_i(struct ds_node *root, const char *key, int *val)
+{
+	struct ds_node *node;
+	int v;
+	char *check;
+
+	node = find_node(root, key);
+	if ( node == NULL ) {
+		fprintf(stderr, "Couldn't find field '%s'\n", key);
+		return 1;
+	}
+
+	v = strtol(node->value, &check, 0);
+	if ( check == node->value ) {
+		fprintf(stderr, "Invalid value for '%s'\n", key);
+		return 1;
+	}
+
+	*val = v;
+
+	return 0;
+}
+
+
+static int get_field_s(struct ds_node *root, const char *key, char **val)
+{
+	struct ds_node *node;
+	char *v;
+	size_t i, len, s1, s2;
+	int hq;
+
+	node = find_node(root, key);
+	if ( node == NULL ) {
+		fprintf(stderr, "Couldn't find field '%s'\n", key);
+		return 1;
+	}
+
+	len = strlen(node->value);
+	hq = 0;
+	for ( i=0; i<len; i++ ) {
+		if ( node->value[i] == '"' ) {
+			s1 = i;
+			hq = 1;
+			break;
+		}
+	}
+	if ( !hq ) {
+		fprintf(stderr, "No quotes in '%s'\n", node->value);
+		return 1;
+	}
+
+	for ( i=len-1; i>=0; i-- ) {
+		if ( node->value[i] == '"' ) {
+			s2 = i;
+			break;
+		}
+	}
+
+	if ( s1 == s2 ) {
+		fprintf(stderr, "Mismatchd quotes in '%s'\n", node->value);
+		return 1;
+	}
+
+	v = malloc(s2-s1+1);
+	if ( v == NULL ) {
+		fprintf(stderr, "Failed to allocate space for '%s'\n", key);
+		return 1;
+	}
+
+	strncpy(v, node->value+s1+1, s2-s1-1);
+	v[s2-s1-1] = '\0';
+
+	*val = v;
+
+	return 0;
+}
+
+
+static int read_style(struct style *sty, struct ds_node *root)
+{
+	char *align;
+
+	get_field_f(root, "margin_left",   &sty->margin_left);
+	get_field_f(root, "margin_right",  &sty->margin_right);
+	get_field_f(root, "margin_top",    &sty->margin_top);
+	get_field_f(root, "margin_bottom", &sty->margin_bottom);
+
+	get_field_i(root, "use_max_width", &sty->use_max_width);
+	get_field_f(root, "max_width",     &sty->max_width);
+
+	get_field_f(root, "offset_x",      &sty->offset_x);
+	get_field_f(root, "offset_y",      &sty->offset_y);
+
+	get_field_s(root, "font",          &sty->font);
+	get_field_s(root, "colour",        &sty->colour);
+	get_field_f(root, "alpha",         &sty->alpha);
+
+	get_field_s(root, "halign",        &align);
+	sty->halign = str_to_halign(align);
+	free(align);
+	get_field_s(root, "valign",        &align);
+	sty->valign = str_to_valign(align);
+	free(align);
+
+	return 0;
+}
+
+
+static StyleSheet *tree_to_stylesheet(struct ds_node *root)
+{
+	StyleSheet *ss;
+	struct ds_node *node;
+	int i;
+
+	ss = new_stylesheet();
+	if ( ss == NULL ) return NULL;
+
+	node = find_node(root, "styles");
+	if ( node == NULL ) {
+		fprintf(stderr, "Couldn't find styles\n");
+		free_stylesheet(ss);
+		return NULL;
+	}
+
+	for ( i=0; i<node->n_children; i++ ) {
+
+		struct style *ns;
+		char *v;
+
+		get_field_s(node->children[i], "name", &v);
+		if ( v == NULL ) {
+			fprintf(stderr, "No name for style '%s'\n",
+			        node->children[i]->key);
+			continue;
+		}
+
+		ns = new_style(ss, v);
+		if ( ns == NULL ) {
+			fprintf(stderr, "Couldn't create style for '%s'\n",
+			        node->children[i]->key);
+			continue;
+		}
+
+		if ( read_style(ns, node->children[i]) ) {
+			fprintf(stderr, "Couldn't read style '%s'\n", v);
+			continue;
+		}
+
+	}
+
+	return ss;
+}
+
+
+int tree_to_presentation(struct ds_node *root, struct presentation *p)
+{
+	struct ds_node *node;
+	char *check;
+
+	node = find_node(root, "slide-properties/width");
+	if ( node == NULL ) return 1;
+	p->slide_width = strtod(node->value, &check);
+	if ( check == node->value ) {
+		fprintf(stderr, "Invalid slide width\n");
+		return 1;
+	}
+
+	node = find_node(root, "slide-properties/height");
+	if ( node == NULL ) return 1;
+	p->slide_height = strtod(node->value, &check);
+	if ( check == node->value ) {
+		fprintf(stderr, "Invalid slide height\n");
+		return 1;
+	}
+
+	node = find_node(root, "stylesheet");
+	if ( node != NULL ) {
+		free_stylesheet(p->ss);
+		p->ss = tree_to_stylesheet(node);
+		if ( p->ss == NULL ) {
+			fprintf(stderr, "Invalid style sheet\n");
+			return 1;
+		}
+	}
 
 	return 0;
 }
@@ -302,6 +530,9 @@ int load_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
 	struct ds_node *root;
+	int r;
+
+	assert(p->completely_empty);
 
 	fh = fopen(filename, "r");
 	if ( fh == NULL ) return 1;
@@ -314,7 +545,12 @@ int load_presentation(struct presentation *p, const char *filename)
 		return 1;
 	}
 
+	r = tree_to_presentation(root, p);
+	free_ds_tree(root);
+
 	fclose(fh);
+
+	if ( r ) return r;  /* Error */
 
 	p->cur_edit_slide = p->slides[0];
 

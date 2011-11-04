@@ -409,7 +409,7 @@ static gint destroy_stylesheet_sig(GtkWidget *w, struct _stylesheetwindow *s)
 }
 
 
-static struct style *new_style(StyleSheet *ss, const char *name)
+struct style *new_style(StyleSheet *ss, const char *name)
 {
 	struct style *sty;
 	int n;
@@ -435,7 +435,21 @@ static struct style *new_style(StyleSheet *ss, const char *name)
 }
 
 
-static void default_stylesheet(StyleSheet *ss)
+void free_stylesheet(StyleSheet *ss)
+{
+	int i;
+
+	for ( i=0; i<ss->n_styles; i++ ) {
+		free(ss->styles[i]->name);
+		free(ss->styles[i]);
+	}
+
+	free(ss->styles);
+	free(ss);
+}
+
+
+void default_stylesheet(StyleSheet *ss)
 {
 	struct style *sty;
 
@@ -568,7 +582,6 @@ StyleSheet *new_stylesheet()
 
 	ss->n_styles = 0;
 	ss->styles = NULL;
-	default_stylesheet(ss);
 
 	return ss;
 }
@@ -668,6 +681,16 @@ static const char *str_halign(enum justify halign)
 }
 
 
+enum justify str_to_halign(char *halign)
+{
+	if ( strcmp(halign, "left") == 0 ) return J_LEFT;
+	if ( strcmp(halign, "right") == 0 ) return J_RIGHT;
+	if ( strcmp(halign, "center") == 0 ) return J_CENTER;
+
+	return J_LEFT;
+}
+
+
 static const char *str_valign(enum vert_pos valign)
 {
 	switch ( valign ) {
@@ -676,6 +699,16 @@ static const char *str_valign(enum vert_pos valign)
 		case V_CENTER : return "center";
 		default : return "???";
 	}
+}
+
+
+enum vert_pos str_to_valign(char *valign)
+{
+	if ( strcmp(valign, "top") == 0 ) return V_TOP;
+	if ( strcmp(valign, "bottom") == 0 ) return V_BOTTOM;
+	if ( strcmp(valign, "center") == 0 ) return V_CENTER;
+
+	return J_LEFT;
 }
 
 

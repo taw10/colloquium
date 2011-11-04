@@ -183,4 +183,6 @@ extern struct object *find_object_at_position(struct slide *s,
 
 extern int slide_number(struct presentation *p, struct slide *s);
 
+#define UNUSED __attribute__((unused))
+
 #endif	/* PRESENTATION_H */

@@ -91,6 +91,12 @@ struct toolinfo
 	void (*im_commit)(struct object *o, gchar *str, struct toolinfo *tip);
 
 	int (*valid_object)(struct object *o);
+
+	void (*realise)(struct toolinfo *tip, GtkWidget *w);
+
+	struct object *(*deserialize)(struct presentation *p,
+	                              struct ds_node *root, struct slide *s,
+	                              struct toolinfo *tip);
 };
 
 
@@ -175,7 +181,12 @@ struct presentation
 
 
 extern struct presentation *new_presentation(void);
+
+extern struct slide *new_slide(void);
 extern struct slide *add_slide(struct presentation *p, int pos);
+extern int insert_slide(struct presentation *p, struct slide *s, int pos);
+extern void free_slide(struct slide *s);
+
 extern int add_object_to_slide(struct slide *s, struct object *o);
 extern void remove_object_from_slide(struct slide *s, struct object *o);
 extern struct object *find_object_at_position(struct slide *s,

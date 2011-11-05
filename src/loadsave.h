@@ -30,6 +30,15 @@
 /* Forward declaration */
 struct presentation;
 
+struct ds_node
+{
+	char *key;
+	char *value;
+	struct ds_node **children;
+	int n_children;
+	int max_children;
+};
+
 /* Would be opaque if I could be bothered to write the constructor */
 struct serializer
 {
@@ -47,6 +56,10 @@ extern void serialize_s(struct serializer *s, const char *key, const char *val);
 extern void serialize_f(struct serializer *s, const char *key, double val);
 extern void serialize_b(struct serializer *s, const char *key, int val);
 extern void serialize_end(struct serializer *s);
+
+extern int get_field_f(struct ds_node *root, const char *key, double *val);
+extern int get_field_i(struct ds_node *root, const char *key, int *val);
+extern int get_field_s(struct ds_node *root, const char *key, char **val);
 
 extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);

@@ -34,16 +34,7 @@
 #include "presentation.h"
 #include "objects.h"
 #include "stylesheet.h"
-
-
-struct ds_node
-{
-	char *key;
-	char *value;
-	struct ds_node **children;
-	int n_children;
-	int max_children;
-};
+#include "slide_render.h"
 
 
 static int alloc_children(struct ds_node *node)
@@ -313,7 +304,7 @@ static void free_ds_tree(struct ds_node *root)
 }
 
 
-static int get_field_f(struct ds_node *root, const char *key, double *val)
+int get_field_f(struct ds_node *root, const char *key, double *val)
 {
 	struct ds_node *node;
 	double v;
@@ -337,7 +328,7 @@ static int get_field_f(struct ds_node *root, const char *key, double *val)
 }
 
 
-static int get_field_i(struct ds_node *root, const char *key, int *val)
+int get_field_i(struct ds_node *root, const char *key, int *val)
 {
 	struct ds_node *node;
 	int v;
@@ -361,7 +352,7 @@ static int get_field_i(struct ds_node *root, const char *key, int *val)
 }
 
 
-static int get_field_s(struct ds_node *root, const char *key, char **val)
+int get_field_s(struct ds_node *root, const char *key, char **val)
 {
 	struct ds_node *node;
 	char *v;
@@ -491,10 +482,109 @@ static StyleSheet *tree_to_stylesheet(struct ds_node *root)
 }
 
 
+static enum objtype text_to_type(const char *t)
+{
+	if ( strcmp(t, "text") == 0 ) return OBJ_TEXT;
+	if ( strcmp(t, "image") == 0 ) return OBJ_IMAGE;
+
+	return OBJ_UNKNOWN;
+}
+
+
+static const char *type_text(enum objtype t)
+{
+	switch ( t )
+	{
+		case OBJ_TEXT : return "text";
+		case OBJ_IMAGE : return "image";
+		default : return "unknown";
+	}
+}
+
+
+
+static struct object *tree_to_object(struct presentation *p,
+                                     struct ds_node *root, struct slide *s)
+{
+	struct object *o = NULL;
+	char *v;
+
+	if ( get_field_s(root, "type", &v) ) return NULL;
+
+	switch ( text_to_type(v) ) {
+
+		case OBJ_TEXT :
+		o = p->text_tool->deserialize(p, root, s, p->text_tool);
+		break;
+
+		case OBJ_IMAGE :
+		o = p->image_tool->deserialize(p, root, s, p->image_tool);
+		break;
+
+		default :
+		fprintf(stderr, "Unrecognised object type '%s'\n", v);
+		break;
+
+	}
+
+	return o;
+}
+
+
+static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
+{
+	struct slide *s;
+	int i;
+
+	s = new_slide();
+	s->parent = p;
+
+	/* Loop over objects */
+	for ( i=0; i<root->n_children; i++ ) {
+
+		struct object *o;
+
+		o = tree_to_object(p, root->children[i], s);
+		if ( o != NULL ) {
+			add_object_to_slide(s, o);
+		}
+
+	}
+
+	redraw_slide(s);
+
+	return s;
+}
+
+
+static int tree_to_slides(struct ds_node *root, struct presentation *p)
+{
+	int i;
+
+	for ( i=0; i<root->n_children; i++ ) {
+
+		struct slide *s;
+
+		s = tree_to_slide(p, root->children[i]);
+		if ( s != NULL ) {
+			insert_slide(p, s, p->num_slides-1);
+			redraw_slide(s);
+		}
+
+	}
+
+	return 0;
+}
+
+
 int tree_to_presentation(struct ds_node *root, struct presentation *p)
 {
 	struct ds_node *node;
 	char *check;
+	int i;
+
+	p->cur_edit_slide = NULL;
+	p->cur_proj_slide = NULL;
 
 	node = find_node(root, "slide-properties/width");
 	if ( node == NULL ) return 1;
@@ -521,6 +611,24 @@ int tree_to_presentation(struct ds_node *root, struct presentation *p)
 			return 1;
 		}
 	}
+
+	for ( i=0; i<p->num_slides; i++ ) {
+		free_slide(p->slides[i]);
+		p->num_slides = 0;
+	}
+
+	node = find_node(root, "slides");
+	if ( node != NULL ) {
+		tree_to_slides(node, p);
+		if ( p->num_slides == 0 ) {
+			fprintf(stderr, "Failed to load any slides\n");
+			p->cur_edit_slide = add_slide(p, 0);
+			return 1;
+		}
+	}
+
+	p->cur_edit_slide = p->slides[0];
+	redraw_slide(p->cur_edit_slide);
 
 	return 0;
 }
@@ -550,21 +658,16 @@ int load_presentation(struct presentation *p, const char *filename)
 
 	fclose(fh);
 
-	if ( r ) return r;  /* Error */
+	if ( r ) {
+		p->cur_edit_slide = new_slide();
+		insert_slide(p, p->cur_edit_slide, 0);
+		p->completely_empty = 1;
+		return r;  /* Error */
+	}
 
 	p->cur_edit_slide = p->slides[0];
 
 	return 0;
-}
-
-
-static const char *type_text(enum objtype t)
-{
-	switch ( t )
-	{
-		case TEXT : return "text";
-		default : return "unknown";
-	}
 }
 
 

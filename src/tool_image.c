@@ -133,7 +133,7 @@ struct object *add_image_object(struct slide *s, double x, double y,
 	new->base.x = x;  new->base.y = y;
 	new->base.bb_width = bb_width;
 	new->base.bb_height = bb_height;
-	new->base.type = IMAGE;
+	new->base.type = OBJ_IMAGE;
 	new->base.empty = 0;
 	new->base.parent = NULL;
 	new->base.style = sty;
@@ -171,7 +171,7 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 	struct image_toolinfo *ti = (struct image_toolinfo *)tip;
 	struct image_object *o = (struct image_object *)p->editing_object;
 
-	assert(o->base.type == IMAGE);
+	assert(o->base.type == OBJ_IMAGE);
 
 	xo = x - o->base.x;  yo = y - o->base.y;
 
@@ -308,8 +308,15 @@ static void im_commit(struct object *o, gchar *str, struct toolinfo *tip)
 
 static int valid_object(struct object *o)
 {
-	if ( o->type == IMAGE ) return 1;
+	if ( o->type == OBJ_IMAGE ) return 1;
 	return 0;
+}
+
+
+static struct object *deserialize(struct presentation *p, struct ds_node *root,
+                                  struct toolinfo *tip)
+{
+	return NULL;
 }
 
 
@@ -330,6 +337,7 @@ struct toolinfo *initialise_image_tool()
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;
 	ti->base.valid_object = valid_object;
+	ti->base.deserialize = deserialize;
 
 	return (struct toolinfo *)ti;
 }

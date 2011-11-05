@@ -190,9 +190,8 @@ static void update_text(struct text_object *o)
 	double ebottom = 0.0;
 	double mw = 0.0;
 	double mh = 0.0;
-	int furniture = 0;
 
-	furniture = o->base.style != o->base.parent->parent->ss->styles[0];
+	o->furniture = o->base.style != o->base.parent->parent->ss->styles[0];
 
 	pango_layout_set_text(o->layout, o->text, -1);
 	o->fontdesc = pango_font_description_from_string(o->base.style->font);
@@ -235,7 +234,7 @@ void insert_text(struct object *op, char *t)
 	size_t tlen, olen, offs;
 	int i;
 
-	assert(o->base.type == TEXT);
+	assert(o->base.type == OBJ_TEXT);
 	tlen = strlen(t);
 	olen = strlen(o->text);
 
@@ -310,7 +309,7 @@ void handle_text_backspace(struct object *op)
 	int old_idx, new_idx;
 	struct text_object *o = (struct text_object *)op;
 
-	assert(o->base.type == TEXT);
+	assert(o->base.type == OBJ_TEXT);
 
 	if ( o->insertion_point == 0 ) return;  /* Nothing to delete */
 
@@ -347,7 +346,7 @@ static void draw_caret(cairo_t *cr, struct text_object *o)
 	PangoRectangle pos;
 	const double t = 1.8;
 
-	assert(o->base.type == TEXT);
+	assert(o->base.type == OBJ_TEXT);
 
 	pango_layout_get_cursor_pos(o->layout,
 	                            o->insertion_point+o->insertion_trail,
@@ -410,8 +409,7 @@ static void serialize(struct object *op, struct serializer *ser)
 }
 
 
-static struct object *add_text_object(struct slide *s, double x, double y,
-                                      struct style *sty,
+static struct object *new_text_object(double x, double y, struct style *sty,
                                       struct text_toolinfo *ti)
 {
 	struct text_object *new;
@@ -423,7 +421,7 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 	new->base.x = x;  new->base.y = y;
 	new->base.bb_width = 10.0;
 	new->base.bb_height = 40.0;
-	new->base.type = TEXT;
+	new->base.type = OBJ_TEXT;
 	new->base.empty = 1;
 	new->base.parent = NULL;
 	new->base.style = sty;
@@ -443,14 +441,26 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 	new->base.update_object = update_text_object;
 	new->base.serialize = serialize;
 
-	if ( add_object_to_slide(s, (struct object *)new) ) {
-		delete_object((struct object *)new);
+	return (struct object *)new;
+}
+
+
+static struct object *add_text_object(struct slide *s, double x, double y,
+                                      struct style *sty,
+                                      struct text_toolinfo *ti)
+{
+	struct object *o;
+
+	o = new_text_object(x, y, sty, ti);
+
+	if ( add_object_to_slide(s, o) ) {
+		delete_object(o);
 		return NULL;
 	}
 
-	redraw_slide(((struct object *)new)->parent);
+	redraw_slide(o->parent);
 
-	return (struct object *)new;
+	return o;
 }
 
 
@@ -466,7 +476,7 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 	struct text_object *o = (struct text_object *)p->editing_object;
 	int idx, trail;
 
-	assert(o->base.type == TEXT);
+	assert(o->base.type == OBJ_TEXT);
 
 	xo = x - o->base.x;  yo = y - o->base.y;
 
@@ -659,8 +669,83 @@ static void im_commit(struct object *o, gchar *str, struct toolinfo *tip)
 
 static int valid_object(struct object *o)
 {
-	if ( o->type == TEXT ) return 1;
+	if ( o->type == OBJ_TEXT ) return 1;
 	return 0;
+}
+
+
+static void realise(struct toolinfo *tip, GtkWidget *w)
+{
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
+	ti->pc = gtk_widget_get_pango_context(w);
+}
+
+
+static struct object *deserialize(struct presentation *p, struct ds_node *root,
+                                  struct slide *s, struct toolinfo *tip)
+{
+	struct object *o;
+	struct text_object *to;
+	char *style;
+	char *text;
+	struct style *sty;
+	double x, y;
+	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
+
+	if ( get_field_s(root, "style", &style) ) {
+		fprintf(stderr, "Couldn't find style for object '%s'\n",
+		        root->key);
+		return NULL;
+	}
+
+	sty = find_style(p->ss, style);
+	if ( sty == NULL ) {
+		fprintf(stderr, "Style '%s' not found in style sheet.\n",
+		        style);
+		free(style);
+		return NULL;
+	}
+	free(style);
+
+	if ( sty == p->ss->styles[0] ) {
+
+		if ( get_field_f(root, "x", &x) ) {
+			fprintf(stderr,
+			        "Couldn't find x position for object '%s'\n",
+				root->key);
+			return NULL;
+		}
+		if ( get_field_f(root, "y", &y) ) {
+			fprintf(stderr,
+			        "Couldn't find y position for object '%s'\n",
+				root->key);
+			return NULL;
+		}
+
+	} else {
+
+		/* Furniture */
+		x = 0.0;
+		y = 0.0;
+
+	}
+
+	o = new_text_object(x, y, sty, ti);
+
+	/* Apply the correct text */
+	if ( get_field_s(root, "text", &text) ) {
+		fprintf(stderr, "Couldn't find text for object '%s'\n",
+		        root->key);
+		return NULL;
+	}
+	to = (struct text_object *)o;
+	free(to->text);
+	to->text = text;
+	o->parent = s;
+	o->empty = 0;
+	update_text(to);
+
+        return o;
 }
 
 
@@ -669,8 +754,6 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	struct text_toolinfo *ti;
 
 	ti = malloc(sizeof(*ti));
-
-	ti->pc = gtk_widget_get_pango_context(w);
 
 	ti->base.click_select = click_select;
 	ti->base.create_default = create_default;
@@ -683,6 +766,8 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;
 	ti->base.valid_object = valid_object;
+	ti->base.realise = realise;
+	ti->base.deserialize = deserialize;
 
 	return (struct toolinfo *)ti;
 }

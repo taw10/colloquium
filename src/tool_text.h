@@ -30,7 +30,7 @@
 #include <gtk/gtk.h>
 
 
-extern struct toolinfo *initialise_text_tool(GtkWidget *w);
+extern struct toolinfo *initialise_text_tool();
 
 
 #endif	/* TOOL_TEXT_H */

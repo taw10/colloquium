@@ -33,37 +33,27 @@
 #include "slide_render.h"
 #include "objects.h"
 #include "stylesheet.h"
+#include "tool_select.h"
+#include "tool_text.h"
+#include "tool_image.h"
 
 
-struct slide *add_slide(struct presentation *p, int pos)
+int insert_slide(struct presentation *p, struct slide *new, int pos)
 {
 	struct slide **try;
-	struct slide *new;
-	int i;
-
-	new = calloc(1, sizeof(struct slide));
-	if ( new == NULL ) return NULL;
-
-	/* No objects to start with */
-	new->num_objects = 0;
-	new->objects = NULL;
-
-	p->completely_empty = 0;
-	new->parent = p;
-
-	new->rendered_edit = NULL;
-	new->rendered_proj = NULL;
-	new->rendered_thumb = NULL;
 
 	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
 	if ( try == NULL ) {
 		free(new);
-		return NULL;
+		return 1;
 	}
 	p->slides = try;
+	p->completely_empty = 0;
 
 	/* Insert into list.  Yuk yuk yuk etc. */
 	if ( (p->num_slides>1) && (pos<p->num_slides-1) ) {
+
+		int i;
 
 		for ( i=p->num_slides; i>pos+1; i-- ) {
 			p->slides[i] = p->slides[i-1];
@@ -79,9 +69,52 @@ struct slide *add_slide(struct presentation *p, int pos)
 		p->slides[pos] = new;
 	}
 
+	new->parent = p;
 	p->num_slides++;
 
+	return 0;
+}
+
+
+struct slide *new_slide()
+{
+	struct slide *new;
+
+	new = calloc(1, sizeof(struct slide));
+	if ( new == NULL ) return NULL;
+
+	/* No objects to start with */
+	new->num_objects = 0;
+	new->objects = NULL;
+
+	new->rendered_edit = NULL;
+	new->rendered_proj = NULL;
+	new->rendered_thumb = NULL;
+
 	return new;
+}
+
+
+void free_slide(struct slide *s)
+{
+	int i;
+
+	for ( i=0; i<s->num_objects; i++ ) {
+		delete_object(s->objects[i]);
+	}
+
+	free(s);
+}
+
+
+struct slide *add_slide(struct presentation *p, int pos)
+{
+	struct slide *s = new_slide();
+	if ( insert_slide(p, s, pos) ) {
+		free_slide(s);
+		return NULL;
+	}
+	return s;
 }
 
 
@@ -229,7 +262,7 @@ struct presentation *new_presentation()
 	/* Add one blank slide and view it */
 	new->num_slides = 0;
 	new->slides = NULL;
-	new->cur_edit_slide = add_slide(new, 0);
+	new->cur_edit_slide = NULL;
 	new->cur_proj_slide = NULL;
 
 	new->editing_object = NULL;
@@ -239,6 +272,11 @@ struct presentation *new_presentation()
 	new->ss = new_stylesheet();
 	default_stylesheet(new->ss);
 	new->image_store = image_store_new();
+
+	new->select_tool = initialise_select_tool();
+	new->text_tool = initialise_text_tool();
+	new->image_tool = initialise_image_tool();
+	new->cur_tool = new->select_tool;
 
 	return new;
 }

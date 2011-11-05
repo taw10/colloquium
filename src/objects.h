@@ -33,8 +33,9 @@
 
 enum objtype
 {
-	TEXT,
-	IMAGE,
+	OBJ_UNKNOWN,
+	OBJ_TEXT,
+	OBJ_IMAGE,
 };
 
 

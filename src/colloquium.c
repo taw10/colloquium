@@ -75,6 +75,8 @@ int main(int argc, char *argv[])
 	}
 
 	p = new_presentation();
+	p->cur_edit_slide = add_slide(p, 0);
+	p->completely_empty = 1;
 	if ( open_mainwindow(p) ) {
 		fprintf(stderr, "Couldn't open main window.\n");
 		return 1;

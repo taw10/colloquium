@@ -76,6 +76,47 @@ static void show_error(struct presentation *p, const char *message)
 }
 
 
+static void update_toolbar(struct presentation *p)
+{
+	GtkWidget *d;
+	int cur_slide_number;
+
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/first");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/prev");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/next");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/last");
+	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
+
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
+	if ( cur_slide_number == 0 ) {
+
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/first");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/prev");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+
+	}
+
+	if ( cur_slide_number == p->num_slides-1 ) {
+
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/next");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+		d = gtk_ui_manager_get_widget(p->ui,
+					"/ui/displaywindowtoolbar/last");
+		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
+
+	}
+
+
+}
+
+
 static gint open_response_sig(GtkWidget *d, gint response,
                               struct presentation *p)
 {
@@ -88,9 +129,9 @@ static gint open_response_sig(GtkWidget *d, gint response,
 		if ( p->completely_empty ) {
 			if ( load_presentation(p, filename) ) {
 				show_error(p, "Failed to open presentation");
-			} else {
-				redraw_slide(p->cur_edit_slide);
 			}
+			redraw_slide(p->cur_edit_slide);
+			update_toolbar(p);
 		} else {
 			struct presentation *p;
 			p = new_presentation();
@@ -259,47 +300,6 @@ static gint about_sig(GtkWidget *widget, struct presentation *p)
 	gtk_widget_show_all(window);
 
 	return 0;
-}
-
-
-static void update_toolbar(struct presentation *p)
-{
-	GtkWidget *d;
-	int cur_slide_number;
-
-	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/first");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
-	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/prev");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
-	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/next");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
-	d = gtk_ui_manager_get_widget(p->ui, "/ui/displaywindowtoolbar/last");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
-
-	cur_slide_number = slide_number(p, p->cur_edit_slide);
-	if ( cur_slide_number == 0 ) {
-
-		d = gtk_ui_manager_get_widget(p->ui,
-					"/ui/displaywindowtoolbar/first");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-		d = gtk_ui_manager_get_widget(p->ui,
-					"/ui/displaywindowtoolbar/prev");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-
-	}
-
-	if ( cur_slide_number == p->num_slides-1 ) {
-
-		d = gtk_ui_manager_get_widget(p->ui,
-					"/ui/displaywindowtoolbar/next");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-		d = gtk_ui_manager_get_widget(p->ui,
-					"/ui/displaywindowtoolbar/last");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-
-	}
-
-
 }
 
 
@@ -608,7 +608,7 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
 	if ( p->editing_object == NULL ) return FALSE;
-	if ( p->editing_object->type != TEXT ) return FALSE;
+	if ( p->editing_object->type != OBJ_TEXT ) return FALSE;
 
 	p->cur_tool->im_commit(p->editing_object, str, p->cur_tool);
 
@@ -1114,10 +1114,7 @@ int open_mainwindow(struct presentation *p)
 	                            p->slide_width + 20,
 	                            p->slide_height + 20);
 
-	p->select_tool = initialise_select_tool();
-	p->text_tool = initialise_text_tool(p->drawingarea);
-	p->image_tool = initialise_image_tool();
-	p->cur_tool = p->select_tool;
+	p->text_tool->realise(p->text_tool, p->drawingarea);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),

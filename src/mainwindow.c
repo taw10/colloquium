@@ -1085,7 +1085,6 @@ void update_titlebar(struct presentation *p)
 		title = malloc(strlen(p->titlebar)+14);
 		sprintf(title, "%s - Colloquium", p->titlebar);
 		gtk_window_set_title(GTK_WINDOW(p->window), title);
-		printf("Set title '%s'\n", title);
 		free(title);
 
 	}

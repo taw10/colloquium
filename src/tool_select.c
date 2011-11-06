@@ -91,7 +91,7 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 static void create_region(struct toolinfo *tip, struct presentation *p,
                           double x1, double y1, double x2, double y2)
 {
-	printf("Create %5.2f %5.2f %5.2f %5.2f\n", x1, y1, x2, y2);
+	/* FIXME: Select multiple objects */
 }
 
 

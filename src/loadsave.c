@@ -751,6 +751,7 @@ int save_presentation(struct presentation *p, const char *filename)
 	FILE *fh;
 	int i;
 	struct serializer ser;
+	char *old_fn;
 
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
@@ -802,8 +803,11 @@ int save_presentation(struct presentation *p, const char *filename)
 	}
 	serialize_end(&ser);
 
-	if ( p->filename != NULL ) free(p->filename);
+	/* Slightly fiddly because someone might
+	 * do save_presentation(p, p->filename) */
+	old_fn = p->filename;
 	p->filename = strdup(filename);
+	if ( old_fn != NULL ) free(old_fn);
 	update_titlebar(p);
 
 	fclose(fh);

@@ -682,7 +682,7 @@ static void realise(struct toolinfo *tip, GtkWidget *w)
 
 
 static struct object *deserialize(struct presentation *p, struct ds_node *root,
-                                  struct slide *s, struct toolinfo *tip)
+                                  struct toolinfo *tip)
 {
 	struct object *o;
 	struct text_object *to;

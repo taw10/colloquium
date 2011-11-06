@@ -504,7 +504,7 @@ static const char *type_text(enum objtype t)
 
 
 static struct object *tree_to_object(struct presentation *p,
-                                     struct ds_node *root, struct slide *s)
+                                     struct ds_node *root)
 {
 	struct object *o = NULL;
 	char *v;
@@ -514,11 +514,11 @@ static struct object *tree_to_object(struct presentation *p,
 	switch ( text_to_type(v) ) {
 
 		case OBJ_TEXT :
-		o = p->text_tool->deserialize(p, root, s, p->text_tool);
+		o = p->text_tool->deserialize(p, root, p->text_tool);
 		break;
 
 		case OBJ_IMAGE :
-		o = p->image_tool->deserialize(p, root, s, p->image_tool);
+		o = p->image_tool->deserialize(p, root, p->image_tool);
 		break;
 
 		default :
@@ -544,7 +544,7 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 
 		struct object *o;
 
-		o = tree_to_object(p, root->children[i], s);
+		o = tree_to_object(p, root->children[i]);
 		if ( o != NULL ) {
 			add_object_to_slide(s, o);
 			o->update_object(o);

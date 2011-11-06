@@ -95,7 +95,7 @@ struct toolinfo
 	void (*realise)(struct toolinfo *tip, GtkWidget *w);
 
 	struct object *(*deserialize)(struct presentation *p,
-	                              struct ds_node *root, struct slide *s,
+	                              struct ds_node *root,
 	                              struct toolinfo *tip);
 };
 

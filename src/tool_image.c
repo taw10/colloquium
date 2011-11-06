@@ -342,7 +342,7 @@ static int valid_object(struct object *o)
 
 
 static struct object *deserialize(struct presentation *p, struct ds_node *root,
-                                  struct slide *s, struct toolinfo *tip)
+                                  struct toolinfo *tip)
 {
 	struct image_object *o;
 	double x, y, w, h;

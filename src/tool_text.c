@@ -758,9 +758,7 @@ static struct object *deserialize(struct presentation *p, struct ds_node *root,
 	free(to->text);
 	to->text = text;
 	to->text_len = strlen(text);
-	o->parent = s;
 	o->empty = 0;
-	update_text(to);
 
         return o;
 }

@@ -118,11 +118,23 @@ static void delete_image_object(struct object *op)
 }
 
 
-struct object *add_image_object(struct slide *s, double x, double y,
-                                double bb_width, double bb_height,
-                                char *filename, struct style *sty,
-                                struct image_store *is,
-                                struct image_toolinfo *ti)
+static void serialize(struct object *op, struct serializer *ser)
+{
+	struct image_object *o = (struct image_object *)op;
+
+	serialize_f(ser, "x", op->x);
+	serialize_f(ser, "y", op->y);
+	serialize_f(ser, "w", op->bb_width);
+	serialize_f(ser, "h", op->bb_height);
+	serialize_s(ser, "filename", o->image->filename);
+}
+
+
+static struct image_object *new_image_object(double x, double y,
+                                             double bb_width, double bb_height,
+                                             char *filename, struct style *sty,
+                                             struct image_store *is,
+                                             struct image_toolinfo *ti)
 {
 	struct image_object *new;
 
@@ -150,13 +162,29 @@ struct object *add_image_object(struct slide *s, double x, double y,
 	new->base.render_object = render_image_object;
 	new->base.delete_object = delete_image_object;
 	new->base.update_object = update_image_object;
+	new->base.serialize = serialize;
 
+	return new;
+}
+
+
+struct object *add_image_object(struct slide *s, double x, double y,
+                                double bb_width, double bb_height,
+                                char *filename, struct style *sty,
+                                struct image_store *is,
+                                struct image_toolinfo *ti)
+{
+	struct image_object *new;
+
+	new = new_image_object(x, y, bb_width, bb_height,
+	                       filename, sty, is, ti);
+	if ( new == NULL ) return NULL;
+
+	new->base.parent = s;
 	if ( add_object_to_slide(s, (struct object *)new) ) {
 		free(new);
 		return NULL;
 	}
-
-	update_image(new);
 
 	return (struct object *)new;
 }
@@ -314,9 +342,48 @@ static int valid_object(struct object *o)
 
 
 static struct object *deserialize(struct presentation *p, struct ds_node *root,
-                                  struct toolinfo *tip)
+                                  struct slide *s, struct toolinfo *tip)
 {
-	return NULL;
+	struct image_object *o;
+	double x, y, w, h;
+	char *filename;
+	struct image_toolinfo *ti = (struct image_toolinfo *)tip;
+
+	if ( get_field_f(root, "x", &x) ) {
+		fprintf(stderr,
+		        "Couldn't find x position for object '%s'\n",
+			root->key);
+		return NULL;
+	}
+	if ( get_field_f(root, "y", &y) ) {
+		fprintf(stderr,
+		        "Couldn't find y position for object '%s'\n",
+			root->key);
+		return NULL;
+	}
+	if ( get_field_f(root, "w", &w) ) {
+		fprintf(stderr,
+		        "Couldn't find width for object '%s'\n",
+			root->key);
+		return NULL;
+	}
+	if ( get_field_f(root, "h", &h) ) {
+		fprintf(stderr,
+		        "Couldn't find height for object '%s'\n",
+			root->key);
+		return NULL;
+	}
+	if ( get_field_s(root, "filename", &filename) ) {
+		fprintf(stderr, "Couldn't find filename for object '%s'\n",
+		        root->key);
+		return NULL;
+	}
+
+	o = new_image_object(x, y, w, h, filename,
+	                     p->ss->styles[0], p->image_store, ti);
+	free(filename);
+
+	return (struct object *)o;
 }
 
 

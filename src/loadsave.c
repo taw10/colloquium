@@ -547,6 +547,7 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 		o = tree_to_object(p, root->children[i], s);
 		if ( o != NULL ) {
 			add_object_to_slide(s, o);
+			o->update_object(o);
 		}
 
 	}

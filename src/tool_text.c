@@ -689,7 +689,7 @@ static struct object *deserialize(struct presentation *p, struct ds_node *root,
 	char *style;
 	char *text;
 	struct style *sty;
-	double x, y;
+	double x, y, w, h;
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
 	if ( get_field_s(root, "style", &style) ) {
@@ -721,16 +721,32 @@ static struct object *deserialize(struct presentation *p, struct ds_node *root,
 				root->key);
 			return NULL;
 		}
+		if ( get_field_f(root, "w", &w) ) {
+			fprintf(stderr,
+			        "Couldn't find width for object '%s'\n",
+				root->key);
+			return NULL;
+		}
+		if ( get_field_f(root, "h", &h) ) {
+			fprintf(stderr,
+			        "Couldn't find height for object '%s'\n",
+				root->key);
+			return NULL;
+		}
 
 	} else {
 
 		/* Furniture */
 		x = 0.0;
 		y = 0.0;
+		w = 0.0;
+		h = 0.0;
 
 	}
 
 	o = new_text_object(x, y, sty, ti);
+	o->bb_width = w;
+	o->bb_height = h;
 
 	/* Apply the correct text */
 	if ( get_field_s(root, "text", &text) ) {
@@ -741,6 +757,7 @@ static struct object *deserialize(struct presentation *p, struct ds_node *root,
 	to = (struct text_object *)o;
 	free(to->text);
 	to->text = text;
+	to->text_len = strlen(text);
 	o->parent = s;
 	o->empty = 0;
 	update_text(to);
@@ -768,6 +785,8 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	ti->base.valid_object = valid_object;
 	ti->base.realise = realise;
 	ti->base.deserialize = deserialize;
+
+	ti->drag_reason = DRAG_REASON_NONE;
 
 	return (struct toolinfo *)ti;
 }

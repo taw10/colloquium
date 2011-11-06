@@ -186,6 +186,8 @@ struct object *add_image_object(struct slide *s, double x, double y,
 		return NULL;
 	}
 
+	update_image(new);
+
 	return (struct object *)new;
 }
 

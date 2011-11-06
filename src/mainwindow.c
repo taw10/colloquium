@@ -1074,11 +1074,28 @@ static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
 }
 
 
+void update_titlebar(struct presentation *p)
+{
+	get_titlebar_string(p);
+
+	if ( p->window != NULL ) {
+
+		char *title;
+
+		title = malloc(strlen(p->titlebar)+14);
+		sprintf(title, "%s - Colloquium", p->titlebar);
+		gtk_window_set_title(GTK_WINDOW(p->window), title);
+		printf("Set title '%s'\n", title);
+		free(title);
+
+	}
+}
+
+
 int open_mainwindow(struct presentation *p)
 {
 	GtkWidget *window;
 	GtkWidget *vbox;
-	char *title;
 	GtkWidget *sw;
 	GtkTargetEntry targets[1];
 
@@ -1090,10 +1107,7 @@ int open_mainwindow(struct presentation *p)
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	p->window = window;
 
-	title = malloc(strlen(p->titlebar)+14);
-	sprintf(title, "%s - Colloquium", p->titlebar);
-	gtk_window_set_title(GTK_WINDOW(window), title);
-	free(title);
+	update_titlebar(p);
 
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(close_sig), p);
 

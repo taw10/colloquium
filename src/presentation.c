@@ -215,7 +215,7 @@ static char *safe_basename(const char *in)
 }
 
 
-static void update_titlebar(struct presentation *p)
+void get_titlebar_string(struct presentation *p)
 {
 	free(p->titlebar);
 
@@ -249,7 +249,7 @@ struct presentation *new_presentation()
 
 	new->filename = NULL;
 	new->titlebar = NULL;
-	update_titlebar(new);
+	get_titlebar_string(new);
 
 	new->window = NULL;
 	new->ui = NULL;

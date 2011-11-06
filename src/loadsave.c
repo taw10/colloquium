@@ -35,6 +35,7 @@
 #include "objects.h"
 #include "stylesheet.h"
 #include "slide_render.h"
+#include "mainwindow.h"
 
 
 static int alloc_children(struct ds_node *node)
@@ -666,6 +667,10 @@ int load_presentation(struct presentation *p, const char *filename)
 		return r;  /* Error */
 	}
 
+	assert(p->filename == NULL);
+	p->filename = strdup(filename);
+	update_titlebar(p);
+
 	p->cur_edit_slide = p->slides[0];
 
 	return 0;
@@ -796,6 +801,10 @@ int save_presentation(struct presentation *p, const char *filename)
 
 	}
 	serialize_end(&ser);
+
+	if ( p->filename != NULL ) free(p->filename);
+	p->filename = strdup(filename);
+	update_titlebar(p);
 
 	fclose(fh);
 	return 0;

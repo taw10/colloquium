@@ -1054,8 +1054,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			p->editing_object = o;
 			redraw_object(o);
 
-			/* Don't free "filename" - it's now owned by the
-			 * image store. */
+			free(filename);
 		}
 
 	}

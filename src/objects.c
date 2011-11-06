@@ -71,7 +71,7 @@ static struct image *add_image_to_store(struct image_store *is, char *filename)
 		is->n_images--;
 		return NULL;
 	}
-	i_new->filename = filename;
+	i_new->filename = strdup(filename);
 	i_new->refcount = 1;
 	i_new->width = w;
 	i_new->height = h;

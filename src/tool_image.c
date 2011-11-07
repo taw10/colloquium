@@ -44,16 +44,27 @@ enum image_drag_reason
 };
 
 
+enum corner
+{
+	CORNER_NONE,
+	CORNER_TL,
+	CORNER_TR,
+	CORNER_BL,
+	CORNER_BR
+};
+
+
 struct image_toolinfo
 {
 	struct toolinfo        base;
 	enum image_drag_reason drag_reason;
+	enum corner            drag_corner;
 	double                 box_x;
 	double                 box_y;
 	double                 box_width;
 	double                 box_height;
-	double                 drag_offset_x;
-	double                 drag_offset_y;
+	double                 drag_initial_x;
+	double                 drag_initial_y;
 };
 
 
@@ -192,37 +203,102 @@ struct object *add_image_object(struct slide *s, double x, double y,
 }
 
 
+static enum corner which_corner(double xp, double yp, struct object *o)
+{
+	double x, y;  /* Relative to object position */
+
+	x = xp - o->x;
+	y = yp - o->y;
+
+	if ( x < 0.0 ) return CORNER_NONE;
+	if ( y < 0.0 ) return CORNER_NONE;
+	if ( x > o->bb_width ) return CORNER_NONE;
+	if ( y > o->bb_height ) return CORNER_NONE;
+
+	/* Top left? */
+	if ( (x<20.0) && (y<20.0) ) return CORNER_TL;
+	if ( (x>o->bb_width-20.0) && (y<20.0) ) return CORNER_TR;
+	if ( (x<20.0) && (y>o->bb_height-20.0) ) {
+		return CORNER_BL;
+	}
+	if ( (x>o->bb_width-20.0) && (y>o->bb_height-20.0) ) {
+		return CORNER_BR;
+	}
+
+	return CORNER_NONE;
+}
+
+
+static void calculate_box_size(struct object *o, double x, double y,
+                               struct image_toolinfo *ti)
+{
+	double ddx, ddy;
+
+	ddx = x - ti->drag_initial_x;
+	ddy = y - ti->drag_initial_y;
+
+	switch ( ti->drag_corner ) {
+
+		case CORNER_BR :
+		ti->box_x = o->x;
+		ti->box_y = o->y;
+		ti->box_width = o->bb_width + ddx;
+		ti->box_height = o->bb_height + ddy;
+		break;
+
+		case CORNER_BL :
+		ti->box_x = o->x + ddx;
+		ti->box_y = o->y;
+		ti->box_width = o->bb_width - ddx;
+		ti->box_height = o->bb_height + ddy;
+		break;
+
+		case CORNER_TL :
+		ti->box_x = o->x + ddx;
+		ti->box_y = o->y + ddy;
+		ti->box_width = o->bb_width - ddx;
+		ti->box_height = o->bb_height - ddy;
+		break;
+
+		case CORNER_TR :
+		ti->box_x = o->x;
+		ti->box_y = o->y + ddy;
+		ti->box_width = o->bb_width + ddx;
+		ti->box_height = o->bb_height - ddy;
+		break;
+
+		case CORNER_NONE :
+		break;
+
+	}
+
+	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
+	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+}
+
+
 static void click_select(struct presentation *p, struct toolinfo *tip,
                          double x, double y, GdkEventButton *event,
                          enum drag_status *drag_status,
 	                 enum drag_reason *drag_reason)
 {
-	double xo, yo;
+	enum corner c;
 	struct image_toolinfo *ti = (struct image_toolinfo *)tip;
 	struct image_object *o = (struct image_object *)p->editing_object;
 
 	assert(o->base.type == OBJ_IMAGE);
 
-	xo = x - o->base.x;  yo = y - o->base.y;
-
 	/* Within the resizing region? */
-	if ( (xo > o->base.bb_width - 20.0) && (yo > o->base.bb_height - 20.0) )
+	c = which_corner(x, y, &o->base);
+	if ( c != CORNER_NONE )
 	{
-		double cx, cy;
-
 		ti->drag_reason = IMAGE_DRAG_REASON_RESIZE;
+		ti->drag_corner = c;
 
-		/* Initial size of rubber band box */
-		ti->box_x = o->base.x;  ti->box_y = o->base.y;
-		ti->box_width = o->base.bb_width;
-		ti->box_height = o->base.bb_height;
+		ti->drag_initial_x = x;
+		ti->drag_initial_y = y;
 
-		/* Coordinates of the bottom right corner */
-		cx = o->base.x + o->base.bb_width;
-		cy = o->base.y + o->base.bb_height;
-
-		ti->drag_offset_x = x - cx;
-		ti->drag_offset_y = y - cy;
+		calculate_box_size((struct object *)o, x, y, ti);
 
 		/* Tell the MCP what we did, and return */
 		*drag_status = DRAG_STATUS_DRAGGING;
@@ -237,12 +313,12 @@ static void drag(struct toolinfo *tip, struct presentation *p,
 {
 	struct image_toolinfo *ti = (struct image_toolinfo *)tip;
 
-	ti->box_width = x - ti->drag_offset_x - ti->box_x;
-	ti->box_height = y - ti->drag_offset_y - ti->box_y;
-	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
-	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+	if ( ti->drag_reason == IMAGE_DRAG_REASON_RESIZE ) {
 
-	redraw_overlay(p);
+		calculate_box_size(o, x, y, ti);
+		redraw_overlay(p);
+
+	}
 }
 
 
@@ -251,11 +327,10 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 {
 	struct image_toolinfo *ti = (struct image_toolinfo *)tip;
 
-	ti->box_width = x - ti->drag_offset_x - ti->box_x;
-	ti->box_height = y - ti->drag_offset_y - ti->box_y;
-	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
-	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+	calculate_box_size((struct object *)o, x, y, ti);
 
+	o->x = ti->box_x;
+	o->y = ti->box_y;
 	o->bb_width = ti->box_width;
 	o->bb_height = ti->box_height;
 	update_image((struct image_object *)o);
@@ -292,6 +367,15 @@ static int deselect_object(struct object *o, struct toolinfo *tip)
 }
 
 
+static void resize_handle(cairo_t *cr, double x, double y)
+{
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x, y, 20.0, 20.0);
+	cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
+	cairo_fill(cr);
+}
+
+
 static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *n)
 {
 	struct image_toolinfo *ti = (struct image_toolinfo *)tip;
@@ -301,12 +385,13 @@ static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *n)
 
 		draw_editing_box(cr, n->x, n->y, n->bb_width, n->bb_height);
 
-		/* Draw resize handle */
-		cairo_new_path(cr);
-		cairo_rectangle(cr, n->x+n->bb_width-20.0,
-			            n->y+n->bb_height-20.0, 20.0, 20.0);
-		cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
-		cairo_fill(cr);
+		/* Draw resize handles */
+		resize_handle(cr, n->x+n->bb_width-20.0,
+		                  n->y+n->bb_height-20.0);  /* BR */
+		resize_handle(cr, n->x, n->y+n->bb_height-20.0);  /* BL */
+		resize_handle(cr, n->x+n->bb_width-20.0, n->y);  /* TR */
+		resize_handle(cr, n->x, n->y);  /* TL */
+
 	}
 
 	if ( ti->drag_reason == IMAGE_DRAG_REASON_RESIZE ) {

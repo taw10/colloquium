@@ -71,7 +71,9 @@ struct image
 	int         width;
 	int         height;
 
-	int refcount;
+	int         refcount;
+
+	struct image_store *parent;
 };
 
 

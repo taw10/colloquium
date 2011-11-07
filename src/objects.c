@@ -75,6 +75,7 @@ static struct image *add_image_to_store(struct image_store *is, char *filename)
 	i_new->refcount = 1;
 	i_new->width = w;
 	i_new->height = h;
+	i_new->parent = is;
 
 	is->images[idx] = i_new;
 
@@ -116,7 +117,26 @@ void unref_image(struct image *i)
 	i->refcount--;
 
 	if ( i->refcount == 0 ) {
-		/* FIXME: Delete image */
+
+		struct image_store *is;
+		int j;
+
+		g_object_unref(G_OBJECT(i->pb));
+		free(i->filename);
+		is = i->parent;
+		free(i);
+
+		for ( j=0; j<is->n_images; j++ ) {
+			if ( is->images[j] == i ) {
+				int k;
+				for ( k=j+1; k<is->n_images; k++ ) {
+					is->images[k-1] = is->images[k];
+				}
+				break;
+			}
+		}
+		is->n_images--;
+
 	}
 }
 

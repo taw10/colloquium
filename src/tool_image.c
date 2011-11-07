@@ -44,16 +44,6 @@ enum image_drag_reason
 };
 
 
-enum corner
-{
-	CORNER_NONE,
-	CORNER_TL,
-	CORNER_TR,
-	CORNER_BL,
-	CORNER_BR
-};
-
-
 struct image_toolinfo
 {
 	struct toolinfo        base;
@@ -203,32 +193,6 @@ struct object *add_image_object(struct slide *s, double x, double y,
 }
 
 
-static enum corner which_corner(double xp, double yp, struct object *o)
-{
-	double x, y;  /* Relative to object position */
-
-	x = xp - o->x;
-	y = yp - o->y;
-
-	if ( x < 0.0 ) return CORNER_NONE;
-	if ( y < 0.0 ) return CORNER_NONE;
-	if ( x > o->bb_width ) return CORNER_NONE;
-	if ( y > o->bb_height ) return CORNER_NONE;
-
-	/* Top left? */
-	if ( (x<20.0) && (y<20.0) ) return CORNER_TL;
-	if ( (x>o->bb_width-20.0) && (y<20.0) ) return CORNER_TR;
-	if ( (x<20.0) && (y>o->bb_height-20.0) ) {
-		return CORNER_BL;
-	}
-	if ( (x>o->bb_width-20.0) && (y>o->bb_height-20.0) ) {
-		return CORNER_BR;
-	}
-
-	return CORNER_NONE;
-}
-
-
 static void calculate_box_size(struct object *o, double x, double y,
                                struct image_toolinfo *ti)
 {
@@ -367,15 +331,6 @@ static int deselect_object(struct object *o, struct toolinfo *tip)
 }
 
 
-static void resize_handle(cairo_t *cr, double x, double y)
-{
-	cairo_new_path(cr);
-	cairo_rectangle(cr, x, y, 20.0, 20.0);
-	cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
-	cairo_fill(cr);
-}
-
-
 static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *n)
 {
 	struct image_toolinfo *ti = (struct image_toolinfo *)tip;
@@ -386,24 +341,17 @@ static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *n)
 		draw_editing_box(cr, n->x, n->y, n->bb_width, n->bb_height);
 
 		/* Draw resize handles */
-		resize_handle(cr, n->x+n->bb_width-20.0,
-		                  n->y+n->bb_height-20.0);  /* BR */
-		resize_handle(cr, n->x, n->y+n->bb_height-20.0);  /* BL */
-		resize_handle(cr, n->x+n->bb_width-20.0, n->y);  /* TR */
-		resize_handle(cr, n->x, n->y);  /* TL */
+		draw_resize_handle(cr, n->x, n->y+n->bb_height-20.0);
+		draw_resize_handle(cr, n->x+n->bb_width-20.0, n->y);
+		draw_resize_handle(cr, n->x, n->y);
+		draw_resize_handle(cr, n->x+n->bb_width-20.0,
+		                   n->y+n->bb_height-20.0);
 
 	}
 
 	if ( ti->drag_reason == IMAGE_DRAG_REASON_RESIZE ) {
-
-		/* FIXME: Use common draw_rubberband_box() routine */
-		cairo_new_path(cr);
-		cairo_rectangle(cr, ti->box_x, ti->box_y,
-		                    ti->box_width, ti->box_height);
-		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
-		cairo_set_line_width(cr, 0.5);
-		cairo_stroke(cr);
-
+		draw_rubberband_box(cr, ti->box_x, ti->box_y,
+		                        ti->box_width, ti->box_height);
 	}
 
 }

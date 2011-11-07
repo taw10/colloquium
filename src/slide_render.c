@@ -112,6 +112,26 @@ void redraw_slide(struct slide *s)
 }
 
 
+void draw_rubberband_box(cairo_t *cr, double x, double y,
+                         double width, double height)
+{
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x, y, width, height);
+	cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+	cairo_set_line_width(cr, 0.5);
+	cairo_stroke(cr);
+}
+
+
+void draw_resize_handle(cairo_t *cr, double x, double y)
+{
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x, y, 20.0, 20.0);
+	cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
+	cairo_fill(cr);
+}
+
+
 void draw_editing_box(cairo_t *cr, double xmin, double ymin,
                       double width, double height)
 {

@@ -75,6 +75,16 @@ struct image
 };
 
 
+enum corner
+{
+	CORNER_NONE,
+	CORNER_TL,
+	CORNER_TR,
+	CORNER_BL,
+	CORNER_BR
+};
+
+
 extern struct image *get_image(struct image_store *is, char *filename);
 extern struct image_store *image_store_new(void);
 extern void unref_image(struct image *i);
@@ -84,5 +94,6 @@ extern void notify_style_update(struct presentation *p,
 
 extern void delete_object(struct object *o);
 
+extern enum corner which_corner(double xp, double yp, struct object *o);
 
 #endif	/* OBJECTS_H */

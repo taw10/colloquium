@@ -50,12 +50,13 @@ struct text_toolinfo
 	struct toolinfo        base;
 	PangoContext          *pc;
 	enum text_drag_reason  drag_reason;
+	enum corner            drag_corner;
 	double                 box_x;
 	double                 box_y;
 	double                 box_width;
 	double                 box_height;
-	double                 drag_offset_x;
-	double                 drag_offset_y;
+	double                 drag_initial_x;
+	double                 drag_initial_y;
 };
 
 
@@ -464,6 +465,54 @@ static struct object *add_text_object(struct slide *s, double x, double y,
 }
 
 
+static void calculate_box_size(struct object *o, double x, double y,
+                               struct text_toolinfo *ti)
+{
+	double ddx, ddy;
+
+	ddx = x - ti->drag_initial_x;
+	ddy = y - ti->drag_initial_y;
+
+	switch ( ti->drag_corner ) {
+
+		case CORNER_BR :
+		ti->box_x = o->x;
+		ti->box_y = o->y;
+		ti->box_width = o->bb_width + ddx;
+		ti->box_height = o->bb_height + ddy;
+		break;
+
+		case CORNER_BL :
+		ti->box_x = o->x + ddx;
+		ti->box_y = o->y;
+		ti->box_width = o->bb_width - ddx;
+		ti->box_height = o->bb_height + ddy;
+		break;
+
+		case CORNER_TL :
+		ti->box_x = o->x + ddx;
+		ti->box_y = o->y + ddy;
+		ti->box_width = o->bb_width - ddx;
+		ti->box_height = o->bb_height - ddy;
+		break;
+
+		case CORNER_TR :
+		ti->box_x = o->x;
+		ti->box_y = o->y + ddy;
+		ti->box_width = o->bb_width + ddx;
+		ti->box_height = o->bb_height - ddy;
+		break;
+
+		case CORNER_NONE :
+		break;
+
+	}
+
+	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
+	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+}
+
+
 static void click_select(struct presentation *p, struct toolinfo *tip,
                          double x, double y, GdkEventButton *event,
                          enum drag_status *drag_status,
@@ -472,6 +521,7 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 	int xp, yp;
 	double xo, yo;
 	gboolean v;
+	enum corner c;
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 	struct text_object *o = (struct text_object *)p->editing_object;
 	int idx, trail;
@@ -481,24 +531,16 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 	xo = x - o->base.x;  yo = y - o->base.y;
 
 	/* Within the resizing region? */
-	if ( (xo > o->base.bb_width - 20.0) && (yo > o->base.bb_height - 20.0)
-	  && (!o->furniture) )
+	c = which_corner(x, y, &o->base);
+	if ( (c != CORNER_NONE) && !o->furniture )
 	{
-		double cx, cy;
-
 		ti->drag_reason = TEXT_DRAG_REASON_RESIZE;
+		ti->drag_corner = c;
 
-		/* Initial size of rubber band box */
-		ti->box_x = o->base.x;  ti->box_y = o->base.y;
-		ti->box_width = o->base.bb_width;
-		ti->box_height = o->base.bb_height;
+		ti->drag_initial_x = x;
+		ti->drag_initial_y = y;
 
-		/* Coordinates of the bottom right corner */
-		cx = o->base.x + o->base.bb_width;
-		cy = o->base.y + o->base.bb_height;
-
-		ti->drag_offset_x = x - cx;
-		ti->drag_offset_y = y - cy;
+		calculate_box_size((struct object *)o, x, y, ti);
 
 		/* Tell the MCP what we did, and return */
 		*drag_status = DRAG_STATUS_DRAGGING;
@@ -521,12 +563,12 @@ static void drag(struct toolinfo *tip, struct presentation *p,
 {
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
-	ti->box_width = x - ti->drag_offset_x - ti->box_x;
-	ti->box_height = y - ti->drag_offset_y - ti->box_y;
-	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
-	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+	if ( ti->drag_reason == TEXT_DRAG_REASON_RESIZE ) {
 
-	redraw_overlay(p);
+		calculate_box_size(o, x, y, ti);
+		redraw_overlay(p);
+
+	}
 }
 
 
@@ -535,11 +577,10 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 {
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
-	ti->box_width = x - ti->drag_offset_x - ti->box_x;
-	ti->box_height = y - ti->drag_offset_y - ti->box_y;
-	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
-	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+	calculate_box_size((struct object *)o, x, y, ti);
 
+	o->x = ti->box_x;
+	o->y = ti->box_y;
 	o->bb_width = ti->box_width;
 	o->bb_height = ti->box_height;
 	update_text((struct text_object *)o);
@@ -612,12 +653,12 @@ static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *n)
 
 		if ( !o->furniture ) {
 
-			/* Draw resize handle */
-			cairo_new_path(cr);
-			cairo_rectangle(cr, n->x+n->bb_width-20.0,
-				            n->y+n->bb_height-20.0, 20.0, 20.0);
-			cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
-			cairo_fill(cr);
+			/* Draw resize handles */
+			draw_resize_handle(cr, n->x, n->y+n->bb_height-20.0);
+			draw_resize_handle(cr, n->x+n->bb_width-20.0, n->y);
+			draw_resize_handle(cr, n->x, n->y);
+			draw_resize_handle(cr, n->x+n->bb_width-20.0,
+				           n->y+n->bb_height-20.0);
 
 		}
 
@@ -625,15 +666,8 @@ static void draw_overlay(struct toolinfo *tip, cairo_t *cr, struct object *n)
 	}
 
 	if ( ti->drag_reason == TEXT_DRAG_REASON_RESIZE ) {
-
-		/* FIXME: Use common draw_rubberband_box() routine */
-		cairo_new_path(cr);
-		cairo_rectangle(cr, ti->box_x, ti->box_y,
-		                    ti->box_width, ti->box_height);
-		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
-		cairo_set_line_width(cr, 0.5);
-		cairo_stroke(cr);
-
+		draw_rubberband_box(cr, ti->box_x, ti->box_y,
+		                        ti->box_width, ti->box_height);
 	}
 
 }

@@ -170,3 +170,29 @@ void delete_object(struct object *o)
 	o->delete_object(o);
 	free(o);
 }
+
+
+enum corner which_corner(double xp, double yp, struct object *o)
+{
+	double x, y;  /* Relative to object position */
+
+	x = xp - o->x;
+	y = yp - o->y;
+
+	if ( x < 0.0 ) return CORNER_NONE;
+	if ( y < 0.0 ) return CORNER_NONE;
+	if ( x > o->bb_width ) return CORNER_NONE;
+	if ( y > o->bb_height ) return CORNER_NONE;
+
+	/* Top left? */
+	if ( (x<20.0) && (y<20.0) ) return CORNER_TL;
+	if ( (x>o->bb_width-20.0) && (y<20.0) ) return CORNER_TR;
+	if ( (x<20.0) && (y>o->bb_height-20.0) ) {
+		return CORNER_BL;
+	}
+	if ( (x>o->bb_width-20.0) && (y>o->bb_height-20.0) ) {
+		return CORNER_BR;
+	}
+
+	return CORNER_NONE;
+}

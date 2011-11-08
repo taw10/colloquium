@@ -173,7 +173,6 @@ void notify_style_update(struct presentation *p, struct style *sty)
 
 			s->objects[j]->update_object(s->objects[j]);
 			if ( p->cur_edit_slide == s ) changed = 1;
-			break;
 
 		}
 
@@ -189,6 +188,27 @@ void delete_object(struct object *o)
 	if ( o->parent != NULL ) remove_object_from_slide(o->parent, o);
 	o->delete_object(o);
 	free(o);
+}
+
+
+void realise_everything(struct presentation *p)
+{
+	int i;
+
+	p->text_tool->realise(p->text_tool, p->drawingarea);
+
+	for ( i=0; i<p->num_slides; i++ ) {
+
+		int j;
+		struct slide *s;
+
+		s = p->slides[i];
+
+		for ( j=0; j<p->slides[i]->num_objects; j++ ) {
+			s->objects[j]->update_object(s->objects[j]);
+		}
+
+	}
 }
 
 

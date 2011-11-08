@@ -1130,7 +1130,7 @@ int open_mainwindow(struct presentation *p)
 	                            p->slide_width + 20,
 	                            p->slide_height + 20);
 
-	p->text_tool->realise(p->text_tool, p->drawingarea);
+	realise_everything(p);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),

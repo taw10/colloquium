@@ -96,6 +96,8 @@ extern void notify_style_update(struct presentation *p,
 
 extern void delete_object(struct object *o);
 
+extern void realise_everything(struct presentation *p);
+
 extern enum corner which_corner(double xp, double yp, struct object *o);
 
 #endif	/* OBJECTS_H */

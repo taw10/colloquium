@@ -81,6 +81,8 @@ void redraw_slide(struct slide *s)
 	/* Is this slide currently open in the editor? */
 	if ( s == s->parent->cur_edit_slide ) {
 
+		GtkWidget *da;
+
 		if ( s->rendered_edit != NULL ) {
 			cairo_surface_destroy(s->rendered_edit);
 		}
@@ -89,13 +91,17 @@ void redraw_slide(struct slide *s)
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
 		s->rendered_edit = render_slide(s, w, h);
 
-		gdk_window_invalidate_rect(s->parent->drawingarea->window,
-		                           NULL, FALSE);
+		da = s->parent->drawingarea;
+		if ( da != NULL ) {
+			gdk_window_invalidate_rect(da->window, NULL, FALSE);
+		}
 
 	}
 
 	/* Is this slide currently being displayed on the projector? */
 	if ( s == s->parent->cur_proj_slide ) {
+
+		GtkWidget *da;
 
 		if ( s->rendered_proj != NULL ) {
 			cairo_surface_destroy(s->rendered_proj);
@@ -105,8 +111,10 @@ void redraw_slide(struct slide *s)
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
 		s->rendered_proj = render_slide(s, w, h);
 
-		gdk_window_invalidate_rect(s->parent->ss_drawingarea->window,
-		                           NULL, FALSE);
+		da = s->parent->drawingarea;
+		if ( da != NULL ) {
+			gdk_window_invalidate_rect(da->window, NULL, FALSE);
+		}
 
 	}
 }

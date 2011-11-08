@@ -73,6 +73,8 @@ struct text_object
 	double                offs_x;
 	double                offs_y;
 	int                   furniture;
+
+	PangoContext        **pc;
 };
 
 
@@ -192,6 +194,15 @@ static void update_text(struct text_object *o)
 	double mw = 0.0;
 	double mh = 0.0;
 
+	if ( o->layout == NULL ) {
+		if ( *o->pc != NULL ) {
+			o->layout = pango_layout_new(*o->pc);
+		} else {
+			/* Can't render yet */
+			return;
+		}
+	}
+
 	o->furniture = o->base.style != o->base.parent->parent->ss->styles[0];
 
 	pango_layout_set_text(o->layout, o->text, -1);
@@ -223,8 +234,6 @@ static void update_text(struct text_object *o)
 	if ( o->furniture ) {
 		calculate_position_from_style(o, eright, ebottom, mw, mh);
 	}
-
-	redraw_slide(((struct object *)o)->parent);
 }
 
 
@@ -270,6 +279,7 @@ void insert_text(struct object *op, char *t)
 	free(tmp);
 
 	update_text(o);
+	redraw_slide(op->parent);
 	o->insertion_point += tlen;
 	o->base.empty = 0;
 }
@@ -324,6 +334,7 @@ void handle_text_backspace(struct object *op)
 	if ( strlen(o->text) == 0 ) o->base.empty = 1;
 
 	update_text(o);
+	redraw_slide(op->parent);
 }
 
 
@@ -331,6 +342,10 @@ static void render_text_object(cairo_t *cr, struct object *op)
 {
 	struct text_object *o = (struct text_object *)op;
 	GdkColor col;
+
+	if ( o->layout == NULL ) {
+		return;
+	}
 
 	cairo_move_to(cr, o->base.x - o->offs_x, o->base.y - o->offs_y);
 	gdk_color_parse(o->base.style->colour, &col);
@@ -433,7 +448,13 @@ static struct object *new_text_object(double x, double y, struct style *sty,
 	new->text_len = 1;
 	new->insertion_point = 0;
 	new->insertion_trail = 0;
-	new->layout = pango_layout_new(ti->pc);
+	if ( ti->pc != NULL ) {
+		new->layout = pango_layout_new(ti->pc);
+		new->pc = NULL;
+	} else {
+		new->layout = NULL;
+		new->pc = &ti->pc;
+	}
 	new->fontdesc = NULL;
 
 	/* Methods for this object */
@@ -584,6 +605,7 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 	o->bb_width = ti->box_width;
 	o->bb_height = ti->box_height;
 	update_text((struct text_object *)o);
+	redraw_slide(o->parent);
 
 	ti->drag_reason = TEXT_DRAG_REASON_NONE;
 }
@@ -600,6 +622,7 @@ static void create_default(struct presentation *p, struct style *sty,
 	o = (struct text_object *)n;
 	o->furniture = 1;
 	update_text(o);
+	redraw_slide(((struct object *)o)->parent);
 	p->editing_object = n;
 }
 
@@ -621,6 +644,7 @@ static void create_region(struct toolinfo *tip, struct presentation *p,
 	o->furniture = 0;
 
 	update_text(o);
+	redraw_slide(((struct object *)o)->parent);
 	p->editing_object = n;
 }
 
@@ -817,6 +841,8 @@ struct toolinfo *initialise_text_tool(GtkWidget *w)
 	ti->base.valid_object = valid_object;
 	ti->base.realise = realise;
 	ti->base.deserialize = deserialize;
+
+	ti->pc = NULL;
 
 	ti->drag_reason = DRAG_REASON_NONE;
 

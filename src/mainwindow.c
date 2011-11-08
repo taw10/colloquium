@@ -127,19 +127,24 @@ static gint open_response_sig(GtkWidget *d, gint response,
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
 
 		if ( p->completely_empty ) {
+
 			if ( load_presentation(p, filename) ) {
 				show_error(p, "Failed to open presentation");
 			}
 			redraw_slide(p->cur_edit_slide);
 			update_toolbar(p);
+
 		} else {
+
 			struct presentation *p;
+
 			p = new_presentation();
 			if ( load_presentation(p, filename) ) {
 				show_error(p, "Failed to open presentation");
 			} else {
 				open_mainwindow(p);
 			}
+
 		}
 
 		g_free(filename);

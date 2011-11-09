@@ -915,11 +915,36 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 
 	if ( p->have_drag_data && p->import_acceptable ) {
 
+		struct style *sty;
+		double eright, ebottom;
+
 		gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
 		p->start_corner_x = x - p->import_width/2.0;
 		p->start_corner_y = y - p->import_height/2.0;
 		p->drag_corner_x = x + p->import_width/2.0;
 		p->drag_corner_y = y + p->import_height/2.0;
+
+		sty = p->ss->styles[0];
+
+		eright = p->slide_width - sty->margin_right;
+		ebottom = p->slide_height - sty->margin_bottom;
+		if ( p->start_corner_x < sty->margin_left ) {
+			p->start_corner_x = sty->margin_left;
+			p->drag_corner_x = sty->margin_left + p->import_width;
+		}
+		if ( p->start_corner_y < sty->margin_top ) {
+			p->start_corner_y = sty->margin_top;
+			p->drag_corner_y = sty->margin_top + p->import_height;
+		}
+		if ( p->drag_corner_x > eright ) {
+			p->drag_corner_x = eright;
+			p->start_corner_x = eright - p->import_width;
+		}
+		if ( p->drag_corner_y > ebottom ) {
+			p->drag_corner_y = ebottom;
+			p->start_corner_y = ebottom - p->import_height;
+		}
+
 		redraw_overlay(p);
 
 	}

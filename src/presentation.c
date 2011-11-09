@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <gtk/gtk.h>
 
 #include "presentation.h"
 #include "slide_render.h"
@@ -36,6 +37,31 @@
 #include "tool_select.h"
 #include "tool_text.h"
 #include "tool_image.h"
+
+
+static int num_presentations = 0;
+
+
+void free_presentation(struct presentation *p)
+{
+	int i;
+	int final = 0;
+
+	for ( i=0; i<p->num_slides; i++ ) {
+		free_slide(p->slides[i]);
+	}
+
+	(*p->num_presentations)--;
+	if ( *p->num_presentations == 0 ) final = 1;
+
+	/* FIXME: Loads of stuff leaks here */
+	free(p->filename);
+	free(p);
+
+	if ( final ) {
+		gtk_main_quit();
+	}
+}
 
 
 int insert_slide(struct presentation *p, struct slide *new, int pos)
@@ -246,6 +272,9 @@ struct presentation *new_presentation()
 	struct presentation *new;
 
 	new = calloc(1, sizeof(struct presentation));
+
+	num_presentations++;
+	new->num_presentations = &num_presentations;
 
 	new->filename = NULL;
 	new->titlebar = NULL;

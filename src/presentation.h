@@ -105,6 +105,7 @@ struct presentation
 	char             *titlebar;
 	char             *filename;
 	int               completely_empty;
+	int              *num_presentations;
 
 	struct toolinfo  *select_tool;
 	struct toolinfo  *text_tool;
@@ -181,6 +182,7 @@ struct presentation
 
 
 extern struct presentation *new_presentation(void);
+extern void free_presentation(struct presentation *p);
 
 extern struct slide *new_slide(void);
 extern struct slide *add_slide(struct presentation *p, int pos);

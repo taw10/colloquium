@@ -177,6 +177,21 @@ static gint open_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint new_sig(GtkWidget *widget, struct presentation *pnn)
+{
+	struct presentation *p;
+
+	p = new_presentation();
+	if ( p != NULL ) {
+		p->cur_edit_slide = add_slide(p, 0);
+		p->completely_empty = 1;
+		open_mainwindow(p);
+	}
+
+	return 0;
+}
+
+
 static gint saveas_response_sig(GtkWidget *d, gint response,
                               struct presentation *p)
 {
@@ -472,7 +487,7 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 
 		{ "FileAction", NULL, "_File", NULL, NULL, NULL },
 		{ "NewAction", GTK_STOCK_NEW, "_New",
-			NULL, NULL, NULL },
+			NULL, NULL, G_CALLBACK(new_sig) },
 		{ "OpenAction", GTK_STOCK_OPEN, "_Open...",
 			NULL, NULL, G_CALLBACK(open_sig) },
 		{ "SaveAction", GTK_STOCK_SAVE, "_Save",
@@ -589,7 +604,7 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 
 static gint close_sig(GtkWidget *window, struct presentation *p)
 {
-	gtk_main_quit();
+	free_presentation(p);
 	return 0;
 }
 

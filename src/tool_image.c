@@ -66,6 +66,7 @@ struct image_object
 	GdkPixbuf           *scaled_pb;
 	int                  scaled_w;
 	int                  scaled_h;
+	double               diagonal_length;
 };
 
 
@@ -195,7 +196,9 @@ struct object *add_image_object(struct slide *s, double x, double y,
 static void calculate_box_size(struct object *o, double x, double y,
                                struct image_toolinfo *ti)
 {
-	double ddx, ddy;
+	double ddx, ddy, dlen, mult;
+	double vx, vy, dbx, dby;
+	struct image_object *to = (struct image_object *)o;
 
 	ddx = x - ti->drag_initial_x;
 	ddy = y - ti->drag_initial_y;
@@ -203,31 +206,65 @@ static void calculate_box_size(struct object *o, double x, double y,
 	switch ( ti->drag_corner ) {
 
 		case CORNER_BR :
-		ti->box_x = o->x;
-		ti->box_y = o->y;
-		ti->box_width = o->bb_width + ddx;
-		ti->box_height = o->bb_height + ddy;
+		vx = o->bb_width;
+		vy = o->bb_height;
 		break;
 
 		case CORNER_BL :
-		ti->box_x = o->x + ddx;
-		ti->box_y = o->y;
-		ti->box_width = o->bb_width - ddx;
-		ti->box_height = o->bb_height + ddy;
+		vx = -o->bb_width;
+		vy = o->bb_height;
 		break;
 
 		case CORNER_TL :
-		ti->box_x = o->x + ddx;
-		ti->box_y = o->y + ddy;
-		ti->box_width = o->bb_width - ddx;
-		ti->box_height = o->bb_height - ddy;
+		vx = -o->bb_width;
+		vy = -o->bb_height;
+		break;
+
+		case CORNER_TR :
+		vx = o->bb_width;
+		vy = -o->bb_height;
+		break;
+
+		case CORNER_NONE :
+		default:
+		vx = 0.0;
+		vy = 0.0;
+		break;
+
+	}
+
+	dlen = (ddx*vx + ddy*vy) / to->diagonal_length;
+	mult = (dlen+to->diagonal_length) / to->diagonal_length;
+
+	ti->box_width = o->bb_width * mult;
+	ti->box_height = o->bb_height * mult;
+	dbx = ti->box_width - o->bb_width;
+	dby = ti->box_height - o->bb_height;
+
+	/* FIXME: This is wrong */
+	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
+	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+
+	switch ( ti->drag_corner ) {
+
+		case CORNER_BR :
+		ti->box_x = o->x;
+		ti->box_y = o->y;
+		break;
+
+		case CORNER_BL :
+		ti->box_x = o->x - dbx;
+		ti->box_y = o->y;
+		break;
+
+		case CORNER_TL :
+		ti->box_x = o->x - dbx;
+		ti->box_y = o->y - dby;
 		break;
 
 		case CORNER_TR :
 		ti->box_x = o->x;
-		ti->box_y = o->y + ddy;
-		ti->box_width = o->bb_width + ddx;
-		ti->box_height = o->bb_height - ddy;
+		ti->box_y = o->y - dby;
 		break;
 
 		case CORNER_NONE :
@@ -235,8 +272,6 @@ static void calculate_box_size(struct object *o, double x, double y,
 
 	}
 
-	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
-	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
 }
 
 
@@ -260,6 +295,9 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 
 		ti->drag_initial_x = x;
 		ti->drag_initial_y = y;
+		o->diagonal_length = pow(o->base.bb_width, 2.0);
+		o->diagonal_length += pow(o->base.bb_height, 2.0);
+		o->diagonal_length = sqrt(o->diagonal_length);
 
 		calculate_box_size((struct object *)o, x, y, ti);
 

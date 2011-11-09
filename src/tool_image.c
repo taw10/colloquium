@@ -241,9 +241,16 @@ static void calculate_box_size(struct object *o, double x, double y,
 	dbx = ti->box_width - o->bb_width;
 	dby = ti->box_height - o->bb_height;
 
-	/* FIXME: This is wrong */
-	if ( ti->box_width < 20.0 ) ti->box_width = 20.0;
-	if ( ti->box_height < 20.0 ) ti->box_height = 20.0;
+	if ( ti->box_width < 40.0 ) {
+		mult = 40.0 / o->bb_width;
+	}
+	if ( ti->box_height < 40.0 ) {
+		mult = 40.0 / o->bb_height;
+	}
+	ti->box_width = o->bb_width * mult;
+	ti->box_height = o->bb_height * mult;
+	dbx = ti->box_width - o->bb_width;
+	dby = ti->box_height - o->bb_height;
 
 	switch ( ti->drag_corner ) {
 

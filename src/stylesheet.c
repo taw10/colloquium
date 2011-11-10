@@ -573,16 +573,83 @@ void default_stylesheet(StyleSheet *ss)
 
 	ss->bgblocks = malloc(sizeof(struct bgblock));
 	ss->n_bgblocks = 1;
-	ss->bgblocks[0].type = BGBLOCK_GRADIENT_Y;
+	ss->bgblocks[0].type = BGBLOCK_SOLID;
 	ss->bgblocks[0].min_x = 0.0;
 	ss->bgblocks[0].max_x = 1024.0;
 	ss->bgblocks[0].min_y = 0.0;
 	ss->bgblocks[0].max_y = 768.0;
-	ss->bgblocks[0].colour1 = strdup("#000000000000");
+	ss->bgblocks[0].colour1 = strdup("#ffffffffffff");
 	ss->bgblocks[0].alpha1 = 1.0;
-	ss->bgblocks[0].colour2 = strdup("#ffffffffffff");
-	ss->bgblocks[0].alpha2 = 1.0;
 
+}
+
+
+static const char *str_halign(enum justify halign)
+{
+	switch ( halign ) {
+		case J_LEFT   : return "left";
+		case J_RIGHT  : return "right";
+		case J_CENTER : return "center";
+		default : return "???";
+	}
+}
+
+
+enum justify str_to_halign(char *halign)
+{
+	if ( strcmp(halign, "left") == 0 ) return J_LEFT;
+	if ( strcmp(halign, "right") == 0 ) return J_RIGHT;
+	if ( strcmp(halign, "center") == 0 ) return J_CENTER;
+
+	return J_LEFT;
+}
+
+
+static const char *str_valign(enum vert_pos valign)
+{
+	switch ( valign ) {
+		case V_TOP    : return "top";
+		case V_BOTTOM : return "bottom";
+		case V_CENTER : return "center";
+		default : return "???";
+	}
+}
+
+
+enum vert_pos str_to_valign(char *valign)
+{
+	if ( strcmp(valign, "top") == 0 ) return V_TOP;
+	if ( strcmp(valign, "bottom") == 0 ) return V_BOTTOM;
+	if ( strcmp(valign, "center") == 0 ) return V_CENTER;
+
+	return J_LEFT;
+}
+
+
+static const char *str_bgtype(enum bgblocktype t)
+{
+	switch ( t ) {
+		case BGBLOCK_SOLID             : return "solid";
+		case BGBLOCK_GRADIENT_X        : return "gradient_x";
+		case BGBLOCK_GRADIENT_Y        : return "gradient_y";
+		case BGBLOCK_GRADIENT_CIRCULAR : return "gradient_circular";
+		case BGBLOCK_IMAGE             : return "image";
+		default : return "???";
+	}
+}
+
+
+static enum bgblocktype str_to_bgtype(char *t)
+{
+	if ( strcmp(t, "solid") == 0 ) return BGBLOCK_SOLID;
+	if ( strcmp(t, "gradient_x") == 0 ) return BGBLOCK_GRADIENT_X;
+	if ( strcmp(t, "gradient_y") == 0 ) return BGBLOCK_GRADIENT_Y;
+	if ( strcmp(t, "gradient_ciruclar") == 0 ) {
+		return BGBLOCK_GRADIENT_CIRCULAR;
+	}
+	if ( strcmp(t, "image") == 0 ) return BGBLOCK_IMAGE;
+
+	return BGBLOCK_SOLID;
 }
 
 
@@ -611,6 +678,41 @@ static int read_style(struct style *sty, struct ds_node *root)
 	get_field_s(root, "valign",        &align);
 	sty->valign = str_to_valign(align);
 	free(align);
+
+	return 0;
+}
+
+
+static int read_bgblock(struct bgblock *b, struct ds_node *root)
+{
+	char *type;
+
+	get_field_s(root, "type",  &type);
+	b->type = str_to_bgtype(type);
+
+	get_field_f(root, "min_x",  &b->min_x);
+	get_field_f(root, "max_x",  &b->max_x);
+	get_field_f(root, "min_y",  &b->min_y);
+	get_field_f(root, "max_y",  &b->max_y);
+
+	switch ( b->type ) {
+
+		case BGBLOCK_SOLID :
+		get_field_s(root, "colour1",  &b->colour1);
+		get_field_f(root, "alpha1",  &b->alpha1);
+
+		case BGBLOCK_GRADIENT_X :
+		case BGBLOCK_GRADIENT_Y :
+		case BGBLOCK_GRADIENT_CIRCULAR :
+		get_field_s(root, "colour1",  &b->colour1);
+		get_field_f(root, "alpha1",  &b->alpha1);
+		get_field_s(root, "colour2",  &b->colour2);
+		get_field_f(root, "alpha2",  &b->alpha2);
+
+		default:
+		break;
+
+	}
 
 	return 0;
 }
@@ -658,9 +760,36 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 
 	}
 
+	node = find_node(root, "bgblocks");
+	if ( node == NULL ) {
+		fprintf(stderr, "Couldn't find bgblocks\n");
+		free_stylesheet(ss);
+		return NULL;
+	}
+
+	ss->bgblocks = malloc(node->n_children * sizeof(struct bgblock));
+	if ( ss->bgblocks == NULL ) {
+		fprintf(stderr, "Couldn't allocate bgblocks\n");
+		free_stylesheet(ss);
+		return NULL;
+	}
+	ss->n_bgblocks = node->n_children;
+
+	for ( i=0; i<node->n_children; i++ ) {
+
+		struct bgblock *b;
+
+		b = &ss->bgblocks[i];
+
+		if ( read_bgblock(b, node->children[i]) ) {
+			fprintf(stderr, "Couldn't read bgblock %i\n", i);
+			continue;
+		}
+
+	}
+
 	return ss;
 }
-
 
 
 StyleSheet *new_stylesheet()
@@ -760,51 +889,50 @@ StylesheetWindow *open_stylesheet(struct presentation *p)
 }
 
 
-static const char *str_halign(enum justify halign)
-{
-	switch ( halign ) {
-		case J_LEFT   : return "left";
-		case J_RIGHT  : return "right";
-		case J_CENTER : return "center";
-		default : return "???";
-	}
-}
-
-
-enum justify str_to_halign(char *halign)
-{
-	if ( strcmp(halign, "left") == 0 ) return J_LEFT;
-	if ( strcmp(halign, "right") == 0 ) return J_RIGHT;
-	if ( strcmp(halign, "center") == 0 ) return J_CENTER;
-
-	return J_LEFT;
-}
-
-
-static const char *str_valign(enum vert_pos valign)
-{
-	switch ( valign ) {
-		case V_TOP    : return "top";
-		case V_BOTTOM : return "bottom";
-		case V_CENTER : return "center";
-		default : return "???";
-	}
-}
-
-
-enum vert_pos str_to_valign(char *valign)
-{
-	if ( strcmp(valign, "top") == 0 ) return V_TOP;
-	if ( strcmp(valign, "bottom") == 0 ) return V_BOTTOM;
-	if ( strcmp(valign, "center") == 0 ) return V_CENTER;
-
-	return J_LEFT;
-}
-
-
 void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 {
 	int i;
+
+	serialize_start(ser, "bgblocks");
+	for ( i=0; i<ss->n_bgblocks; i++ ) {
+
+		struct bgblock *b = &ss->bgblocks[i];
+		char id[32];
+
+		snprintf(id, 31, "%i", i);
+
+		serialize_start(ser, id);
+		serialize_s(ser, "type", str_bgtype(b->type));
+		serialize_f(ser, "min_x", b->min_x);
+		serialize_f(ser, "min_y", b->min_y);
+		serialize_f(ser, "max_x", b->max_x);
+		serialize_f(ser, "max_y", b->max_y);
+
+		switch ( b->type ) {
+
+			case BGBLOCK_SOLID :
+			serialize_s(ser, "colour1", b->colour1);
+			serialize_f(ser, "alpha1", b->alpha1);
+			break;
+
+			case BGBLOCK_GRADIENT_X :
+			case BGBLOCK_GRADIENT_Y :
+			case BGBLOCK_GRADIENT_CIRCULAR :
+			serialize_s(ser, "colour1", b->colour1);
+			serialize_f(ser, "alpha1", b->alpha1);
+			serialize_s(ser, "colour2", b->colour2);
+			serialize_f(ser, "alpha2", b->alpha2);
+			break;
+
+			default:
+			break;
+
+		}
+
+		serialize_end(ser);
+
+	}
+	serialize_end(ser);
 
 	serialize_start(ser, "styles");
 	for ( i=0; i<ss->n_styles; i++ ) {

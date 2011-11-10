@@ -39,7 +39,8 @@ static void render_bgblock(cairo_t *cr, struct bgblock *b)
 {
 	GdkColor col1;
 	GdkColor col2;
-	cairo_pattern_t *patt;
+	cairo_pattern_t *patt = NULL;
+	double cx, cy, r, r1, r2;
 
 	cairo_rectangle(cr, b->min_x, b->min_y,
 	                    b->max_x - b->min_x,
@@ -54,21 +55,46 @@ static void render_bgblock(cairo_t *cr, struct bgblock *b)
 		cairo_fill(cr);
 		break;
 
+		case BGBLOCK_GRADIENT_CIRCULAR :
+		cx = b->min_x + (b->max_x-b->min_x)/2.0;
+		cy = b->min_y + (b->max_y-b->min_y)/2.0;
+		r1 = (b->max_x-b->min_x)/2.0;
+		r2 = (b->max_y-b->min_y)/2.0;
+		r = r1 > r2 ? r1 : r2;
+		patt = cairo_pattern_create_radial(cx, cy, r, cx, cy, 0.0);
+		/* Fall-through */
+
+		case BGBLOCK_GRADIENT_X :
+		if ( patt == NULL ) {
+			patt = cairo_pattern_create_linear(b->min_x, 0.0,
+		                                           b->max_y, 0.0);
+		}
+		/* Fall-through */
+
 		case BGBLOCK_GRADIENT_Y :
-		patt = cairo_pattern_create_linear(0.0, b->min_y,
-		                                   0.0, b->max_y);
+		if ( patt == NULL ) {
+			patt = cairo_pattern_create_linear(0.0, b->min_y,
+		                                           0.0, b->max_y);
+		}
+
 		gdk_color_parse(b->colour1, &col1);
 		gdk_color_parse(b->colour2, &col2);
-		cairo_pattern_add_color_stop_rgb(patt, 0.0, col1.red/65535.0,
-		                                            col1.green/65535.0,
-		                                            col1.blue/65535.0);
-		cairo_pattern_add_color_stop_rgb(patt, 1.0, col2.red/65535.0,
-		                                            col2.green/65535.0,
-		                                            col2.blue/65535.0);
+		cairo_pattern_add_color_stop_rgba(patt, 0.0, col1.red/65535.0,
+		                                             col1.green/65535.0,
+		                                             col1.blue/65535.0,
+		                                             b->alpha1);
+		cairo_pattern_add_color_stop_rgba(patt, 1.0, col2.red/65535.0,
+		                                             col2.green/65535.0,
+		                                             col2.blue/65535.0,
+		                                             b->alpha2);
 		cairo_set_source(cr, patt);
 		cairo_fill(cr);
 		cairo_pattern_destroy(patt);
 		break;
+
+		case BGBLOCK_IMAGE :
+		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+		cairo_fill(cr);
 
 	}
 }

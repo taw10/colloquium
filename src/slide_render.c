@@ -111,7 +111,7 @@ void redraw_slide(struct slide *s)
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
 		s->rendered_proj = render_slide(s, w, h);
 
-		da = s->parent->drawingarea;
+		da = s->parent->ss_drawingarea;
 		if ( da != NULL ) {
 			gdk_window_invalidate_rect(da->window, NULL, FALSE);
 		}

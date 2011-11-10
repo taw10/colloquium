@@ -131,7 +131,7 @@ extern struct style *find_style(StyleSheet *ss, const char *name);
 extern enum justify str_to_halign(char *halign);
 extern enum vert_pos str_to_valign(char *valign);
 
-
+extern StyleSheet *tree_to_stylesheet(struct ds_node *root);
 extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
 
 #endif	/* STYLESHEET_H */

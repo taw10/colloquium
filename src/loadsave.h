@@ -61,6 +61,8 @@ extern int get_field_f(struct ds_node *root, const char *key, double *val);
 extern int get_field_i(struct ds_node *root, const char *key, int *val);
 extern int get_field_s(struct ds_node *root, const char *key, char **val);
 
+extern struct ds_node *find_node(struct ds_node *root, const char *path);
+
 extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);
 

@@ -121,7 +121,7 @@ static void UNUSED show_tree(struct ds_node *root, const char *path)
 }
 
 
-static struct ds_node *find_node(struct ds_node *root, const char *path)
+struct ds_node *find_node(struct ds_node *root, const char *path)
 {
 	size_t start, len;
 	char element[1024];
@@ -404,82 +404,6 @@ int get_field_s(struct ds_node *root, const char *key, char **val)
 	*val = v;
 
 	return 0;
-}
-
-
-static int read_style(struct style *sty, struct ds_node *root)
-{
-	char *align;
-
-	get_field_f(root, "margin_left",   &sty->margin_left);
-	get_field_f(root, "margin_right",  &sty->margin_right);
-	get_field_f(root, "margin_top",    &sty->margin_top);
-	get_field_f(root, "margin_bottom", &sty->margin_bottom);
-
-	get_field_i(root, "use_max_width", &sty->use_max_width);
-	get_field_f(root, "max_width",     &sty->max_width);
-
-	get_field_f(root, "offset_x",      &sty->offset_x);
-	get_field_f(root, "offset_y",      &sty->offset_y);
-
-	get_field_s(root, "font",          &sty->font);
-	get_field_s(root, "colour",        &sty->colour);
-	get_field_f(root, "alpha",         &sty->alpha);
-
-	get_field_s(root, "halign",        &align);
-	sty->halign = str_to_halign(align);
-	free(align);
-	get_field_s(root, "valign",        &align);
-	sty->valign = str_to_valign(align);
-	free(align);
-
-	return 0;
-}
-
-
-static StyleSheet *tree_to_stylesheet(struct ds_node *root)
-{
-	StyleSheet *ss;
-	struct ds_node *node;
-	int i;
-
-	ss = new_stylesheet();
-	if ( ss == NULL ) return NULL;
-
-	node = find_node(root, "styles");
-	if ( node == NULL ) {
-		fprintf(stderr, "Couldn't find styles\n");
-		free_stylesheet(ss);
-		return NULL;
-	}
-
-	for ( i=0; i<node->n_children; i++ ) {
-
-		struct style *ns;
-		char *v;
-
-		get_field_s(node->children[i], "name", &v);
-		if ( v == NULL ) {
-			fprintf(stderr, "No name for style '%s'\n",
-			        node->children[i]->key);
-			continue;
-		}
-
-		ns = new_style(ss, v);
-		if ( ns == NULL ) {
-			fprintf(stderr, "Couldn't create style for '%s'\n",
-			        node->children[i]->key);
-			continue;
-		}
-
-		if ( read_style(ns, node->children[i]) ) {
-			fprintf(stderr, "Couldn't read style '%s'\n", v);
-			continue;
-		}
-
-	}
-
-	return ss;
 }
 
 

@@ -570,6 +570,19 @@ void default_stylesheet(StyleSheet *ss)
 	sty->valign = V_CENTER;
 	sty->offset_x = +200.0;
 	sty->offset_y = -300.0;
+
+	ss->bgblocks = malloc(sizeof(struct bgblock));
+	ss->n_bgblocks = 1;
+	ss->bgblocks[0].type = BGBLOCK_GRADIENT_Y;
+	ss->bgblocks[0].min_x = 0.0;
+	ss->bgblocks[0].max_x = 1024.0;
+	ss->bgblocks[0].min_y = 0.0;
+	ss->bgblocks[0].max_y = 768.0;
+	ss->bgblocks[0].colour1 = strdup("#000000000000");
+	ss->bgblocks[0].alpha1 = 1.0;
+	ss->bgblocks[0].colour2 = strdup("#ffffffffffff");
+	ss->bgblocks[0].alpha2 = 1.0;
+
 }
 
 

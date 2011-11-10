@@ -35,6 +35,45 @@
 #include "stylesheet.h"
 
 
+static void render_bgblock(cairo_t *cr, struct bgblock *b)
+{
+	GdkColor col1;
+	GdkColor col2;
+	cairo_pattern_t *patt;
+
+	cairo_rectangle(cr, b->min_x, b->min_y,
+	                    b->max_x - b->min_x,
+	                    b->max_y - b->min_y);
+
+	switch ( b->type ) {
+
+		case BGBLOCK_SOLID :
+		gdk_color_parse(b->colour1, &col1);
+		gdk_cairo_set_source_color(cr, &col1);
+		/* FIXME: Honour alpha as well */
+		cairo_fill(cr);
+		break;
+
+		case BGBLOCK_GRADIENT_Y :
+		patt = cairo_pattern_create_linear(0.0, b->min_y,
+		                                   0.0, b->max_y);
+		gdk_color_parse(b->colour1, &col1);
+		gdk_color_parse(b->colour2, &col2);
+		cairo_pattern_add_color_stop_rgb(patt, 0.0, col1.red/65535.0,
+		                                            col1.green/65535.0,
+		                                            col1.blue/65535.0);
+		cairo_pattern_add_color_stop_rgb(patt, 1.0, col2.red/65535.0,
+		                                            col2.green/65535.0,
+		                                            col2.blue/65535.0);
+		cairo_set_source(cr, patt);
+		cairo_fill(cr);
+		cairo_pattern_destroy(patt);
+		break;
+
+	}
+}
+
+
 static cairo_surface_t *render_slide(struct slide *s, int w, int h)
 {
 	cairo_surface_t *surf;
@@ -44,12 +83,11 @@ static cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 
 	cr = cairo_create(surf);
-
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-	cairo_fill(cr);
-
 	cairo_scale(cr, w/s->parent->slide_width, h/s->parent->slide_height);
+
+	for ( i=0; i<s->parent->ss->n_bgblocks; i++ ) {
+		render_bgblock(cr, &s->parent->ss->bgblocks[i]);
+	}
 
 	for ( i=0; i<s->num_objects; i++ ) {
 

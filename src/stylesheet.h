@@ -70,10 +70,42 @@ struct style
 };
 
 
+enum bgblocktype
+{
+	BGBLOCK_SOLID,
+	BGBLOCK_GRADIENT_X,
+	BGBLOCK_GRADIENT_Y,
+	BGBLOCK_IMAGE,
+};
+
+
+struct bgblock
+{
+	enum bgblocktype type;
+	double           min_x;
+	double           max_x;
+	double           min_y;
+	double           max_y;
+
+	char            *colour1;
+	double           alpha1;
+	char            *colour2;
+	double           alpha2;
+
+	struct image    *image;
+	GdkPixbuf       *scaled_pb;
+	int              scaled_w;
+	int              scaled_h;
+};
+
+
 struct _stylesheet
 {
-	struct style **styles;
-	int            n_styles;
+	struct style  **styles;
+	int             n_styles;
+
+	struct bgblock *bgblocks;
+	int             n_bgblocks;
 
 	/* Background stuff */
 };

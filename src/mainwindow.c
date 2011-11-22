@@ -436,9 +436,7 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
 		case TOOL_IMAGE : p->cur_tool = p->image_tool; break;
 	}
 
-	if ( p->cur_tbox != NULL ) {
-		gtk_container_remove(GTK_CONTAINER(p->tbox), p->cur_tbox);
-	}
+	gtk_container_remove(GTK_CONTAINER(p->tbox), p->cur_tbox);
 	p->cur_tbox = p->cur_tool->tbox;
 	gtk_container_add(GTK_CONTAINER(p->tbox), p->cur_tbox);
 
@@ -602,6 +600,10 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	                         G_CALLBACK(add_furniture), p);
 
 	}
+	p->cur_tbox = NULL;
+	p->cur_tool = p->select_tool;
+	p->cur_tbox = p->cur_tool->tbox;
+	gtk_container_add(GTK_CONTAINER(p->tbox), p->cur_tbox);
 	update_toolbar(p);
 }
 

@@ -69,7 +69,7 @@ static void click_select(struct presentation *p, struct toolinfo *tip,
 
 	*drag_status = DRAG_STATUS_COULD_DRAG;
 	*drag_reason = DRAG_REASON_TOOL;
-	ti->drag_reason = SELECT_DRAG_REASON_MOVE;
+	ti->drag_reason = SELECT_DRAG_REASON_POTENTIAL_MOVE;
 }
 
 
@@ -102,7 +102,7 @@ static void drag(struct toolinfo *tip, struct presentation *p,
 {
 	struct select_toolinfo *ti = (struct select_toolinfo *)tip;
 
-	if ( ti->drag_reason != SELECT_DRAG_REASON_POTENTIAL_MOVE ) {
+	if ( ti->drag_reason == SELECT_DRAG_REASON_POTENTIAL_MOVE ) {
 		ti->drag_reason = SELECT_DRAG_REASON_MOVE;
 	}
 

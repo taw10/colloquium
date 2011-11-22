@@ -467,7 +467,7 @@ static struct object *deserialize(struct presentation *p, struct ds_node *root,
 }
 
 
-static void realise(struct toolinfo *ti, GtkWidget *w)
+static void realise(struct toolinfo *ti, GtkWidget *w, struct presentation *p)
 {
 	ti->tbox = gtk_label_new("Image tool");
 	g_object_ref(ti->tbox);

@@ -196,9 +196,9 @@ void realise_everything(struct presentation *p)
 	int i;
 
 	/* Realise all the tools */
-	p->select_tool->realise(p->select_tool, p->drawingarea);
-	p->text_tool->realise(p->text_tool, p->drawingarea);
-	p->image_tool->realise(p->image_tool, p->drawingarea);
+	p->select_tool->realise(p->select_tool, p->drawingarea, p);
+	p->text_tool->realise(p->text_tool, p->drawingarea, p);
+	p->image_tool->realise(p->image_tool, p->drawingarea, p);
 
 	for ( i=0; i<p->num_slides; i++ ) {
 

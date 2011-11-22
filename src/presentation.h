@@ -94,7 +94,8 @@ struct toolinfo
 
 	int (*valid_object)(struct object *o);
 
-	void (*realise)(struct toolinfo *tip, GtkWidget *w);
+	void (*realise)(struct toolinfo *tip, GtkWidget *w,
+	                struct presentation *p);
 
 	struct object *(*deserialize)(struct presentation *p,
 	                              struct ds_node *root,

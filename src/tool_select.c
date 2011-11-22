@@ -180,14 +180,32 @@ static int valid_object(struct object *o)
 }
 
 
-static void realise(struct toolinfo *ti, GtkWidget *w)
+static gint delete_sig(GtkWidget *widget, struct presentation *p)
+{
+	if ( p->editing_object == NULL ) return FALSE;
+
+	delete_object(p->editing_object);
+	p->editing_object = NULL;
+	redraw_slide(p->cur_edit_slide);
+
+	return FALSE;
+}
+
+
+static void realise(struct toolinfo *ti, GtkWidget *w, struct presentation *p)
 {
 	GtkWidget *hbox;
+	GtkWidget *del;
 
 	hbox = gtk_hbox_new(FALSE, 0.0);
 	ti->tbox = hbox;
+
+	del = gtk_button_new_from_stock(GTK_STOCK_DELETE);
+	g_signal_connect(G_OBJECT(del), "clicked", G_CALLBACK(delete_sig), p);
+	gtk_box_pack_start(GTK_BOX(hbox), del, 0, 0, FALSE);
+
 	g_object_ref(ti->tbox);
-	gtk_widget_show(ti->tbox);
+	gtk_widget_show_all(ti->tbox);
 }
 
 

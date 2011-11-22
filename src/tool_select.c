@@ -180,6 +180,17 @@ static int valid_object(struct object *o)
 }
 
 
+static void realise(struct toolinfo *ti, GtkWidget *w)
+{
+	GtkWidget *hbox;
+
+	hbox = gtk_hbox_new(FALSE, 0.0);
+	ti->tbox = hbox;
+	g_object_ref(ti->tbox);
+	gtk_widget_show(ti->tbox);
+}
+
+
 struct toolinfo *initialise_select_tool()
 {
 	struct select_toolinfo *ti;
@@ -199,6 +210,7 @@ struct toolinfo *initialise_select_tool()
 	ti->base.key_pressed = key_pressed;
 	ti->base.im_commit = im_commit;
 	ti->base.valid_object = valid_object;
+	ti->base.realise = realise;
 
 	return (struct toolinfo *)ti;
 }

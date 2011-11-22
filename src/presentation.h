@@ -68,6 +68,8 @@ enum drag_status
 
 struct toolinfo
 {
+	GtkWidget *tbox;
+
 	void (*click_select)(struct presentation *p, struct toolinfo *tip,
 	                     double x, double y, GdkEventButton *event,
 	                     enum drag_status *drag_status,
@@ -117,6 +119,7 @@ struct presentation
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
 	GtkWidget        *tbox;
+	GtkWidget        *cur_tbox;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;

@@ -732,10 +732,14 @@ static int valid_object(struct object *o)
 }
 
 
-static void realise(struct toolinfo *tip, GtkWidget *w)
+static void realise(struct toolinfo *ti, GtkWidget *w)
 {
-	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
-	ti->pc = gtk_widget_get_pango_context(w);
+	struct text_toolinfo *tip = (struct text_toolinfo *)ti;
+	tip->pc = gtk_widget_get_pango_context(w);
+
+	ti->tbox = gtk_label_new("Text tool");
+	g_object_ref(ti->tbox);
+	gtk_widget_show(ti->tbox);
 }
 
 

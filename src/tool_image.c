@@ -467,6 +467,14 @@ static struct object *deserialize(struct presentation *p, struct ds_node *root,
 }
 
 
+static void realise(struct toolinfo *ti, GtkWidget *w)
+{
+	ti->tbox = gtk_label_new("Image tool");
+	g_object_ref(ti->tbox);
+	gtk_widget_show(ti->tbox);
+}
+
+
 struct toolinfo *initialise_image_tool()
 {
 	struct image_toolinfo *ti;
@@ -485,6 +493,7 @@ struct toolinfo *initialise_image_tool()
 	ti->base.im_commit = im_commit;
 	ti->base.valid_object = valid_object;
 	ti->base.deserialize = deserialize;
+	ti->base.realise = realise;
 
 	return (struct toolinfo *)ti;
 }

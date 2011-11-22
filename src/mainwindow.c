@@ -436,6 +436,12 @@ static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
 		case TOOL_IMAGE : p->cur_tool = p->image_tool; break;
 	}
 
+	if ( p->cur_tbox != NULL ) {
+		gtk_container_remove(GTK_CONTAINER(p->tbox), p->cur_tbox);
+	}
+	p->cur_tbox = p->cur_tool->tbox;
+	gtk_container_add(GTK_CONTAINER(p->tbox), p->cur_tbox);
+
 	if ( p->editing_object != NULL ) {
 		if ( p->cur_tool->valid_object(p->editing_object) ) {
 			p->cur_tool->select(p->editing_object, p->cur_tool);
@@ -479,7 +485,6 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
-	GtkToolItem *titem;
 	GtkWidget *toolbar;
 	GtkWidget *menu;
 	GtkWidget *item;
@@ -576,13 +581,11 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	gtk_ui_manager_ensure_update(p->ui);
 
 	toolbar = gtk_ui_manager_get_widget(p->ui, "/displaywindowtoolbar");
-	titem = gtk_separator_tool_item_new();
-	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), titem, -1);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar),
+	                   gtk_separator_tool_item_new(), -1);
 
-	p->tbox = gtk_hbox_new(FALSE, 0.0);
-	titem = gtk_tool_item_new();
-	gtk_container_add(GTK_CONTAINER(titem), p->tbox);
-	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), titem, -1);
+	p->tbox = GTK_WIDGET(gtk_tool_item_new());
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM(p->tbox), -1);
 
 	/* Add the styles to the "Insert" menu */
 	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
@@ -1157,7 +1160,6 @@ int open_mainwindow(struct presentation *p)
 
 	vbox = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
-	add_menu_bar(p, vbox);
 
 	p->drawingarea = gtk_drawing_area_new();
 	sw = gtk_scrolled_window_new(NULL, NULL);
@@ -1166,12 +1168,13 @@ int open_mainwindow(struct presentation *p)
 	                               GTK_POLICY_AUTOMATIC);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sw),
 	                                      p->drawingarea);
-	gtk_box_pack_start(GTK_BOX(vbox), sw, TRUE, TRUE, 0);
 	gtk_widget_set_size_request(GTK_WIDGET(p->drawingarea),
 	                            p->slide_width + 20,
 	                            p->slide_height + 20);
 
 	realise_everything(p);
+	add_menu_bar(p, vbox);
+	gtk_box_pack_start(GTK_BOX(vbox), sw, TRUE, TRUE, 0);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),

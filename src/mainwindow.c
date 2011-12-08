@@ -362,6 +362,11 @@ static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
 	p->cur_edit_slide = p->slides[0];
 	notify_slide_changed(p);
 
+	if ( p->slideshow_linked ) {
+		p->cur_proj_slide = p->cur_edit_slide;
+		notify_slideshow_slide_changed(p);
+	}
+
 	return FALSE;
 }
 
@@ -375,6 +380,11 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 
 	p->cur_edit_slide = p->slides[cur_slide_number-1];
 	notify_slide_changed(p);
+
+	if ( p->slideshow_linked ) {
+		p->cur_proj_slide = p->cur_edit_slide;
+		notify_slideshow_slide_changed(p);
+	}
 
 	return FALSE;
 }
@@ -390,6 +400,11 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 	p->cur_edit_slide = p->slides[cur_slide_number+1];
 	notify_slide_changed(p);
 
+	if ( p->slideshow_linked ) {
+		p->cur_proj_slide = p->cur_edit_slide;
+		notify_slideshow_slide_changed(p);
+	}
+
 	return FALSE;
 }
 
@@ -398,6 +413,11 @@ static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	p->cur_edit_slide = p->slides[p->num_slides-1];
 	notify_slide_changed(p);
+
+	if ( p->slideshow_linked ) {
+		p->cur_proj_slide = p->cur_edit_slide;
+		notify_slideshow_slide_changed(p);
+	}
 
 	return FALSE;
 }
@@ -657,18 +677,25 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	switch ( event->keyval ) {
 
-	case GDK_KEY_Page_Up :
+		case GDK_KEY_Page_Up :
 		prev_slide_sig(NULL, p);
 		break;
 
-	case GDK_KEY_Page_Down :
+		case GDK_KEY_Page_Down :
 		next_slide_sig(NULL, p);
 		break;
 
-	case GDK_KEY_Escape :
+		case GDK_KEY_Escape :
 		if ( p->slideshow != NULL ) end_slideshow(p);
 		redraw_object(p->editing_object);
 		p->editing_object = NULL;
+		break;
+
+		case GDK_KEY_B :
+		p->slideshow_linked = 1 - p->slideshow_linked;
+		if ( p->slideshow_linked ) {
+		}
+		redraw_overlay(p);
 		break;
 
 	}
@@ -851,8 +878,8 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 
 	if ( (p->drag_status == DRAG_STATUS_DRAGGING)
 	  && ((p->drag_reason == DRAG_REASON_CREATE)
-	      || (p->drag_reason == DRAG_REASON_IMPORT)) ) {
-
+	      || (p->drag_reason == DRAG_REASON_IMPORT)) )
+	{
 		cairo_new_path(cr);
 		cairo_rectangle(cr, p->start_corner_x, p->start_corner_y,
 		                    p->drag_corner_x - p->start_corner_x,
@@ -860,6 +887,9 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
 		cairo_set_line_width(cr, 0.5);
 		cairo_stroke(cr);
+	}
+
+	if ( p->slideshow_linked ) {
 
 	}
 }

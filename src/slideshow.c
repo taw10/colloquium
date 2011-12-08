@@ -227,6 +227,7 @@ void try_start_slideshow(struct presentation *p)
 	} /* FIXME: Sensible (configurable) choice of monitor */
 
 	p->slideshow = n;
+	p->slideshow_linked = 1;
 	gtk_window_fullscreen(GTK_WINDOW(n));
 	gtk_widget_show_all(GTK_WIDGET(n));
 

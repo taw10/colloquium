@@ -125,6 +125,7 @@ struct presentation
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;
 	struct slide     *cur_proj_slide;
+	int               slideshow_linked;
 
 	/* This is the "native" size of the slide.  It only exists to give
 	 * font size some meaning in the context of a somewhat arbitrary DPI */

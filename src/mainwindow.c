@@ -668,10 +668,17 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 {
 	gboolean r;
 
-	/* Throw the event to the IM context and let it sort things out */
-	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context),
-	                                   event);
-	if ( r ) return FALSE;  /* IM ate it */
+	/* FIXME: Only if doing sensible text input */
+	if ( p->editing_object != NULL ) {
+
+		/* Throw the event to the IM context and let it sort things
+		 * out */
+		r = gtk_im_context_filter_keypress(
+		                                  GTK_IM_CONTEXT(p->im_context),
+			                          event);
+		if ( r ) return FALSE;  /* IM ate it */
+
+	}
 
 	p->cur_tool->key_pressed(p->editing_object, event->keyval, p->cur_tool);
 
@@ -692,10 +699,21 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_B :
-		p->slideshow_linked = 1 - p->slideshow_linked;
-		if ( p->slideshow_linked ) {
+		case GDK_KEY_b :
+		if ( p->slideshow != NULL ) {
+			if ( p->prefs->b_splits ) {
+				p->slideshow_linked = 1 - p->slideshow_linked;
+				if ( p->slideshow_linked ) {
+					p->cur_proj_slide = p->cur_edit_slide;
+					notify_slideshow_slide_changed(p);
+				}
+			} else {
+				p->ss_blank = 1-p->ss_blank;
+				gdk_window_invalidate_rect(
+				                      p->ss_drawingarea->window,
+					             NULL, FALSE);
+			}
 		}
-		redraw_overlay(p);
 		break;
 
 	}

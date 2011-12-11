@@ -280,6 +280,10 @@ struct presentation *new_presentation()
 	new->titlebar = NULL;
 	get_titlebar_string(new);
 
+	/* FIXME: Should be just one of these */
+	new->prefs = calloc(1, sizeof(struct prefs));
+	new->prefs->b_splits = 1;
+
 	new->window = NULL;
 	new->ui = NULL;
 	new->action_group = NULL;

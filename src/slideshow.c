@@ -104,6 +104,10 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 
 	notify_slideshow_slide_changed(p);
 
+	/* Editor always follows slideshow, even if "unlinked" */
+	p->cur_edit_slide = p->cur_proj_slide;
+	notify_slide_changed(p);
+
 	return FALSE;
 }
 
@@ -120,6 +124,10 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 	p->cur_proj_slide = p->slides[cur_slide_number+1];
 
 	notify_slideshow_slide_changed(p);
+
+	/* Editor always follows slideshow, even if "unlinked" */
+	p->cur_edit_slide = p->cur_proj_slide;
+	notify_slide_changed(p);
 
 	return FALSE;
 }
@@ -142,9 +150,17 @@ static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	case GDK_KEY_B :
 	case GDK_KEY_b :
-		p->ss_blank = 1-p->ss_blank;
-		gdk_window_invalidate_rect(p->ss_drawingarea->window,
-		                           NULL, FALSE);
+		if ( p->prefs->b_splits ) {
+			p->slideshow_linked = 1 - p->slideshow_linked;
+			if ( p->slideshow_linked ) {
+				p->cur_proj_slide = p->cur_edit_slide;
+				notify_slideshow_slide_changed(p);
+			}
+		} else {
+			p->ss_blank = 1-p->ss_blank;
+			gdk_window_invalidate_rect(p->ss_drawingarea->window,
+			                           NULL, FALSE);
+		}
 		break;
 
 	case GDK_KEY_Page_Up :

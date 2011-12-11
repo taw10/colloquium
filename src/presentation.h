@@ -103,12 +103,20 @@ struct toolinfo
 };
 
 
+struct prefs
+{
+	int b_splits;
+};
+
+
 struct presentation
 {
 	char             *titlebar;
 	char             *filename;
 	int               completely_empty;
 	int              *num_presentations;
+
+	struct prefs     *prefs;
 
 	struct toolinfo  *select_tool;
 	struct toolinfo  *text_tool;

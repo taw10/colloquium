@@ -91,44 +91,51 @@ void notify_slideshow_slide_changed(struct presentation *p)
 }
 
 
-static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
+static void change_slide(struct presentation *p, signed int n)
 {
+
 	int cur_slide_number;
 
-	cur_slide_number = slide_number(p, p->cur_proj_slide);
+	/* If linked, it doesn't matter whether we work from the editor or
+	 * slideshow position because they're showing the same thing.  If not,
+	 * then we must use the editor's slide. */
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
 
-	if ( cur_slide_number == 0 ) return FALSE;
+	if ( cur_slide_number+n < 0 ) return;
+	if ( cur_slide_number+n >= p->num_slides ) return;
 
 	p->ss_blank = 0;
-	p->cur_proj_slide = p->slides[cur_slide_number-1];
 
-	notify_slideshow_slide_changed(p);
+	if ( p->slideshow_linked ) {
 
-	/* Editor always follows slideshow, even if "unlinked" */
-	p->cur_edit_slide = p->cur_proj_slide;
-	notify_slide_changed(p);
+		/* If we are currently "linked", update both. */
+		p->cur_proj_slide = p->slides[cur_slide_number+n];
+		p->cur_edit_slide = p->cur_proj_slide;
+		notify_slideshow_slide_changed(p);
+		notify_slide_changed(p);
 
+	} else {
+
+		/* If we are not linked, a slide change on the "slideshow"
+		 * actually affects the editor. */
+		p->cur_edit_slide = p->slides[cur_slide_number+n];
+		notify_slide_changed(p);
+		/* p->cur_proj_slide not changed */
+
+	}
+}
+
+
+static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
+{
+	change_slide(p, -1);
 	return FALSE;
 }
 
 
 static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(p, p->cur_proj_slide);
-
-	if ( cur_slide_number == p->num_slides-1 ) return FALSE;
-
-	p->ss_blank = 0;
-	p->cur_proj_slide = p->slides[cur_slide_number+1];
-
-	notify_slideshow_slide_changed(p);
-
-	/* Editor always follows slideshow, even if "unlinked" */
-	p->cur_edit_slide = p->cur_proj_slide;
-	notify_slide_changed(p);
-
+	change_slide(p, +1);
 	return FALSE;
 }
 

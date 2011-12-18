@@ -547,7 +547,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->halign = J_CENTER;
 	sty->valign = V_CENTER;
 	sty->offset_x = -200.0;
-	sty->offset_y = +300.0;
+	sty->offset_y = -200.0;
 	sty->role = S_ROLE_PTITLE_REF;
 
 	sty = new_style(ss, "Presentation author");

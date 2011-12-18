@@ -194,6 +194,7 @@ static void update_text(struct text_object *o)
 	double mw = 0.0;
 	double mh = 0.0;
 	struct object *ex;
+	struct text_object *ext;
 
 	switch ( o->base.style->role ) {
 
@@ -209,9 +210,10 @@ static void update_text(struct text_object *o)
 
 		case S_ROLE_PTITLE:
 		ex = o->base.parent->roles[S_ROLE_PTITLE_REF];
-		if ( ex != NULL ) {
+		ext = (struct text_object *)ex;
+		if ( (ext != NULL) && (ext->text != NULL) ) {
 			free(o->text);
-			o->text = strdup(((struct text_object *)ex)->text);
+			o->text = strdup(ext->text);
 			o->text_len = strlen(o->text);
 		}
 		break;
@@ -667,7 +669,8 @@ static void create_default(struct presentation *p, struct style *sty,
 		break;
 	}
 
-	/* If we just created a new presentation title */
+	/* If we just created a new presentation title, set this object as the
+	 * presentation title reference for all subsequent slides */
 	if ( sty->role == S_ROLE_PTITLE_REF ) {
 		int i;
 		for ( i=slide_number(p, s)+1;
@@ -675,10 +678,6 @@ static void create_default(struct presentation *p, struct style *sty,
 		{
 			struct slide *s = p->slides[i];
 			s->roles[S_ROLE_PTITLE_REF] = n;
-			if ( s->roles[S_ROLE_PTITLE] != NULL ) {
-				update_text((struct text_object *)
-				                       s->roles[S_ROLE_PTITLE]);
-			}
 		}
 	}
 
@@ -717,9 +716,32 @@ static void select_object(struct object *o, struct toolinfo *tip)
 
 static int deselect_object(struct object *o, struct toolinfo *tip)
 {
-	if ( (o != NULL) && o->empty ) {
+	struct slide *s;
+	struct presentation *p;
+
+	if ( o == NULL ) return 0;
+
+	s = o->parent;
+	p = s->parent;
+
+	if ( o->empty ) {
 		delete_object(o);
 		return 1;
+	}
+
+	if ( o->style->role == S_ROLE_PTITLE_REF ) {
+
+		int i;
+
+		for ( i=slide_number(p, s)+1; i<p->num_slides; i++ ) {
+
+			struct slide *s = p->slides[i];
+			if ( s->roles[S_ROLE_PTITLE] != NULL ) {
+				update_text((struct text_object *)
+				                       s->roles[S_ROLE_PTITLE]);
+			}
+		}
+
 	}
 
 	return 0;

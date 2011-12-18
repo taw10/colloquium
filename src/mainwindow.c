@@ -332,6 +332,7 @@ static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
 
 void notify_slide_changed(struct presentation *p)
 {
+	p->cur_tool->deselect(p->editing_object, p->cur_tool);
 	p->editing_object = NULL;
 	update_toolbar(p);
 	redraw_slide(p->cur_edit_slide);

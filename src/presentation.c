@@ -67,6 +67,7 @@ void free_presentation(struct presentation *p)
 int insert_slide(struct presentation *p, struct slide *new, int pos)
 {
 	struct slide **try;
+	int i;
 
 	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
 	if ( try == NULL ) {
@@ -97,6 +98,13 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 
 	new->parent = p;
 	p->num_slides++;
+
+	for ( i=pos+1; i<p->num_slides; i++ ) {
+		struct object *o = p->slides[i]->roles[S_ROLE_SLIDENUMBER];
+		if ( o != NULL ) {
+			o->update_object(o);
+		}
+	}
 
 	return 0;
 }
@@ -141,7 +149,9 @@ struct slide *add_slide(struct presentation *p, int pos)
 		return NULL;
 	}
 
+	/* Copy roles and references to this slide as applicable */
 	if ( pos >= 0 ) {
+
 		struct slide *ex = p->slides[pos];
 
 		s->roles[S_ROLE_PTITLE_REF] = ex->roles[S_ROLE_PTITLE_REF];

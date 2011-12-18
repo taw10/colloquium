@@ -183,10 +183,56 @@ void notify_style_update(struct presentation *p, struct style *sty)
 }
 
 
+static void check_references(struct slide *s, struct object *om)
+{
+	if ( s->roles[S_ROLE_PDATE_REF] == om ) {
+		struct object *o;
+		s->roles[S_ROLE_PDATE_REF] = NULL;
+		o = s->roles[S_ROLE_PDATE];
+		if ( o != NULL ) o->update_object(o);
+	}
+
+	if ( s->roles[S_ROLE_PAUTHOR_REF] == om ) {
+		struct object *o;
+		s->roles[S_ROLE_PAUTHOR_REF] = NULL;
+		o = s->roles[S_ROLE_PAUTHOR];
+		if ( o != NULL ) o->update_object(o);
+	}
+
+	if ( s->roles[S_ROLE_PTITLE_REF] == om ) {
+		struct object *o;
+		s->roles[S_ROLE_PTITLE_REF] = NULL;
+		o = s->roles[S_ROLE_PTITLE];
+		if ( o != NULL ) o->update_object(o);
+	}
+
+}
+
+
 void delete_object(struct object *o)
 {
+	int i;
+
 	if ( o->parent != NULL ) remove_object_from_slide(o->parent, o);
 	o->delete_object(o);
+
+	/* If this object was any kind of special (for this slide),
+	 * check all the other slides for references */
+	if ( (o->parent->roles[S_ROLE_PTITLE_REF] == o)
+	  || (o->parent->roles[S_ROLE_PAUTHOR_REF] == o)
+	  || (o->parent->roles[S_ROLE_PDATE_REF] == o) )
+	{
+		for ( i=0; i<o->parent->parent->num_slides; i++ ) {
+			check_references(o->parent->parent->slides[i], o);
+		}
+	}
+
+	for ( i=0; i<NUM_S_ROLES; i++ ) {
+		if ( o->parent->roles[i] == o ) {
+			o->parent->roles[i] = NULL;
+		}
+	}
+
 	free(o);
 }
 

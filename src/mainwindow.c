@@ -494,7 +494,7 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	if ( sty == NULL ) return 0;
 
 	force_tool(p, TOOL_TEXT);
-	p->text_tool->create_default(p, sty, p->text_tool);
+	p->text_tool->create_default(p, sty, p->cur_edit_slide, p->text_tool);
 
 	return 0;
 }

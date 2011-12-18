@@ -27,8 +27,21 @@
 #include <config.h>
 #endif
 
-
 #include "loadsave.h"
+
+
+enum object_role
+{
+	S_ROLE_NONE        = 0,
+	S_ROLE_SLIDENUMBER = 1,
+	S_ROLE_PTITLE      = 2,  /* Presentation title on slide */
+	S_ROLE_PTITLE_REF  = 3,  /* Reference to actual title */
+	S_ROLE_PAUTHOR     = 4,
+	S_ROLE_PAUTHOR_REF = 5,
+	S_ROLE_PDATE       = 6,
+	S_ROLE_PDATE_REF   = 7,
+	NUM_S_ROLES
+};
 
 
 enum justify
@@ -50,6 +63,7 @@ enum vert_pos
 struct style
 {
 	char              *name;
+	enum object_role   role;
 
 	double             margin_left;
 	double             margin_right;

@@ -140,6 +140,40 @@ struct slide *add_slide(struct presentation *p, int pos)
 		free_slide(s);
 		return NULL;
 	}
+
+	if ( pos >= 0 ) {
+		struct slide *ex = p->slides[pos];
+
+		s->roles[S_ROLE_PTITLE_REF] = ex->roles[S_ROLE_PTITLE_REF];
+		s->roles[S_ROLE_PAUTHOR_REF] = ex->roles[S_ROLE_PAUTHOR_REF];
+		s->roles[S_ROLE_PDATE_REF] = ex->roles[S_ROLE_PDATE_REF];
+
+		if ( ex->roles[S_ROLE_PTITLE] != NULL ) {
+			p->text_tool->create_default(p,
+			             ex->roles[S_ROLE_PTITLE]->style, s,
+			             p->text_tool);
+		}
+
+		if ( ex->roles[S_ROLE_SLIDENUMBER] != NULL ) {
+			p->text_tool->create_default(p,
+			             ex->roles[S_ROLE_SLIDENUMBER]->style, s,
+			             p->text_tool);
+		}
+
+		if ( ex->roles[S_ROLE_PAUTHOR] != NULL ) {
+			p->text_tool->create_default(p,
+			             ex->roles[S_ROLE_PAUTHOR]->style, s,
+			             p->text_tool);
+		}
+
+		if ( ex->roles[S_ROLE_PDATE] != NULL ) {
+			p->text_tool->create_default(p,
+			             ex->roles[S_ROLE_PDATE]->style, s,
+			             p->text_tool);
+		}
+
+	}
+
 	return s;
 }
 

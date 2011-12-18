@@ -62,7 +62,7 @@ struct text_toolinfo
 
 struct text_object
 {
-	struct object        base;
+	struct object         base;
 
 	char                 *text;
 	size_t                text_len;
@@ -193,6 +193,33 @@ static void update_text(struct text_object *o)
 	double ebottom = 0.0;
 	double mw = 0.0;
 	double mh = 0.0;
+	struct object *ex;
+
+	switch ( o->base.style->role ) {
+
+		case S_ROLE_SLIDENUMBER:
+		if ( o->text_len < 32 ) {
+			free(o->text);
+			o->text = malloc(32);
+			o->text_len = 32;
+		}
+		snprintf(o->text, o->text_len-1, "Slide %i",
+		         1+slide_number(o->base.parent->parent, o->base.parent));
+		break;
+
+		case S_ROLE_PTITLE:
+		ex = o->base.parent->roles[S_ROLE_PTITLE_REF];
+		if ( ex != NULL ) {
+			free(o->text);
+			o->text = strdup(((struct text_object *)ex)->text);
+			o->text_len = strlen(o->text);
+		}
+		break;
+
+		default:
+		break;
+
+	}
 
 	if ( o->layout == NULL ) {
 		if ( *o->pc != NULL ) {
@@ -612,18 +639,51 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 
 
 static void create_default(struct presentation *p, struct style *sty,
-                           struct toolinfo *tip)
+                           struct slide *s, struct toolinfo *tip)
 {
 	struct object *n;
 	struct text_object *o;
 	struct text_toolinfo *ti = (struct text_toolinfo *)tip;
 
-	n = add_text_object(p->cur_edit_slide, 0.0, 0.0, sty, ti);
+	n = add_text_object(s, 0.0, 0.0, sty, ti);
 	o = (struct text_object *)n;
 	o->furniture = 1;
+
+	if ( sty->role != S_ROLE_NONE ) {
+		s->roles[sty->role] = n;
+	}
+
+	switch ( sty->role )
+	{
+		case S_ROLE_NONE:
+		case S_ROLE_SLIDENUMBER:
+		case S_ROLE_PTITLE:
+		case S_ROLE_PAUTHOR:
+		case S_ROLE_PDATE:
+		break;
+
+		default:
+		p->editing_object = n;
+		break;
+	}
+
+	/* If we just created a new presentation title */
+	if ( sty->role == S_ROLE_PTITLE_REF ) {
+		int i;
+		for ( i=slide_number(p, s)+1;
+		      i<p->num_slides; i++ )
+		{
+			struct slide *s = p->slides[i];
+			s->roles[S_ROLE_PTITLE_REF] = n;
+			if ( s->roles[S_ROLE_PTITLE] != NULL ) {
+				update_text((struct text_object *)
+				                       s->roles[S_ROLE_PTITLE]);
+			}
+		}
+	}
+
 	update_text(o);
 	redraw_slide(((struct object *)o)->parent);
-	p->editing_object = n;
 }
 
 

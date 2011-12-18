@@ -27,7 +27,6 @@
 #include <config.h>
 #endif
 
-
 #include <gtk/gtk.h>
 
 #include "stylesheet.h"
@@ -36,6 +35,7 @@
 struct slide
 {
 	struct presentation *parent;
+	struct object *roles[NUM_S_ROLES];
 
 	/* Any of these may be NULL */
 	cairo_surface_t *rendered_proj;
@@ -75,7 +75,7 @@ struct toolinfo
 	                     enum drag_status *drag_status,
 	                     enum drag_reason *drag_reason);
 	void (*create_default)(struct presentation *p, struct style *sty,
-	                       struct toolinfo *tip);
+	                       struct slide *s, struct toolinfo *tip);
 	void (*select)(struct object *o, struct toolinfo *tip);
 	int  (*deselect)(struct object *o, struct toolinfo *tip);
 	void (*drag)(struct toolinfo *tip, struct presentation *p,

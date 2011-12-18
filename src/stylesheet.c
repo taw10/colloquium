@@ -419,6 +419,7 @@ struct style *new_style(StyleSheet *ss, const char *name)
 	if ( sty == NULL ) return NULL;
 
 	sty->name = strdup(name);
+	sty->role = S_ROLE_NONE;
 
 	n = ss->n_styles;
 	styles_new = realloc(ss->styles, (n+1)*sizeof(sty));
@@ -505,6 +506,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->valign = V_BOTTOM;
 	sty->offset_x = 0.0;
 	sty->offset_y = 0.0;
+	sty->role = S_ROLE_PDATE;
 
 	sty = new_style(ss, "Slide number");
 	sty->font = strdup("Sans 12");
@@ -518,6 +520,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->valign = V_BOTTOM;
 	sty->offset_x = 0.0;
 	sty->offset_y = 0.0;
+	sty->role = S_ROLE_SLIDENUMBER;
 
 	sty = new_style(ss, "Presentation title on slide");
 	sty->font = strdup("Sans 12");
@@ -531,6 +534,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->valign = V_BOTTOM;
 	sty->offset_x = 0.0;
 	sty->offset_y = 0.0;
+	sty->role = S_ROLE_PTITLE;
 
 	sty = new_style(ss, "Presentation title");
 	sty->font = strdup("Sans 50");
@@ -544,6 +548,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->valign = V_CENTER;
 	sty->offset_x = -200.0;
 	sty->offset_y = +300.0;
+	sty->role = S_ROLE_PTITLE_REF;
 
 	sty = new_style(ss, "Presentation author");
 	sty->font = strdup("Sans 30");
@@ -557,6 +562,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->valign = V_CENTER;
 	sty->offset_x = +200.0;
 	sty->offset_y = -300.0;
+	sty->role = S_ROLE_PAUTHOR_REF;
 
 	sty = new_style(ss, "Presentation date");
 	sty->font = strdup("Sans 30");
@@ -570,6 +576,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->valign = V_CENTER;
 	sty->offset_x = +200.0;
 	sty->offset_y = -300.0;
+	sty->role = S_ROLE_PDATE_REF;
 
 	ss->bgblocks = malloc(sizeof(struct bgblock));
 	ss->n_bgblocks = 1;
@@ -580,7 +587,6 @@ void default_stylesheet(StyleSheet *ss)
 	ss->bgblocks[0].max_y = 768.0;
 	ss->bgblocks[0].colour1 = strdup("#ffffffffffff");
 	ss->bgblocks[0].alpha1 = 1.0;
-
 }
 
 

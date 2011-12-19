@@ -216,6 +216,26 @@ static void update_text(struct text_object *o)
 			o->text = strdup(ext->text);
 			o->text_len = strlen(o->text);
 		}
+		if ( ext == NULL ) {
+			free(o->text);
+			o->text = strdup("<presentation title>");
+			o->text_len = strlen(o->text);
+		}
+		break;
+
+		case S_ROLE_PDATE:
+		ex = o->base.parent->roles[S_ROLE_PDATE_REF];
+		ext = (struct text_object *)ex;
+		if ( (ext != NULL) && (ext->text != NULL) ) {
+			free(o->text);
+			o->text = strdup(ext->text);
+			o->text_len = strlen(o->text);
+		}
+		if ( ext == NULL ) {
+			free(o->text);
+			o->text = strdup("<date>");
+			o->text_len = strlen(o->text);
+		}
 		break;
 
 		default:
@@ -640,6 +660,19 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 }
 
 
+static void update_subsequent_refs(struct presentation *p, int start,
+                                   enum object_role role, struct object *o)
+{
+	int i;
+
+	for ( i=start; i<p->num_slides; i++ )
+	{
+		struct slide *s = p->slides[i];
+		s->roles[role] = o;
+	}
+}
+
+
 static void create_default(struct presentation *p, struct style *sty,
                            struct slide *s, struct toolinfo *tip)
 {
@@ -669,16 +702,21 @@ static void create_default(struct presentation *p, struct style *sty,
 		break;
 	}
 
-	/* If we just created a new presentation title, set this object as the
-	 * presentation title reference for all subsequent slides */
+	/* If we just created a new presentation title (etc), set this object as
+	 * the presentation title reference for all subsequent slides.
+	 * Any relevant objects will get updated when the current object gets
+	 * deselected. */
 	if ( sty->role == S_ROLE_PTITLE_REF ) {
-		int i;
-		for ( i=slide_number(p, s)+1;
-		      i<p->num_slides; i++ )
-		{
-			struct slide *s = p->slides[i];
-			s->roles[S_ROLE_PTITLE_REF] = n;
-		}
+		update_subsequent_refs(p, slide_number(p, s)+1,
+		                       S_ROLE_PTITLE_REF, n);
+	}
+	if ( sty->role == S_ROLE_PAUTHOR_REF ) {
+		update_subsequent_refs(p, slide_number(p, s)+1,
+		                       S_ROLE_PAUTHOR_REF, n);
+	}
+	if ( sty->role == S_ROLE_PDATE_REF ) {
+		update_subsequent_refs(p, slide_number(p, s)+1,
+		                       S_ROLE_PDATE_REF, n);
 	}
 
 	update_text(o);
@@ -714,6 +752,22 @@ static void select_object(struct object *o, struct toolinfo *tip)
 }
 
 
+static void update_subsequent(struct presentation *p, int start,
+                              enum object_role role, struct object *o)
+{
+	int i;
+
+	for ( i=start; i<p->num_slides; i++ ) {
+
+		struct slide *s = p->slides[i];
+
+		if ( s->roles[role] != NULL ) {
+			s->roles[role]->update_object(s->roles[role]);
+		}
+	}
+}
+
+
 static int deselect_object(struct object *o, struct toolinfo *tip)
 {
 	struct slide *s;
@@ -730,18 +784,13 @@ static int deselect_object(struct object *o, struct toolinfo *tip)
 	}
 
 	if ( o->style->role == S_ROLE_PTITLE_REF ) {
-
-		int i;
-
-		for ( i=slide_number(p, s)+1; i<p->num_slides; i++ ) {
-
-			struct slide *s = p->slides[i];
-			if ( s->roles[S_ROLE_PTITLE] != NULL ) {
-				update_text((struct text_object *)
-				                       s->roles[S_ROLE_PTITLE]);
-			}
-		}
-
+		update_subsequent(p, slide_number(p, s)+1, S_ROLE_PTITLE, o);
+	}
+	if ( o->style->role == S_ROLE_PAUTHOR_REF ) {
+		update_subsequent(p, slide_number(p, s)+1, S_ROLE_PAUTHOR, o);
+	}
+	if ( o->style->role == S_ROLE_PDATE_REF ) {
+		update_subsequent(p, slide_number(p, s)+1, S_ROLE_PDATE, o);
 	}
 
 	return 0;

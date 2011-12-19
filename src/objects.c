@@ -185,6 +185,7 @@ void notify_style_update(struct presentation *p, struct style *sty)
 
 static void check_references(struct slide *s, struct object *om)
 {
+	/* FIXME: Should replace with previous useful one, not NULL */
 	if ( s->roles[S_ROLE_PDATE_REF] == om ) {
 		struct object *o;
 		s->roles[S_ROLE_PDATE_REF] = NULL;

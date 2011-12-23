@@ -683,6 +683,7 @@ static void create_default(struct presentation *p, struct style *sty,
 	n = add_text_object(s, 0.0, 0.0, sty, ti);
 	o = (struct text_object *)n;
 	o->furniture = 1;
+	n->empty = 0;
 
 	if ( sty->role != S_ROLE_NONE ) {
 		s->roles[sty->role] = n;

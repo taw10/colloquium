@@ -655,7 +655,7 @@ enum object_role str_to_role(const char *s)
 	if ( strcmp(s, "ptitle-ref") == 0 )  return S_ROLE_PTITLE_REF;
 	if ( strcmp(s, "pauthor") == 0 )     return S_ROLE_PAUTHOR;
 	if ( strcmp(s, "pauthor-ref") == 0 ) return S_ROLE_PAUTHOR_REF;
-	if ( strcmp(s, "padte") == 0 )       return S_ROLE_PDATE;
+	if ( strcmp(s, "pdate") == 0 )       return S_ROLE_PDATE;
 	if ( strcmp(s, "pdate-ref") == 0 )   return S_ROLE_PDATE_REF;
 
 	return S_ROLE_NONE;

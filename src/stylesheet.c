@@ -632,6 +632,36 @@ enum vert_pos str_to_valign(char *valign)
 }
 
 
+static const char *str_role(enum object_role r)
+{
+	switch ( r ) {
+		case S_ROLE_NONE        : return "none";
+		case S_ROLE_SLIDENUMBER : return "slidenumber";
+		case S_ROLE_PTITLE      : return "ptitle";
+		case S_ROLE_PTITLE_REF  : return "ptitle-ref";
+		case S_ROLE_PAUTHOR     : return "pauthor";
+		case S_ROLE_PAUTHOR_REF : return "pauthor-ref";
+		case S_ROLE_PDATE       : return "pdate";
+		case S_ROLE_PDATE_REF   : return "pdate-ref";
+		default : return "???";
+	}
+}
+
+
+enum object_role str_to_role(const char *s)
+{
+	if ( strcmp(s, "slidenumber") == 0 ) return S_ROLE_SLIDENUMBER;
+	if ( strcmp(s, "ptitle") == 0 )      return S_ROLE_PTITLE;
+	if ( strcmp(s, "ptitle-ref") == 0 )  return S_ROLE_PTITLE_REF;
+	if ( strcmp(s, "pauthor") == 0 )     return S_ROLE_PAUTHOR;
+	if ( strcmp(s, "pauthor-ref") == 0 ) return S_ROLE_PAUTHOR_REF;
+	if ( strcmp(s, "padte") == 0 )       return S_ROLE_PDATE;
+	if ( strcmp(s, "pdate-ref") == 0 )   return S_ROLE_PDATE_REF;
+
+	return S_ROLE_NONE;
+}
+
+
 static const char *str_bgtype(enum bgblocktype t)
 {
 	switch ( t ) {
@@ -662,6 +692,15 @@ static enum bgblocktype str_to_bgtype(char *t)
 static int read_style(struct style *sty, struct ds_node *root)
 {
 	char *align;
+	char *role;
+
+	get_field_s(root, "role", &role);
+	if ( role != NULL ) {
+		sty->role = str_to_role(role);
+		free(role);
+	} else {
+		sty->role = S_ROLE_NONE;
+	}
 
 	get_field_f(root, "margin_left",   &sty->margin_left);
 	get_field_f(root, "margin_right",  &sty->margin_right);
@@ -733,7 +772,7 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 	ss = new_stylesheet();
 	if ( ss == NULL ) return NULL;
 
-	node = find_node(root, "styles");
+	node = find_node(root, "styles", 0);
 	if ( node == NULL ) {
 		fprintf(stderr, "Couldn't find styles\n");
 		free_stylesheet(ss);
@@ -766,7 +805,7 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 
 	}
 
-	node = find_node(root, "bgblocks");
+	node = find_node(root, "bgblocks", 0);
 	if ( node == NULL ) {
 		fprintf(stderr, "Couldn't find bgblocks\n");
 		free_stylesheet(ss);
@@ -950,6 +989,7 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 
 		serialize_start(ser, id);
 		serialize_s(ser, "name", s->name);
+		serialize_s(ser, "role", str_role(s->role));
 		serialize_f(ser, "margin_left", s->margin_left);
 		serialize_f(ser, "margin_right", s->margin_right);
 		serialize_f(ser, "margin_top", s->margin_top);

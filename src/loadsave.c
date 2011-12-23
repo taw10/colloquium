@@ -99,7 +99,7 @@ static struct ds_node *add_child(struct ds_node *node, const char *key)
 }
 
 
-static void UNUSED show_tree(struct ds_node *root, const char *path)
+void show_tree(struct ds_node *root, const char *path)
 {
 	char newpath[1024];
 	int i;
@@ -121,7 +121,7 @@ static void UNUSED show_tree(struct ds_node *root, const char *path)
 }
 
 
-struct ds_node *find_node(struct ds_node *root, const char *path)
+struct ds_node *find_node(struct ds_node *root, const char *path, int cr)
 {
 	size_t start, len;
 	char element[1024];
@@ -163,9 +163,13 @@ struct ds_node *find_node(struct ds_node *root, const char *path)
 
 		if ( !found ) {
 
-			cur = add_child(cur, element);
-			if ( cur == NULL ) {
-				return NULL;  /* Error */
+			if ( cr ) {
+				cur = add_child(cur, element);
+				if ( cur == NULL ) {
+					return NULL;  /* Error */
+				}
+			} else {
+				return NULL;
 			}
 
 		}
@@ -267,7 +271,7 @@ static int deserialize_file(FILE *fh, struct ds_node *root)
 			}
 			value[pos] = '\0';
 
-			node = find_node(cur_node, key);
+			node = find_node(cur_node, key, 1);
 			node->value = strdup(value);
 
 		} else {
@@ -279,7 +283,7 @@ static int deserialize_file(FILE *fh, struct ds_node *root)
 				if ( !isspace(line[i]) ) path[pos++] = line[i];
 			}
 			path[pos] = '\0';
-			cur_node = find_node(root, path);
+			cur_node = find_node(root, path, 1);
 
 		}
 
@@ -311,7 +315,7 @@ int get_field_f(struct ds_node *root, const char *key, double *val)
 	double v;
 	char *check;
 
-	node = find_node(root, key);
+	node = find_node(root, key, 0);
 	if ( node == NULL ) {
 		fprintf(stderr, "Couldn't find field '%s'\n", key);
 		return 1;
@@ -335,7 +339,7 @@ int get_field_i(struct ds_node *root, const char *key, int *val)
 	int v;
 	char *check;
 
-	node = find_node(root, key);
+	node = find_node(root, key, 0);
 	if ( node == NULL ) {
 		fprintf(stderr, "Couldn't find field '%s'\n", key);
 		return 1;
@@ -360,9 +364,10 @@ int get_field_s(struct ds_node *root, const char *key, char **val)
 	size_t i, len, s1, s2;
 	int hq;
 
-	node = find_node(root, key);
+	node = find_node(root, key, 0);
 	if ( node == NULL ) {
 		fprintf(stderr, "Couldn't find field '%s'\n", key);
+		*val = NULL;
 		return 1;
 	}
 
@@ -483,6 +488,78 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 }
 
 
+static void try_last(struct slide *s, struct slide *ls, enum object_role r)
+{
+	if ( s->roles[r] == NULL ) {
+		s->roles[r] = ls->roles[r];
+	}
+}
+
+
+static void try_update(struct object *o)
+{
+	if ( o == NULL ) return;
+	o->update_object(o);
+}
+
+
+/* Go through all the slides and make sure the roles are tidied up */
+static void fix_up_roles(struct presentation *p)
+{
+	int i;
+	struct slide *last_slide = NULL;
+
+	for ( i=0; i<p->num_slides; i++ ) {
+
+		int j;
+		struct slide *s;
+
+		s = p->slides[i];
+
+		for ( j=0; j<NUM_S_ROLES; j++ ) {
+			s->roles[j] = NULL;
+		}
+
+		for ( j=0; j<s->num_objects; j++ ) {
+
+			struct object *o;
+			enum object_role r;
+
+			o = s->objects[j];
+			r = o->style->role;
+
+			if ( r == S_ROLE_NONE ) continue;
+
+			if ( s->roles[r] != NULL ) {
+				fprintf(stderr, "Warning, two objects in slide"
+				                " with role %i.\n", r);
+				continue;
+			}
+
+			s->roles[r] = o;
+
+		}
+
+		if ( last_slide != NULL ) {
+
+			/* Set off-slide references for this slide */
+			try_last(s, last_slide, S_ROLE_PTITLE_REF);
+			try_last(s, last_slide, S_ROLE_PAUTHOR_REF);
+			try_last(s, last_slide, S_ROLE_PDATE_REF);
+
+		}
+
+		try_update(s->roles[S_ROLE_PTITLE]);
+		try_update(s->roles[S_ROLE_PAUTHOR]);
+		try_update(s->roles[S_ROLE_PDATE]);
+		try_update(s->roles[S_ROLE_SLIDENUMBER]);
+
+		last_slide = s;
+
+	}
+}
+
+
 static int tree_to_slides(struct ds_node *root, struct presentation *p)
 {
 	int i;
@@ -499,6 +576,8 @@ static int tree_to_slides(struct ds_node *root, struct presentation *p)
 
 	}
 
+	fix_up_roles(p);
+
 	return 0;
 }
 
@@ -512,7 +591,7 @@ int tree_to_presentation(struct ds_node *root, struct presentation *p)
 	p->cur_edit_slide = NULL;
 	p->cur_proj_slide = NULL;
 
-	node = find_node(root, "slide-properties/width");
+	node = find_node(root, "slide-properties/width", 0);
 	if ( node == NULL ) return 1;
 	p->slide_width = strtod(node->value, &check);
 	if ( check == node->value ) {
@@ -520,7 +599,7 @@ int tree_to_presentation(struct ds_node *root, struct presentation *p)
 		return 1;
 	}
 
-	node = find_node(root, "slide-properties/height");
+	node = find_node(root, "slide-properties/height", 0);
 	if ( node == NULL ) return 1;
 	p->slide_height = strtod(node->value, &check);
 	if ( check == node->value ) {
@@ -528,7 +607,7 @@ int tree_to_presentation(struct ds_node *root, struct presentation *p)
 		return 1;
 	}
 
-	node = find_node(root, "stylesheet");
+	node = find_node(root, "stylesheet", 0);
 	if ( node != NULL ) {
 		free_stylesheet(p->ss);
 		p->ss = tree_to_stylesheet(node);
@@ -543,7 +622,7 @@ int tree_to_presentation(struct ds_node *root, struct presentation *p)
 		p->num_slides = 0;
 	}
 
-	node = find_node(root, "slides");
+	node = find_node(root, "slides", 0);
 	if ( node != NULL ) {
 		tree_to_slides(node, p);
 		if ( p->num_slides == 0 ) {

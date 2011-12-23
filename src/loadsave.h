@@ -51,6 +51,8 @@ struct serializer
 	int blank_written;
 };
 
+extern void show_tree(struct ds_node *root, const char *path);
+
 extern void serialize_start(struct serializer *s, const char *id);
 extern void serialize_s(struct serializer *s, const char *key, const char *val);
 extern void serialize_f(struct serializer *s, const char *key, double val);
@@ -61,7 +63,8 @@ extern int get_field_f(struct ds_node *root, const char *key, double *val);
 extern int get_field_i(struct ds_node *root, const char *key, int *val);
 extern int get_field_s(struct ds_node *root, const char *key, char **val);
 
-extern struct ds_node *find_node(struct ds_node *root, const char *path);
+extern struct ds_node *find_node(struct ds_node *root, const char *path,
+                                 int cr);
 
 extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);

@@ -305,9 +305,7 @@ int slide_number(struct presentation *p, struct slide *s)
 		if ( p->slides[i] == s ) return i;
 	}
 
-	fprintf(stderr, "Sorry, this point is never reached.\n");
-	fprintf(stderr, "Please report a bug.\n");
-	return 0;
+	return p->num_slides;
 }
 
 

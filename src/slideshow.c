@@ -168,6 +168,8 @@ void toggle_slideshow_link(struct presentation *p)
 	if ( p->slideshow_linked ) {
 		p->cur_proj_slide = p->cur_edit_slide;
 		notify_slideshow_slide_changed(p, p->cur_proj_slide);
+	} else {
+		redraw_overlay(p);
 	}
 }
 

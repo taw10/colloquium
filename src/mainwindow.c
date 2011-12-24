@@ -906,10 +906,10 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	/* Overall background */
 	cairo_rectangle(cr, event->area.x, event->area.y,
 	                event->area.width, event->area.height);
-	if ( p->slideshow == NULL ) {
-		cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
-	} else {
+	if ( (p->slideshow != NULL) && !p->slideshow_linked  ) {
 		cairo_set_source_rgb(cr, 1.0, 0.3, 0.2);
+	} else {
+		cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	}
 	cairo_fill(cr);
 

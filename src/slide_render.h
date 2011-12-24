@@ -33,7 +33,7 @@
 extern void redraw_slide(struct slide *s);
 
 extern void draw_rubberband_box(cairo_t *cr, double xmin, double ymin,
-                         double width, double height);
+                                double width, double height);
 
 extern void draw_resize_handle(cairo_t *cr, double x, double y);
 

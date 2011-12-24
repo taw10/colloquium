@@ -85,8 +85,15 @@ static gboolean ss_expose_sig(GtkWidget *da, GdkEventExpose *event,
 }
 
 
-void notify_slideshow_slide_changed(struct presentation *p)
+void notify_slideshow_slide_changed(struct presentation *p, struct slide *np)
 {
+	if ( (p->cur_proj_slide != NULL)
+	  && (p->cur_proj_slide->rendered_edit != NULL) )
+	{
+		cairo_surface_destroy(p->cur_proj_slide->rendered_proj);
+		p->cur_proj_slide->rendered_proj = NULL;
+	}
+	p->cur_proj_slide = np;
 	redraw_slide(p->cur_proj_slide);
 }
 
@@ -109,17 +116,14 @@ static void change_slide(struct presentation *p, signed int n)
 	if ( p->slideshow_linked ) {
 
 		/* If we are currently "linked", update both. */
-		p->cur_proj_slide = p->slides[cur_slide_number+n];
-		p->cur_edit_slide = p->cur_proj_slide;
-		notify_slideshow_slide_changed(p);
-		notify_slide_changed(p);
+		notify_slideshow_slide_changed(p, p->slides[cur_slide_number+n]);
+		notify_slide_changed(p, p->slides[cur_slide_number+n]);
 
 	} else {
 
 		/* If we are not linked, a slide change on the "slideshow"
 		 * actually affects the editor. */
-		p->cur_edit_slide = p->slides[cur_slide_number+n];
-		notify_slide_changed(p);
+		notify_slide_changed(p, p->slides[cur_slide_number+n]);
 		/* p->cur_proj_slide not changed */
 
 	}
@@ -145,8 +149,26 @@ void end_slideshow(struct presentation *p)
 	gtk_widget_destroy(p->ss_drawingarea);
 	gtk_widget_destroy(p->slideshow);
 	p->slideshow = NULL;
+
+	if ( (p->cur_proj_slide != NULL)
+	  && (p->cur_proj_slide->rendered_edit != NULL) )
+	{
+		cairo_surface_destroy(p->cur_proj_slide->rendered_proj);
+		p->cur_proj_slide->rendered_proj = NULL;
+	}
+
 	p->cur_proj_slide = NULL;
-	notify_slide_changed(p);
+	redraw_overlay(p);
+}
+
+
+void toggle_slideshow_link(struct presentation *p)
+{
+	p->slideshow_linked = 1 - p->slideshow_linked;
+	if ( p->slideshow_linked ) {
+		p->cur_proj_slide = p->cur_edit_slide;
+		notify_slideshow_slide_changed(p, p->cur_proj_slide);
+	}
 }
 
 
@@ -158,11 +180,7 @@ static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
 	case GDK_KEY_B :
 	case GDK_KEY_b :
 		if ( p->prefs->b_splits ) {
-			p->slideshow_linked = 1 - p->slideshow_linked;
-			if ( p->slideshow_linked ) {
-				p->cur_proj_slide = p->cur_edit_slide;
-				notify_slideshow_slide_changed(p);
-			}
+			toggle_slideshow_link(p);
 		} else {
 			p->ss_blank = 1-p->ss_blank;
 			gdk_window_invalidate_rect(p->ss_drawingarea->window,

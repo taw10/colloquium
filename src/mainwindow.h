@@ -29,7 +29,7 @@
 
 
 extern int open_mainwindow(struct presentation *p);
-extern void notify_slide_changed(struct presentation *p);
+extern void notify_slide_changed(struct presentation *p, struct slide *np);
 extern void update_titlebar(struct presentation *p);
 
 extern void redraw_overlay(struct presentation *p);

@@ -330,15 +330,22 @@ static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
-void notify_slide_changed(struct presentation *p)
+void notify_slide_changed(struct presentation *p, struct slide *np)
 {
 	p->cur_tool->deselect(p->editing_object, p->cur_tool);
 	p->editing_object = NULL;
+
+	if ( p->cur_edit_slide->rendered_edit != NULL ) {
+		cairo_surface_destroy(p->cur_edit_slide->rendered_edit);
+		p->cur_edit_slide->rendered_edit = NULL;
+	}
+	p->cur_edit_slide = np;
+
 	update_toolbar(p);
 	redraw_slide(p->cur_edit_slide);
 
-	if ( p->slideshow != NULL ) {
-		notify_slideshow_slide_changed(p);
+	if ( (p->slideshow != NULL) && p->slideshow_linked ) {
+		notify_slideshow_slide_changed(p, np);
 	}
 }
 
@@ -351,8 +358,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 
 	new = add_slide(p, cur_slide_number);
-	p->cur_edit_slide = new;
-	notify_slide_changed(p);
+	notify_slide_changed(p, new);
 
 	return FALSE;
 }
@@ -360,14 +366,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	p->cur_edit_slide = p->slides[0];
-	notify_slide_changed(p);
-
-	if ( p->slideshow_linked ) {
-		p->cur_proj_slide = p->cur_edit_slide;
-		notify_slideshow_slide_changed(p);
-	}
-
+	notify_slide_changed(p, p->slides[0]);
 	return FALSE;
 }
 
@@ -379,13 +378,7 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 	if ( cur_slide_number == 0 ) return FALSE;
 
-	p->cur_edit_slide = p->slides[cur_slide_number-1];
-	notify_slide_changed(p);
-
-	if ( p->slideshow_linked ) {
-		p->cur_proj_slide = p->cur_edit_slide;
-		notify_slideshow_slide_changed(p);
-	}
+	notify_slide_changed(p, p->slides[cur_slide_number-1]);
 
 	return FALSE;
 }
@@ -398,13 +391,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 	if ( cur_slide_number == p->num_slides-1 ) return FALSE;
 
-	p->cur_edit_slide = p->slides[cur_slide_number+1];
-	notify_slide_changed(p);
-
-	if ( p->slideshow_linked ) {
-		p->cur_proj_slide = p->cur_edit_slide;
-		notify_slideshow_slide_changed(p);
-	}
+	notify_slide_changed(p, p->slides[cur_slide_number+1]);
 
 	return FALSE;
 }
@@ -412,13 +399,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	p->cur_edit_slide = p->slides[p->num_slides-1];
-	notify_slide_changed(p);
-
-	if ( p->slideshow_linked ) {
-		p->cur_proj_slide = p->cur_edit_slide;
-		notify_slideshow_slide_changed(p);
-	}
+	notify_slide_changed(p, p->slides[p->num_slides-1]);
 
 	return FALSE;
 }
@@ -653,7 +634,10 @@ void redraw_overlay(struct presentation *p)
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
-	if ( p->editing_object == NULL ) return FALSE;
+	if ( p->editing_object == NULL ) {
+		printf("IM keypress: %s\n", str);
+		return FALSE;
+	}
 	if ( p->editing_object->type != OBJ_TEXT ) return FALSE;
 
 	p->cur_tool->im_commit(p->editing_object, str, p->cur_tool);
@@ -703,11 +687,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_b :
 		if ( p->slideshow != NULL ) {
 			if ( p->prefs->b_splits ) {
-				p->slideshow_linked = 1 - p->slideshow_linked;
-				if ( p->slideshow_linked ) {
-					p->cur_proj_slide = p->cur_edit_slide;
-					notify_slideshow_slide_changed(p);
-				}
+				toggle_slideshow_link(p);
 			} else {
 				p->ss_blank = 1-p->ss_blank;
 				gdk_window_invalidate_rect(

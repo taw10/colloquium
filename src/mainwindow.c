@@ -225,6 +225,8 @@ static gint saveas_sig(GtkWidget *widget, struct presentation *p)
 	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
+	                                               TRUE);
 
 	g_signal_connect(G_OBJECT(d), "response",
 	                 G_CALLBACK(saveas_response_sig), p);
@@ -280,6 +282,8 @@ static gint save_ss_sig(GtkWidget *widget, struct presentation *p)
 	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
+	                                               TRUE);
 
 	g_signal_connect(G_OBJECT(d), "response",
 	                 G_CALLBACK(save_ss_response_sig), p);

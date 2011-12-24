@@ -290,6 +290,51 @@ static gint save_ss_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint export_pdf_response_sig(GtkWidget *d, gint response,
+                                    struct presentation *p)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+
+		if ( export_pdf(p, filename) ) {
+			show_error(p, "Failed to export as PDF");
+		}
+
+		g_free(filename);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static gint export_pdf_sig(GtkWidget *widget, struct presentation *p)
+{
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new("Export PDF",
+	                                GTK_WINDOW(p->window),
+	                                GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
+	                                               TRUE);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(export_pdf_response_sig), p);
+
+	gtk_widget_show_all(d);
+
+	return 0;
+}
+
+
 static gint about_sig(GtkWidget *widget, struct presentation *p)
 {
 	GtkWidget *window;
@@ -502,6 +547,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, G_CALLBACK(saveas_sig) },
 		{ "SaveStyleAction", GTK_STOCK_SAVE_AS, "Save St_ylesheet",
 			NULL, NULL, G_CALLBACK(save_ss_sig) },
+		{ "ExportPDFAction", GTK_STOCK_SAVE_AS, "Export PDF",
+			NULL, NULL, G_CALLBACK(export_pdf_sig) },
 		{ "QuitAction", GTK_STOCK_QUIT, "_Quit",
 			NULL, NULL, G_CALLBACK(quit_sig) },
 

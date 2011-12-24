@@ -40,4 +40,6 @@ extern void draw_resize_handle(cairo_t *cr, double x, double y);
 extern void draw_editing_box(cairo_t *cr, double xmin, double ymin,
                              double width, double height);
 
+extern int export_pdf(struct presentation *p, const char *filename);
+
 #endif	/* SLIDE_RENDER_H */

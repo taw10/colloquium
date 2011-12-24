@@ -26,6 +26,7 @@
 #endif
 
 #include <cairo.h>
+#include <cairo-pdf.h>
 #include <pango/pangocairo.h>
 #include <assert.h>
 
@@ -100,17 +101,10 @@ static void render_bgblock(cairo_t *cr, struct bgblock *b)
 }
 
 
-static cairo_surface_t *render_slide(struct slide *s, int w, int h)
+static void render_slide_bits(struct slide *s, cairo_t *cr)
 {
-	cairo_surface_t *surf;
-	cairo_t *cr;
 	int i;
 	cairo_font_options_t *fopts;
-
-	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
-
-	cr = cairo_create(surf);
-	cairo_scale(cr, w/s->parent->slide_width, h/s->parent->slide_height);
 
 	fopts = cairo_font_options_create();
 	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_NONE);
@@ -130,8 +124,22 @@ static cairo_surface_t *render_slide(struct slide *s, int w, int h)
 
 	}
 
-	cairo_destroy(cr);
 	cairo_font_options_destroy(fopts);
+}
+
+static cairo_surface_t *render_slide(struct slide *s, int w, int h)
+{
+	cairo_surface_t *surf;
+	cairo_t *cr;
+
+	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+
+	cr = cairo_create(surf);
+	cairo_scale(cr, w/s->parent->slide_width, h/s->parent->slide_height);
+
+	render_slide_bits(s, cr);
+
+	cairo_destroy(cr);
 
 	return surf;
 }
@@ -231,4 +239,32 @@ void draw_editing_box(cairo_t *cr, double xmin, double ymin,
 	cairo_stroke(cr);
 
 	cairo_set_dash(cr, NULL, 0, 0.0);
+}
+
+
+int export_pdf(struct presentation *p, const char *filename)
+{
+	int i;
+	cairo_surface_t *surf;
+	cairo_t *cr;
+
+	surf = cairo_pdf_surface_create(filename, p->slide_width,
+	                                          p->slide_height);
+
+	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
+		fprintf(stderr, "Couldn't create Cairo surface\n");
+		return 1;
+	}
+
+	cr = cairo_create(surf);
+
+	for ( i=0; i<p->num_slides; i++ ) {
+		render_slide_bits(p->slides[i], cr);
+		cairo_surface_show_page(surf);
+	}
+
+	cairo_surface_finish(surf);
+	cairo_destroy(cr);
+
+	return 0;
 }

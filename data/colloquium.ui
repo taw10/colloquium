@@ -8,6 +8,7 @@
 			<menuitem name="save" action="SaveAction" />
 			<menuitem name="saveas" action="SaveAsAction" />
 			<menuitem name="savestyle" action="SaveStyleAction" />
+			<menuitem name="exportpdf" action="ExportPDFAction" />
 			<separator />
 			<menuitem name="quit" action="QuitAction" />
 		</menu>

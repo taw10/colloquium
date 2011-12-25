@@ -199,6 +199,7 @@ void open_notes(struct presentation *p)
 	p->cur_notes_slide = p->cur_edit_slide;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_default_size(GTK_WINDOW(n->window), 800, 256);
 	sc = gtk_scrolled_window_new(NULL, NULL);
 	gtk_container_add(GTK_CONTAINER(n->window), sc);
 

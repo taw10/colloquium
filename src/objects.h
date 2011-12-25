@@ -1,5 +1,5 @@
 /*
- * presentation.h
+ * objects.h
  *
  * Colloquium - A tiny presentation program
  *

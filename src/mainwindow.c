@@ -42,6 +42,7 @@
 #include "tool_select.h"
 #include "tool_text.h"
 #include "tool_image.h"
+#include "notes.h"
 
 
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
@@ -393,6 +394,10 @@ void notify_slide_changed(struct presentation *p, struct slide *np)
 	update_toolbar(p);
 	redraw_slide(p->cur_edit_slide);
 
+	if ( p->notes != NULL ) {
+		notify_notes_slide_changed(p, np);
+	}
+
 	if ( (p->slideshow != NULL) && p->slideshow_linked ) {
 		notify_slideshow_slide_changed(p, np);
 	}
@@ -460,6 +465,13 @@ static gint open_stylesheet_sig(GtkWidget *widget, struct presentation *p)
 		p->stylesheetwindow = open_stylesheet(p);
 	} /* else already open */
 
+	return FALSE;
+}
+
+
+static gint open_notes_sig(GtkWidget *widget, struct presentation *p)
+{
+	open_notes(p);
 	return FALSE;
 }
 
@@ -579,6 +591,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 		{ "ToolsAction", NULL, "_Tools", NULL, NULL, NULL },
 		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start slideshow",
 			"F5", NULL, G_CALLBACK(start_slideshow_sig) },
+		{ "NotesAction", NULL, "_Open slide notes",
+			"F5", NULL, G_CALLBACK(open_notes_sig) },
 		{ "PrefsAction", GTK_STOCK_PREFERENCES, "_Preferences",
 		        NULL, NULL, NULL },
 

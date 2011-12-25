@@ -46,6 +46,8 @@ struct slide
 
 	int              num_objects;
 	struct object  **objects;
+
+	char *notes;
 };
 
 
@@ -106,6 +108,7 @@ struct toolinfo
 struct prefs
 {
 	int b_splits;
+	int open_notes;
 };
 
 
@@ -129,10 +132,12 @@ struct presentation
 	GtkIMContext     *im_context;
 	GtkWidget        *tbox;
 	GtkWidget        *cur_tbox;
+	struct notes     *notes;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;
 	struct slide     *cur_proj_slide;
+	struct slide     *cur_notes_slide;
 	int               slideshow_linked;
 
 	/* This is the "native" size of the slide.  It only exists to give

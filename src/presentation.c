@@ -125,6 +125,8 @@ struct slide *new_slide()
 	new->rendered_proj = NULL;
 	new->rendered_thumb = NULL;
 
+	new->notes = strdup("");
+
 	return new;
 }
 
@@ -325,11 +327,13 @@ struct presentation *new_presentation()
 	/* FIXME: Should be just one of these */
 	new->prefs = calloc(1, sizeof(struct prefs));
 	new->prefs->b_splits = 1;
+	new->prefs->open_notes = 1;
 
 	new->window = NULL;
 	new->ui = NULL;
 	new->action_group = NULL;
 	new->slideshow = NULL;
+	new->notes = NULL;
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;

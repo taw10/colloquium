@@ -34,6 +34,7 @@
 #include "presentation.h"
 #include "slide_render.h"
 #include "mainwindow.h"
+#include "notes.h"
 
 
 static gint ss_destroy_sig(GtkWidget *widget, struct presentation *p)
@@ -273,6 +274,8 @@ void try_start_slideshow(struct presentation *p)
 	p->slideshow_linked = 1;
 	gtk_window_fullscreen(GTK_WINDOW(n));
 	gtk_widget_show_all(GTK_WIDGET(n));
+
+	if ( p->prefs->open_notes ) open_notes(p);
 
 	p->cur_proj_slide = p->cur_edit_slide;
 	redraw_slide(p->cur_proj_slide);

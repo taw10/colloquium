@@ -882,6 +882,8 @@ StyleSheet *load_stylesheet(const char *filename)
 	ss = new_stylesheet();
 	if ( ss == NULL ) return NULL;
 
+	/* FIXME: Implement this */
+
 	return ss;
 }
 

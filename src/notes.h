@@ -34,4 +34,7 @@ extern void open_notes(struct presentation *p);
 extern void notify_notes_slide_changed(struct presentation *p,
                                        struct slide *np);
 
+extern void write_notes(struct slide *s, struct serializer *ser);
+extern void load_notes(struct ds_node *node, struct slide *s);
+
 #endif	/* NOTES_H */

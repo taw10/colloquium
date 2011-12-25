@@ -36,6 +36,7 @@
 #include "stylesheet.h"
 #include "slide_render.h"
 #include "mainwindow.h"
+#include "notes.h"
 
 
 static int alloc_children(struct ds_node *node)
@@ -366,7 +367,6 @@ int get_field_s(struct ds_node *root, const char *key, char **val)
 
 	node = find_node(root, key, 0);
 	if ( node == NULL ) {
-		fprintf(stderr, "Couldn't find field '%s'\n", key);
 		*val = NULL;
 		return 1;
 	}
@@ -468,6 +468,8 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 
 	s = new_slide();
 	s->parent = p;
+
+	load_notes(root, s);
 
 	/* Loop over objects */
 	for ( i=0; i<root->n_children; i++ ) {
@@ -746,6 +748,7 @@ void serialize_end(struct serializer *ser)
 {
 	free(ser->stack[--ser->stack_depth]);
 	rebuild_prefix(ser);
+	ser->empty_set = 1;
 }
 
 
@@ -801,6 +804,9 @@ int save_presentation(struct presentation *p, const char *filename)
 			serialize_end(&ser);
 
 		}
+
+		write_notes(s, &ser);
+
 		serialize_end(&ser);
 
 	}

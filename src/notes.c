@@ -216,6 +216,7 @@ void open_notes(struct presentation *p)
 	pango_font_description_free(desc);
 	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(n->v), 30);
 	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(n->v), 30);
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(n->v), GTK_WRAP_WORD_CHAR);
 	gtk_container_add(GTK_CONTAINER(sc), n->v);
 
 	g_signal_connect(G_OBJECT(n->v), "destroy",

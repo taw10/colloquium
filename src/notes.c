@@ -75,6 +75,12 @@ static void grab_notes(struct notes *n, struct slide *s)
 }
 
 
+void grab_current_notes(struct presentation *p)
+{
+	grab_notes(p->notes, p->cur_notes_slide);
+}
+
+
 void notify_notes_slide_changed(struct presentation *p, struct slide *np)
 {
 	grab_notes(p->notes, p->cur_notes_slide);

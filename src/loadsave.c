@@ -759,6 +759,8 @@ int save_presentation(struct presentation *p, const char *filename)
 	struct serializer ser;
 	char *old_fn;
 
+	grab_current_notes(p);
+
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
 

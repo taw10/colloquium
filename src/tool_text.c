@@ -186,7 +186,7 @@ static void calculate_position_from_style(struct text_object *o,
 }
 
 
-static void update_text(struct text_object *o)
+static void update_text(struct text_object *o, cairo_t *cr)
 {
 	PangoRectangle logical;
 	double eright = 0.0;
@@ -251,6 +251,8 @@ static void update_text(struct text_object *o)
 			return;
 		}
 	}
+
+	if ( cr != NULL ) pango_cairo_update_layout(cr, o->layout);
 
 	o->furniture = o->base.style != o->base.parent->parent->ss->styles[0];
 
@@ -327,7 +329,6 @@ void insert_text(struct object *op, char *t)
 	memcpy(o->text, tmp, o->text_len);
 	free(tmp);
 
-	update_text(o);
 	redraw_slide(op->parent);
 	o->insertion_point += tlen;
 	o->base.empty = 0;
@@ -382,7 +383,6 @@ void handle_text_backspace(struct object *op)
 
 	if ( strlen(o->text) == 0 ) o->base.empty = 1;
 
-	update_text(o);
 	redraw_slide(op->parent);
 }
 
@@ -396,10 +396,11 @@ static void render_text_object(cairo_t *cr, struct object *op)
 		return;
 	}
 
+	update_text(o, cr);
+
 	cairo_move_to(cr, o->base.x - o->offs_x, o->base.y - o->offs_y);
 	gdk_color_parse(o->base.style->colour, &col);
 	gdk_cairo_set_source_color(cr, &col);  /* FIXME: Honour alpha as well */
-	pango_cairo_update_layout(cr, o->layout);
 	pango_cairo_show_layout(cr, o->layout);
 }
 
@@ -445,7 +446,7 @@ static void draw_caret(cairo_t *cr, struct text_object *o)
 static void update_text_object(struct object *op)
 {
 	struct text_object *o = (struct text_object *)op;
-	update_text(o);
+	update_text(o, NULL);
 }
 
 
@@ -653,7 +654,7 @@ static void end_drag(struct toolinfo *tip, struct presentation *p,
 	o->y = ti->box_y;
 	o->bb_width = ti->box_width;
 	o->bb_height = ti->box_height;
-	update_text((struct text_object *)o);
+	update_text((struct text_object *)o, NULL);
 	redraw_slide(o->parent);
 
 	ti->drag_reason = TEXT_DRAG_REASON_NONE;
@@ -720,7 +721,6 @@ static void create_default(struct presentation *p, struct style *sty,
 		                       S_ROLE_PDATE_REF, n);
 	}
 
-	update_text(o);
 	redraw_slide(((struct object *)o)->parent);
 }
 
@@ -741,7 +741,6 @@ static void create_region(struct toolinfo *tip, struct presentation *p,
 	o = (struct text_object *)n;
 	o->furniture = 0;
 
-	update_text(o);
 	redraw_slide(((struct object *)o)->parent);
 	p->editing_object = n;
 }

@@ -479,7 +479,7 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 		o = tree_to_object(p, root->children[i]);
 		if ( o != NULL ) {
 			add_object_to_slide(s, o);
-			o->update_object(o);
+			if ( o->type != OBJ_TEXT) o->update_object(o);
 		}
 
 	}

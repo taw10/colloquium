@@ -393,7 +393,7 @@ int get_field_s(struct ds_node *root, const char *key, char **val)
 	}
 
 	if ( s1 == s2 ) {
-		fprintf(stderr, "Mismatchd quotes in '%s'\n", node->value);
+		fprintf(stderr, "Mismatched quotes in '%s'\n", node->value);
 		return 1;
 	}
 

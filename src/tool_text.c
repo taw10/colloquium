@@ -692,7 +692,6 @@ static void create_default(struct presentation *p, struct style *sty,
 
 	switch ( sty->role )
 	{
-		case S_ROLE_NONE:
 		case S_ROLE_SLIDENUMBER:
 		case S_ROLE_PTITLE:
 		case S_ROLE_PAUTHOR:

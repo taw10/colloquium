@@ -97,86 +97,9 @@ static gint close_notes_sig(GtkWidget *w, struct presentation *p)
 }
 
 
-static char *escape_text(const char *a)
-{
-	char *b;
-	size_t l1, l, i;
-
-	l1 = strlen(a);
-
-	b = malloc(2*l1 + 1);
-	l = 0;
-
-	for ( i=0; i<l1; i++ ) {
-
-		char c = a[i];
-
-		/* Yes, this is horribly confusing */
-		if ( c == '\n' ) {
-			b[l++] = '\\';  b[l++] = 'n';
-		} else if ( c == '\r' ) {
-			b[l++] = '\\';  b[l++] = 'r';
-		} else if ( c == '\"' ) {
-			b[l++] = '\\';  b[l++] = '\"';
-		} else if ( c == '\t' ) {
-			b[l++] = '\\';  b[l++] = 't';
-		} else {
-			b[l++] = c;
-		}
-
-	}
-	b[l++] = '\0';
-
-	return realloc(b, l);
-}
-
-
-static char *unescape_text(const char *a)
-{
-	char *b;
-	size_t l1, l, i;
-	int escape;
-
-	l1 = strlen(a);
-
-	b = malloc(l1 + 1);
-	l = 0;
-	escape = 0;
-
-	for ( i=0; i<l1; i++ ) {
-
-		char c = a[i];
-
-		if ( escape ) {
-			if ( c == 'r' ) b[l++] = '\r';
-			if ( c == 'n' ) b[l++] = '\n';
-			if ( c == '\"' ) b[l++] = '\"';
-			if ( c == 't' ) b[l++] = '\t';
-			escape = 0;
-			continue;
-		}
-
-		if ( c == '\\' ) {
-			escape = 1;
-			continue;
-		}
-
-		b[l++] = c;
-
-	}
-	b[l++] = '\0';
-
-	return realloc(b, l);
-}
-
-
 void write_notes(struct slide *s, struct serializer *ser)
 {
-	char *es;
-
-	es = escape_text(s->notes);
-	serialize_s(ser, "notes", es);
-	free(es);
+	serialize_s(ser, "notes", s->notes);
 }
 
 
@@ -186,8 +109,7 @@ void load_notes(struct ds_node *node, struct slide *s)
 
 	if ( get_field_s(node, "notes", &v) ) return;
 
-	s->notes = unescape_text(v);
-	free(v);
+	s->notes = v;
 }
 
 

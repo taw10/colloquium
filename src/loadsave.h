@@ -53,6 +53,9 @@ struct serializer
 
 extern void show_tree(struct ds_node *root, const char *path);
 
+extern char *escape_text(const char *a);
+extern char *unescape_text(const char *a);
+
 extern void serialize_start(struct serializer *s, const char *id);
 extern void serialize_s(struct serializer *s, const char *key, const char *val);
 extern void serialize_f(struct serializer *s, const char *key, double val);

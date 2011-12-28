@@ -377,6 +377,80 @@ static void free_ds_tree(struct ds_node *root)
 }
 
 
+char *escape_text(const char *a)
+{
+	char *b;
+	size_t l1, l, i;
+
+	l1 = strlen(a);
+
+	b = malloc(2*l1 + 1);
+	l = 0;
+
+	for ( i=0; i<l1; i++ ) {
+
+		char c = a[i];
+
+		/* Yes, this is horribly confusing */
+		if ( c == '\n' ) {
+			b[l++] = '\\';  b[l++] = 'n';
+		} else if ( c == '\r' ) {
+			b[l++] = '\\';  b[l++] = 'r';
+		} else if ( c == '\"' ) {
+			b[l++] = '\\';  b[l++] = '\"';
+		} else if ( c == '\t' ) {
+			b[l++] = '\\';  b[l++] = 't';
+		} else {
+			b[l++] = c;
+		}
+
+	}
+	b[l++] = '\0';
+
+	return realloc(b, l);
+}
+
+
+char *unescape_text(const char *a)
+{
+	char *b;
+	size_t l1, l, i;
+	int escape;
+
+	l1 = strlen(a);
+
+	b = malloc(l1 + 1);
+	l = 0;
+	escape = 0;
+
+	for ( i=0; i<l1; i++ ) {
+
+		char c = a[i];
+
+		if ( escape ) {
+			if ( c == 'r' ) b[l++] = '\r';
+			if ( c == 'n' ) b[l++] = '\n';
+			if ( c == '\"' ) b[l++] = '\"';
+			if ( c == 't' ) b[l++] = '\t';
+			escape = 0;
+			continue;
+		}
+
+		if ( c == '\\' ) {
+			escape = 1;
+			continue;
+		}
+
+		b[l++] = c;
+
+	}
+	b[l++] = '\0';
+
+	return realloc(b, l);
+}
+
+
+
 int get_field_f(struct ds_node *root, const char *key, double *val)
 {
 	struct ds_node *node;
@@ -473,7 +547,8 @@ int get_field_s(struct ds_node *root, const char *key, char **val)
 	strncpy(v, node->value+s1+1, s2-s1-1);
 	v[s2-s1-1] = '\0';
 
-	*val = v;
+	*val = unescape_text(v);
+	free(v);
 
 	return 0;
 }
@@ -792,8 +867,18 @@ static void check_prefix_output(struct serializer *ser)
 
 void serialize_s(struct serializer *ser, const char *key, const char *val)
 {
+	char *n;
+
+	n = escape_text(val);
+	if ( n == NULL ) {
+		fprintf(stderr, "Failed to escape '%s'\n", val);
+		return;
+	}
+
 	check_prefix_output(ser);
-	fprintf(ser->fh, "%s = \"%s\"\n", key, val);
+	fprintf(ser->fh, "%s = \"%s\"\n", key, n);
+
+	free(n);
 }
 
 

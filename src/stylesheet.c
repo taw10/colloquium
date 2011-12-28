@@ -745,6 +745,7 @@ static int read_bgblock(struct bgblock *b, struct ds_node *root)
 		case BGBLOCK_SOLID :
 		get_field_s(root, "colour1",  &b->colour1);
 		get_field_f(root, "alpha1",  &b->alpha1);
+		break;
 
 		case BGBLOCK_GRADIENT_X :
 		case BGBLOCK_GRADIENT_Y :
@@ -753,6 +754,7 @@ static int read_bgblock(struct bgblock *b, struct ds_node *root)
 		get_field_f(root, "alpha1",  &b->alpha1);
 		get_field_s(root, "colour2",  &b->colour2);
 		get_field_f(root, "alpha2",  &b->alpha2);
+		break;
 
 		default:
 		break;

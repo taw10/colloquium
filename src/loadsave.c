@@ -182,113 +182,180 @@ out:
 }
 
 
-static int deserialize_file(FILE *fh, struct ds_node *root)
+static void parse_line(struct ds_node *root, struct ds_node **cn,
+                       const char *line)
 {
-	char *rval = NULL;
-	struct ds_node *cur_node = root;
+	size_t i;
+	size_t len, s_start;
+	size_t s_equals = 0;
+	size_t s_val = 0;
+	size_t s_openbracket = 0;
+	size_t s_closebracket = 0;
+	int h_start = 0;
+	int h_equals = 0;
+	int h_val = 0;
+	int h_openbracket = 0;
+	int h_closebracket = 0;
+	struct ds_node *cur_node = *cn;
+
+	len = strlen(line);
+
+	s_start = len;
+
+	for ( i=0; i<len; i++ ) {
+		if ( !h_start && !isspace(line[i]) ) {
+			s_start = i;
+			h_start = 1;
+		}
+		if ( !h_val && h_equals && !isspace(line[i]) ) {
+			s_val = i;
+			h_val = 1;
+		}
+		if ( !h_equals && (line[i] == '=') ) {
+			s_equals = i;
+			h_equals = 1;
+		}
+		if ( !h_openbracket && (line[i] == '[') ) {
+			s_openbracket = i;
+			h_openbracket = 1;
+		}
+		if ( h_openbracket && !h_closebracket
+		     && (line[i] == ']') )
+		{
+			s_closebracket = i;
+			h_closebracket = 1;
+		}
+	}
+
+	if ( (h_openbracket && !h_closebracket)
+	  || (!h_openbracket && h_closebracket) )
+	{
+		fprintf(stderr, "Mismatched square brackets: %s", line);
+		return;
+	}
+
+	if ( !h_openbracket && !h_equals ) return;
+
+	if ( !h_openbracket && (!h_start || !h_val || !h_equals) ) {
+		fprintf(stderr, "Incomplete assignment: %s", line);
+		return;
+	}
+
+	if ( h_equals && (h_openbracket || h_closebracket) ) {
+		fprintf(stderr, "Brackets and equals: %s", line);
+		return;
+	}
+
+	if ( !h_openbracket ) {
+
+		size_t pos = 0;
+		char *key;
+		char *value;
+		struct ds_node *node;
+
+		key = malloc(len);
+		value = malloc(len);
+
+		for ( i=s_start; i<s_equals; i++ ) {
+			if ( !isspace(line[i]) ) key[pos++] = line[i];
+		}
+		key[pos] = '\0';
+
+		pos = 0;
+		for ( i=s_val; i<len; i++ ) {
+			if ( line[i] != '\n' ) value[pos++] = line[i];
+		}
+		value[pos] = '\0';
+
+		node = find_node(cur_node, key, 1);
+		node->value = strdup(value);
+
+		free(key);
+		free(value);
+
+	} else {
+
+		size_t pos = 0;
+		char *path;
+
+		path = malloc(len);
+
+		for ( i=s_openbracket+1; i<s_closebracket; i++ ) {
+			if ( !isspace(line[i]) ) path[pos++] = line[i];
+		}
+		path[pos] = '\0';
+		cur_node = find_node(root, path, 1);
+
+		free(path);
+
+	}
+
+	*cn = cur_node;
+}
+
+
+static char *fgets_long(FILE *fh)
+{
+	char *line;
+	size_t la, l;
+
+	la = 1024;
+	line = malloc(la);
+	if ( line == NULL ) return NULL;
 
 	do {
-		size_t i;
-		char line[1024];
-		size_t len, s_start;
-		size_t s_equals = 0;
-		size_t s_val = 0;
-		size_t s_openbracket = 0;
-		size_t s_closebracket = 0;
-		int h_start = 0;
-		int h_equals = 0;
-		int h_val = 0;
-		int h_openbracket = 0;
-		int h_closebracket = 0;
 
-		rval = fgets(line, 1023, fh);
-		if ( rval == NULL ) {
+		int r;
+
+		r = fgetc(fh);
+		if ( r == EOF ) {
+			free(line);
+			return NULL;
+		}
+
+		if ( r == '\n' ) {
+			line[l++] = '\0';
+			return line;
+		}
+
+		line[l++] = r;
+
+		if ( l == la ) {
+
+			char *ln;
+
+			la += 1024;
+			ln = realloc(line, la);
+			if ( ln == NULL ) {
+				free(line);
+				return NULL;
+			}
+
+			line = ln;
+
+		}
+
+	} while ( 1 );
+}
+
+
+static int deserialize_file(FILE *fh, struct ds_node *root)
+{
+	char *line;
+	struct ds_node *cur_node = root;
+
+	line = NULL;
+	do {
+
+		line = fgets_long(fh);
+		if ( line == NULL ) {
 			if ( ferror(fh) ) printf("Read error!\n");
 			continue;
 		}
 
-		len = strlen(line);
-		s_start = len-1;
+		parse_line(root, &cur_node, line);
 
-		for ( i=0; i<len-1; i++ ) {
-			if ( !h_start && !isspace(line[i]) ) {
-				s_start = i;
-				h_start = 1;
-			}
-			if ( !h_val && h_equals && !isspace(line[i]) ) {
-				s_val = i;
-				h_val = 1;
-			}
-			if ( !h_equals && (line[i] == '=') ) {
-				s_equals = i;
-				h_equals = 1;
-			}
-			if ( !h_openbracket && (line[i] == '[') ) {
-				s_openbracket = i;
-				h_openbracket = 1;
-			}
-			if ( h_openbracket && !h_closebracket
-			     && (line[i] == ']') )
-			{
-				s_closebracket = i;
-				h_closebracket = 1;
-			}
-		}
-
-		if ( (h_openbracket && !h_closebracket)
-		  || (!h_openbracket && h_closebracket) )
-		{
-			fprintf(stderr, "Mismatched square brackets: %s", line);
-			continue;
-		}
-
-		if ( !h_openbracket && !h_equals ) continue;
-
-		if ( !h_openbracket && (!h_start || !h_val || !h_equals) ) {
-			fprintf(stderr, "Incomplete assignment: %s", line);
-			continue;
-		}
-
-		if ( h_equals && (h_openbracket || h_closebracket) ) {
-			fprintf(stderr, "Brackets and equals: %s", line);
-			continue;
-		}
-
-		if ( !h_openbracket ) {
-
-			size_t pos = 0;
-			char key[1024];
-			char value[1024];
-			struct ds_node *node;
-
-			for ( i=s_start; i<s_equals; i++ ) {
-				if ( !isspace(line[i]) ) key[pos++] = line[i];
-			}
-			key[pos] = '\0';
-
-			pos = 0;
-			for ( i=s_val; i<len; i++ ) {
-				if ( line[i] != '\n' ) value[pos++] = line[i];
-			}
-			value[pos] = '\0';
-
-			node = find_node(cur_node, key, 1);
-			node->value = strdup(value);
-
-		} else {
-
-			size_t pos = 0;
-			char path[1024];
-
-			for ( i=s_openbracket+1; i<s_closebracket; i++ ) {
-				if ( !isspace(line[i]) ) path[pos++] = line[i];
-			}
-			path[pos] = '\0';
-			cur_node = find_node(root, path, 1);
-
-		}
-
-	} while ( rval != NULL );
+	} while ( line != NULL );
 
 	return 0;
 }

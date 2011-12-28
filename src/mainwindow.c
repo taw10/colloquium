@@ -718,17 +718,10 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 {
 	gboolean r;
 
-	/* FIXME: Only if doing sensible text input */
-	if ( p->editing_object != NULL ) {
-
-		/* Throw the event to the IM context and let it sort things
-		 * out */
-		r = gtk_im_context_filter_keypress(
-		                                  GTK_IM_CONTEXT(p->im_context),
-			                          event);
-		if ( r ) return FALSE;  /* IM ate it */
-
-	}
+	/* Throw the event to the IM context and let it sort things out */
+	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context),
+		                           event);
+	if ( r ) return FALSE;  /* IM ate it */
 
 	p->cur_tool->key_pressed(p->editing_object, event->keyval, p->cur_tool);
 

@@ -741,6 +741,10 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		p->editing_object = NULL;
 		break;
 
+		case GDK_KEY_Return :
+		p->cur_tool->im_commit(p->editing_object, "\n", p->cur_tool);
+		break;
+
 		case GDK_KEY_B :
 		case GDK_KEY_b :
 		if ( p->slideshow != NULL ) {

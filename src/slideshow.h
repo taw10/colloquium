@@ -34,6 +34,7 @@ extern void notify_slideshow_slide_changed(struct presentation *p,
                                            struct slide *np);
 
 extern void toggle_slideshow_link(struct presentation *p);
+extern void check_toggle_blank(struct presentation *p);
 
 extern void end_slideshow(struct presentation *p);
 

@@ -700,7 +700,11 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
 	if ( p->editing_object == NULL ) {
-		printf("IM keypress: %s\n", str);
+		if ( str[0] == 'b' ) {
+			check_toggle_blank(p);
+		} else {
+			printf("IM keypress: %s\n", str);
+		}
 		return FALSE;
 	}
 	if ( p->editing_object->type != OBJ_TEXT ) return FALSE;

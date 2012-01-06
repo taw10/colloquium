@@ -175,6 +175,20 @@ void toggle_slideshow_link(struct presentation *p)
 }
 
 
+void check_toggle_blank(struct presentation *p)
+{
+	if ( p->slideshow != NULL ) {
+		if ( p->prefs->b_splits ) {
+			toggle_slideshow_link(p);
+		} else {
+			p->ss_blank = 1-p->ss_blank;
+			gdk_window_invalidate_rect(p->ss_drawingarea->window,
+					           NULL, FALSE);
+		}
+	}
+}
+
+
 static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct presentation *p)
 {
@@ -182,13 +196,7 @@ static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	case GDK_KEY_B :
 	case GDK_KEY_b :
-		if ( p->prefs->b_splits ) {
-			toggle_slideshow_link(p);
-		} else {
-			p->ss_blank = 1-p->ss_blank;
-			gdk_window_invalidate_rect(p->ss_drawingarea->window,
-			                           NULL, FALSE);
-		}
+		check_toggle_blank(p);
 		break;
 
 	case GDK_KEY_Page_Up :

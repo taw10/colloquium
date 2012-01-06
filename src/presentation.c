@@ -327,7 +327,7 @@ struct presentation *new_presentation()
 	/* FIXME: Should be just one of these */
 	new->prefs = calloc(1, sizeof(struct prefs));
 	new->prefs->b_splits = 1;
-	new->prefs->open_notes = 1;
+	new->prefs->open_notes = 0;
 
 	new->window = NULL;
 	new->ui = NULL;

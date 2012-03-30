@@ -467,11 +467,26 @@ static struct object *deserialize(struct presentation *p, struct ds_node *root,
 }
 
 
+static gint prop_sig(GtkWidget *widget, struct presentation *p)
+{
+	if ( p->editing_object == NULL ) return FALSE;
+
+
+	return FALSE;
+}
+
+
 static void realise(struct toolinfo *ti, GtkWidget *w, struct presentation *p)
 {
-	ti->tbox = gtk_label_new("Image tool");
+	GtkWidget *prop;
+
+	ti->tbox = gtk_hbox_new(FALSE, 0.0);
+	prop = gtk_button_new_from_stock(GTK_STOCK_PROPERTIES);
+	g_signal_connect(G_OBJECT(prop), "clicked", G_CALLBACK(prop_sig), p);
+	gtk_box_pack_start(GTK_BOX(ti->tbox), prop, FALSE, FALSE, 0);
+
 	g_object_ref(ti->tbox);
-	gtk_widget_show(ti->tbox);
+	gtk_widget_show_all(ti->tbox);
 }
 
 

@@ -11,13 +11,15 @@ LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 src_colloquium_SOURCES = src/colloquium.c src/presentation.c src/mainwindow.c \
                          src/slide_render.c src/objects.c src/slideshow.c \
                          src/stylesheet.c src/loadsave.c src/tool_text.c \
-                         src/tool_select.c src/tool_image.c src/notes.c
+                         src/tool_select.c src/tool_image.c src/notes.c \
+                         src/stylesheet-editor.c
 
 INCLUDES = "-I$(top_srcdir)/data"
 
 EXTRA_DIST += src/presentation.h src/mainwindow.h src/slide_render .h \
               src/objects.h src/slideshow.h src/stylesheet.h src/loadsave.h \
-              src/tool_text.h src/tool_select.h src/tool_image.h src/notes.h
+              src/tool_text.h src/tool_select.h src/tool_image.h src/notes.h \
+              src/stylesheet-editor.h
 
 colloquiumdir = $(datadir)/colloquium
 colloquium_DATA = data/colloquium.ui

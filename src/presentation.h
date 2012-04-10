@@ -30,12 +30,11 @@
 #include <gtk/gtk.h>
 
 #include "stylesheet.h"
-
+#include "stylesheet-editor.h"
 
 struct slide
 {
 	struct presentation *parent;
-	struct object *roles[NUM_S_ROLES];
 
 	/* Any of these may be NULL */
 	cairo_surface_t *rendered_proj;

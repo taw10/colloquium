@@ -30,57 +30,28 @@
 #include "loadsave.h"
 
 
-enum object_role
+struct frame_class
 {
-	S_ROLE_NONE        = 0,
-	S_ROLE_SLIDENUMBER = 1,
-	S_ROLE_PTITLE      = 2,  /* Presentation title on slide */
-	S_ROLE_PTITLE_REF  = 3,  /* Reference to actual title */
-	S_ROLE_PAUTHOR     = 4,
-	S_ROLE_PAUTHOR_REF = 5,
-	S_ROLE_PDATE       = 6,
-	S_ROLE_PDATE_REF   = 7,
-	NUM_S_ROLES
+	/* Margins of this frame from the parent */
+	double   margin_left;
+	double   margin_right;
+	double   margin_top;
+	double   margin_bottom;
+
+	/* Storycode prologue (run through the interpreter before the
+	 * main storycode for the frame */
+	char    *sc_prologue;
 };
 
 
-enum justify
+struct frame
 {
-	J_LEFT   = 0,
-	J_CENTER = 1,
-	J_RIGHT  = 2,
-};
+	struct frame_class *cl;
 
+	struct frame      **children;
+	int                 n_children;
 
-enum vert_pos
-{
-	V_TOP     = 0,
-	V_CENTER  = 1,
-	V_BOTTOM  = 2,
-};
-
-
-struct style
-{
-	char              *name;
-	enum object_role   role;
-
-	double             margin_left;
-	double             margin_right;
-	double             margin_top;
-	double             margin_bottom;
-	double             max_width;
-	int                use_max_width;
-
-	enum justify       halign;
-	enum vert_pos      valign;
-
-	double             offset_x;
-	double             offset_y;
-
-	char              *font;
-	char              *colour;
-	double             alpha;
+	char               *sc;  /* Storycode */
 };
 
 
@@ -114,34 +85,33 @@ struct bgblock
 };
 
 
-struct _stylesheet
+struct slide_template
 {
-	struct style  **styles;
-	int             n_styles;
+	char                 *name;
 
-	struct bgblock *bgblocks;
-	int             n_bgblocks;
+	struct frame_class  **frame_classes;
+	int                   n_frame_classes;
 
-	/* Background stuff */
+	struct bgblock      **bgblocks;
+	int                   n_bgblocks;
 };
 
 
-typedef struct _stylesheetwindow StylesheetWindow;
 typedef struct _stylesheet StyleSheet;
 struct presentation;
-
-extern StylesheetWindow *open_stylesheet(struct presentation *p);
 
 extern StyleSheet *new_stylesheet();
 extern StyleSheet *load_stylesheet(const char *filename);
 extern void free_stylesheet(StyleSheet *ss);
 extern void default_stylesheet(StyleSheet *ss);
 
-extern struct style *new_style(StyleSheet *ss, const char *name);
-
 extern int save_stylesheet(StyleSheet *ss, const char *filename);
 
-extern struct style *find_style(StyleSheet *ss, const char *name);
+/* Used during deserialization */
+extern struct frame_class *find_slide_template(StyleSheet *ss,
+                                               const char *name);
+extern struct frame_class *find_frame_class(struct slide_template *st,
+                                            const char *name);
 
 extern enum justify str_to_halign(char *halign);
 extern enum vert_pos str_to_valign(char *valign);

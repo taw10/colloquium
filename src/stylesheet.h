@@ -44,17 +44,6 @@ struct frame_class
 };
 
 
-struct frame
-{
-	struct frame_class *cl;
-
-	struct frame      **children;
-	int                 n_children;
-
-	char               *sc;  /* Storycode */
-};
-
-
 enum bgblocktype
 {
 	BGBLOCK_SOLID,
@@ -110,11 +99,9 @@ extern int save_stylesheet(StyleSheet *ss, const char *filename);
 /* Used during deserialization */
 extern struct frame_class *find_slide_template(StyleSheet *ss,
                                                const char *name);
+
 extern struct frame_class *find_frame_class(struct slide_template *st,
                                             const char *name);
-
-extern enum justify str_to_halign(char *halign);
-extern enum vert_pos str_to_valign(char *valign);
 
 extern StyleSheet *tree_to_stylesheet(struct ds_node *root);
 extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);

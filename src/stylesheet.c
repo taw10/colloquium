@@ -52,8 +52,14 @@ struct slide_template *new_slide_template(StyleSheet *ss, const char *name)
 	if ( st == NULL ) return NULL;
 
 	st->name = strdup(name);
+	st->frame_classes = NULL;
+	st->n_frame_classes = 0;
+	st->bgblocks = NULL;
+	st->n_bgblocks = 0;
 
 	n = ss->n_slide_templates;
+
+	/* Resize to n_slide_templates * size of pointer */
 	slide_templates_new = realloc(ss->slide_templates, (n+1)*sizeof(st));
 	if ( slide_templates_new == NULL ) {
 		free(st->name);
@@ -78,6 +84,7 @@ struct frame_class *new_frame_class(struct slide_template *st, const char *name)
 	if ( fc == NULL ) return NULL;
 
 	fc->name = strdup(name);
+	fc->sc_prologue = NULL;
 
 	n = st->n_frame_classes;
 	frame_classes_new = realloc(st->frame_classes, (n+1)*sizeof(fc));
@@ -91,6 +98,38 @@ struct frame_class *new_frame_class(struct slide_template *st, const char *name)
 	st->n_frame_classes = n+1;
 
 	return fc;
+}
+
+
+static void free_frame_class(struct frame_class *fc)
+{
+	free(fc->name);
+	free(fc->sc_prologue);
+}
+
+
+static void free_bgblock(struct bgblock *bg)
+{
+	free(bg->colour1);
+	free(bg->colour2);
+}
+
+
+static void free_slide_template(struct slide_template *st)
+{
+	int i;
+
+	for ( i=0; i<st->n_frame_classes; i++ ) {
+		free_frame_class(st->frame_classes[i]);
+	}
+	free(st->frame_classes);
+
+	for ( i=0; i<st->n_bgblocks; i++ ) {
+		free_frame_class(st->bgblocks[i]);
+	}
+	free(st->bgblocks);
+
+	free(st->name);
 }
 
 

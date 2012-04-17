@@ -67,7 +67,7 @@ void free_presentation(struct presentation *p)
 int insert_slide(struct presentation *p, struct slide *new, int pos)
 {
 	struct slide **try;
-	int i;
+//	int i;
 
 	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
 	if ( try == NULL ) {
@@ -99,12 +99,13 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	new->parent = p;
 	p->num_slides++;
 
-	for ( i=pos+1; i<p->num_slides; i++ ) {
-		struct object *o = p->slides[i]->roles[S_ROLE_SLIDENUMBER];
-		if ( o != NULL ) {
-			o->update_object(o);
-		}
-	}
+	/* Update slide numbers for all subsequent slides */
+//	for ( i=pos+1; i<p->num_slides; i++ ) {
+//		struct object *o = p->slides[i]->roles[S_ROLE_SLIDENUMBER];
+//		if ( o != NULL ) {
+//			o->update_object(o);
+//		}
+//	}
 
 	return 0;
 }
@@ -151,6 +152,7 @@ struct slide *add_slide(struct presentation *p, int pos)
 		return NULL;
 	}
 
+#if 0
 	/* Copy roles and references to this slide as applicable */
 	if ( pos >= 0 ) {
 
@@ -185,6 +187,7 @@ struct slide *add_slide(struct presentation *p, int pos)
 		}
 
 	}
+#endif
 
 	return s;
 }
@@ -344,18 +347,13 @@ struct presentation *new_presentation()
 	new->cur_edit_slide = NULL;
 	new->cur_proj_slide = NULL;
 
-	new->editing_object = NULL;
+	new->cur_frame = NULL;
 	new->completely_empty = 1;
 	new->drag_status = DRAG_STATUS_NONE;
 
 	new->ss = new_stylesheet();
 	default_stylesheet(new->ss);
 	new->image_store = image_store_new();
-
-	new->select_tool = initialise_select_tool();
-	new->text_tool = initialise_text_tool();
-	new->image_tool = initialise_image_tool();
-	new->cur_tool = new->select_tool;
 
 	return new;
 }

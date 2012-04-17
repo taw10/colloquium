@@ -382,16 +382,14 @@ static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
 
 void notify_slide_changed(struct presentation *p, struct slide *np)
 {
-	p->cur_tool->deselect(p->editing_object, p->cur_tool);
-	p->editing_object = NULL;
-
 	if ( p->cur_edit_slide->rendered_edit != NULL ) {
 		cairo_surface_destroy(p->cur_edit_slide->rendered_edit);
 		p->cur_edit_slide->rendered_edit = NULL;
 	}
 	p->cur_edit_slide = np;
 
-	update_toolbar(p);
+	p->cur_frame = NULL;
+
 	redraw_slide(p->cur_edit_slide);
 
 	if ( p->notes != NULL ) {
@@ -421,6 +419,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	notify_slide_changed(p, p->slides[0]);
+	update_toolbar(p);
 	return FALSE;
 }
 
@@ -433,6 +432,7 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 	if ( cur_slide_number == 0 ) return FALSE;
 
 	notify_slide_changed(p, p->slides[cur_slide_number-1]);
+	update_toolbar(p);
 
 	return FALSE;
 }
@@ -446,6 +446,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 	if ( cur_slide_number == p->num_slides-1 ) return FALSE;
 
 	notify_slide_changed(p, p->slides[cur_slide_number+1]);
+	update_toolbar(p);
 
 	return FALSE;
 }
@@ -454,6 +455,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 {
 	notify_slide_changed(p, p->slides[p->num_slides-1]);
+	update_toolbar(p);
 
 	return FALSE;
 }
@@ -473,73 +475,6 @@ static gint open_notes_sig(GtkWidget *widget, struct presentation *p)
 {
 	open_notes(p);
 	return FALSE;
-}
-
-
-enum tool_id
-{
-	TOOL_SELECT,
-	TOOL_TEXT,
-	TOOL_IMAGE,
-};
-
-
-static gint set_tool_sig(GtkWidget *widget, GtkRadioAction *action,
-                         struct presentation *p)
-{
-	if ( p->editing_object != NULL ) {
-		int d = p->cur_tool->deselect(p->editing_object, p->cur_tool);
-		if ( d ) p->editing_object = NULL;
-	}
-
-	switch ( gtk_radio_action_get_current_value(action) )
-	{
-		case TOOL_SELECT : p->cur_tool = p->select_tool; break;
-		case TOOL_TEXT : p->cur_tool = p->text_tool; break;
-		case TOOL_IMAGE : p->cur_tool = p->image_tool; break;
-	}
-
-	gtk_container_remove(GTK_CONTAINER(p->tbox), p->cur_tbox);
-	p->cur_tbox = p->cur_tool->tbox;
-	gtk_container_add(GTK_CONTAINER(p->tbox), p->cur_tbox);
-
-	if ( p->editing_object != NULL ) {
-		if ( p->cur_tool->valid_object(p->editing_object) ) {
-			p->cur_tool->select(p->editing_object, p->cur_tool);
-		} else {
-			p->editing_object = NULL;
-		}
-	}
-
-	gdk_window_invalidate_rect(p->drawingarea->window, NULL, FALSE);
-
-	return 0;
-}
-
-
-static void force_tool(struct presentation *p, enum tool_id tool)
-{
-	GtkAction *action;
-	action = gtk_ui_manager_get_action(p->ui,
-	                                   "/ui/displaywindowtoolbar/select");
-	gtk_radio_action_set_current_value(GTK_RADIO_ACTION(action), tool);
-}
-
-
-static gint add_furniture(GtkWidget *widget, struct presentation *p)
-{
-	gchar *name;
-	struct style *sty;
-
-	g_object_get(G_OBJECT(widget), "label", &name, NULL);
-	sty = find_style(p->ss, name);
-	g_free(name);
-	if ( sty == NULL ) return 0;
-
-	force_tool(p, TOOL_TEXT);
-	p->text_tool->create_default(p, sty, p->cur_edit_slide, p->text_tool);
-
-	return 0;
 }
 
 
@@ -615,21 +550,9 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 
 	};
 	guint n_entries = G_N_ELEMENTS(entries);
-	GtkRadioActionEntry tools[] = {
-		{ "ButtonToolSelectAction", "colloquium-select", "Select",
-			NULL, NULL, TOOL_SELECT },
-		{ "ButtonToolTextAction", "colloquium-text", "Text",
-			NULL, NULL, TOOL_TEXT },
-		{ "ButtonToolImageAction", "colloquium-image", "Image",
-			NULL, NULL, TOOL_IMAGE },
-	};
-	guint n_tools = G_N_ELEMENTS(tools);
 
 	p->action_group = gtk_action_group_new("mainwindow");
 	gtk_action_group_add_actions(p->action_group, entries, n_entries, p);
-	gtk_action_group_add_radio_actions(p->action_group, tools, n_tools,
-	                                   TOOL_SELECT,
-	                                   G_CALLBACK(set_tool_sig), p);
 
 	p->ui = gtk_ui_manager_new();
 	gtk_ui_manager_insert_action_group(p->ui, p->action_group, 0);
@@ -649,28 +572,21 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar),
 	                   gtk_separator_tool_item_new(), -1);
 
-	p->tbox = GTK_WIDGET(gtk_tool_item_new());
-	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM(p->tbox), -1);
-
 	/* Add the styles to the "Insert" menu */
 	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
 	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
 	item = gtk_separator_menu_item_new();
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-	for ( i=1; i<p->ss->n_styles; i++ )
+	for ( i=1; i<p->ss->n_frame_classes; i++ )
 	{
 		char *name;
-		name = p->ss->styles[i]->name;
+		name = p->ss->frame_classes[i]->name;
 		item = gtk_menu_item_new_with_label(name);
 		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 		g_signal_connect(G_OBJECT(item), "activate",
 	                         G_CALLBACK(add_furniture), p);
 
 	}
-	p->cur_tbox = NULL;
-	p->cur_tool = p->select_tool;
-	p->cur_tbox = p->cur_tool->tbox;
-	gtk_container_add(GTK_CONTAINER(p->tbox), p->cur_tbox);
 	update_toolbar(p);
 }
 
@@ -682,7 +598,7 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 }
 
 
-static void redraw_object(struct object *o)
+static void redraw_frame(struct frame *o)
 {
 	if ( o == NULL ) return;
 	gdk_window_invalidate_rect(o->parent->parent->drawingarea->window,
@@ -707,11 +623,6 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 		}
 		return FALSE;
 	}
-	if ( p->editing_object->type != OBJ_TEXT ) return FALSE;
-
-	p->cur_tool->im_commit(p->editing_object, str, p->cur_tool);
-
-	redraw_object(p->editing_object);
 
 	return FALSE;
 }
@@ -769,152 +680,9 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
-static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
-                                 struct presentation *p)
-{
-	struct object *clicked;
-	gdouble x, y;
-
-	x = event->x - p->border_offs_x;
-	y = event->y - p->border_offs_y;
-
-	clicked = find_object_at_position(p->cur_edit_slide, x, y);
-
-	if ( clicked == NULL ) {
-
-		/* Clicked no object. Deselect old object and set up for
-		 * (maybe) creating a new one. */
-
-		if ( p->editing_object != NULL ) {
-			p->cur_tool->deselect(p->editing_object, p->cur_tool);
-			p->editing_object = NULL;
-		}
-		p->start_corner_x = event->x - p->border_offs_x;
-		p->start_corner_y = event->y - p->border_offs_y;
-		p->drag_status = DRAG_STATUS_COULD_DRAG;
-		p->drag_reason = DRAG_REASON_CREATE;
-
-	} else {
-
-		/* If the clicked object is not the same as the previously
-		 * selected one, deselect the old one. */
-		if ( p->editing_object != clicked ) {
-			p->cur_tool->deselect(p->editing_object, p->cur_tool);
-			p->editing_object = NULL;
-		}
-
-		p->drag_status = DRAG_STATUS_NONE;
-		p->drag_reason = DRAG_REASON_NONE;
-
-		if ( p->cur_tool->valid_object(clicked) ) {
-			p->editing_object = clicked;
-			p->cur_tool->click_select(p, p->cur_tool, x, y, event,
-			                          &p->drag_status,
-			                          &p->drag_reason);
-		}
-
-	}
-
-	gtk_widget_grab_focus(GTK_WIDGET(da));
-	redraw_overlay(p);
-	return FALSE;
-}
-
-
-static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
-                           struct presentation *p)
-{
-	if ( p->drag_status == DRAG_STATUS_COULD_DRAG ) {
-
-		/* We just got a motion signal, and the status was "could drag",
-		 * therefore the drag has started. */
-		p->drag_status = DRAG_STATUS_DRAGGING;
-
-	}
-
-	switch ( p->drag_reason ) {
-
-	case DRAG_REASON_NONE :
-		break;
-
-	case DRAG_REASON_CREATE :
-		p->drag_corner_x = event->x - p->border_offs_x;
-		p->drag_corner_y = event->y - p->border_offs_y;
-		redraw_overlay(p);
-		break;
-
-	case DRAG_REASON_IMPORT :
-		/* Do nothing, handled by dnd_motion() */
-		break;
-
-	case DRAG_REASON_TOOL :
-		p->cur_tool->drag(p->cur_tool, p, p->editing_object,
-		                  event->x - p->border_offs_x,
-		                  event->y - p->border_offs_y);
-		break;
-
-	}
-
-	gdk_event_request_motions(event);
-	return FALSE;
-}
-
-
-static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
-                                   struct presentation *p)
-{
-	gdouble x, y;
-
-	x = event->x - p->border_offs_x;
-	y = event->y - p->border_offs_y;
-
-	/* Not dragging?  Then I don't care. */
-	if ( p->drag_status != DRAG_STATUS_DRAGGING ) return FALSE;
-
-	p->drag_corner_x = x;
-	p->drag_corner_y = y;
-	p->drag_status = DRAG_STATUS_NONE;
-
-	switch ( p->drag_reason )
-	{
-
-	case DRAG_REASON_NONE :
-		printf("Release on pointless drag.\n");
-		break;
-
-	case DRAG_REASON_CREATE :
-		redraw_overlay(p);
-		p->cur_tool->create_region(p->cur_tool, p,
-					   p->start_corner_x,
-					   p->start_corner_y,
-					   p->drag_corner_x,
-					   p->drag_corner_y);
-		break;
-
-	case DRAG_REASON_IMPORT :
-		/* Do nothing, handled in dnd_drop() or dnd_leave() */
-		break;
-
-	case DRAG_REASON_TOOL :
-		p->cur_tool->end_drag(p->cur_tool, p, p->editing_object, x, y);
-		break;
-
-
-	}
-
-	p->drag_reason = DRAG_REASON_NONE;
-
-	gtk_widget_grab_focus(GTK_WIDGET(da));
-	redraw_overlay(p);
-	return FALSE;
-}
-
-
 static void draw_overlay(cairo_t *cr, struct presentation *p)
 {
 	struct object *o = p->editing_object;
-
-	p->cur_tool->draw_editing_overlay(p->cur_tool, cr, o);
 
 	if ( o != NULL ) {
 		/* Draw margins */
@@ -939,23 +707,6 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 		cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
-	}
-
-	if ( (p->drag_status == DRAG_STATUS_DRAGGING)
-	  && ((p->drag_reason == DRAG_REASON_CREATE)
-	      || (p->drag_reason == DRAG_REASON_IMPORT)) )
-	{
-		cairo_new_path(cr);
-		cairo_rectangle(cr, p->start_corner_x, p->start_corner_y,
-		                    p->drag_corner_x - p->start_corner_x,
-		                    p->drag_corner_y - p->start_corner_y);
-		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
-		cairo_set_line_width(cr, 0.5);
-		cairo_stroke(cr);
-	}
-
-	if ( p->slideshow_linked ) {
-
 	}
 }
 
@@ -999,223 +750,6 @@ static gboolean expose_sig(GtkWidget *da, GdkEventExpose *event,
 	cairo_destroy(cr);
 
 	return FALSE;
-}
-
-
-static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
-                           gint x, gint y, guint time, struct presentation *p)
-{
-	GdkAtom target;
-
-	/* If we haven't already requested the data, do so now */
-	if ( !p->drag_preview_pending && !p->have_drag_data ) {
-		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
-		gtk_drag_get_data(widget, drag_context, target, time);
-		p->drag_preview_pending = 1;
-	}
-
-	if ( p->have_drag_data && p->import_acceptable ) {
-
-		struct style *sty;
-		double eright, ebottom;
-
-		gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
-		p->start_corner_x = x - p->import_width/2.0;
-		p->start_corner_y = y - p->import_height/2.0;
-		p->drag_corner_x = x + p->import_width/2.0;
-		p->drag_corner_y = y + p->import_height/2.0;
-
-		sty = p->ss->styles[0];
-
-		eright = p->slide_width - sty->margin_right;
-		ebottom = p->slide_height - sty->margin_bottom;
-		if ( p->start_corner_x < sty->margin_left ) {
-			p->start_corner_x = sty->margin_left;
-			p->drag_corner_x = sty->margin_left + p->import_width;
-		}
-		if ( p->start_corner_y < sty->margin_top ) {
-			p->start_corner_y = sty->margin_top;
-			p->drag_corner_y = sty->margin_top + p->import_height;
-		}
-		if ( p->drag_corner_x > eright ) {
-			p->drag_corner_x = eright;
-			p->start_corner_x = eright - p->import_width;
-		}
-		if ( p->drag_corner_y > ebottom ) {
-			p->drag_corner_y = ebottom;
-			p->start_corner_y = ebottom - p->import_height;
-		}
-
-		redraw_overlay(p);
-
-	}
-
-	return TRUE;
-}
-
-
-static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
-                           gint x, gint y, guint time, struct presentation *p)
-{
-	GdkAtom target;
-
-	target = gtk_drag_dest_find_target(widget, drag_context, NULL);
-	gtk_drag_get_data(widget, drag_context, target, time);
-
-	return TRUE;
-}
-
-
-static void chomp(char *s)
-{
-	size_t i;
-
-	if ( !s ) return;
-
-	for ( i=0; i<strlen(s); i++ ) {
-		if ( (s[i] == '\n') || (s[i] == '\r') ) {
-			s[i] = '\0';
-			return;
-		}
-	}
-}
-
-
-/* Scale the image down if it's a silly size */
-static void check_import_size(struct presentation *p)
-{
-	if ( p->import_width > p->slide_width ) {
-
-		int new_import_width;
-
-		new_import_width = p->slide_width/2;
-		p->import_height = (new_import_width *p->import_height)
-		                     / p->import_width;
-		p->import_width = new_import_width;
-	}
-
-	if ( p->import_height > p->slide_height ) {
-
-		int new_import_height;
-
-		new_import_height = p->slide_height/2;
-		p->import_width = (new_import_height*p->import_width)
-		                    / p->import_height;
-		p->import_height = new_import_height;
-	}
-}
-
-
-static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
-                        gint x, gint y, GtkSelectionData *seldata,
-                        guint info, guint time, struct presentation *p)
-{
-	if ( p->drag_preview_pending ) {
-
-		gchar *filename;
-		GError *error = NULL;
-		GdkPixbufFormat *f;
-		const gchar *uri;
-		int w, h;
-
-		p->have_drag_data = 1;
-		p->drag_preview_pending = 0;
-		uri = (gchar *)seldata->data;
-
-		filename = g_filename_from_uri(uri, NULL, &error);
-		if ( filename == NULL ) {
-
-			/* This doesn't even look like a sensible URI.
-			 * Bail out. */
-			gdk_drag_status(drag_context, 0, time);
-			if ( p->drag_highlight ) {
-				gtk_drag_unhighlight(widget);
-				p->drag_highlight = 0;
-			}
-			p->import_acceptable = 0;
-			return;
-
-		}
-		chomp(filename);
-
-		f = gdk_pixbuf_get_file_info(filename, &w, &h);
-		g_free(filename);
-
-		p->import_width = w;
-		p->import_height = h;
-
-		if ( f == NULL ) {
-
-			gdk_drag_status(drag_context, 0, time);
-			if ( p->drag_highlight ) {
-				gtk_drag_unhighlight(widget);
-				p->drag_highlight = 0;
-			}
-			p->drag_status = DRAG_STATUS_NONE;
-			p->drag_reason = DRAG_REASON_NONE;
-			p->import_acceptable = 0;
-
-		} else {
-
-			/* Looks like a sensible image */
-			gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
-			p->import_acceptable = 1;
-
-			if ( !p->drag_highlight ) {
-				gtk_drag_highlight(widget);
-				p->drag_highlight = 1;
-			}
-
-			check_import_size(p);
-			p->drag_reason = DRAG_REASON_IMPORT;
-			p->drag_status = DRAG_STATUS_DRAGGING;
-
-		}
-
-	} else {
-
-		gchar *uri;
-		char *filename;
-		GError *error = NULL;
-
-		uri = (gchar *)seldata->data;
-
-		filename = g_filename_from_uri(uri, NULL, &error);
-		if ( filename != NULL ) {
-
-			struct object *o;
-
-			gtk_drag_finish(drag_context, TRUE, FALSE, time);
-			chomp(filename);
-			o = add_image_object(p->cur_edit_slide,
-				             p->start_corner_x,
-				             p->start_corner_y,
-				             p->import_width, p->import_height,
-				             filename,
-				             p->ss->styles[0], p->image_store,
-				             p->image_tool);
-
-			force_tool(p, TOOL_IMAGE);
-			p->editing_object = o;
-			redraw_object(o);
-
-			free(filename);
-		}
-
-	}
-}
-
-
-static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
-                      guint time, struct presentation *p)
-{
-	if ( p->drag_highlight ) {
-		gtk_drag_unhighlight(widget);
-	}
-	p->have_drag_data = 0;
-	p->drag_highlight = 0;
-	p->drag_status = DRAG_STATUS_NONE;
-	p->drag_reason = DRAG_REASON_NONE;
 }
 
 
@@ -1290,20 +824,6 @@ int open_mainwindow(struct presentation *p)
 			 G_CALLBACK(expose_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "motion-notify-event",
 			 G_CALLBACK(motion_sig), p);
-
-	/* Drag and drop */
-	targets[0].target = "text/uri-list";
-	targets[0].flags = 0;
-	targets[0].info = 1;
-	gtk_drag_dest_set(p->drawingarea, 0, targets, 1, GDK_ACTION_LINK);
-	g_signal_connect(p->drawingarea, "drag-data-received",
-	                 G_CALLBACK(dnd_receive), p);
-	g_signal_connect(p->drawingarea, "drag-motion",
-	                 G_CALLBACK(dnd_motion), p);
-	g_signal_connect(p->drawingarea, "drag-drop",
-	                 G_CALLBACK(dnd_drop), p);
-	g_signal_connect(p->drawingarea, "drag-leave",
-	                 G_CALLBACK(dnd_leave), p);
 
 	/* Input method */
 	p->im_context = gtk_im_multicontext_new();

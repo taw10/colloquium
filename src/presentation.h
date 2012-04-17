@@ -67,43 +67,6 @@ enum drag_status
 };
 
 
-struct toolinfo
-{
-	GtkWidget *tbox;
-
-	void (*click_select)(struct presentation *p, struct toolinfo *tip,
-	                     double x, double y, GdkEventButton *event,
-	                     enum drag_status *drag_status,
-	                     enum drag_reason *drag_reason);
-	void (*create_default)(struct presentation *p, struct style *sty,
-	                       struct slide *s, struct toolinfo *tip);
-	void (*select)(struct object *o, struct toolinfo *tip);
-	int  (*deselect)(struct object *o, struct toolinfo *tip);
-	void (*drag)(struct toolinfo *tip, struct presentation *p,
-	             struct object *o, double x, double y);
-	void (*end_drag)(struct toolinfo *tip, struct presentation *p,
-	                 struct object *o, double x, double y);
-
-	void (*create_region)(struct toolinfo *tip, struct presentation *p,
-	                      double x1, double y1, double x2, double y2);
-
-	void (*draw_editing_overlay)(struct toolinfo *tip, cairo_t *cr,
-	                             struct object *o);
-	void (*key_pressed)(struct object *o, guint keyval,
-	                    struct toolinfo *tip);
-	void (*im_commit)(struct object *o, gchar *str, struct toolinfo *tip);
-
-	int (*valid_object)(struct object *o);
-
-	void (*realise)(struct toolinfo *tip, GtkWidget *w,
-	                struct presentation *p);
-
-	struct object *(*deserialize)(struct presentation *p,
-	                              struct ds_node *root,
-	                              struct toolinfo *tip);
-};
-
-
 struct prefs
 {
 	int b_splits;
@@ -120,17 +83,11 @@ struct presentation
 
 	struct prefs     *prefs;
 
-	struct toolinfo  *select_tool;
-	struct toolinfo  *text_tool;
-	struct toolinfo  *image_tool;
-
 	GtkWidget        *window;
 	GtkWidget        *drawingarea;
 	GtkUIManager     *ui;
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
-	GtkWidget        *tbox;
-	GtkWidget        *cur_tbox;
 	struct notes     *notes;
 
 	/* Pointers to the current "editing" and "projection" slides */
@@ -154,12 +111,10 @@ struct presentation
 	double            border_offs_x;
 	double            border_offs_y;
 
-	/* FIXME: Might have more than one object selected at a time. */
-	struct object    *editing_object;
+	struct frame     *cur_frame;
 
 	/* Stylesheet */
 	StyleSheet       *ss;
-	struct style     *default_style;
 
 	/* Dialogue boxes */
 	StylesheetWindow *stylesheetwindow;
@@ -170,9 +125,6 @@ struct presentation
 	GdkCursor        *blank_cursor;
 	int               ss_blank;
 	char              ss_geom[256];
-
-	/* Tool status */
-	struct toolinfo  *cur_tool;
 
 	/* Rubber band boxes and related stuff */
 	double            start_corner_x;
@@ -198,6 +150,17 @@ struct presentation
 };
 
 
+struct frame
+{
+	struct frame_class *cl;
+
+	struct frame      **children;
+	int                 n_children;
+
+	char               *sc;  /* Storycode */
+};
+
+
 extern struct presentation *new_presentation(void);
 extern void free_presentation(struct presentation *p);
 
@@ -208,10 +171,8 @@ extern void free_slide(struct slide *s);
 
 extern void get_titlebar_string(struct presentation *p);
 
-extern int add_object_to_slide(struct slide *s, struct object *o);
-extern void remove_object_from_slide(struct slide *s, struct object *o);
-extern struct object *find_object_at_position(struct slide *s,
-                                              double x, double y);
+extern struct frame *find_frame_at_position(struct slide *s,
+                                            double x, double y);
 
 extern int slide_number(struct presentation *p, struct slide *s);
 

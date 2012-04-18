@@ -31,7 +31,6 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
-#include "slide_render.h"
 #include "objects.h"
 #include "stylesheet.h"
 #include "tool_select.h"

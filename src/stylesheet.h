@@ -32,6 +32,8 @@
 
 struct frame_class
 {
+	char *name;
+
 	/* Margins of this frame from the parent */
 	double   margin_left;
 	double   margin_right;
@@ -97,8 +99,8 @@ extern void default_stylesheet(StyleSheet *ss);
 extern int save_stylesheet(StyleSheet *ss, const char *filename);
 
 /* Used during deserialization */
-extern struct frame_class *find_slide_template(StyleSheet *ss,
-                                               const char *name);
+extern struct slide_template *find_slide_template(StyleSheet *ss,
+                                                  const char *name);
 
 extern struct frame_class *find_frame_class(struct slide_template *st,
                                             const char *name);

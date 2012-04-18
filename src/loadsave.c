@@ -34,7 +34,6 @@
 #include "presentation.h"
 #include "objects.h"
 #include "stylesheet.h"
-#include "slide_render.h"
 #include "mainwindow.h"
 #include "notes.h"
 

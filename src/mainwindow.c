@@ -34,7 +34,7 @@
 
 #include "presentation.h"
 #include "mainwindow.h"
-#include "slide_render.h"
+#include "storycode.h"
 #include "objects.h"
 #include "slideshow.h"
 #include "stylesheet.h"
@@ -484,7 +484,7 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	GtkWidget *toolbar;
 	GtkWidget *menu;
 	GtkWidget *item;
-	int i;
+//	int i;
 	GtkActionEntry entries[] = {
 
 		{ "FileAction", NULL, "_File", NULL, NULL, NULL },
@@ -577,16 +577,16 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
 	item = gtk_separator_menu_item_new();
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-	for ( i=1; i<p->ss->n_frame_classes; i++ )
-	{
-		char *name;
-		name = p->ss->frame_classes[i]->name;
-		item = gtk_menu_item_new_with_label(name);
-		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-		g_signal_connect(G_OBJECT(item), "activate",
-	                         G_CALLBACK(add_furniture), p);
-
-	}
+//	for ( i=1; i<p->ss->n_frame_classes; i++ )
+//	{
+//		char *name;
+//		name = p->ss->frame_classes[i]->name;
+//		item = gtk_menu_item_new_with_label(name);
+//		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+//		g_signal_connect(G_OBJECT(item), "activate",
+//	                         G_CALLBACK(add_furniture), p);
+//
+//	}
 	update_toolbar(p);
 }
 
@@ -601,8 +601,8 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 static void redraw_frame(struct frame *o)
 {
 	if ( o == NULL ) return;
-	gdk_window_invalidate_rect(o->parent->parent->drawingarea->window,
-	                           NULL, FALSE);
+//	gdk_window_invalidate_rect(o->parent->parent->drawingarea->window,
+//	                           NULL, FALSE);
 }
 
 
@@ -615,7 +615,7 @@ void redraw_overlay(struct presentation *p)
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
-	if ( p->editing_object == NULL ) {
+	if ( p->cur_frame == NULL ) {
 		if ( str[0] == 'b' ) {
 			check_toggle_blank(p);
 		} else {
@@ -638,7 +638,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		                           event);
 	if ( r ) return FALSE;  /* IM ate it */
 
-	p->cur_tool->key_pressed(p->editing_object, event->keyval, p->cur_tool);
+//	p->cur_tool->key_pressed(p->editing_object, event->keyval, p->cur_tool);
 
 	switch ( event->keyval ) {
 
@@ -652,12 +652,12 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Escape :
 		if ( p->slideshow != NULL ) end_slideshow(p);
-		redraw_object(p->editing_object);
-		p->editing_object = NULL;
+		redraw_frame(p->cur_frame);
+		p->cur_frame = NULL;
 		break;
 
 		case GDK_KEY_Return :
-		p->cur_tool->im_commit(p->editing_object, "\n", p->cur_tool);
+		//p->cur_tool->im_commit(p->cur_frame, "\n", p->cur_tool);
 		break;
 
 		case GDK_KEY_B :
@@ -682,27 +682,27 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 static void draw_overlay(cairo_t *cr, struct presentation *p)
 {
-	struct object *o = p->editing_object;
+	struct frame *fr = p->cur_frame;
 
-	if ( o != NULL ) {
+	if ( fr != NULL ) {
 		/* Draw margins */
-		cairo_move_to(cr, o->style->margin_left, -p->border_offs_y);
-		cairo_line_to(cr, o->style->margin_left,
+		cairo_move_to(cr, fr->cl->margin_left, -p->border_offs_y);
+		cairo_line_to(cr, fr->cl->margin_left,
 			          p->slide_height+p->border_offs_y);
 
-		cairo_move_to(cr, p->slide_width-o->style->margin_right,
+		cairo_move_to(cr, p->slide_width-fr->cl->margin_right,
 			          -p->border_offs_y);
-		cairo_line_to(cr, p->slide_width-o->style->margin_right,
+		cairo_line_to(cr, p->slide_width-fr->cl->margin_right,
 			          p->slide_height+p->border_offs_y);
 
-		cairo_move_to(cr, -p->border_offs_x, o->style->margin_top);
+		cairo_move_to(cr, -p->border_offs_x, fr->cl->margin_top);
 		cairo_line_to(cr, p->slide_width+p->border_offs_x,
-			          o->style->margin_top);
+			          fr->cl->margin_top);
 
 		cairo_move_to(cr, -p->border_offs_x,
-			          p->slide_height-o->style->margin_bottom);
+			          p->slide_height-fr->cl->margin_bottom);
 		cairo_line_to(cr, p->slide_width+p->border_offs_x,
-			          p->slide_height-o->style->margin_bottom);
+			          p->slide_height-fr->cl->margin_bottom);
 
 		cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
 		cairo_set_line_width(cr, 1.0);
@@ -775,7 +775,7 @@ int open_mainwindow(struct presentation *p)
 	GtkWidget *window;
 	GtkWidget *vbox;
 	GtkWidget *sw;
-	GtkTargetEntry targets[1];
+//	GtkTargetEntry targets[1];
 
 	if ( p->window != NULL ) {
 		fprintf(stderr, "Presentation window is already open!\n");
@@ -814,16 +814,16 @@ int open_mainwindow(struct presentation *p)
 	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
 	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
 
-	g_signal_connect(G_OBJECT(p->drawingarea), "button-press-event",
-			 G_CALLBACK(button_press_sig), p);
-	g_signal_connect(G_OBJECT(p->drawingarea), "button-release-event",
-			 G_CALLBACK(button_release_sig), p);
+//	g_signal_connect(G_OBJECT(p->drawingarea), "button-press-event",
+//			 G_CALLBACK(button_press_sig), p);
+//	g_signal_connect(G_OBJECT(p->drawingarea), "button-release-event",
+//			 G_CALLBACK(button_release_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "key-press-event",
 			 G_CALLBACK(key_press_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "expose-event",
 			 G_CALLBACK(expose_sig), p);
-	g_signal_connect(G_OBJECT(p->drawingarea), "motion-notify-event",
-			 G_CALLBACK(motion_sig), p);
+//	g_signal_connect(G_OBJECT(p->drawingarea), "motion-notify-event",
+//			 G_CALLBACK(motion_sig), p);
 
 	/* Input method */
 	p->im_context = gtk_im_multicontext_new();

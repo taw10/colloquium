@@ -30,7 +30,7 @@
 #include <pango/pangocairo.h>
 #include <assert.h>
 
-#include "slide_render.h"
+#include "storycode.h"
 #include "presentation.h"
 #include "objects.h"
 #include "stylesheet.h"
@@ -112,8 +112,8 @@ static void render_slide_bits(struct slide *s, cairo_t *cr)
 	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_SUBPIXEL);
 	cairo_set_font_options(cr, fopts);
 
-	for ( i=0; i<s->parent->ss->n_bgblocks; i++ ) {
-		render_bgblock(cr, &s->parent->ss->bgblocks[i]);
+	for ( i=0; i<s->st->n_bgblocks; i++ ) {
+		render_bgblock(cr, s->st->bgblocks[i]);
 	}
 
 	for ( i=0; i<s->num_objects; i++ ) {

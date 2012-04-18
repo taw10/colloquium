@@ -37,8 +37,8 @@
 
 struct _stylesheet
 {
-	struct slide_template **templates;
-	int                     n_templates;
+	struct slide_template **slide_templates;
+	int                     n_slide_templates;
 };
 
 
@@ -67,7 +67,7 @@ struct slide_template *new_slide_template(StyleSheet *ss, const char *name)
 		return NULL;
 	}
 	ss->slide_templates = slide_templates_new;
-	ss->slide_templates[n] = ss;
+	ss->slide_templates[n] = st;
 	ss->n_slide_templates = n+1;
 
 	return st;
@@ -93,7 +93,7 @@ struct frame_class *new_frame_class(struct slide_template *st, const char *name)
 		free(fc);
 		return NULL;
 	}
-	st->frame_classe = frame_classes_new;
+	st->frame_classes = frame_classes_new;
 	st->frame_classes[n] = fc;
 	st->n_frame_classes = n+1;
 
@@ -125,7 +125,7 @@ static void free_slide_template(struct slide_template *st)
 	free(st->frame_classes);
 
 	for ( i=0; i<st->n_bgblocks; i++ ) {
-		free_frame_class(st->bgblocks[i]);
+		free_bgblock(st->bgblocks[i]);
 	}
 	free(st->bgblocks);
 
@@ -158,21 +158,31 @@ void default_stylesheet(StyleSheet *ss)
 	fc->margin_right = 20.0;
 	fc->margin_top = 20.0;
 	fc->margin_bottom = 20.0;
-	fc->sc_prologue = strdup("\FF'Sans 50';\FC'#000000000000';");
+	fc->sc_prologue = strdup("\\FF'Sans 50';\\FC'#000000000000';");
 
 	fc = new_frame_class(st, "Author(s)");
 	fc->margin_left = 20.0;
 	fc->margin_right = 20.0;
 	fc->margin_top = 20.0;
 	fc->margin_bottom = 20.0;
-	fc->sc_prologue = strdup("\FF'Sans 30';\FC'#000000000000';");
+	fc->sc_prologue = strdup("\\FF'Sans 30';\\FC'#000000000000';");
 
 	fc = new_frame_class(st, "Date");
 	fc->margin_left = 20.0;
 	fc->margin_right = 20.0;
 	fc->margin_top = 20.0;
 	fc->margin_bottom = 20.0;
-	fc->sc_prologue = strdup("\FF'Sans 30';\FC'#000000000000';");
+	fc->sc_prologue = strdup("\\FF'Sans 30';\\FC'#000000000000';");
+
+	st->bgblocks = malloc(sizeof(struct bgblock));
+	st->n_bgblocks = 1;
+	st->bgblocks[0]->type = BGBLOCK_SOLID;
+	st->bgblocks[0]->min_x = 0.0;
+	st->bgblocks[0]->max_x = 1024.0;
+	st->bgblocks[0]->min_y = 0.0;
+	st->bgblocks[0]->max_y = 768.0;
+	st->bgblocks[0]->colour1 = strdup("#eeeeeeeeeeee");
+	st->bgblocks[0]->alpha1 = 1.0;
 
 	st = new_slide_template(ss, "Slide");
 
@@ -181,28 +191,28 @@ void default_stylesheet(StyleSheet *ss)
 	fc->margin_right = 20.0;
 	fc->margin_top = 20.0;
 	fc->margin_bottom = 20.0;
-	fc->sc_prologue = strdup("\FF'Sans 18';\FC'#000000000000';");
+	fc->sc_prologue = strdup("\\FF'Sans 18';\\FC'#000000000000';");
 
 	fc = new_frame_class(st, "Title");
 	fc->margin_left = 20.0;
 	fc->margin_right = 20.0;
 	fc->margin_top = 20.0;
 	fc->margin_bottom = 20.0;
-	fc->sc_prologue = strdup("\FF'Sans 40';\FC'#000000000000';");
+	fc->sc_prologue = strdup("\\FF'Sans 40';\\FC'#000000000000';");
 
 	fc = new_frame_class(st, "Credit");
 	fc->margin_left = 20.0;
 	fc->margin_right = 20.0;
 	fc->margin_top = 20.0;
 	fc->margin_bottom = 35.0;
-	fc->sc_prologue = strdup("\FF'Sans 14';\FC'#000000000000';");
+	fc->sc_prologue = strdup("\\FF'Sans 14';\\FC'#000000000000';");
 
 	fc = new_frame_class(st, "Date");
 	fc->margin_left = 600.0;
 	fc->margin_right = 100.0;
 	fc->margin_top = 745.0;
 	fc->margin_bottom = 5.0;
-	fc->sc_prologue = strdup("\FF'Sans 12';\FC'#999999999999';");
+	fc->sc_prologue = strdup("\\FF'Sans 12';\\FC'#999999999999';");
 
 	fc = new_frame_class(st, "Slide number");
 	fc->margin_left = 600.0;
@@ -218,15 +228,15 @@ void default_stylesheet(StyleSheet *ss)
 	fc->margin_bottom = 5.0;
 	fc->sc_prologue = strdup("\\FF'Sans 12';\\FC'#999999999999';\\JC\\VC");
 
-	ss->bgblocks = malloc(sizeof(struct bgblock));
-	ss->n_bgblocks = 1;
-	ss->bgblocks[0].type = BGBLOCK_SOLID;
-	ss->bgblocks[0].min_x = 0.0;
-	ss->bgblocks[0].max_x = 1024.0;
-	ss->bgblocks[0].min_y = 0.0;
-	ss->bgblocks[0].max_y = 768.0;
-	ss->bgblocks[0].colour1 = strdup("#ffffffffffff");
-	ss->bgblocks[0].alpha1 = 1.0;
+	st->bgblocks = malloc(sizeof(struct bgblock));
+	st->n_bgblocks = 1;
+	st->bgblocks[0]->type = BGBLOCK_SOLID;
+	st->bgblocks[0]->min_x = 0.0;
+	st->bgblocks[0]->max_x = 1024.0;
+	st->bgblocks[0]->min_y = 0.0;
+	st->bgblocks[0]->max_y = 768.0;
+	st->bgblocks[0]->colour1 = strdup("#ffffffffffff");
+	st->bgblocks[0]->alpha1 = 1.0;
 }
 
 
@@ -257,7 +267,7 @@ static enum bgblocktype str_to_bgtype(char *t)
 }
 
 
-static int read_frame_class(struct frame_class *fs, struct ds_node *root)
+static int read_frame_class(struct frame_class *fc, struct ds_node *root)
 {
 	get_field_f(root, "margin_left",   &fc->margin_left);
 	get_field_f(root, "margin_right",  &fc->margin_right);
@@ -311,12 +321,14 @@ struct slide_template *tree_to_slide_template(StyleSheet *ss,
 {
 	struct slide_template *st;
 	int i;
+	char *v;
+	struct ds_node *node;
 
 	get_field_s(root, "name", &v);
 	if ( v == NULL ) {
 		fprintf(stderr, "No name for slide template '%s'\n",
-		        node->children[i]->key);
-		continue;
+		        root->children[i]->key);
+		return NULL;
 	}
 
 	st = new_slide_template(ss, v);
@@ -342,7 +354,7 @@ struct slide_template *tree_to_slide_template(StyleSheet *ss,
 
 		struct frame_class *fc;
 
-		fc = &st->frame_classes[i];
+		fc = st->frame_classes[i];
 
 		if ( read_frame_class(fc, node->children[i]) ) {
 			fprintf(stderr, "Couldn't read frame class %i\n", i);
@@ -370,7 +382,7 @@ struct slide_template *tree_to_slide_template(StyleSheet *ss,
 
 		struct bgblock *b;
 
-		b = &st->bgblocks[i];
+		b = st->bgblocks[i];
 
 		if ( read_bgblock(b, node->children[i]) ) {
 			fprintf(stderr, "Couldn't read bgblock %i\n", i);
@@ -418,8 +430,8 @@ StyleSheet *new_stylesheet()
 	ss = calloc(1, sizeof(struct _stylesheet));
 	if ( ss == NULL ) return NULL;
 
-	ss->n_styles = 0;
-	ss->styles = NULL;
+	ss->n_slide_templates = 0;
+	ss->slide_templates = NULL;
 
 	return ss;
 }
@@ -467,17 +479,17 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 	int i;
 
 	serialize_start(ser, "templates");
-	for ( i=0; i<ss->n_templates; i++ ) {
+	for ( i=0; i<ss->n_slide_templates; i++ ) {
 
 		int j;
 		struct slide_template *st;
 
-		st = ss->templates[i];
+		st = ss->slide_templates[i];
 
 		serialize_start(ser, "bgblocks");
 		for ( j=0; j<st->n_bgblocks; j++ ) {
 
-			struct bgblock *b = &st->bgblocks[j];
+			struct bgblock *b = st->bgblocks[j];
 			char id[32];
 
 			snprintf(id, 31, "%i", j);
@@ -516,7 +528,7 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 		serialize_end(ser);
 
 		serialize_start(ser, "frame_classes");
-		for ( j=0; j<st->n_styles; j++ ) {
+		for ( j=0; j<st->n_frame_classes; j++ ) {
 
 			struct frame_class *fc = st->frame_classes[j];
 			char id[32];
@@ -555,12 +567,12 @@ struct frame_class *find_frame_class(struct slide_template *st,
 }
 
 
-struct frame_class *find_slide_template(StyleSheet *ss, const char *name)
+struct slide_template *find_slide_template(StyleSheet *ss, const char *name)
 {
 	int i;
-	for ( i=0; i<ss->n_templates; i++ ) {
-		if ( strcmp(ss->templates[i]->name, name) == 0 ) {
-			return ss->templates[i];
+	for ( i=0; i<ss->n_slide_templates; i++ ) {
+		if ( strcmp(ss->slide_templates[i]->name, name) == 0 ) {
+			return ss->slide_templates[i];
 		}
 	}
 

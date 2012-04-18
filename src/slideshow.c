@@ -32,7 +32,7 @@
 #include <gdk/gdkkeysyms.h>
 
 #include "presentation.h"
-#include "slide_render.h"
+#include "storycode.h"
 #include "mainwindow.h"
 #include "notes.h"
 

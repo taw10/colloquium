@@ -553,52 +553,9 @@ int get_field_s(struct ds_node *root, const char *key, char **val)
 }
 
 
-static enum objtype text_to_type(const char *t)
+static struct frame *tree_to_frame(struct ds_node *root)
 {
-	if ( strcmp(t, "text") == 0 ) return OBJ_TEXT;
-	if ( strcmp(t, "image") == 0 ) return OBJ_IMAGE;
-
-	return OBJ_UNKNOWN;
-}
-
-
-static const char *type_text(enum objtype t)
-{
-	switch ( t )
-	{
-		case OBJ_TEXT : return "text";
-		case OBJ_IMAGE : return "image";
-		default : return "unknown";
-	}
-}
-
-
-
-static struct object *tree_to_object(struct presentation *p,
-                                     struct ds_node *root)
-{
-	struct object *o = NULL;
-	char *v;
-
-	if ( get_field_s(root, "type", &v) ) return NULL;
-
-	switch ( text_to_type(v) ) {
-
-		case OBJ_TEXT :
-		o = p->text_tool->deserialize(p, root, p->text_tool);
-		break;
-
-		case OBJ_IMAGE :
-		o = p->image_tool->deserialize(p, root, p->image_tool);
-		break;
-
-		default :
-		fprintf(stderr, "Unrecognised object type '%s'\n", v);
-		break;
-
-	}
-
-	return o;
+	return NULL;
 }
 
 
@@ -615,91 +572,16 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 	/* Loop over objects */
 	for ( i=0; i<root->n_children; i++ ) {
 
-		struct object *o;
+		struct frame *fr;
 
-		o = tree_to_object(p, root->children[i]);
-		if ( o != NULL ) {
-			add_object_to_slide(s, o);
-			if ( o->type != OBJ_TEXT) o->update_object(o);
+		fr = tree_to_frame(root->children[i]);
+		if ( fr != NULL ) {
+			add_frame_to_slide(s, fr);
 		}
 
 	}
-
-	redraw_slide(s);
 
 	return s;
-}
-
-
-static void try_last(struct slide *s, struct slide *ls, enum object_role r)
-{
-	if ( s->roles[r] == NULL ) {
-		s->roles[r] = ls->roles[r];
-	}
-}
-
-
-static void try_update(struct object *o)
-{
-	if ( o == NULL ) return;
-	o->update_object(o);
-}
-
-
-/* Go through all the slides and make sure the roles are tidied up */
-static void fix_up_roles(struct presentation *p)
-{
-	int i;
-	struct slide *last_slide = NULL;
-
-	for ( i=0; i<p->num_slides; i++ ) {
-
-		int j;
-		struct slide *s;
-
-		s = p->slides[i];
-
-		for ( j=0; j<NUM_S_ROLES; j++ ) {
-			s->roles[j] = NULL;
-		}
-
-		for ( j=0; j<s->num_objects; j++ ) {
-
-			struct object *o;
-			enum object_role r;
-
-			o = s->objects[j];
-			r = o->style->role;
-
-			if ( r == S_ROLE_NONE ) continue;
-
-			if ( s->roles[r] != NULL ) {
-				fprintf(stderr, "Warning, two objects in slide"
-				                " with role %i.\n", r);
-				continue;
-			}
-
-			s->roles[r] = o;
-
-		}
-
-		if ( last_slide != NULL ) {
-
-			/* Set off-slide references for this slide */
-			try_last(s, last_slide, S_ROLE_PTITLE_REF);
-			try_last(s, last_slide, S_ROLE_PAUTHOR_REF);
-			try_last(s, last_slide, S_ROLE_PDATE_REF);
-
-		}
-
-		try_update(s->roles[S_ROLE_PTITLE]);
-		try_update(s->roles[S_ROLE_PAUTHOR]);
-		try_update(s->roles[S_ROLE_PDATE]);
-		try_update(s->roles[S_ROLE_SLIDENUMBER]);
-
-		last_slide = s;
-
-	}
 }
 
 
@@ -714,12 +596,9 @@ static int tree_to_slides(struct ds_node *root, struct presentation *p)
 		s = tree_to_slide(p, root->children[i]);
 		if ( s != NULL ) {
 			insert_slide(p, s, p->num_slides-1);
-			redraw_slide(s);
 		}
 
 	}
-
-	fix_up_roles(p);
 
 	return 0;
 }
@@ -776,7 +655,7 @@ int tree_to_presentation(struct ds_node *root, struct presentation *p)
 	}
 
 	p->cur_edit_slide = p->slides[0];
-	redraw_slide(p->cur_edit_slide);
+//	redraw_slide(p->cur_edit_slide);
 
 	return 0;
 }
@@ -943,17 +822,16 @@ int save_presentation(struct presentation *p, const char *filename)
 
 		snprintf(s_id, 31, "%i", i);
 		serialize_start(&ser, s_id);
-		for ( j=0; j<s->num_objects; j++ ) {
+		for ( j=0; j<s->num_frames; j++ ) {
 
-			struct object *o = s->objects[j];
-			char o_id[32];
+			struct frame *fr = s->frames[j];
+			char fr_id[32];
 
-			if ( o->empty ) continue;
-			snprintf(o_id, 31, "%i", j);
+			if ( fr->empty ) continue;
+			snprintf(fr_id, 31, "%i", j);
 
-			serialize_start(&ser, o_id);
-			serialize_s(&ser, "type", type_text(o->type));
-			o->serialize(o, &ser);
+			serialize_start(&ser, fr_id);
+			fr->serialize(fr, &ser);
 			serialize_end(&ser);
 
 		}

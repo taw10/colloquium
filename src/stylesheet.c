@@ -327,7 +327,7 @@ struct slide_template *tree_to_slide_template(StyleSheet *ss,
 	get_field_s(root, "name", &v);
 	if ( v == NULL ) {
 		fprintf(stderr, "No name for slide template '%s'\n",
-		        root->children[i]->key);
+		        root->key);
 		return NULL;
 	}
 

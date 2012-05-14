@@ -117,9 +117,9 @@ struct slide *new_slide()
 	new = calloc(1, sizeof(struct slide));
 	if ( new == NULL ) return NULL;
 
-	/* No objects to start with */
-	new->num_objects = 0;
-	new->objects = NULL;
+	/* No frames to start with */
+	new->num_frames = 0;
+	new->frames = NULL;
 
 	new->rendered_edit = NULL;
 	new->rendered_proj = NULL;
@@ -131,12 +131,26 @@ struct slide *new_slide()
 }
 
 
+static void free_frame(struct frame *fr)
+{
+	int i;
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		free_frame(fr->children[i]);
+	}
+
+	free(fr->sc);
+
+	free(fr);
+}
+
+
 void free_slide(struct slide *s)
 {
 	int i;
 
-	for ( i=0; i<s->num_objects; i++ ) {
-		delete_object(s->objects[i]);
+	for ( i=0; i<s->num_frames; i++ ) {
+		free_frame(s->frames[i]);
 	}
 
 	free(s);
@@ -192,16 +206,15 @@ struct slide *add_slide(struct presentation *p, int pos)
 }
 
 
-int add_object_to_slide(struct slide *s, struct object *o)
+int add_frame_to_slide(struct slide *s, struct frame *fr)
 {
-	struct object **try;
+	struct frame **try;
 
-	try = realloc(s->objects, (1+s->num_objects)*sizeof(struct object *));
+	try = realloc(s->frames, (1+s->num_frames)*sizeof(struct frame *));
 	if ( try == NULL ) return 1;
-	s->objects = try;
+	s->frames = try;
 
-	s->objects[s->num_objects++] = o;
-	o->parent = s;
+	s->frames[s->num_frames++] = fr;
 
 	s->parent->completely_empty = 0;
 
@@ -209,49 +222,49 @@ int add_object_to_slide(struct slide *s, struct object *o)
 }
 
 
-void remove_object_from_slide(struct slide *s, struct object *o)
+void remove_frame_from_slide(struct slide *s, struct frame *fr)
 {
 	int i;
 	int found = 0;
 
-	for ( i=0; i<s->num_objects; i++ ) {
+	for ( i=0; i<s->num_frames; i++ ) {
 
-		if ( s->objects[i] == o ) {
+		if ( s->frames[i] == fr ) {
 			assert(!found);
 			found = 1;
 		}
 
 		if ( found ) {
-			if ( i == s->num_objects-1 ) {
-				s->objects[i] = NULL;
+			if ( i == s->num_frames-1 ) {
+				s->frames[i] = NULL;
 			} else {
-				s->objects[i] = s->objects[i+1];
+				s->frames[i] = s->frames[i+1];
 			}
 		}
 
 	}
 
-	s->num_objects--;
+	s->num_frames--;
 }
 
 
-struct object *find_object_at_position(struct slide *s, double x, double y)
+struct frame *find_frame_at_position(struct slide *s, double x, double y)
 {
 	int i;
-	struct object *o = NULL;
+	struct frame *fr = NULL;
 
-	for ( i=0; i<s->num_objects; i++ ) {
+	for ( i=0; i<s->num_frames; i++ ) {
 
-		if ( (x>s->objects[i]->x) && (y>s->objects[i]->y)
-		  && (x<s->objects[i]->x+s->objects[i]->bb_width)
-		  && (y<s->objects[i]->y+s->objects[i]->bb_height) )
+		if ( /* FIXME: implement */ 1 )
 		{
-			o = s->objects[i];
+			fr = s->frames[i];
 		}
 
 	}
 
-	return o;
+	/* FIXME: Recurse */
+
+	return fr;
 }
 
 

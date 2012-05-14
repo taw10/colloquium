@@ -1,5 +1,5 @@
 /*
- * slide_render.c
+ * storycode.c
  *
  * Colloquium - A tiny presentation program
  *
@@ -116,16 +116,17 @@ static void render_slide_bits(struct slide *s, cairo_t *cr)
 		render_bgblock(cr, s->st->bgblocks[i]);
 	}
 
-	for ( i=0; i<s->num_objects; i++ ) {
+	for ( i=0; i<s->num_frames; i++ ) {
 
-		struct object *o = s->objects[i];
+		struct frame *fr = s->frames[i];
 
-		o->render_object(cr, o);
+		fr->render_frame(fr, cr);
 
 	}
 
 	cairo_font_options_destroy(fopts);
 }
+
 
 static cairo_surface_t *render_slide(struct slide *s, int w, int h)
 {

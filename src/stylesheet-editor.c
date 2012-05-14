@@ -34,24 +34,30 @@
 #include "stylesheet.h"
 #include "objects.h"
 #include "loadsave.h"
+#include "storycode.h"
 
 
 struct _stylesheetwindow
 {
-	struct presentation *p;  /* Presentation to update when user alters
-	                          * something in this window */
-	GtkWidget           *window;
-	StyleSheet          *ss; /* Style sheet this window corresponds to */
+	struct presentation   *p;  /* Presentation to update when user alters
+	                            * something in this window */
+	GtkWidget             *window;
+	StyleSheet            *ss; /* Style sheet this window corresponds to */
 
-	GtkWidget           *margin_left;
-	GtkWidget           *margin_right;
-	GtkWidget           *margin_top;
-	GtkWidget           *margin_bottom;
+	GtkWidget             *margin_left;
+	GtkWidget             *margin_right;
+	GtkWidget             *margin_top;
+	GtkWidget             *margin_bottom;
 
-	GtkWidget           *text_font;
-	GtkWidget           *text_colour;
+	GtkWidget             *text_font;
+	GtkWidget             *text_colour;
 
-	struct style        *cur_style;
+	char                  *font;
+	char                  *colour;
+	double                 alpha;
+
+	struct slide_template *cur_slide_template;
+	struct frame_class    *cur_frame_class;
 };
 
 
@@ -61,10 +67,10 @@ static void text_font_set_sig(GtkFontButton *widget,
 	const gchar *font;
 
 	font = gtk_font_button_get_font_name(widget);
-	free(s->cur_style->font);
-	s->cur_style->font = strdup(font);
+	free(s->font);
+	s->font = strdup(font);
 
-	notify_style_update(s->p, s->cur_style);
+//	notify_style_update(s->p, s->cur_frame_class);
 }
 
 
@@ -75,73 +81,83 @@ static void text_colour_set_sig(GtkColorButton *widget,
 	guint16 al;
 
 	gtk_color_button_get_color(widget, &col);
-	free(s->cur_style->colour);
-	s->cur_style->colour = gdk_color_to_string(&col);
+	free(s->colour);
+	s->colour = gdk_color_to_string(&col);
 	al = gtk_color_button_get_alpha(widget);
-	s->cur_style->alpha = (double)al / 65535.0;
+	s->alpha = (double)al / 65535.0;
 
-	notify_style_update(s->p, s->cur_style);
+//	notify_style_update(s->p, s->cur_frame_class);
 }
 
 
 static void margin_left_changed_sig(GtkSpinButton *spin,
                                     struct _stylesheetwindow *s)
 {
-	s->cur_style->margin_left = gtk_spin_button_get_value(spin);
-	notify_style_update(s->p, s->cur_style);
+	s->cur_frame_class->margin_left = gtk_spin_button_get_value(spin);
+//	notify_style_update(s->p, s->cur_frame_class);
 }
 
 
 static void margin_right_changed_sig(GtkSpinButton *spin,
                                      struct _stylesheetwindow *s)
 {
-	s->cur_style->margin_right = gtk_spin_button_get_value(spin);
-	notify_style_update(s->p, s->cur_style);
+	s->cur_frame_class->margin_right = gtk_spin_button_get_value(spin);
+//	notify_style_update(s->p, s->cur_frame_class);
 }
 
 
 static void margin_top_changed_sig(GtkSpinButton *spin,
                                    struct _stylesheetwindow *s)
 {
-	s->cur_style->margin_top = gtk_spin_button_get_value(spin);
-	notify_style_update(s->p, s->cur_style);
+	s->cur_frame_class->margin_top = gtk_spin_button_get_value(spin);
+//	notify_style_update(s->p, s->cur_frame_class);
 }
 
 
 static void margin_bottom_changed_sig(GtkSpinButton *spin,
                                       struct _stylesheetwindow *s)
 {
-	s->cur_style->margin_bottom = gtk_spin_button_get_value(spin);
-	notify_style_update(s->p, s->cur_style);
+	s->cur_frame_class->margin_bottom = gtk_spin_button_get_value(spin);
+//	notify_style_update(s->p, s->cur_frame_class);
 }
 
 
-static void style_changed_sig(GtkComboBox *combo,
-                               struct _stylesheetwindow *s)
+static void frame_class_changed_sig(GtkComboBox *combo,
+                                    struct _stylesheetwindow *s)
 {
 	int n;
 	GdkColor col;
+	char *font;
 
 	n = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
-	s->cur_style = s->ss->styles[n];
+	s->cur_frame_class = s->cur_slide_template->frame_classes[n];
 
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_left),
-	                          s->cur_style->margin_left);
+	                          s->cur_frame_class->margin_left);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_right),
-	                          s->cur_style->margin_right);
+	                          s->cur_frame_class->margin_right);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_bottom),
-	                          s->cur_style->margin_bottom);
+	                          s->cur_frame_class->margin_bottom);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(s->margin_top),
-	                          s->cur_style->margin_top);
+	                          s->cur_frame_class->margin_top);
 
-	n = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
-	s->cur_style = s->ss->styles[n];
+	font = sc_get_final_font(s->cur_frame_class->sc_prologue);
+	gtk_font_button_set_font_name(GTK_FONT_BUTTON(s->text_font), font);
 
-	gtk_font_button_set_font_name(GTK_FONT_BUTTON(s->text_font),
-	                              s->cur_style->font);
-
-	gdk_color_parse(s->cur_style->colour, &col);
+	s->colour = sc_get_final_text_colour(s->cur_frame_class->sc_prologue);
+	gdk_color_parse(s->colour, &col);
 	gtk_color_button_set_color(GTK_COLOR_BUTTON(s->text_colour), &col);
+}
+
+
+static void slide_template_changed_sig(GtkComboBox *combo,
+                                       struct _stylesheetwindow *s)
+{
+	for ( i=0; i<s->ss->n_styles; i++ ) {
+		gtk_combo_box_append_text(GTK_COMBO_BOX(combo),
+		                          s->ss->styles[i]->name);
+	}
+	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
 }
 
 
@@ -161,11 +177,6 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
 	gtk_box_pack_start(GTK_BOX(box), label, FALSE, FALSE, 0);
 	combo = gtk_combo_box_new_text();
-	for ( i=0; i<s->ss->n_styles; i++ ) {
-		gtk_combo_box_append_text(GTK_COMBO_BOX(combo),
-		                          s->ss->styles[i]->name);
-	}
-	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
 	g_signal_connect(G_OBJECT(combo), "changed",
 	                 G_CALLBACK(style_changed_sig), s);
 	gtk_box_pack_start(GTK_BOX(box), combo, TRUE, TRUE, 0);
@@ -236,7 +247,7 @@ static void do_layout(struct _stylesheetwindow *s, GtkWidget *b)
 	                 G_CALLBACK(text_colour_set_sig), s);
 
 	/* Force first update */
-	style_changed_sig(GTK_COMBO_BOX(combo), s);
+	frame_class_changed_sig(GTK_COMBO_BOX(combo), s);
 }
 
 
@@ -264,8 +275,8 @@ StylesheetWindow *open_stylesheet(struct presentation *p)
 
 	s->p = p;
 	s->ss = p->ss;
-	s->cur_style = NULL;
-	s->cur_style = NULL;
+	s->cur_slide_template = NULL;
+	s->cur_frame_class = NULL;
 
 	s->window = gtk_dialog_new_with_buttons("Stylesheet",
 	                                   GTK_WINDOW(p->window), 0,

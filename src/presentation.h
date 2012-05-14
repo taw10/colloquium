@@ -44,8 +44,8 @@ struct slide
 	/* This should always be present (and up to date). */
 	cairo_surface_t *rendered_thumb;
 
-	int              num_objects;
-	struct object  **objects;
+	int              num_frames;
+	struct frame   **frames;
 
 	char *notes;
 };
@@ -156,9 +156,15 @@ struct frame
 	struct frame_class *cl;
 
 	struct frame      **children;
-	int                 n_children;
+	int                 num_children;
+
+	int                (*render_frame)(struct frame *this, cairo_t *cr);
+	int                (*serialize)(struct frame *this,
+	                                struct serializer *ser);
 
 	char               *sc;  /* Storycode */
+
+	int                 empty;
 };
 
 
@@ -169,6 +175,8 @@ extern struct slide *new_slide(void);
 extern struct slide *add_slide(struct presentation *p, int pos);
 extern int insert_slide(struct presentation *p, struct slide *s, int pos);
 extern void free_slide(struct slide *s);
+
+extern int add_frame_to_slide(struct slide *s, struct frame *fr);
 
 extern void get_titlebar_string(struct presentation *p);
 

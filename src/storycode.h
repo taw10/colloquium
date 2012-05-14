@@ -1,5 +1,5 @@
 /*
- * slide_render.h
+ * storycode.h
  *
  * Colloquium - A tiny presentation program
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef SLIDE_RENDER_H
-#define SLIDE_RENDER_H
+#ifndef STORYCODE_H
+#define STORYCODE_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -42,4 +42,7 @@ extern void draw_editing_box(cairo_t *cr, double xmin, double ymin,
 
 extern int export_pdf(struct presentation *p, const char *filename);
 
-#endif	/* SLIDE_RENDER_H */
+extern char *sc_get_final_font(const char *sc);
+extern char *sc_get_final_text_colour(const char *sc);
+
+#endif	/* STORYCODE_H */

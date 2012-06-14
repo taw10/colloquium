@@ -28,20 +28,6 @@
 #endif
 
 
-#include "presentation.h"
-
-extern void redraw_slide(struct slide *s);
-
-extern void draw_rubberband_box(cairo_t *cr, double xmin, double ymin,
-                                double width, double height);
-
-extern void draw_resize_handle(cairo_t *cr, double x, double y);
-
-extern void draw_editing_box(cairo_t *cr, double xmin, double ymin,
-                             double width, double height);
-
-extern int export_pdf(struct presentation *p, const char *filename);
-
 extern char *sc_get_final_font(const char *sc);
 extern char *sc_get_final_text_colour(const char *sc);
 

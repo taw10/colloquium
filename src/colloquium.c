@@ -28,9 +28,6 @@
 #include <gtk/gtk.h>
 #include <getopt.h>
 
-#include "presentation.h"
-#include "mainwindow.h"
-
 
 static void show_help(const char *s)
 {
@@ -74,13 +71,13 @@ int main(int argc, char *argv[])
 
 	}
 
-	p = new_presentation();
-	p->cur_edit_slide = add_slide(p, 0);
-	p->completely_empty = 1;
-	if ( open_mainwindow(p) ) {
-		fprintf(stderr, "Couldn't open main window.\n");
-		return 1;
-	}
+//	p = new_presentation();
+//	p->cur_edit_slide = add_slide(p, 0);
+//	p->completely_empty = 1;
+//	if ( open_mainwindow(p) ) {
+//		fprintf(stderr, "Couldn't open main window.\n");
+//		return 1;
+//	}
 
 	gtk_main();
 

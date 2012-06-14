@@ -27,8 +27,6 @@
 #include <config.h>
 #endif
 
-#include "loadsave.h"
-
 
 struct frame_class
 {
@@ -90,22 +88,5 @@ struct slide_template
 
 typedef struct _stylesheet StyleSheet;
 struct presentation;
-
-extern StyleSheet *new_stylesheet();
-extern StyleSheet *load_stylesheet(const char *filename);
-extern void free_stylesheet(StyleSheet *ss);
-extern void default_stylesheet(StyleSheet *ss);
-
-extern int save_stylesheet(StyleSheet *ss, const char *filename);
-
-/* Used during deserialization */
-extern struct slide_template *find_slide_template(StyleSheet *ss,
-                                                  const char *name);
-
-extern struct frame_class *find_frame_class(struct slide_template *st,
-                                            const char *name);
-
-extern StyleSheet *tree_to_stylesheet(struct ds_node *root);
-extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
 
 #endif	/* STYLESHEET_H */

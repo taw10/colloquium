@@ -1,5 +1,5 @@
 /*
- * presentation.h
+ * render.h
  *
  * Colloquium - A tiny presentation program
  *
@@ -20,46 +20,18 @@
  *
  */
 
-#ifndef PRESENTATION_H
-#define PRESENTATION_H
+#ifndef RENDER_H
+#define RENDER_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include <cairo.h>
-#include <pango/pango.h>
+#include "presentation.h"
 
-struct slide
-{
-	struct presentation *parent;
-	struct slide_template *st;
+extern cairo_surface_t *render_slide(struct slide *s, int w, int h);
 
-	/* Any of these may be NULL */
-	cairo_surface_t *rendered_proj;
-	cairo_surface_t *rendered_edit;
+extern int render_sc(const char *sc, cairo_t *cr, double w, double h,
+                     PangoContext *pc);
 
-	/* This should always be present (and up to date). */
-	cairo_surface_t *rendered_thumb;
-
-	struct frame   *top;
-
-	char *notes;
-};
-
-
-struct frame
-{
-	struct frame_class *cl;
-	PangoContext *pc;
-
-	struct frame      **rendering_order;
-	int                 num_ro;
-
-	char               *sc;  /* Storycode */
-
-	int                 empty;
-};
-
-
-#endif	/* PRESENTATION_H */
+#endif	/* RENDER_H */

@@ -1,0 +1,5 @@
+*.o
+.deps
+.dirstamp
+storycode_test
+render_test

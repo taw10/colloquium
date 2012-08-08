@@ -1,0 +1,88 @@
+/*
+ * storycode_test.c
+ *
+ * Colloquium - A tiny presentation program
+ *
+ * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <gtk/gtk.h>
+
+#include "../src/storycode.h"
+#include "../src/render.h"
+
+
+static gint mw_destroy(GtkWidget *w, void *p)
+{
+	exit(0);
+}
+
+static gboolean draw_sig(GtkWidget *da, cairo_t *cr)
+{
+	PangoContext *pc;
+	GtkAllocation allocation;
+	gint w, h;
+
+	w = gtk_widget_get_allocated_width(da);
+	h = gtk_widget_get_allocated_height(da);
+
+	/* Overall background */
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_set_source_rgb(cr, 0.0, 1.0, 0.0);
+	cairo_fill(cr);
+
+	pc = gtk_widget_get_pango_context(da);
+
+	gtk_widget_get_allocation(da, &allocation);
+
+	render_sc("\\sf{m20.0}Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur. Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros. Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.", cr, allocation.width, allocation.height, pc);
+
+	return FALSE;
+}
+
+
+int main(int argc, char *argv[])
+{
+	GtkWidget *window;
+	GtkWidget *drawingarea;
+
+	gtk_init(&argc, &argv);
+
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+	drawingarea = gtk_drawing_area_new();
+	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(drawingarea));
+	gtk_widget_set_size_request(GTK_WIDGET(drawingarea), 320, 200);
+
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(mw_destroy),
+	                 NULL);
+
+	g_signal_connect(G_OBJECT(drawingarea), "draw",
+			 G_CALLBACK(draw_sig), NULL);
+
+	gtk_widget_show_all(window);
+	gtk_main();
+
+	return 0;
+}

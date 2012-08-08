@@ -24,10 +24,10 @@ AC_TYPE_SIGNAL
 gl_INIT
 
 
-AM_PATH_GTK_2_0(2.0.0,
+AM_PATH_GTK_3_0(3.0.0,
 [ ],
 [
-   AC_MSG_ERROR([GTK is required.])
+   AC_MSG_ERROR([GTK+3 is required.])
 ])
 
 

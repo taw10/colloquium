@@ -28,55 +28,19 @@
 #endif
 
 
-struct frame_class
+struct frame;
+#include "layout.h"
+
+
+struct style
 {
 	char *name;
 
-	/* Margins of this frame from the parent */
-	double   margin_l;
-	double   margin_r;
-	double   margin_t;
-	double   margin_b;
-
-	/* Padding between this frame and any children */
-	double   pad_l;
-	double   pad_r;
-	double   pad_t;
-	double   pad_b;
+	struct layout_parameters lop;
 
 	/* Storycode prologue (run through the interpreter before the
 	 * main storycode for the frame */
 	char    *sc_prologue;
-};
-
-
-enum bgblocktype
-{
-	BGBLOCK_SOLID,
-	BGBLOCK_GRADIENT_X,
-	BGBLOCK_GRADIENT_Y,
-	BGBLOCK_GRADIENT_CIRCULAR,
-	BGBLOCK_IMAGE,
-};
-
-
-struct bgblock
-{
-	enum bgblocktype type;
-	double           min_x;
-	double           max_x;
-	double           min_y;
-	double           max_y;
-
-	char            *colour1;
-	double           alpha1;
-	char            *colour2;
-	double           alpha2;
-
-	struct image    *image;
-	GdkPixbuf       *scaled_pb;
-	int              scaled_w;
-	int              scaled_h;
 };
 
 

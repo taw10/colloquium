@@ -28,10 +28,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
+#include <string.h>
 
 #include "../src/storycode.h"
 #include "../src/render.h"
 #include "../src/layout.h"
+#include "../src/stylesheet.h"
 
 
 static gint mw_destroy(GtkWidget *w, void *p)
@@ -70,8 +72,33 @@ int main(int argc, char *argv[])
 	GtkWidget *drawingarea;
 	struct frame *fr;
 	struct frame *fr2;
+	struct style *sty1;
+	struct style *sty2;
 
 	gtk_init(&argc, &argv);
+
+	sty1 = calloc(1, sizeof(struct style));
+	sty1->lop.pad_l = 0.0;
+	sty1->lop.pad_r = 0.0;
+	sty1->lop.pad_t = 0.0;
+	sty1->lop.pad_b = 0.0;
+	sty1->lop.margin_l = 0.0;
+	sty1->lop.margin_r = 0.0;
+	sty1->lop.margin_t = 0.0;
+	sty1->lop.margin_b = 0.0;
+	sty1->name = strdup("Default");
+
+	sty2 = calloc(1, sizeof(struct style));
+	sty2->lop.pad_l = 10.0;
+	sty2->lop.pad_r = 10.0;
+	sty2->lop.pad_t = 10.0;
+	sty2->lop.pad_b = 10.0;
+	sty2->lop.margin_l = 10.0;
+	sty2->lop.margin_r = 10.0;
+	sty2->lop.margin_t = 10.0;
+	sty2->lop.margin_b = 10.0;
+	sty2->name = strdup("Text frame");
+
 
 	fr2 = calloc(1, sizeof(struct frame));
 	if ( fr2 == NULL ) return 1;
@@ -80,14 +107,7 @@ int main(int argc, char *argv[])
 	if ( fr2->rendering_order == NULL ) return 1;
 	fr2->rendering_order[0] = fr2;
 	fr2->num_ro = 1;
-	fr2->lop.pad_l = 10.0;
-	fr2->lop.pad_r = 10.0;
-	fr2->lop.pad_t = 10.0;
-	fr2->lop.pad_b = 10.0;
-	fr2->lop.margin_l = 10.0;
-	fr2->lop.margin_r = 10.0;
-	fr2->lop.margin_t = 10.0;
-	fr2->lop.margin_b = 10.0;
+	fr2->style = sty2;
 
 	fr = calloc(1, sizeof(struct frame));
 	if ( fr == NULL ) return 1;
@@ -96,14 +116,7 @@ int main(int argc, char *argv[])
 	if ( fr->rendering_order == NULL ) return 1;
 	fr->rendering_order[0] = fr;  /* Render parent first */
 	fr->rendering_order[1] = fr2;
-	fr->lop.margin_l = 0.0;
-	fr->lop.margin_r = 0.0;
-	fr->lop.margin_t = 0.0;
-	fr->lop.margin_b = 0.0;
-	fr->lop.pad_l = 10.0;
-	fr->lop.pad_r = 10.0;
-	fr->lop.pad_t = 10.0;
-	fr->lop.pad_b = 10.0;
+	fr->style = sty1;
 	fr->num_ro = 2;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);

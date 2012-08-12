@@ -30,75 +30,11 @@
 #include <pango/pangocairo.h>
 #include <assert.h>
 #include <gdk/gdk.h>
+#include <string.h>
 
 #include "storycode.h"
 #include "stylesheet.h"
 #include "presentation.h"
-
-
-static void render_bgblock(cairo_t *cr, struct bgblock *b)
-{
-	GdkColor col1;
-	GdkColor col2;
-	cairo_pattern_t *patt = NULL;
-	double cx, cy, r, r1, r2;
-
-	cairo_rectangle(cr, b->min_x, b->min_y,
-	                    b->max_x - b->min_x,
-	                    b->max_y - b->min_y);
-
-	switch ( b->type ) {
-
-		case BGBLOCK_SOLID :
-		gdk_color_parse(b->colour1, &col1);
-		gdk_cairo_set_source_color(cr, &col1);
-		/* FIXME: Honour alpha as well */
-		cairo_fill(cr);
-		break;
-
-		case BGBLOCK_GRADIENT_CIRCULAR :
-		cx = b->min_x + (b->max_x-b->min_x)/2.0;
-		cy = b->min_y + (b->max_y-b->min_y)/2.0;
-		r1 = (b->max_x-b->min_x)/2.0;
-		r2 = (b->max_y-b->min_y)/2.0;
-		r = r1 > r2 ? r1 : r2;
-		patt = cairo_pattern_create_radial(cx, cy, r, cx, cy, 0.0);
-		/* Fall-through */
-
-		case BGBLOCK_GRADIENT_X :
-		if ( patt == NULL ) {
-			patt = cairo_pattern_create_linear(b->min_x, 0.0,
-		                                           b->max_y, 0.0);
-		}
-		/* Fall-through */
-
-		case BGBLOCK_GRADIENT_Y :
-		if ( patt == NULL ) {
-			patt = cairo_pattern_create_linear(0.0, b->min_y,
-		                                           0.0, b->max_y);
-		}
-
-		gdk_color_parse(b->colour1, &col1);
-		gdk_color_parse(b->colour2, &col2);
-		cairo_pattern_add_color_stop_rgba(patt, 0.0, col1.red/65535.0,
-		                                             col1.green/65535.0,
-		                                             col1.blue/65535.0,
-		                                             b->alpha1);
-		cairo_pattern_add_color_stop_rgba(patt, 1.0, col2.red/65535.0,
-		                                             col2.green/65535.0,
-		                                             col2.blue/65535.0,
-		                                             b->alpha2);
-		cairo_set_source(cr, patt);
-		cairo_fill(cr);
-		cairo_pattern_destroy(patt);
-		break;
-
-		case BGBLOCK_IMAGE :
-		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-		cairo_fill(cr);
-
-	}
-}
 
 
 /* Render Level 1 Storycode */
@@ -139,6 +75,7 @@ int render_sc(const char *sc, cairo_t *cr, double w, double h, PangoContext *pc)
 int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 {
 	int i;
+	int d = 0;
 
 	/* The rendering order is a list of children, but it also contains the
 	 * current frame.  In this way, it contains information about which
@@ -153,6 +90,15 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 			/* Draw the frame itself (rectangle) */
 			cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
 			cairo_set_line_width(cr, 1.0);
+
+			if ( (fr->style != NULL)
+			  && (strcmp(fr->style->name, "Default") == 0) )
+			{
+				cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+			} else {
+				cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+			}
+			cairo_fill_preserve(cr);
 			cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 			cairo_stroke(cr);
 
@@ -161,6 +107,8 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 			w = fr->w - (fr->lop.pad_l + fr->lop.pad_r);
 			h = fr->h - (fr->lop.pad_t + fr->lop.pad_b);
 			render_sc(fr->sc, cr, w, h, pc);
+
+			d = 1;
 
 			continue;
 
@@ -174,6 +122,11 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 
 	}
 
+	if ( !d ) {
+		fprintf(stderr, "WARNING: Frame didn't appear on its own "
+		                "rendering list?\n");
+	}
+
 	return 0;
 }
 
@@ -183,7 +136,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_surface_t *surf;
 	cairo_t *cr;
 	cairo_font_options_t *fopts;
-	int i;
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 
@@ -195,10 +147,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_OFF);
 	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_SUBPIXEL);
 	cairo_set_font_options(cr, fopts);
-
-	for ( i=0; i<s->st->n_bgblocks; i++ ) {
-		render_bgblock(cr, s->st->bgblocks[i]);
-	}
 
 	render_frame(s->top, cr, NULL); /* FIXME: pc */
 

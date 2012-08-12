@@ -53,23 +53,24 @@ struct slide
 
 struct frame
 {
-	//struct frame_class *cl;
-	PangoContext *pc;
+	PangoContext *pc;  /* FIXME: Doesn't belong here */
 
-	struct frame      **rendering_order;
-	int                 num_ro;
+	struct frame            **rendering_order;
+	int                       num_ro;
 
-	char               *sc;  /* Storycode */
+	char                     *sc;  /* Storycode */
 
-	struct layout_parameters lop;
+	struct layout_parameters  lop;
+	struct style             *style;  /* Non-NULL if 'lop' came from SS */
 
 	/* Location relative to parent, calculated from alignment parameters */
-	double              offs_x;
-	double              offs_y;
-	double              w;
-	double              h;
+	double                    offs_x;
+	double                    offs_y;
+	double                    w;
+	double                    h;
 
-	int                 empty;
+	/* True if this frame should be deleted on the next mouse click */
+	int                       empty;
 };
 
 

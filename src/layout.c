@@ -27,11 +27,22 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "presentation.h"
 #include "layout.h"
+#include "stylesheet.h"
 
-void layout_frame(struct frame *fr, double w, double h)
+
+static void copy_lop_from_style(struct frame *fr, struct style *style)
+{
+	if ( style == NULL ) return;  /* Not dictated by style sheet */
+
+	memcpy(&fr->lop, &style->lop, sizeof(struct layout_parameters));
+}
+
+
+static void layout_subframe(struct frame *fr, double w, double h)
 {
 	int i;
 
@@ -47,6 +58,8 @@ void layout_frame(struct frame *fr, double w, double h)
 
 		if ( child == fr ) continue;
 
+		copy_lop_from_style(child, child->style);
+
 		child->offs_x = child->lop.margin_l + fr->lop.pad_l;
 		child->offs_y = child->lop.margin_t + fr->lop.pad_r;
 		child_w = w - (child->lop.margin_l + child->lop.margin_r);
@@ -54,8 +67,14 @@ void layout_frame(struct frame *fr, double w, double h)
 		child_w -= (fr->lop.pad_l + fr->lop.pad_r);
 		child_h -= (fr->lop.pad_t + fr->lop.pad_b);
 
-		layout_frame(child, child_w, child_h);
+		layout_subframe(child, child_w, child_h);
 
 	}
 }
 
+
+void layout_frame(struct frame *fr, double w, double h)
+{
+	copy_lop_from_style(fr, fr->style);
+	layout_subframe(fr, w, h);
+}

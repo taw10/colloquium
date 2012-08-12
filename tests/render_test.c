@@ -31,6 +31,7 @@
 
 #include "../src/storycode.h"
 #include "../src/render.h"
+#include "../src/layout.h"
 
 
 static gint mw_destroy(GtkWidget *w, void *p)
@@ -38,7 +39,7 @@ static gint mw_destroy(GtkWidget *w, void *p)
 	exit(0);
 }
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr)
+static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 {
 	PangoContext *pc;
 	GtkAllocation allocation;
@@ -49,14 +50,15 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr)
 
 	/* Overall background */
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_rgb(cr, 0.0, 1.0, 0.0);
+	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
 	pc = gtk_widget_get_pango_context(da);
 
 	gtk_widget_get_allocation(da, &allocation);
 
-	render_sc("\\sf{m20.0}Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur. Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros. Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.", cr, allocation.width, allocation.height, pc);
+	layout_frame(fr, allocation.width, allocation.height);
+	render_frame(fr, cr, pc);
 
 	return FALSE;
 }
@@ -66,8 +68,31 @@ int main(int argc, char *argv[])
 {
 	GtkWidget *window;
 	GtkWidget *drawingarea;
+	struct frame *fr;
+	struct frame *fr2;
 
 	gtk_init(&argc, &argv);
+
+	fr2 = calloc(1, sizeof(struct frame));
+	if ( fr2 == NULL ) return 1;
+	fr2->sc = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur. Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros. Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.";
+	fr2->rendering_order = calloc(1, sizeof(struct frame *));
+	if ( fr2->rendering_order == NULL ) return 1;
+	fr2->rendering_order[0] = fr2;
+	fr2->num_ro = 1;
+
+	fr = calloc(1, sizeof(struct frame));
+	if ( fr == NULL ) return 1;
+	fr->sc = "";
+	fr->rendering_order = calloc(2, sizeof(struct frame *));
+	if ( fr->rendering_order == NULL ) return 1;
+	fr->rendering_order[0] = fr;  /* Render parent first */
+	fr->rendering_order[1] = fr2;
+	fr->lop.margin_l = 10.0;
+	fr->lop.margin_r = 10.0;
+	fr->lop.margin_t = 10.0;
+	fr->lop.margin_b = 10.0;
+	fr->num_ro = 2;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
@@ -79,7 +104,7 @@ int main(int argc, char *argv[])
 	                 NULL);
 
 	g_signal_connect(G_OBJECT(drawingarea), "draw",
-			 G_CALLBACK(draw_sig), NULL);
+			 G_CALLBACK(draw_sig), fr);
 
 	gtk_widget_show_all(window);
 	gtk_main();

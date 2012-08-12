@@ -3,7 +3,7 @@
  *
  * Colloquium - A tiny presentation program
  *
- * Copyright (c) 2011 Thomas White <taw@bitwiz.org.uk>
+ * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,5 +26,20 @@
 #endif
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "storycode.h"
+#include "presentation.h"
+
+
+struct frame *unpack_storycode(const char *sc)
+{
+	struct frame *fr;
+
+	fr = calloc(1, sizeof(struct frame));
+	if ( fr == NULL ) return NULL;
+
+	
+
+	return fr;
+}

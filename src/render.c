@@ -108,6 +108,11 @@ int render_sc(const char *sc, cairo_t *cr, double w, double h, PangoContext *pc)
 	PangoFontDescription *fontdesc;
 	GdkColor col;
 
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_set_line_width(cr, 0.1);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_stroke(cr);
+
 	/* FIXME: Check for Level 1 markup e.g. image */
 
 	layout = pango_layout_new(pc);
@@ -115,6 +120,8 @@ int render_sc(const char *sc, cairo_t *cr, double w, double h, PangoContext *pc)
 	pango_cairo_update_layout(cr, layout);
 	pango_layout_set_width(layout, w*PANGO_SCALE);
 	pango_layout_set_height(layout, h*PANGO_SCALE);
+	pango_layout_set_justify(layout, 1);
+	pango_layout_set_ellipsize(layout, 1);
 
 	pango_layout_set_text(layout, sc, -1);
 	fontdesc = pango_font_description_from_string("Sans 12");
@@ -136,7 +143,7 @@ int render_sc(const char *sc, cairo_t *cr, double w, double h, PangoContext *pc)
 }
 
 
-static int render_frame(struct frame *fr, cairo_t *cr, double w, double h)
+int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 {
 	int i;
 
@@ -146,24 +153,16 @@ static int render_frame(struct frame *fr, cairo_t *cr, double w, double h)
 	 * children. */
 	for ( i=0; i<fr->num_ro; i++ ) {
 
-		double nw, nh;
-
 		if ( fr->rendering_order[i] == fr ) {
-			render_sc(fr->sc, cr, w, h, fr->pc);
+			render_sc(fr->sc, cr, fr->w, fr->h, pc);
 			continue;
 		}
 
 		/* Sort out the transformation for the margins */
-		cairo_translate(cr, fr->rendering_order[i]->cl->margin_left,
-		                    fr->rendering_order[i]->cl->margin_top);
+		cairo_translate(cr, fr->rendering_order[i]->x,
+		                    fr->rendering_order[i]->y);
 
-		nw = w - fr->rendering_order[i]->cl->margin_left;
-		nw    -= fr->rendering_order[i]->cl->margin_right;
-
-		nh = h - fr->rendering_order[i]->cl->margin_top;
-		nh    -= fr->rendering_order[i]->cl->margin_bottom;
-
-		render_frame(fr->rendering_order[i], cr, nw, nh);
+		render_frame(fr->rendering_order[i], cr, pc);
 
 	}
 
@@ -193,7 +192,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 		render_bgblock(cr, s->st->bgblocks[i]);
 	}
 
-	render_frame(s->top, cr, w, h);
+	render_frame(s->top, cr, NULL); /* FIXME: pc */
 
 	cairo_font_options_destroy(fopts);
 	cairo_destroy(cr);

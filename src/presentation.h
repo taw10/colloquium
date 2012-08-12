@@ -30,6 +30,9 @@
 #include <cairo.h>
 #include <pango/pango.h>
 
+struct frame;
+#include "layout.h"
+
 struct slide
 {
 	struct presentation *parent;
@@ -50,13 +53,21 @@ struct slide
 
 struct frame
 {
-	struct frame_class *cl;
+	//struct frame_class *cl;
 	PangoContext *pc;
 
 	struct frame      **rendering_order;
 	int                 num_ro;
 
 	char               *sc;  /* Storycode */
+
+	struct layout_parameters lop;
+
+	/* Location relative to parent, calculated from alignment parameters */
+	double              x;
+	double              y;
+	double              w;
+	double              h;
 
 	int                 empty;
 };

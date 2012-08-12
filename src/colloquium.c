@@ -43,7 +43,7 @@ static void show_help(const char *s)
 int main(int argc, char *argv[])
 {
 	int c;
-	struct presentation *p;
+//	struct presentation *p;
 
 	/* Long options */
 	const struct option longopts[] = {

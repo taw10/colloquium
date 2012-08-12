@@ -1,9 +1,9 @@
 /*
- * render.h
+ * layout.c
  *
  * Colloquium - A tiny presentation program
  *
- * Copyright (c) 2011 Thomas White <taw@bitwiz.org.uk>
+ * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,20 +20,40 @@
  *
  */
 
-#ifndef RENDER_H
-#define RENDER_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <assert.h>
+#include <stdlib.h>
+
 #include "presentation.h"
+#include "layout.h"
 
-extern cairo_surface_t *render_slide(struct slide *s, int w, int h);
 
-extern int render_sc(const char *sc, cairo_t *cr, double w, double h,
-                     PangoContext *pc);
+/* Calculate layout for frame (and all its children) based on size */
+void layout_frame(struct frame *fr, double w, double h)
+{
+	fr->w = w;
+	fr->h = h;
 
-extern int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc);
+	int i;
 
-#endif	/* RENDER_H */
+	for ( i=0; i<fr->num_ro; i++ ) {
+
+		struct frame *child;
+		double child_w, child_h;
+
+		child = fr->rendering_order[i];
+
+		if ( child == fr ) continue;
+
+		child->x = fr->lop.margin_l;
+		child->y = fr->lop.margin_t;
+		child_w = w - (fr->lop.margin_l + fr->lop.margin_r);
+		child_h = h - (fr->lop.margin_t + fr->lop.margin_b);
+		layout_frame(child, child_w, child_h);
+
+	}
+}

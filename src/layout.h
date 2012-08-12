@@ -34,6 +34,11 @@ struct layout_parameters
 	double margin_r;
 	double margin_t;
 	double margin_b;
+
+	double pad_l;
+	double pad_r;
+	double pad_t;
+	double pad_b;
 };
 
 

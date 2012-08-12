@@ -64,8 +64,8 @@ struct frame
 	struct layout_parameters lop;
 
 	/* Location relative to parent, calculated from alignment parameters */
-	double              x;
-	double              y;
+	double              offs_x;
+	double              offs_y;
 	double              w;
 	double              h;
 

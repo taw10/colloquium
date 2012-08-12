@@ -108,18 +108,13 @@ int render_sc(const char *sc, cairo_t *cr, double w, double h, PangoContext *pc)
 	PangoFontDescription *fontdesc;
 	GdkColor col;
 
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_line_width(cr, 0.1);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	cairo_stroke(cr);
-
 	/* FIXME: Check for Level 1 markup e.g. image */
 
 	layout = pango_layout_new(pc);
-
-	pango_cairo_update_layout(cr, layout);
 	pango_layout_set_width(layout, w*PANGO_SCALE);
 	pango_layout_set_height(layout, h*PANGO_SCALE);
+
+	pango_cairo_update_layout(cr, layout);
 	pango_layout_set_justify(layout, 1);
 	pango_layout_set_ellipsize(layout, 1);
 
@@ -127,8 +122,6 @@ int render_sc(const char *sc, cairo_t *cr, double w, double h, PangoContext *pc)
 	fontdesc = pango_font_description_from_string("Sans 12");
 
 	pango_layout_set_font_description(layout, fontdesc);
-
-	cairo_move_to(cr, 0.0, 0.0);
 
 	/* FIXME: Honour alpha as well */
 	gdk_color_parse("#000000", &col);
@@ -154,13 +147,28 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 	for ( i=0; i<fr->num_ro; i++ ) {
 
 		if ( fr->rendering_order[i] == fr ) {
-			render_sc(fr->sc, cr, fr->w, fr->h, pc);
+
+			double w, h;
+
+			/* Draw the frame itself (rectangle) */
+			cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
+			cairo_set_line_width(cr, 1.0);
+			cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+			cairo_stroke(cr);
+
+			/* Set up padding, and then draw the contents */
+			cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t);
+			w = fr->w - (fr->lop.pad_l + fr->lop.pad_r);
+			h = fr->h - (fr->lop.pad_t + fr->lop.pad_b);
+			render_sc(fr->sc, cr, w, h, pc);
+
 			continue;
+
 		}
 
 		/* Sort out the transformation for the margins */
-		cairo_translate(cr, fr->rendering_order[i]->x,
-		                    fr->rendering_order[i]->y);
+		cairo_translate(cr, fr->rendering_order[i]->offs_x,
+		                    fr->rendering_order[i]->offs_y);
 
 		render_frame(fr->rendering_order[i], cr, pc);
 

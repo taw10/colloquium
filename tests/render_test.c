@@ -80,6 +80,14 @@ int main(int argc, char *argv[])
 	if ( fr2->rendering_order == NULL ) return 1;
 	fr2->rendering_order[0] = fr2;
 	fr2->num_ro = 1;
+	fr2->lop.pad_l = 10.0;
+	fr2->lop.pad_r = 10.0;
+	fr2->lop.pad_t = 10.0;
+	fr2->lop.pad_b = 10.0;
+	fr2->lop.margin_l = 10.0;
+	fr2->lop.margin_r = 10.0;
+	fr2->lop.margin_t = 10.0;
+	fr2->lop.margin_b = 10.0;
 
 	fr = calloc(1, sizeof(struct frame));
 	if ( fr == NULL ) return 1;
@@ -88,10 +96,14 @@ int main(int argc, char *argv[])
 	if ( fr->rendering_order == NULL ) return 1;
 	fr->rendering_order[0] = fr;  /* Render parent first */
 	fr->rendering_order[1] = fr2;
-	fr->lop.margin_l = 10.0;
-	fr->lop.margin_r = 10.0;
-	fr->lop.margin_t = 10.0;
-	fr->lop.margin_b = 10.0;
+	fr->lop.margin_l = 0.0;
+	fr->lop.margin_r = 0.0;
+	fr->lop.margin_t = 0.0;
+	fr->lop.margin_b = 0.0;
+	fr->lop.pad_l = 10.0;
+	fr->lop.pad_r = 10.0;
+	fr->lop.pad_t = 10.0;
+	fr->lop.pad_b = 10.0;
 	fr->num_ro = 2;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);

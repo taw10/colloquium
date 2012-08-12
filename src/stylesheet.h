@@ -33,10 +33,16 @@ struct frame_class
 	char *name;
 
 	/* Margins of this frame from the parent */
-	double   margin_left;
-	double   margin_right;
-	double   margin_top;
-	double   margin_bottom;
+	double   margin_l;
+	double   margin_r;
+	double   margin_t;
+	double   margin_b;
+
+	/* Padding between this frame and any children */
+	double   pad_l;
+	double   pad_r;
+	double   pad_t;
+	double   pad_b;
 
 	/* Storycode prologue (run through the interpreter before the
 	 * main storycode for the frame */

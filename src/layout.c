@@ -31,14 +31,12 @@
 #include "presentation.h"
 #include "layout.h"
 
-
-/* Calculate layout for frame (and all its children) based on size */
 void layout_frame(struct frame *fr, double w, double h)
 {
+	int i;
+
 	fr->w = w;
 	fr->h = h;
-
-	int i;
 
 	for ( i=0; i<fr->num_ro; i++ ) {
 
@@ -49,11 +47,15 @@ void layout_frame(struct frame *fr, double w, double h)
 
 		if ( child == fr ) continue;
 
-		child->x = fr->lop.margin_l;
-		child->y = fr->lop.margin_t;
-		child_w = w - (fr->lop.margin_l + fr->lop.margin_r);
-		child_h = h - (fr->lop.margin_t + fr->lop.margin_b);
+		child->offs_x = child->lop.margin_l + fr->lop.pad_l;
+		child->offs_y = child->lop.margin_t + fr->lop.pad_r;
+		child_w = w - (child->lop.margin_l + child->lop.margin_r);
+		child_h = h - (child->lop.margin_t + child->lop.margin_b);
+		child_w -= (fr->lop.pad_l + fr->lop.pad_r);
+		child_h -= (fr->lop.pad_t + fr->lop.pad_b);
+
 		layout_frame(child, child_w, child_h);
 
 	}
 }
+

@@ -84,6 +84,11 @@ SCBlockList *sc_block_list_new()
 
 void sc_block_list_free(SCBlockList *bl)
 {
+	int i;
+
+	for ( i=0; i<bl->n_blocks; i++ ) {
+		free(bl->blocks[i]);
+	}
 	free(bl->blocks);
 	free(bl);
 }

@@ -32,6 +32,19 @@
 
 int main(int argc, char *argv[])
 {
+	SCBlockList *bl;
+	SCBlockListIterator *iter;
+	char *b;
+
+	bl = sc_find_blocks("\\bg{wibble \\f{wobble}}\\bg{rwawr}Wobble", "bg");
+
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+		printf("'%s'\n", b);
+	}
+	sc_block_list_free(bl);
 
 	return 0;
 }

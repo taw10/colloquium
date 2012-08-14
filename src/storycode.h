@@ -27,8 +27,13 @@
 #include <config.h>
 #endif
 
+typedef struct _scblocklist SCBlockList;
+typedef struct _scblocklistiterator SCBlockListIterator;
 
-extern char *sc_get_final_font(const char *sc);
-extern char *sc_get_final_text_colour(const char *sc);
+char *sc_block_list_first(SCBlockList *bl, SCBlockListIterator **piter);
+char *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter);
+
+extern SCBlockList *sc_find_blocks(const char *sc, const char *blockname);
+extern void sc_block_list_free(SCBlockList *bl);
 
 #endif	/* STORYCODE_H */

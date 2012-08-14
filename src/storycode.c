@@ -149,7 +149,7 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 		return NULL;
 	}
 
-	strcat(label, "\\");
+	strcpy(label, "\\");
 	strcat(label, blockname);
 	strcat(label, "{");
 

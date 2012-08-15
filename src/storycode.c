@@ -160,10 +160,10 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 
 		if ( pos != NULL ) {
 
-			 int i;
-			 int bct = 1;
-			 int found = 0;
-			 int ml = strlen(pos);
+			int i;
+			int bct = 1;
+			int found = 0;
+			int ml = strlen(pos);
 
 			pos += strlen(label);
 

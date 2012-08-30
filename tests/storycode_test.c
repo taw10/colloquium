@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 {
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
-	char *b;
+	struct scblock *b;
 
 	bl = sc_find_blocks("\\bg{wibble \\f{wobble}}\\bg{rwawr}Wobble", "bg");
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	      b != NULL;
 	      b = sc_block_list_next(bl, iter) )
 	{
-		printf("'%s'\n", b);
+		printf("'%s'\n", b->contents);
 	}
 	sc_block_list_free(bl);
 

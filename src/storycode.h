@@ -30,8 +30,16 @@
 typedef struct _scblocklist SCBlockList;
 typedef struct _scblocklistiterator SCBlockListIterator;
 
-char *sc_block_list_first(SCBlockList *bl, SCBlockListIterator **piter);
-char *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter);
+struct scblock
+{
+	char *name;
+	char *options;
+	char *contents;
+};
+
+struct scblock *sc_block_list_first(SCBlockList *bl,
+                                    SCBlockListIterator **piter);
+struct scblock *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter);
 
 extern SCBlockList *sc_find_blocks(const char *sc, const char *blockname);
 extern void sc_block_list_free(SCBlockList *bl);

@@ -36,8 +36,9 @@
 struct _scblocklist
 {
 	int n_blocks;
-	char **blocks;
 	int max_blocks;
+
+	struct scblock *blocks;
 };
 
 
@@ -49,13 +50,12 @@ struct _scblocklistiterator
 
 static int allocate_blocks(SCBlockList *bl)
 {
-	char **blocks_new;
+	struct scblock *blocks_new;
 
-	blocks_new = realloc(bl->blocks, bl->max_blocks*sizeof(char *));
+	blocks_new = realloc(bl->blocks, bl->max_blocks*sizeof(struct scblock));
 	if ( blocks_new == NULL ) {
 		return 1;
 	}
-
 	bl->blocks = blocks_new;
 
 	return 0;
@@ -81,20 +81,22 @@ SCBlockList *sc_block_list_new()
 }
 
 
-
 void sc_block_list_free(SCBlockList *bl)
 {
 	int i;
 
 	for ( i=0; i<bl->n_blocks; i++ ) {
-		free(bl->blocks[i]);
+		free(bl->blocks[i].name);
+		free(bl->blocks[i].options);
+		free(bl->blocks[i].contents);
 	}
 	free(bl->blocks);
 	free(bl);
 }
 
 
-char *sc_block_list_first(SCBlockList *bl, SCBlockListIterator **piter)
+struct scblock *sc_block_list_first(SCBlockList *bl,
+                                    SCBlockListIterator **piter)
 {
 	SCBlockListIterator *iter;
 
@@ -106,11 +108,11 @@ char *sc_block_list_first(SCBlockList *bl, SCBlockListIterator **piter)
 	iter->pos = 0;
 	*piter = iter;
 
-	return bl->blocks[0];
+	return &bl->blocks[0];
 }
 
 
-char *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter)
+struct scblock *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter)
 {
 	iter->pos++;
 	if ( iter->pos == bl->n_blocks ) {
@@ -118,18 +120,21 @@ char *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter)
 		return NULL;
 	}
 
-	return bl->blocks[iter->pos];
+	return &bl->blocks[iter->pos];
 }
 
 
-static int sc_block_list_add(SCBlockList *bl, char *text)
+static int sc_block_list_add(SCBlockList *bl,
+                             char *name, char *options, char *contents)
 {
 	if ( bl->n_blocks == bl->max_blocks ) {
 		bl->max_blocks += 64;
 		if ( allocate_blocks(bl) ) return 1;
 	}
 
-	bl->blocks[bl->n_blocks] = text;
+	bl->blocks[bl->n_blocks].name = name;
+	bl->blocks[bl->n_blocks].options = options;
+	bl->blocks[bl->n_blocks].contents = contents;
 	bl->n_blocks++;
 	return 0;
 }
@@ -186,7 +191,11 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 				return NULL;
 			}
 
-			if ( sc_block_list_add(bl, strndup(pos, i)) ) {
+			/* FIXME: Find options */
+
+			if ( sc_block_list_add(bl, strdup(blockname), NULL,
+			                       strndup(pos, i)) )
+			{
 				fprintf(stderr, "Failed to add block.\n");
 				sc_block_list_free(bl);
 				return NULL;

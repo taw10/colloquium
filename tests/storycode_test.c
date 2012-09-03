@@ -35,14 +35,38 @@ int main(int argc, char *argv[])
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
 	struct scblock *b;
+	const char *tt = "\\bg[a=b]{wibble \\f{wobble}}\\bg{rwawr}Wobble"
+	                 "\\f{wibble \\bg[muhu]{wobble}}";
 
-	bl = sc_find_blocks("\\bg{wibble \\f{wobble}}\\bg{rwawr}Wobble", "bg");
+	printf("'%s' ->\n", tt);
+	bl = sc_find_blocks(tt, "bg");
+
+	if ( bl == NULL ) {
+		printf("Failed to find blocks.\n");
+		return 1;
+	}
 
 	for ( b = sc_block_list_first(bl, &iter);
 	      b != NULL;
 	      b = sc_block_list_next(bl, iter) )
 	{
-		printf("'%s'\n", b->contents);
+		printf("   \\%s [%s] {%s}\n", b->name, b->options, b->contents);
+	}
+	sc_block_list_free(bl);
+
+	printf("->\n");
+	bl = sc_find_blocks(tt, NULL);
+
+	if ( bl == NULL ) {
+		printf("Failed to find blocks.\n");
+		return 1;
+	}
+
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+		printf("   \\%s [%s] {%s}\n", b->name, b->options, b->contents);
 	}
 	sc_block_list_free(bl);
 

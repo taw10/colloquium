@@ -57,6 +57,7 @@ struct frame
 
 	struct frame            **rendering_order;
 	int                       num_ro;
+	int                       max_ro;
 
 	char                     *sc;  /* Storycode */
 

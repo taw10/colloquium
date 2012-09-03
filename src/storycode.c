@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "storycode.h"
 #include "presentation.h"
@@ -136,79 +137,329 @@ static int sc_block_list_add(SCBlockList *bl,
 	bl->blocks[bl->n_blocks].options = options;
 	bl->blocks[bl->n_blocks].contents = contents;
 	bl->n_blocks++;
+
 	return 0;
+}
+
+
+static int get_subexpr(const char *sc, char *bk, char **pcontents, int *err)
+{
+	size_t ml;
+	int i;
+	int bct = 1;
+	int found = 0;
+	char *contents;
+
+	*err = 0;
+
+	ml = strlen(sc);
+	contents = malloc(ml+1);
+	if ( contents == NULL ) {
+		*err = -1;
+		return 0;
+	}
+	*pcontents = contents;
+
+	for ( i=0; i<ml; i++ ) {
+		if ( sc[i] == bk[0] ) {
+			bct++;
+		} else if ( sc[i] == bk[1] ) {
+			bct--;
+		}
+		if ( bct == 0 ) {
+			found = 1;
+			break;
+		}
+		contents[i] = sc[i];
+	}
+
+	if ( (!found) || (bct != 0) ) {
+		*err = 1;
+		return 0;
+	}
+
+	contents[i] = '\0';
+	return i+1;
+}
+
+
+static size_t read_block(const char *sc, char **pname, char **options,
+                         char **contents, int *err)
+{
+	size_t l, i, j;
+	char *name;
+	int done;
+
+	*err = 0;
+
+	l = strlen(sc);
+	i = 0;  j = 0;
+	name = malloc(l+1);
+	if ( name == NULL ) {
+		*err = 1;
+		return 0;
+	}
+
+	done = 0;
+	do {
+
+		char c = sc[i];
+
+		if ( isalnum(c) ) {
+			name[j++] = c;
+			i++;
+		} else {
+			/* Found the end of the name */
+			done = 1;
+		}
+
+	} while ( !done && (i<l) );
+
+	name[j] = '\0';
+
+	if ( !done ) {
+		*err = 1;
+		printf("Couldn't find end of block beginning '%s'\n", sc);
+		return 0;
+	}
+	*pname = name;
+
+	if ( sc[i] == '[' ) {
+
+		i += get_subexpr(sc+i+1, "[]", options, err) + 1;
+		if ( *err ) {
+			printf("Couldn't find end of options '%s'\n", sc+i);
+			return 0;
+		}
+
+	} else {
+		*options = NULL;
+	}
+
+	if ( sc[i] == '{' ) {
+
+		i += get_subexpr(sc+i+1, "{}", contents, err) + 1;
+		if ( *err ) {
+			printf("Couldn't find end of content '%s'\n", sc+i);
+			return 0;
+		}
+
+	} else {
+		*contents = NULL;
+	}
+
+	return i+1;
 }
 
 
 SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 {
 	SCBlockList *bl;
-	const char *pos;
-	char label[1024];
+	char *tbuf;
+	size_t len, i, j;
 
 	bl = sc_block_list_new();
 	if ( bl == NULL ) return NULL;
 
-	if ( strlen(blockname) > 1021 ) {
-		fprintf(stderr, "Block name '%s' too long.\n", blockname);
+	len = strlen(sc);
+	tbuf = malloc(len+1);
+	if ( tbuf == NULL ) {
+		sc_block_list_free(bl);
 		return NULL;
 	}
 
-	strcpy(label, "\\");
-	strcat(label, blockname);
-	strcat(label, "{");
-
-	pos = sc;
+	i = 0;  j = 0;
 	do {
 
-		pos = strstr(pos, label);
+		if ( sc[i] == '\\' ) {
 
-		if ( pos != NULL ) {
+			int err;
+			char *name = NULL;
+			char *options = NULL;
+			char *contents = NULL;
 
-			int i;
-			int bct = 1;
-			int found = 0;
-			int ml = strlen(pos);
-
-			pos += strlen(label);
-
-			for ( i=0; i<ml; i++ ) {
-				if ( pos[i] == '{' ) {
-					bct++;
-				} else if ( pos[i] == '}' ) {
-					bct--;
+			if ( (blockname == NULL) && (j != 0) ) {
+				tbuf[j] = '\0';
+				if ( sc_block_list_add(bl, NULL, NULL,
+				                       strdup(tbuf)) )
+				{
+					fprintf(stderr,
+					        "Failed to add block.\n");
+					sc_block_list_free(bl);
+					free(tbuf);
+					return NULL;
 				}
-				if ( bct == 0 ) {
-					found = 1;
-					break;
-				}
+				j = 0;
 			}
 
-			if ( (!found) || (bct != 0) ) {
-				fprintf(stderr, "Parse error while looking for"
-				                " block '%s'\n", blockname);
+			i += read_block(sc+i+1, &name, &options, &contents,
+			                &err);
+			if ( err ) {
+				printf("Parse error\n");
 				sc_block_list_free(bl);
+				free(tbuf);
 				return NULL;
 			}
 
-			/* FIXME: Find options */
-
-			if ( sc_block_list_add(bl, strdup(blockname), NULL,
-			                       strndup(pos, i)) )
+			if ( (blockname == NULL)
+			  || ((blockname != NULL) && !strcmp(blockname, name)) )
 			{
-				fprintf(stderr, "Failed to add block.\n");
-				sc_block_list_free(bl);
-				return NULL;
+				if ( sc_block_list_add(bl, name, options,
+				                       contents) )
+				{
+					fprintf(stderr,
+					        "Failed to add block.\n");
+					sc_block_list_free(bl);
+					free(tbuf);
+					return NULL;
+				}
 			}
 
-			pos += i+1;
-			printf("Remaining text '%s'\n", pos);
+		} else {
 
+			tbuf[j++] = sc[i++];
 		}
 
-	} while ( pos != NULL );
+	} while ( i<len );
+
+	if ( (blockname == NULL) && (j != 0) ) {
+		tbuf[j] = '\0';
+		if ( sc_block_list_add(bl, NULL, NULL, tbuf) )
+		{
+			fprintf(stderr,
+			        "Failed to add block.\n");
+			sc_block_list_free(bl);
+			free(tbuf);
+			return NULL;
+		}
+		j = 0;
+	}
 
 	return bl;
+}
+
+
+static char *remove_blocks(const char *in, const char *blockname)
+{
+	SCBlockList *bl;
+	SCBlockListIterator *iter;
+	char *out;
+	struct scblock *b;
+
+	bl = sc_find_blocks(in, NULL);
+	if ( bl == NULL ) {
+		printf("Failed to find blocks.\n");
+		return NULL;
+	}
+
+	out = malloc(strlen(in)+1);
+	if ( out == NULL ) return NULL;
+	out[0] = '\0';
+
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+		if ( b->name == NULL ) {
+			strcat(out, b->contents);
+		} else {
+
+			if ( strcmp(blockname, b->name) != 0 ) {
+				strcat(out, "\\");
+				strcat(out, b->name);
+				if ( b->options != NULL ) {
+					strcat(out, "[");
+					strcat(out, b->options);
+					strcat(out, "]");
+				}
+				if ( b->contents != NULL ) {
+					strcat(out, "{");
+					strcat(out, b->contents);
+					strcat(out, "}");
+				}
+
+				if ( (b->options == NULL)
+				  && (b->contents == NULL) ) {
+					strcat(out, " ");
+				}
+
+			}
+
+		}
+	}
+	sc_block_list_free(bl);
+
+	return out;
+}
+
+
+static int alloc_ro(struct frame *fr)
+{
+	struct frame **new_ro;
+
+	new_ro = realloc(fr->rendering_order,
+	                 fr->max_ro*sizeof(struct frame *));
+	if ( new_ro == NULL ) return 1;
+
+	fr->rendering_order = new_ro;
+
+	return 0;
+}
+
+
+static struct frame *frame_new()
+{
+	struct frame *n;
+
+	n = calloc(1, sizeof(struct frame));
+	if ( n == NULL ) return NULL;
+
+	n->rendering_order = NULL;
+	n->max_ro = 32;
+	alloc_ro(n);
+
+	n->num_ro = 1;
+	n->rendering_order[0] = n;
+
+	return n;
+}
+
+
+static struct frame *add_subframe(struct frame *fr, char *sc)
+{
+	struct frame *n;
+
+	n = frame_new();
+	if ( n == NULL ) return NULL;
+
+	if ( fr->num_ro == fr->max_ro ) {
+		fr->max_ro += 32;
+		if ( alloc_ro(fr) ) return NULL;
+	}
+
+	fr->rendering_order[fr->num_ro++] = fr;
+
+	return fr;
+}
+
+
+static void recursive_unpack(struct frame *fr, const char *sc)
+{
+	SCBlockList *bl;
+	SCBlockListIterator *iter;
+	struct scblock *b;
+
+	bl = sc_find_blocks(sc, "f");
+
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+		struct frame *sfr;
+		sfr = add_subframe(fr, remove_blocks(sc, "f"));
+		recursive_unpack(sfr, b->contents);
+	}
+	sc_block_list_free(bl);
 }
 
 
@@ -217,10 +468,12 @@ struct frame *sc_unpack(const char *sc)
 {
 	struct frame *fr;
 
-	fr = calloc(1, sizeof(struct frame));
+	fr = frame_new();
 	if ( fr == NULL ) return NULL;
 
-
+	fr->sc = remove_blocks(sc, "f");
+	printf("Top frame: '%s'\n", fr->sc);
+	recursive_unpack(fr, sc);
 
 	return fr;
 }

@@ -44,4 +44,6 @@ struct scblock *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter);
 extern SCBlockList *sc_find_blocks(const char *sc, const char *blockname);
 extern void sc_block_list_free(SCBlockList *bl);
 
+extern struct frame *sc_unpack(const char *sc);
+
 #endif	/* STORYCODE_H */

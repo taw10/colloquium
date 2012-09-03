@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 #include <string.h>
+#include <assert.h>
 
 #include "../src/storycode.h"
 #include "../src/render.h"
@@ -71,10 +72,39 @@ int main(int argc, char *argv[])
 	GtkWidget *window;
 	GtkWidget *drawingarea;
 	struct frame *fr;
+	struct style *sty;
+	struct style *sty2;
 
 	gtk_init(&argc, &argv);
 
-	fr = sc_unpack("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur.\\f{Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros. Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.} Wibble Wobble.");
+	fr = sc_unpack("Lorem ipsum\\f{Donec ut libero} Wibble Wobble.");
+
+	sty = calloc(1, sizeof(struct style));
+	sty->lop.pad_l = 10.0;
+	sty->lop.pad_r = 10.0;
+	sty->lop.pad_t = 10.0;
+	sty->lop.pad_b = 10.0;
+	sty->lop.margin_l = 0.0;
+	sty->lop.margin_r = 0.0;
+	sty->lop.margin_t = 0.0;
+	sty->lop.margin_b = 0.0;
+	sty->name = strdup("Default");
+
+	sty2 = calloc(1, sizeof(struct style));
+	sty2->lop.pad_l = 0.0;
+	sty2->lop.pad_r = 0.0;
+	sty2->lop.pad_t = 0.0;
+	sty2->lop.pad_b = 0.0;
+	sty2->lop.margin_l = 20.0;
+	sty2->lop.margin_r = 20.0;
+	sty2->lop.margin_t = 20.0;
+	sty2->lop.margin_b = 20.0;
+	sty2->name = strdup("Default");
+
+	fr->style = sty;
+	fr->rendering_order[1]->style = sty2;
+
+	assert(fr->rendering_order[0] == fr);
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 

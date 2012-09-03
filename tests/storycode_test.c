@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
 	struct scblock *b;
-	const char *tt = "\\bg[a=b]{wibble \\f{wobble}}\\bg{rwawr}Wobble"
-	                 "\\f{wibble \\bg[muhu]{wobble}}";
+	const char *tt = "\\bg[a=b]{wibble \\f{wobble}}\\bg{rwawr}\\muhu Wobble"
+	                 "\\wibble{}\\f{wibble \\bg[muhu]{wobble}}\\frib[\\f] f";
 
 	printf("'%s' ->\n", tt);
 	bl = sc_find_blocks(tt, "bg");

@@ -425,7 +425,7 @@ static struct frame *frame_new()
 }
 
 
-static struct frame *add_subframe(struct frame *fr, char *sc)
+static struct frame *add_subframe(struct frame *fr)
 {
 	struct frame *n;
 
@@ -437,9 +437,9 @@ static struct frame *add_subframe(struct frame *fr, char *sc)
 		if ( alloc_ro(fr) ) return NULL;
 	}
 
-	fr->rendering_order[fr->num_ro++] = fr;
+	fr->rendering_order[fr->num_ro++] = n;
 
-	return fr;
+	return n;
 }
 
 
@@ -456,10 +456,32 @@ static void recursive_unpack(struct frame *fr, const char *sc)
 	      b = sc_block_list_next(bl, iter) )
 	{
 		struct frame *sfr;
-		sfr = add_subframe(fr, remove_blocks(sc, "f"));
+		sfr = add_subframe(fr);
+		sfr->sc = remove_blocks(b->contents, "f");
 		recursive_unpack(sfr, b->contents);
 	}
 	sc_block_list_free(bl);
+}
+
+
+static void show_heirarchy(struct frame *fr, const char *t)
+{
+	int i;
+	char tn[1024];
+
+	strcpy(tn, t);
+	strcat(tn, "  |-> ");
+
+	printf("%s%p %s\n", t, fr, fr->sc);
+
+	for ( i=0; i<fr->num_ro; i++ ) {
+		if ( fr->rendering_order[i] != fr ) {
+			show_heirarchy(fr->rendering_order[i], tn);
+		} else {
+			printf("%s<this frame>\n", tn);
+		}
+	}
+
 }
 
 
@@ -472,8 +494,9 @@ struct frame *sc_unpack(const char *sc)
 	if ( fr == NULL ) return NULL;
 
 	fr->sc = remove_blocks(sc, "f");
-	printf("Top frame: '%s'\n", fr->sc);
 	recursive_unpack(fr, sc);
+
+	show_heirarchy(fr, "");
 
 	return fr;
 }

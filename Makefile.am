@@ -5,7 +5,8 @@ ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = src/colloquium
 
 AM_CFLAGS = -Wall
-AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib -I$(top_srcdir)/lib
+AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \
+              -I$(top_srcdir)/lib
 LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 
 src_colloquium_SOURCES = src/colloquium.c src/storycode.c src/render.c \

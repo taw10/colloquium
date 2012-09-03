@@ -1,5 +1,5 @@
 /*
- * storycode_test.c
+ * render_test.c
  *
  * Colloquium - A tiny presentation program
  *

@@ -3,7 +3,7 @@
  *
  * Colloquium - A tiny presentation program
  *
- * Copyright (c) 2011 Thomas White <taw@bitwiz.org.uk>
+ * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,9 @@
 #include <gtk/gtk.h>
 #include <getopt.h>
 
+#include "presentation.h"
+#include "mainwindow.h"
+
 
 static void show_help(const char *s)
 {
@@ -43,7 +46,7 @@ static void show_help(const char *s)
 int main(int argc, char *argv[])
 {
 	int c;
-//	struct presentation *p;
+	struct presentation *p;
 
 	/* Long options */
 	const struct option longopts[] = {
@@ -71,13 +74,13 @@ int main(int argc, char *argv[])
 
 	}
 
-//	p = new_presentation();
-//	p->cur_edit_slide = add_slide(p, 0);
-//	p->completely_empty = 1;
-//	if ( open_mainwindow(p) ) {
-//		fprintf(stderr, "Couldn't open main window.\n");
-//		return 1;
-//	}
+	p = new_presentation();
+	p->cur_edit_slide = add_slide(p, 0);
+	p->completely_empty = 1;
+	if ( open_mainwindow(p) ) {
+		fprintf(stderr, "Couldn't open main window.\n");
+		return 1;
+	}
 
 	gtk_main();
 

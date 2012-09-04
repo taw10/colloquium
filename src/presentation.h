@@ -29,6 +29,7 @@
 
 #include <cairo.h>
 #include <pango/pango.h>
+#include <gtk/gtk.h>
 
 struct frame;
 #include "layout.h"
@@ -73,6 +74,87 @@ struct frame
 	/* True if this frame should be deleted on the next mouse click */
 	int                       empty;
 };
+
+
+struct presentation
+{
+	char             *titlebar;
+	char             *filename;
+	int               completely_empty;
+	int              *num_presentations;
+
+	struct prefs     *prefs;
+
+	struct toolinfo  *select_tool;
+	struct toolinfo  *text_tool;
+	struct toolinfo  *image_tool;
+
+	GtkWidget        *window;
+	GtkWidget        *drawingarea;
+	GtkUIManager     *ui;
+	GtkActionGroup   *action_group;
+	GtkIMContext     *im_context;
+	GtkWidget        *tbox;
+	GtkWidget        *cur_tbox;
+	struct notes     *notes;
+
+	/* Pointers to the current "editing" and "projection" slides */
+	struct slide     *cur_edit_slide;
+	struct slide     *cur_proj_slide;
+	struct slide     *cur_notes_slide;
+	int               slideshow_linked;
+
+	/* This is the "native" size of the slide.  It only exists to give
+	 * font size some meaning in the context of a somewhat arbitrary DPI */
+	double            slide_width;
+	double            slide_height;
+
+	/* Width of a slide in the editor, projector or thumbnail (pixels) */
+	int               edit_slide_width;
+	int               proj_slide_width;
+	int               thumb_slide_width;
+
+	/* This is just to help with rendering the slides within the
+	 * editing window. */
+	double            border_offs_x;
+	double            border_offs_y;
+
+	/* Slideshow stuff */
+	GtkWidget        *slideshow;
+	GtkWidget        *ss_drawingarea;
+	GdkCursor        *blank_cursor;
+	int               ss_blank;
+	char              ss_geom[256];
+
+	/* Tool status */
+	struct toolinfo  *cur_tool;
+
+	/* Stuff to do with drag and drop import of "content" */
+	int               drag_preview_pending;
+	int               have_drag_data;
+	int               drag_highlight;
+	double            import_width;
+	double            import_height;
+	int               import_acceptable;
+
+	unsigned int      num_slides;
+	struct slide    **slides;
+};
+
+
+extern struct presentation *new_presentation(void);
+extern void free_presentation(struct presentation *p);
+
+extern struct slide *new_slide(void);
+extern struct slide *add_slide(struct presentation *p, int pos);
+extern int insert_slide(struct presentation *p, struct slide *s, int pos);
+extern void free_slide(struct slide *s);
+
+extern void get_titlebar_string(struct presentation *p);
+
+extern int slide_number(struct presentation *p, struct slide *s);
+
+#define UNUSED __attribute__((unused))
 
 
 #endif	/* PRESENTATION_H */

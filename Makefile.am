@@ -10,7 +10,7 @@ AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \
 LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 
 src_colloquium_SOURCES = src/colloquium.c src/storycode.c src/render.c \
-                         src/layout.c
+                         src/layout.c src/mainwindow.c src/presentation.c
 
 INCLUDES = "-I$(top_srcdir)/data"
 

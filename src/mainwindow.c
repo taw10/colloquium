@@ -602,7 +602,7 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 
 
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
-                           struct presentation *p)
+                         struct presentation *p)
 {
 	double xoff, yoff;
 	int width, height;
@@ -626,8 +626,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 
 	/* Draw the slide from the cache */
 	cairo_rectangle(cr, 0.0, 0.0, width, height);
-	cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
-	                         xoff, yoff);
+//	cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
+//	                         xoff, yoff);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
 	cairo_fill(cr);
 
 	cairo_translate(cr, xoff, yoff);

@@ -60,7 +60,7 @@ static void redraw_slide(struct slide *s)
 		w = s->parent->edit_slide_width;
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
 		s->rendered_edit = render_slide(s, w, h);
-		
+
 	}
 
 	/* Is this slide currently being displayed on the projector? */

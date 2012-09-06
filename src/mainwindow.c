@@ -37,6 +37,47 @@
 #include "render.h"
 
 
+static void redraw_slide(struct slide *s)
+{
+	int w, h;
+
+	if ( s->rendered_thumb != NULL ) {
+		cairo_surface_destroy(s->rendered_thumb);
+	}
+
+	w = s->parent->thumb_slide_width;
+	h = (s->parent->slide_height/s->parent->slide_width) * w;
+	s->rendered_thumb = render_slide(s, w, h);
+	/* FIXME: Request redraw for slide sorter if open */
+
+	/* Is this slide currently open in the editor? */
+	if ( s == s->parent->cur_edit_slide ) {
+
+		if ( s->rendered_edit != NULL ) {
+			cairo_surface_destroy(s->rendered_edit);
+		}
+
+		w = s->parent->edit_slide_width;
+		h = (s->parent->slide_height/s->parent->slide_width) * w;
+		s->rendered_edit = render_slide(s, w, h);
+		
+	}
+
+	/* Is this slide currently being displayed on the projector? */
+	if ( s == s->parent->cur_proj_slide ) {
+
+		if ( s->rendered_proj != NULL ) {
+			cairo_surface_destroy(s->rendered_proj);
+		}
+
+		w = s->parent->proj_slide_width;
+		h = (s->parent->slide_height/s->parent->slide_width) * w;
+		s->rendered_proj = render_slide(s, w, h);
+
+	}
+}
+
+
 static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
                        GtkContainer *container)
 {
@@ -389,7 +430,7 @@ void notify_slide_changed(struct presentation *p, struct slide *np)
 	/* FIXME: Free old rendered stuff */
 
 	update_toolbar(p);
-	//redraw_slide(p->cur_edit_slide);
+	redraw_slide(p->cur_edit_slide);
 
 	if ( p->notes != NULL ) {
 		//notify_notes_slide_changed(p, np);
@@ -623,12 +664,11 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	xoff = (width - p->slide_width)/2.0;
 	yoff = (height - p->slide_height)/2.0;
 	p->border_offs_x = xoff;  p->border_offs_y = yoff;
-
+	
 	/* Draw the slide from the cache */
-	cairo_rectangle(cr, 0.0, 0.0, width, height);
-//	cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
-//	                         xoff, yoff);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+	cairo_rectangle(cr, xoff, yoff, p->slide_width, p->slide_height);
+	cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
+	                         xoff, yoff);
 	cairo_fill(cr);
 
 	cairo_translate(cr, xoff, yoff);
@@ -724,8 +764,7 @@ int open_mainwindow(struct presentation *p)
 	p->proj_slide_width = 2048;
 	p->thumb_slide_width = 320;  /* FIXME: Completely made up */
 
-	/* FIXME */
-	//redraw_slide(p->cur_edit_slide);
+	redraw_slide(p->cur_edit_slide);
 
 	return 0;
 }

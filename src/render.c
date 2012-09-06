@@ -140,7 +140,15 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 
 	cr = cairo_create(surf);
-	cairo_scale(cr, w, h);
+
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	cairo_fill(cr);
+
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
 
 	fopts = cairo_font_options_create();
 	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_NONE);
@@ -148,7 +156,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_SUBPIXEL);
 	cairo_set_font_options(cr, fopts);
 
-	render_frame(s->top, cr, NULL); /* FIXME: pc */
+	//render_frame(s->top, cr, NULL); /* FIXME: pc */
 
 	cairo_font_options_destroy(fopts);
 	cairo_destroy(cr);

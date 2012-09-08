@@ -33,6 +33,7 @@
 
 struct frame;
 #include "layout.h"
+#include "stylesheet.h"
 
 struct slide
 {
@@ -83,20 +84,11 @@ struct presentation
 	int               completely_empty;
 	int              *num_presentations;
 
-	struct prefs     *prefs;
-
-	struct toolinfo  *select_tool;
-	struct toolinfo  *text_tool;
-	struct toolinfo  *image_tool;
-
 	GtkWidget        *window;
 	GtkWidget        *drawingarea;
 	GtkUIManager     *ui;
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
-	GtkWidget        *tbox;
-	GtkWidget        *cur_tbox;
-	struct notes     *notes;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;
@@ -126,17 +118,7 @@ struct presentation
 	int               ss_blank;
 	char              ss_geom[256];
 
-	/* Tool status */
-	struct toolinfo  *cur_tool;
-
-	/* Stuff to do with drag and drop import of "content" */
-	int               drag_preview_pending;
-	int               have_drag_data;
-	int               drag_highlight;
-	double            import_width;
-	double            import_height;
-	int               import_acceptable;
-
+	StyleSheet       *ss;
 	unsigned int      num_slides;
 	struct slide    **slides;
 };

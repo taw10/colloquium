@@ -62,7 +62,7 @@ void free_presentation(struct presentation *p)
 int insert_slide(struct presentation *p, struct slide *new, int pos)
 {
 	struct slide **try;
-	
+
 	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
 	if ( try == NULL ) {
 		free(new);
@@ -207,7 +207,6 @@ struct presentation *new_presentation()
 	new->ui = NULL;
 	new->action_group = NULL;
 	new->slideshow = NULL;
-	new->notes = NULL;
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;
@@ -220,8 +219,8 @@ struct presentation *new_presentation()
 
 	new->completely_empty = 1;
 
-	//new->ss = new_stylesheet();
-	//default_stylesheet(new->ss);
+	new->ss = new_stylesheet();
+	default_stylesheet(new->ss);
 
 	return new;
 }

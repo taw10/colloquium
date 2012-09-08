@@ -3,7 +3,7 @@
  *
  * Colloquium - A tiny presentation program
  *
- * Copyright (c) 2011 Thomas White <taw@bitwiz.org.uk>
+ * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 
 struct frame;
 #include "layout.h"
+#include "loadsave.h"
 
 
 struct style
@@ -50,13 +51,35 @@ struct slide_template
 
 	struct frame_class  **frame_classes;
 	int                   n_frame_classes;
+};
 
-	struct bgblock      **bgblocks;
-	int                   n_bgblocks;
+
+struct _stylesheet
+{
+	struct style  **styles;
+	int             n_styles;
 };
 
 
 typedef struct _stylesheet StyleSheet;
 struct presentation;
+
+extern StyleSheet *new_stylesheet();
+extern StyleSheet *load_stylesheet(const char *filename);
+extern void free_stylesheet(StyleSheet *ss);
+extern void default_stylesheet(StyleSheet *ss);
+
+extern struct style *new_style(StyleSheet *ss, const char *name);
+
+extern int save_stylesheet(StyleSheet *ss, const char *filename);
+
+extern struct style *find_style(StyleSheet *ss, const char *name);
+
+extern enum justify str_to_halign(char *halign);
+extern enum vert_pos str_to_valign(char *valign);
+
+extern StyleSheet *tree_to_stylesheet(struct ds_node *root);
+extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
+
 
 #endif	/* STYLESHEET_H */

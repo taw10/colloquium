@@ -94,8 +94,7 @@ static gint quit_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
-/* FIXME (unused) */
-static UNUSED void show_error(struct presentation *p, const char *message)
+static void show_error(struct presentation *p, const char *message)
 {
 	GtkWidget *window;
 
@@ -163,11 +162,11 @@ static gint open_response_sig(GtkWidget *d, gint response,
 
 		if ( p->completely_empty ) {
 
-			/* FIXME */
-			//if ( load_presentation(p, filename) ) {
-			//	show_error(p, "Failed to open presentation");
-			//}
-			//redraw_slide(p->cur_edit_slide);
+			if ( load_presentation(p, filename) ) {
+				show_error(p, "Failed to open presentation");
+			}
+			p->cur_edit_slide = p->slides[0];
+			redraw_slide(p->cur_edit_slide);
 			update_toolbar(p);
 
 		} else {
@@ -176,11 +175,11 @@ static gint open_response_sig(GtkWidget *d, gint response,
 
 			/* FIXME */
 			p = new_presentation();
-			//if ( load_presentation(p, filename) ) {
-			//	show_error(p, "Failed to open presentation");
-			//} else {
+			if ( load_presentation(p, filename) ) {
+				show_error(p, "Failed to open presentation");
+			} else {
 				open_mainwindow(p);
-			//}
+			}
 
 		}
 
@@ -238,10 +237,9 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
 
-		/* FIXME */
-		//if ( save_presentation(p, filename) ) {
-		//	show_error(p, "Failed to save presentation");
-		//}
+		if ( save_presentation(p, filename) ) {
+			show_error(p, "Failed to save presentation");
+		}
 
 		g_free(filename);
 
@@ -281,8 +279,7 @@ static gint save_sig(GtkWidget *widget, struct presentation *p)
 		return saveas_sig(widget, p);
 	}
 
-	/* FIXME */
-	//save_presentation(p, p->filename);
+	save_presentation(p, p->filename);
 
 	return 0;
 }
@@ -432,9 +429,9 @@ void notify_slide_changed(struct presentation *p, struct slide *np)
 	update_toolbar(p);
 	redraw_slide(p->cur_edit_slide);
 
-	if ( p->notes != NULL ) {
-		//notify_notes_slide_changed(p, np);
-	}
+	//if ( p->notes != NULL ) {
+	//	notify_notes_slide_changed(p, np);
+	//}
 
 	if ( (p->slideshow != NULL) && p->slideshow_linked ) {
 		//notify_slideshow_slide_changed(p, np);
@@ -609,9 +606,6 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	toolbar = gtk_ui_manager_get_widget(p->ui, "/displaywindowtoolbar");
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar),
 	                   gtk_separator_tool_item_new(), -1);
-
-	p->tbox = GTK_WIDGET(gtk_tool_item_new());
-	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM(p->tbox), -1);
 
 	/* Add the styles to the "Insert" menu */
 	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");

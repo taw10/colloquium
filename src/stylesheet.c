@@ -35,6 +35,16 @@
 #include "loadsave.h"
 
 
+struct _stylesheet
+{
+	struct style          **styles;
+	int                     n_styles;
+
+	struct slide_template **templates;
+	int                     n_templates;
+};
+
+
 struct style *new_style(StyleSheet *ss, const char *name)
 {
 	struct style *sty;
@@ -78,19 +88,34 @@ void free_stylesheet(StyleSheet *ss)
 void default_stylesheet(StyleSheet *ss)
 {
 	struct style *sty;
+	struct slide_template *titlepage;
+	struct slide_template *slide;
+	struct slide_template *acknowledgements;
 
-	/* Default style must be first */
-	sty = new_style(ss, "Default");
+	titlepage = new_template(ss, "Title page");
+	slide = new_template(ss, "Slide");
+	acknowledgements = new_template(ss, "Acknowledgements");
+
+	sty = new_style(ss, "Presentation title");
 	sty->lop.margin_l = 20.0;
 	sty->lop.margin_r = 20.0;
 	sty->lop.margin_t = 20.0;
 	sty->lop.margin_b = 20.0;
+	add_to_template(titlepage, sty);
+
+	sty = new_style(ss, "Content");
+	sty->lop.margin_l = 20.0;
+	sty->lop.margin_r = 20.0;
+	sty->lop.margin_t = 20.0;
+	sty->lop.margin_b = 20.0;
+	add_to_template(slide, sty);
 
 	sty = new_style(ss, "Slide title");
 	sty->lop.margin_l = 20.0;
 	sty->lop.margin_r = 20.0;
 	sty->lop.margin_t = 20.0;
 	sty->lop.margin_b = 20.0;
+	add_to_template(slide, sty);
 }
 
 
@@ -244,4 +269,81 @@ struct style *find_style(StyleSheet *ss, const char *name)
 	}
 
 	return NULL;
+}
+
+
+struct slide_template *new_template(StyleSheet *ss, const char *name)
+{
+	struct slide_template *t;
+	int n;
+	struct slide_template **templates_new;
+
+	t = calloc(1, sizeof(*t));
+	if ( t == NULL ) return NULL;
+
+	t->name = strdup(name);
+
+	n = ss->n_templates;
+	templates_new = realloc(ss->templates, (n+1)*sizeof(t));
+	if ( templates_new == NULL ) {
+		free(t->name);
+		free(t);
+		return NULL;
+	}
+	ss->templates = templates_new;
+	ss->templates[n] = t;
+	ss->n_templates = n+1;
+
+	return t;
+}
+
+
+void add_to_template(struct slide_template *t, struct style *sty)
+{
+	int n;
+	struct style **styles_new;
+
+	n = t->n_styles;
+	styles_new = realloc(t->styles, (n+1)*sizeof(sty));
+	if ( styles_new == NULL ) {
+		fprintf(stderr, "Failed to add style '%s' to template '%s'.\n",
+		        sty->name, t->name);
+		return;
+	}
+	t->styles = styles_new;
+	t->styles[n] = sty;
+	t->n_styles = n+1;
+}
+
+
+struct _styleiterator
+{
+	int n;
+};
+
+struct style *style_first(StyleSheet *ss, StyleIterator **piter)
+{
+	StyleIterator *iter;
+
+	if ( ss->n_styles == 0 ) return NULL;
+
+	iter = calloc(1, sizeof(StyleIterator));
+	if ( iter == NULL ) return NULL;
+
+	iter->n = 0;
+	*piter = iter;
+
+	return ss->styles[0];
+}
+
+
+struct style *style_next(StyleSheet *ss, StyleIterator *iter)
+{
+	iter->n++;
+	if ( iter->n == ss->n_styles ) {
+		free(iter);
+		return NULL;
+	}
+
+	return ss->styles[iter->n];
 }

@@ -513,13 +513,31 @@ static gint open_notes_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint add_furniture(GtkWidget *widget, struct presentation *p)
+{
+	gchar *name;
+	struct style *sty;
+
+	g_object_get(G_OBJECT(widget), "label", &name, NULL);
+	sty = find_style(p->ss, name);
+	g_free(name);
+	if ( sty == NULL ) return 0;
+
+	/* FIXME: Create it */
+
+	return 0;
+}
+
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
 	GtkWidget *toolbar;
 	GtkWidget *menu;
 	GtkWidget *item;
-	//int i;
+	struct style *s;
+	StyleIterator *iter;
+
 	GtkActionEntry entries[] = {
 
 		{ "FileAction", NULL, "_File", NULL, NULL, NULL },
@@ -613,17 +631,15 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	item = gtk_separator_menu_item_new();
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
-	/* FIXME */
-	//for ( i=1; i<p->ss->n_styles; i++ )
-	//{
-	//	char *name;
-	//	name = p->ss->styles[i]->name;
-	//	item = gtk_menu_item_new_with_label(name);
-	//	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-	//	g_signal_connect(G_OBJECT(item), "activate",
-	//                       G_CALLBACK(add_furniture), p);
-	//
-	//}
+	for ( s = style_first(p->ss, &iter);
+	      s != NULL;
+	      s = style_next(p->ss, iter) )
+	{
+		item = gtk_menu_item_new_with_label(s->name);
+		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+		g_signal_connect(G_OBJECT(item), "activate",
+	                         G_CALLBACK(add_furniture), p);
+	}
 
 	update_toolbar(p);
 }
@@ -658,7 +674,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	xoff = (width - p->slide_width)/2.0;
 	yoff = (height - p->slide_height)/2.0;
 	p->border_offs_x = xoff;  p->border_offs_y = yoff;
-	
+
 	/* Draw the slide from the cache */
 	cairo_rectangle(cr, xoff, yoff, p->slide_width, p->slide_height);
 	cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,

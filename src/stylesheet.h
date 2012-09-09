@@ -49,15 +49,9 @@ struct slide_template
 {
 	char                 *name;
 
-	struct frame_class  **frame_classes;
-	int                   n_frame_classes;
-};
-
-
-struct _stylesheet
-{
-	struct style  **styles;
-	int             n_styles;
+	/* References to the styles in the main list */
+	struct style        **styles;
+	int                   n_styles;
 };
 
 
@@ -70,16 +64,18 @@ extern void free_stylesheet(StyleSheet *ss);
 extern void default_stylesheet(StyleSheet *ss);
 
 extern struct style *new_style(StyleSheet *ss, const char *name);
-
-extern int save_stylesheet(StyleSheet *ss, const char *filename);
-
 extern struct style *find_style(StyleSheet *ss, const char *name);
 
-extern enum justify str_to_halign(char *halign);
-extern enum vert_pos str_to_valign(char *valign);
+extern struct slide_template *new_template(StyleSheet *ss, const char *name);
+extern void add_to_template(struct slide_template *t, struct style *sty);
 
+extern int save_stylesheet(StyleSheet *ss, const char *filename);
 extern StyleSheet *tree_to_stylesheet(struct ds_node *root);
 extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
 
+typedef struct _styleiterator StyleIterator;
+
+extern struct style *style_first(StyleSheet *ss, StyleIterator **piter);
+extern struct style *style_next(StyleSheet *ss, StyleIterator *iter);
 
 #endif	/* STYLESHEET_H */

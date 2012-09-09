@@ -51,6 +51,10 @@ struct serializer
 	int blank_written;
 };
 
+extern struct ds_node *new_ds_node(const char *key);
+extern void free_ds_tree(struct ds_node *root);
+extern int deserialize_file(FILE *fh, struct ds_node *root);
+
 extern void show_tree(struct ds_node *root, const char *path);
 
 extern char *escape_text(const char *a);
@@ -68,8 +72,5 @@ extern int get_field_s(struct ds_node *root, const char *key, char **val);
 
 extern struct ds_node *find_node(struct ds_node *root, const char *path,
                                  int cr);
-
-extern int load_presentation(struct presentation *p, const char *filename);
-extern int save_presentation(struct presentation *p, const char *filename);
 
 #endif	/* LOADSAVE_H */

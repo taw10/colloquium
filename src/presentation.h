@@ -136,6 +136,9 @@ extern void get_titlebar_string(struct presentation *p);
 
 extern int slide_number(struct presentation *p, struct slide *s);
 
+extern int load_presentation(struct presentation *p, const char *filename);
+extern int save_presentation(struct presentation *p, const char *filename);
+
 #define UNUSED __attribute__((unused))
 
 

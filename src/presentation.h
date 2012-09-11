@@ -89,6 +89,8 @@ struct presentation
 	GtkUIManager     *ui;
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
+	GtkWidget       **menu_rebuild_list;
+	int               n_menu_rebuild;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;

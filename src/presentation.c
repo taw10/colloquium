@@ -224,6 +224,9 @@ struct presentation *new_presentation()
 	new->ss = new_stylesheet();
 	default_stylesheet(new->ss);
 
+	new->n_menu_rebuild = 0;
+	new->menu_rebuild_list = NULL;
+
 	return new;
 }
 

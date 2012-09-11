@@ -74,8 +74,13 @@ extern StyleSheet *tree_to_stylesheet(struct ds_node *root);
 extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
 
 typedef struct _styleiterator StyleIterator;
-
 extern struct style *style_first(StyleSheet *ss, StyleIterator **piter);
 extern struct style *style_next(StyleSheet *ss, StyleIterator *iter);
+
+typedef struct _templateiterator TemplateIterator;
+extern struct slide_template *template_first(StyleSheet *ss,
+                                             TemplateIterator **piter);
+extern struct slide_template *template_next(StyleSheet *ss,
+                                            TemplateIterator *iter);
 
 #endif	/* STYLESHEET_H */

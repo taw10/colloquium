@@ -529,14 +529,69 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 }
 
 
+static void update_style_menus(struct presentation *p)
+{
+	GtkWidget *menu;
+	GtkWidget *item;
+	struct slide_template *t;
+	TemplateIterator *iter;
+	int i, j, n;
+
+	for ( i=0; i<p->n_menu_rebuild; i++ ) {
+		gtk_widget_destroy(p->menu_rebuild_list[i]);
+	}
+	free(p->menu_rebuild_list);
+
+	/* Add the styles to the "Insert" menu */
+	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
+	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
+	item = gtk_separator_menu_item_new();
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+	n = 0;
+	for ( t = template_first(p->ss, &iter);
+	      t != NULL;
+	      t = template_next(p->ss, iter) )
+	{
+		n += t->n_styles;
+		n += 1;  /* The top level */
+	}
+
+	p->menu_rebuild_list = calloc(n, sizeof(GtkWidget *));
+	if ( p->menu_rebuild_list == NULL ) return;
+
+	j = 0;
+	for ( t = template_first(p->ss, &iter);
+	      t != NULL;
+	      t = template_next(p->ss, iter) )
+	{
+		GtkWidget *submenu;
+
+		submenu = gtk_menu_new();
+		item = gtk_menu_item_new_with_label(t->name);
+		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+			gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), submenu);
+		p->menu_rebuild_list[j++] = item;
+
+		for ( i=0; i<t->n_styles; i++ ) {
+
+			struct style *s = t->styles[i];
+
+			item = gtk_menu_item_new_with_label(s->name);
+			gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+			p->menu_rebuild_list[j++] = item;
+			g_signal_connect(G_OBJECT(item), "activate",
+			                 G_CALLBACK(add_furniture), p);
+
+		}
+	}
+}
+
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
 	GtkWidget *toolbar;
-	GtkWidget *menu;
-	GtkWidget *item;
-	struct style *s;
-	StyleIterator *iter;
 
 	GtkActionEntry entries[] = {
 
@@ -625,22 +680,7 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar),
 	                   gtk_separator_tool_item_new(), -1);
 
-	/* Add the styles to the "Insert" menu */
-	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
-	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
-	item = gtk_separator_menu_item_new();
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-
-	for ( s = style_first(p->ss, &iter);
-	      s != NULL;
-	      s = style_next(p->ss, iter) )
-	{
-		item = gtk_menu_item_new_with_label(s->name);
-		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-		g_signal_connect(G_OBJECT(item), "activate",
-	                         G_CALLBACK(add_furniture), p);
-	}
-
+	update_style_menus(p);
 	update_toolbar(p);
 }
 

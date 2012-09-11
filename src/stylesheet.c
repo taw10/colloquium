@@ -347,3 +347,36 @@ struct style *style_next(StyleSheet *ss, StyleIterator *iter)
 
 	return ss->styles[iter->n];
 }
+
+
+struct _templateiterator
+{
+	int n;
+};
+
+struct slide_template *template_first(StyleSheet *ss, TemplateIterator **piter)
+{
+	TemplateIterator *iter;
+
+	if ( ss->n_templates == 0 ) return NULL;
+
+	iter = calloc(1, sizeof(TemplateIterator));
+	if ( iter == NULL ) return NULL;
+
+	iter->n = 0;
+	*piter = iter;
+
+	return ss->templates[0];
+}
+
+
+struct slide_template *template_next(StyleSheet *ss, TemplateIterator *iter)
+{
+	iter->n++;
+	if ( iter->n == ss->n_templates ) {
+		free(iter);
+		return NULL;
+	}
+
+	return ss->templates[iter->n];
+}

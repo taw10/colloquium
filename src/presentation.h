@@ -55,8 +55,6 @@ struct slide
 
 struct frame
 {
-	PangoContext *pc;  /* FIXME: Doesn't belong here */
-
 	struct frame            **rendering_order;
 	int                       num_ro;
 	int                       max_ro;
@@ -66,11 +64,13 @@ struct frame
 	struct layout_parameters  lop;
 	struct style             *style;  /* Non-NULL if 'lop' came from SS */
 
-	/* Location relative to parent, calculated from alignment parameters */
+	/* Location relative to parent, calculated from layout parameters */
 	double                    offs_x;
 	double                    offs_y;
 	double                    w;
 	double                    h;
+
+	PangoLayout              *pl;
 
 	/* True if this frame should be deleted on the next mouse click */
 	int                       empty;

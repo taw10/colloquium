@@ -28,6 +28,20 @@
 #endif
 
 
+typedef enum
+{
+	DIR_NONE,
+	DIR_UL,
+	DIR_U,
+	DIR_UR,
+	DIR_R,
+	DIR_DR,
+	DIR_D,
+	DIR_DL,
+	DIR_L
+} Direction;
+
+
 struct layout_parameters
 {
 	double margin_l;
@@ -39,11 +53,17 @@ struct layout_parameters
 	double pad_r;
 	double pad_t;
 	double pad_b;
+
+	Direction grav;
+
+	double min_w;
+	double min_h;
 };
 
 
 /* Calculate layout for frame (and all its children) based on size */
-extern void layout_frame(struct frame *fr, double w, double h);
+extern void layout_frame(struct frame *fr, double w, double h,
+                         PangoContext *pc);
 
 
 #endif	/* LAYOUT_H */

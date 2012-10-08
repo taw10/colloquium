@@ -421,6 +421,8 @@ static struct frame *frame_new()
 	n->num_ro = 1;
 	n->rendering_order[0] = n;
 
+	n->pl = NULL;
+
 	return n;
 }
 

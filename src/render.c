@@ -38,35 +38,23 @@
 
 
 /* Render Level 1 Storycode */
-int render_sc(const char *sc, cairo_t *cr, double w, double h, PangoContext *pc)
+int render_sc(struct frame *fr, cairo_t *cr, double w, double h,
+              PangoContext *pc)
 {
-	PangoLayout *layout;
-	PangoFontDescription *fontdesc;
 	GdkColor col;
 
-	/* FIXME: Check for Level 1 markup e.g. image */
+	if ( fr->pl != NULL ) {
 
-	layout = pango_layout_new(pc);
-	pango_layout_set_width(layout, w*PANGO_SCALE);
-	pango_layout_set_height(layout, h*PANGO_SCALE);
+		pango_cairo_update_layout(cr, fr->pl);
 
-	pango_cairo_update_layout(cr, layout);
-	pango_layout_set_justify(layout, 1);
-	pango_layout_set_ellipsize(layout, 1);
+		/* FIXME: Honour alpha as well */
+		gdk_color_parse("#000000", &col);
+		gdk_cairo_set_source_color(cr, &col);
 
-	pango_layout_set_text(layout, sc, -1);
-	fontdesc = pango_font_description_from_string("Sans 12");
+		pango_cairo_show_layout(cr, fr->pl);
 
-	pango_layout_set_font_description(layout, fontdesc);
-
-	/* FIXME: Honour alpha as well */
-	gdk_color_parse("#000000", &col);
-	gdk_cairo_set_source_color(cr, &col);
-
-	pango_cairo_show_layout(cr, layout);
-
-	pango_font_description_free(fontdesc);
-	g_object_unref(G_OBJECT(layout));
+		//g_object_unref(G_OBJECT(layout));
+	}
 
 	return 0;
 }
@@ -106,7 +94,7 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 			cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t);
 			w = fr->w - (fr->lop.pad_l + fr->lop.pad_r);
 			h = fr->h - (fr->lop.pad_t + fr->lop.pad_b);
-			render_sc(fr->sc, cr, w, h, pc);
+			render_sc(fr, cr, w, h, pc);
 
 			d = 1;
 

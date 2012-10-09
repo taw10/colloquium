@@ -56,6 +56,7 @@ static void layout_subframe(struct frame *fr, double w, double h,
 		double child_w, child_h;
 		double offs_x, offs_y;
 		PangoFontDescription *fontdesc;
+		PangoRectangle extents;
 
 		child = fr->rendering_order[i];
 
@@ -88,6 +89,10 @@ static void layout_subframe(struct frame *fr, double w, double h,
 		fontdesc = pango_font_description_from_string("Sans 12");
 		pango_layout_set_font_description(child->pl, fontdesc);
 		pango_font_description_free(fontdesc);
+
+		pango_layout_get_extents(child->pl, NULL, &extents);
+		child_w = extents.width / PANGO_SCALE;
+		child_h = extents.height / PANGO_SCALE;
 
 		/* Now, apply the minimum size if given */
 		if ( child->lop.min_w > 0.0 ) {

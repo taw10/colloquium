@@ -35,6 +35,7 @@
 #include "presentation.h"
 #include "mainwindow.h"
 #include "render.h"
+#include "frame.h"
 
 
 static void redraw_slide(struct slide *s)
@@ -517,13 +518,15 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 {
 	gchar *name;
 	struct style *sty;
+	struct frame *fr;
 
 	g_object_get(G_OBJECT(widget), "label", &name, NULL);
 	sty = find_style(p->ss, name);
 	g_free(name);
 	if ( sty == NULL ) return 0;
 
-	/* FIXME: Create it */
+	fr = add_subframe(p->cur_edit_slide->top);
+	fr->style = sty;
 
 	return 0;
 }

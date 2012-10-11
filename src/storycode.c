@@ -31,7 +31,7 @@
 #include <ctype.h>
 
 #include "storycode.h"
-#include "presentation.h"
+#include "frame.h"
 
 
 struct _scblocklist
@@ -390,58 +390,6 @@ static char *remove_blocks(const char *in, const char *blockname)
 	sc_block_list_free(bl);
 
 	return out;
-}
-
-
-static int alloc_ro(struct frame *fr)
-{
-	struct frame **new_ro;
-
-	new_ro = realloc(fr->rendering_order,
-	                 fr->max_ro*sizeof(struct frame *));
-	if ( new_ro == NULL ) return 1;
-
-	fr->rendering_order = new_ro;
-
-	return 0;
-}
-
-
-static struct frame *frame_new()
-{
-	struct frame *n;
-
-	n = calloc(1, sizeof(struct frame));
-	if ( n == NULL ) return NULL;
-
-	n->rendering_order = NULL;
-	n->max_ro = 32;
-	alloc_ro(n);
-
-	n->num_ro = 1;
-	n->rendering_order[0] = n;
-
-	n->pl = NULL;
-
-	return n;
-}
-
-
-static struct frame *add_subframe(struct frame *fr)
-{
-	struct frame *n;
-
-	n = frame_new();
-	if ( n == NULL ) return NULL;
-
-	if ( fr->num_ro == fr->max_ro ) {
-		fr->max_ro += 32;
-		if ( alloc_ro(fr) ) return NULL;
-	}
-
-	fr->rendering_order[fr->num_ro++] = n;
-
-	return n;
 }
 
 

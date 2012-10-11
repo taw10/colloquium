@@ -32,6 +32,7 @@
 #include "presentation.h"
 #include "layout.h"
 #include "stylesheet.h"
+#include "frame.h"
 
 
 static void copy_lop_from_style(struct frame *fr, struct style *style)

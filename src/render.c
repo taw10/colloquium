@@ -35,6 +35,7 @@
 #include "storycode.h"
 #include "stylesheet.h"
 #include "presentation.h"
+#include "frame.h"
 
 
 /* Render Level 1 Storycode */

@@ -1,5 +1,5 @@
 /*
- * layout.h
+ * frame.h
  *
  * Colloquium - A tiny presentation program
  *
@@ -20,53 +20,43 @@
  *
  */
 
-#ifndef LAYOUT_H
-#define LAYOUT_H
+#ifndef FRAME_H
+#define FRAME_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <pango/pango.h>
 
-struct frame;
+#include "layout.h"
 
 
-typedef enum
+struct frame
 {
-	DIR_NONE,
-	DIR_UL,
-	DIR_U,
-	DIR_UR,
-	DIR_R,
-	DIR_DR,
-	DIR_D,
-	DIR_DL,
-	DIR_L
-} Direction;
+	struct frame            **rendering_order;
+	int                       num_ro;
+	int                       max_ro;
 
+	char                     *sc;  /* Storycode */
 
-struct layout_parameters
-{
-	double margin_l;
-	double margin_r;
-	double margin_t;
-	double margin_b;
+	struct layout_parameters  lop;
+	struct style             *style;  /* Non-NULL if 'lop' came from SS */
 
-	double pad_l;
-	double pad_r;
-	double pad_t;
-	double pad_b;
+	/* Location relative to parent, calculated from layout parameters */
+	double                    offs_x;
+	double                    offs_y;
+	double                    w;
+	double                    h;
 
-	Direction grav;
+	PangoLayout              *pl;
 
-	double min_w;
-	double min_h;
+	/* True if this frame should be deleted on the next mouse click */
+	int                       empty;
 };
 
 
-/* Calculate layout for frame (and all its children) based on size */
-extern void layout_frame(struct frame *fr, double w, double h,
-                         PangoContext *pc);
+extern struct frame *frame_new(void);
+extern struct frame *add_subframe(struct frame *fr);
 
-
-#endif	/* LAYOUT_H */
+#endif	/* FRAME_H */

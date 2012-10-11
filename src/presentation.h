@@ -28,7 +28,6 @@
 #endif
 
 #include <cairo.h>
-#include <pango/pango.h>
 #include <gtk/gtk.h>
 
 struct frame;
@@ -47,33 +46,9 @@ struct slide
 	/* This should always be present (and up to date). */
 	cairo_surface_t *rendered_thumb;
 
-	struct frame   *top;
+	struct frame    *top;
 
 	char *notes;
-};
-
-
-struct frame
-{
-	struct frame            **rendering_order;
-	int                       num_ro;
-	int                       max_ro;
-
-	char                     *sc;  /* Storycode */
-
-	struct layout_parameters  lop;
-	struct style             *style;  /* Non-NULL if 'lop' came from SS */
-
-	/* Location relative to parent, calculated from layout parameters */
-	double                    offs_x;
-	double                    offs_y;
-	double                    w;
-	double                    h;
-
-	PangoLayout              *pl;
-
-	/* True if this frame should be deleted on the next mouse click */
-	int                       empty;
 };
 
 
@@ -140,6 +115,7 @@ extern int slide_number(struct presentation *p, struct slide *s);
 
 extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);
+
 
 #define UNUSED __attribute__((unused))
 

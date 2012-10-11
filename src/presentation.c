@@ -34,6 +34,7 @@
 #include "stylesheet.h"
 #include "loadsave.h"
 #include "mainwindow.h"
+#include "frame.h"
 
 
 static int num_presentations = 0;

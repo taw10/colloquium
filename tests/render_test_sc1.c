@@ -35,6 +35,7 @@
 #include "../src/render.h"
 #include "../src/layout.h"
 #include "../src/stylesheet.h"
+#include "../src/frame.h"
 
 
 static gint mw_destroy(GtkWidget *w, void *p)

@@ -1,5 +1,5 @@
 /*
- * layout.h
+ * frame.c
  *
  * Colloquium - A tiny presentation program
  *
@@ -20,53 +20,65 @@
  *
  */
 
-#ifndef LAYOUT_H
-#define LAYOUT_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <assert.h>
+#include <stdlib.h>
 
-struct frame;
+#include "frame.h"
 
 
-typedef enum
+static int alloc_ro(struct frame *fr)
 {
-	DIR_NONE,
-	DIR_UL,
-	DIR_U,
-	DIR_UR,
-	DIR_R,
-	DIR_DR,
-	DIR_D,
-	DIR_DL,
-	DIR_L
-} Direction;
+	struct frame **new_ro;
+
+	new_ro = realloc(fr->rendering_order,
+	                 fr->max_ro*sizeof(struct frame *));
+	if ( new_ro == NULL ) return 1;
+
+	fr->rendering_order = new_ro;
+
+	return 0;
+}
 
 
-struct layout_parameters
+struct frame *frame_new()
 {
-	double margin_l;
-	double margin_r;
-	double margin_t;
-	double margin_b;
+	struct frame *n;
 
-	double pad_l;
-	double pad_r;
-	double pad_t;
-	double pad_b;
+	n = calloc(1, sizeof(struct frame));
+	if ( n == NULL ) return NULL;
 
-	Direction grav;
+	n->rendering_order = NULL;
+	n->max_ro = 32;
+	alloc_ro(n);
 
-	double min_w;
-	double min_h;
-};
+	n->num_ro = 1;
+	n->rendering_order[0] = n;
 
+	n->pl = NULL;
 
-/* Calculate layout for frame (and all its children) based on size */
-extern void layout_frame(struct frame *fr, double w, double h,
-                         PangoContext *pc);
+	return n;
+}
 
 
-#endif	/* LAYOUT_H */
+struct frame *add_subframe(struct frame *fr)
+{
+	struct frame *n;
+
+	n = frame_new();
+	if ( n == NULL ) return NULL;
+
+	if ( fr->num_ro == fr->max_ro ) {
+		fr->max_ro += 32;
+		if ( alloc_ro(fr) ) return NULL;
+	}
+
+	fr->rendering_order[fr->num_ro++] = n;
+
+	return n;
+}
+

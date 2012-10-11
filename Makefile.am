@@ -11,7 +11,7 @@ LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 
 src_colloquium_SOURCES = src/colloquium.c src/storycode.c src/render.c \
                          src/layout.c src/mainwindow.c src/presentation.c \
-                         src/stylesheet.c src/loadsave.c
+                         src/stylesheet.c src/loadsave.c src/frame.c
 
 INCLUDES = "-I$(top_srcdir)/data"
 
@@ -30,10 +30,11 @@ EXTRA_DIST += $(colloquium_DATA)
 noinst_PROGRAMS = tests/storycode_test tests/render_test tests/render_test_sc1
 TESTS = tests/storycode_test tests/render_test tests/render_test_sc1
 
-tests_storycode_test_SOURCES = tests/storycode_test.c src/storycode.c
+tests_storycode_test_SOURCES = tests/storycode_test.c src/storycode.c \
+                               src/frame.c
 
 tests_render_test_SOURCES = tests/render_test.c src/storycode.c src/render.c \
-                            src/layout.c
+                            src/layout.c src/frame.c
 
 tests_render_test_sc1_SOURCES = tests/render_test_sc1.c src/storycode.c \
-                                src/render.c src/layout.c
+                                src/render.c src/layout.c src/frame.c

@@ -38,32 +38,27 @@
 #include "frame.h"
 
 
-static void redraw_slide(struct slide *s)
+static void rerender_slide(struct presentation *p, PangoContext *pc)
 {
 	int w, h;
+	struct slide *s = p->cur_edit_slide;
 
 	if ( s->rendered_thumb != NULL ) {
 		cairo_surface_destroy(s->rendered_thumb);
 	}
 
-	w = s->parent->thumb_slide_width;
-	h = (s->parent->slide_height/s->parent->slide_width) * w;
-	s->rendered_thumb = render_slide(s, w, h);
-	/* FIXME: Request redraw for slide sorter if open */
+	w = p->thumb_slide_width;
+	h = (p->slide_height/p->slide_width) * w;
+	s->rendered_thumb = render_slide(s, w, h, pc);
 
-	/* Is this slide currently open in the editor? */
-	if ( s == s->parent->cur_edit_slide ) {
-
-		if ( s->rendered_edit != NULL ) {
-			cairo_surface_destroy(s->rendered_edit);
-		}
-
-		w = s->parent->edit_slide_width;
-		h = (s->parent->slide_height/s->parent->slide_width) * w;
-		s->rendered_edit = render_slide(s, w, h);
-
+	if ( s->rendered_edit != NULL ) {
+		cairo_surface_destroy(s->rendered_edit);
 	}
 
+	w = p->edit_slide_width;
+	h = (p->slide_height/p->slide_width) * w;
+	s->rendered_edit = render_slide(s, w, h, pc);
+printf("rendered %p -> %p\n", s, s->rendered_edit);
 	/* Is this slide currently being displayed on the projector? */
 	if ( s == s->parent->cur_proj_slide ) {
 
@@ -73,9 +68,20 @@ static void redraw_slide(struct slide *s)
 
 		w = s->parent->proj_slide_width;
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
-		s->rendered_proj = render_slide(s, w, h);
+		s->rendered_proj = render_slide(s, w, h, pc);
 
 	}
+}
+
+
+static void redraw(struct presentation *p)
+{
+	gint w, h;
+
+	w = gtk_widget_get_allocated_width(GTK_WIDGET(p->drawingarea));
+	h = gtk_widget_get_allocated_height(GTK_WIDGET(p->drawingarea));
+
+	gtk_widget_queue_draw_area(p->drawingarea, 0, 0, w, h);
 }
 
 
@@ -167,7 +173,7 @@ static gint open_response_sig(GtkWidget *d, gint response,
 				show_error(p, "Failed to open presentation");
 			}
 			p->cur_edit_slide = p->slides[0];
-			redraw_slide(p->cur_edit_slide);
+			rerender_slide(p, p->pc);
 			update_toolbar(p);
 
 		} else {
@@ -428,7 +434,7 @@ void notify_slide_changed(struct presentation *p, struct slide *np)
 	/* FIXME: Free old rendered stuff */
 
 	update_toolbar(p);
-	redraw_slide(p->cur_edit_slide);
+	redraw(p);
 
 	//if ( p->notes != NULL ) {
 	//	notify_notes_slide_changed(p, np);
@@ -527,6 +533,11 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 
 	fr = add_subframe(p->cur_edit_slide->top);
 	fr->style = sty;
+	set_edit(p, p->cur_edit_slide);
+	fr->sc = "Hello";
+	layout_frame(p->cur_edit_slide->top, p->slide_width, p->slide_height,
+	             p->pc);
+	set_selection(p, fr);
 
 	return 0;
 }
@@ -695,6 +706,45 @@ static gint close_sig(GtkWidget *window, struct presentation *p)
 }
 
 
+static void draw_editing_box(cairo_t *cr, struct frame *fr)
+{
+	const double dash[] = {2.0, 2.0};
+	double xmin, ymin, width, height;
+
+	xmin = fr->offs_x;
+	ymin = fr->offs_y;
+	width = fr->w;
+	height = fr->h;
+
+	printf("box %f %f %f %f\n", xmin, ymin, width, height);
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, xmin-5.0, ymin-5.0, width+10.0, height+10.0);
+	cairo_set_source_rgb(cr, 0.0, 0.69, 1.0);
+	cairo_set_line_width(cr, 0.5);
+	cairo_stroke(cr);
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, xmin, ymin, width, height);
+	cairo_set_dash(cr, dash, 2, 0.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 0.1);
+	cairo_stroke(cr);
+
+	cairo_set_dash(cr, NULL, 0, 0.0);
+}
+
+
+static void draw_overlay(cairo_t *cr, struct presentation *p)
+{
+	int i;
+
+	for ( i=0; i<p->n_selection; i++ ) {
+		draw_editing_box(cr, p->selection[i]);
+	}
+}
+
+
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
                          struct presentation *p)
 {
@@ -719,15 +769,19 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	p->border_offs_x = xoff;  p->border_offs_y = yoff;
 
 	/* Draw the slide from the cache */
-	cairo_rectangle(cr, xoff, yoff, p->slide_width, p->slide_height);
-	cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
-	                         xoff, yoff);
-	cairo_fill(cr);
+	if ( p->cur_edit_slide->rendered_edit != NULL ) {
+		cairo_rectangle(cr, xoff, yoff, p->slide_width, p->slide_height);
+		cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
+			                 xoff, yoff);
+		cairo_fill(cr);
+		fprintf(stderr, "Drew slide %p.\n",
+		        p->cur_edit_slide->rendered_edit);
+	} else {
+		fprintf(stderr, "Current slide not rendered yet!\n");
+	}
 
 	cairo_translate(cr, xoff, yoff);
-
-	/* FIXME */
-	//draw_overlay(cr, p);
+	draw_overlay(cr, p);
 
 	return FALSE;
 }
@@ -747,6 +801,16 @@ void update_titlebar(struct presentation *p)
 		free(title);
 
 	}
+}
+
+
+static gint realise_sig(GtkWidget *da, struct presentation *p)
+{
+	/* FIXME: Can do this "properly" by setting up a separate font map */
+	p->pc = gtk_widget_get_pango_context(da);
+	printf("got context %p\n", p->pc);
+	rerender_slide(p, p->pc);
+	return FALSE;
 }
 
 
@@ -771,6 +835,10 @@ int open_mainwindow(struct presentation *p)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
+	p->edit_slide_width = 1024;
+	p->proj_slide_width = 2048;
+	p->thumb_slide_width = 320;  /* FIXME: Completely made up */
+
 	p->drawingarea = gtk_drawing_area_new();
 	sw = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw),
@@ -784,6 +852,8 @@ int open_mainwindow(struct presentation *p)
 
 	add_menu_bar(p, vbox);
 	gtk_box_pack_start(GTK_BOX(vbox), sw, TRUE, TRUE, 0);
+	g_signal_connect(G_OBJECT(p->drawingarea), "realize",
+	                 G_CALLBACK(realise_sig), p);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),
@@ -812,12 +882,6 @@ int open_mainwindow(struct presentation *p)
 	gtk_widget_grab_focus(GTK_WIDGET(p->drawingarea));
 
 	gtk_widget_show_all(window);
-
-	p->edit_slide_width = 1024;
-	p->proj_slide_width = 2048;
-	p->thumb_slide_width = 320;  /* FIXME: Completely made up */
-
-	redraw_slide(p->cur_edit_slide);
 
 	return 0;
 }

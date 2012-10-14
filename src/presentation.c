@@ -111,6 +111,9 @@ struct slide *new_slide()
 	new->rendered_proj = NULL;
 	new->rendered_thumb = NULL;
 
+	new->top = frame_new();
+	/* FIXME: Set zero margins etc on top level frame */
+
 	new->notes = strdup("");
 
 	return new;
@@ -193,6 +196,17 @@ int slide_number(struct presentation *p, struct slide *s)
 }
 
 
+static int alloc_selection(struct presentation *p)
+{
+	struct frame **new_selection;
+	new_selection = realloc(p->selection,
+	                        p->max_selection*sizeof(struct frame *));
+	if ( new_selection == NULL ) return 1;
+	p->selection = new_selection;
+	return 0;
+}
+
+
 struct presentation *new_presentation()
 {
 	struct presentation *new;
@@ -227,6 +241,11 @@ struct presentation *new_presentation()
 
 	new->n_menu_rebuild = 0;
 	new->menu_rebuild_list = NULL;
+
+	new->selection = NULL;
+	new->n_selection = 0;
+	new->max_selection = 64;
+	if ( alloc_selection(new) ) return NULL;
 
 	return new;
 }
@@ -417,3 +436,29 @@ int load_presentation(struct presentation *p, const char *filename)
 	return 0;
 }
 
+
+void set_edit(struct presentation *p, struct slide *s)
+{
+	p->cur_edit_slide = s;
+}
+
+
+void set_selection(struct presentation *p, struct frame *fr)
+{
+	p->selection[0] = fr;
+	p->n_selection = 1;
+}
+
+
+void add_selection(struct presentation *p, struct frame *fr)
+{
+	if ( p->n_selection == p->max_selection ) {
+		p->max_selection += 64;
+		if ( alloc_selection(p) ) {
+			fprintf(stderr, "Not enough memory for selection.\n");
+			return;
+		}
+	}
+
+	p->selection[p->n_selection++] = fr;
+}

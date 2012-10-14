@@ -120,7 +120,7 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 }
 
 
-cairo_surface_t *render_slide(struct slide *s, int w, int h)
+cairo_surface_t *render_slide(struct slide *s, int w, int h, PangoContext *pc)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
@@ -145,7 +145,8 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_SUBPIXEL);
 	cairo_set_font_options(cr, fopts);
 
-	//render_frame(s->top, cr, NULL); /* FIXME: pc */
+	printf("rendered to %p %ix%i\n", surf, w, h);
+	render_frame(s->top, cr, pc);
 
 	cairo_font_options_destroy(fopts);
 	cairo_destroy(cr);

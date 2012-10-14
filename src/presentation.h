@@ -66,12 +66,18 @@ struct presentation
 	GtkIMContext     *im_context;
 	GtkWidget       **menu_rebuild_list;
 	int               n_menu_rebuild;
+	PangoContext     *pc;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;
 	struct slide     *cur_proj_slide;
 	struct slide     *cur_notes_slide;
 	int               slideshow_linked;
+
+	/* Pointers to the frame currently being edited */
+	struct frame    **selection;
+	int               n_selection;
+	int               max_selection;
 
 	/* This is the "native" size of the slide.  It only exists to give
 	 * font size some meaning in the context of a somewhat arbitrary DPI */
@@ -116,6 +122,9 @@ extern int slide_number(struct presentation *p, struct slide *s);
 extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);
 
+extern void set_edit(struct presentation *p, struct slide *s);
+extern void set_selection(struct presentation *p, struct frame *fr);
+extern void add_selection(struct presentation *p, struct frame *fr);
 
 #define UNUSED __attribute__((unused))
 

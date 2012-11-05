@@ -718,8 +718,6 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 	width = fr->w;
 	height = fr->h;
 
-	printf("box %f %f %f %f\n", xmin, ymin, width, height);
-
 	cairo_new_path(cr);
 	cairo_rectangle(cr, xmin-5.0, ymin-5.0, width+10.0, height+10.0);
 	cairo_set_source_rgb(cr, 0.0, 0.69, 1.0);
@@ -776,8 +774,6 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 		cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
 			                 xoff, yoff);
 		cairo_fill(cr);
-		fprintf(stderr, "Drew slide %p.\n",
-		        p->cur_edit_slide->rendered_edit);
 	} else {
 		fprintf(stderr, "Current slide not rendered yet!\n");
 	}

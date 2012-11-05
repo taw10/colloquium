@@ -538,6 +538,8 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	layout_frame(p->cur_edit_slide->top, p->slide_width, p->slide_height,
 	             p->pc);
 	set_selection(p, fr);
+	rerender_slide(p, p->pc);
+	redraw(p);
 
 	return 0;
 }

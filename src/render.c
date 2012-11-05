@@ -78,7 +78,6 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 
 			/* Draw the frame itself (rectangle) */
 			cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
-			cairo_set_line_width(cr, 1.0);
 
 			if ( (fr->style != NULL)
 			  && (strcmp(fr->style->name, "Default") == 0) )
@@ -89,7 +88,12 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 			}
 			cairo_fill_preserve(cr);
 			cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-			cairo_stroke(cr);
+
+			/* if draw_border */
+			//cairo_set_line_width(cr, 1.0);
+			//cairo_stroke(cr);
+
+			cairo_new_path(cr);
 
 			/* Set up padding, and then draw the contents */
 			cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t);

@@ -49,7 +49,7 @@ static void rerender_slide(struct presentation *p, PangoContext *pc)
 
 	w = p->thumb_slide_width;
 	h = (p->slide_height/p->slide_width) * w;
-	s->rendered_thumb = render_slide(s, w, h, pc);
+	s->rendered_thumb = render_slide(s, w, h);
 
 	if ( s->rendered_edit != NULL ) {
 		cairo_surface_destroy(s->rendered_edit);
@@ -57,8 +57,8 @@ static void rerender_slide(struct presentation *p, PangoContext *pc)
 
 	w = p->edit_slide_width;
 	h = (p->slide_height/p->slide_width) * w;
-	s->rendered_edit = render_slide(s, w, h, pc);
-printf("rendered %p -> %p\n", s, s->rendered_edit);
+	s->rendered_edit = render_slide(s, w, h);
+
 	/* Is this slide currently being displayed on the projector? */
 	if ( s == s->parent->cur_proj_slide ) {
 
@@ -68,7 +68,7 @@ printf("rendered %p -> %p\n", s, s->rendered_edit);
 
 		w = s->parent->proj_slide_width;
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
-		s->rendered_proj = render_slide(s, w, h, pc);
+		s->rendered_proj = render_slide(s, w, h);
 
 	}
 }
@@ -535,8 +535,7 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	fr->style = sty;
 	set_edit(p, p->cur_edit_slide);
 	fr->sc = "Hello";
-	layout_frame(p->cur_edit_slide->top, p->slide_width, p->slide_height,
-	             p->pc);
+	layout_frame(p->cur_edit_slide->top, p->slide_width, p->slide_height);
 	set_selection(p, fr);
 	rerender_slide(p, p->pc);
 	redraw(p);
@@ -735,12 +734,55 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 }
 
 
+static void draw_caret(cairo_t *cr, struct frame *fr)
+{
+#if 0
+	double xposd, yposd, cx;
+	double clow, chigh;
+	PangoRectangle pos;
+	const double t = 1.8;
+
+	pango_layout_get_cursor_pos(o->layout,
+	                            o->insertion_point+o->insertion_trail,
+	                            &pos, NULL);
+
+	xposd = pos.x/PANGO_SCALE;
+	cx = o->base.x - o->offs_x + xposd;
+	yposd = pos.y/PANGO_SCALE;
+	clow = o->base.y - o->offs_y + yposd;
+	chigh = clow + (pos.height/PANGO_SCALE);
+
+	cairo_move_to(cr, cx, clow);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_move_to(cr, cx-t, clow-t);
+	cairo_line_to(cr, cx, clow);
+	cairo_move_to(cr, cx+t, clow-t);
+	cairo_line_to(cr, cx, clow);
+
+	cairo_move_to(cr, cx-t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+	cairo_move_to(cr, cx+t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+#endif
+}
+
+
 static void draw_overlay(cairo_t *cr, struct presentation *p)
 {
 	int i;
 
 	for ( i=0; i<p->n_selection; i++ ) {
 		draw_editing_box(cr, p->selection[i]);
+	}
+
+	/* If only one frame is selected, draw the caret */
+	if ( p->n_selection == 1 ) {
+		draw_caret(cr, p->selection[0]);
 	}
 }
 

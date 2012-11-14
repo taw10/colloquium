@@ -38,30 +38,74 @@
 #include "frame.h"
 
 
-/* Render Level 1 Storycode */
-int render_sc(struct frame *fr, cairo_t *cr, double w, double h,
-              PangoContext *pc)
+struct renderstuff
 {
+	cairo_t *cr;
+	PangoContext *pc;
+	PangoFontMap *fontmap;
+	PangoFont *font;
+	struct frame *fr;
+};
+
+
+static void render_segment(gpointer data, gpointer user_data)
+{
+	struct renderstuff *s = user_data;
+	PangoItem *item = data;
+	PangoGlyphString *glyphs;
 	GdkColor col;
 
-	if ( fr->pl != NULL ) {
+	glyphs = pango_glyph_string_new();
 
-		pango_cairo_update_layout(cr, fr->pl);
+	pango_shape(s->fr->sc+item->offset, item->length, &item->analysis,
+	            glyphs);
 
-		/* FIXME: Honour alpha as well */
-		gdk_color_parse("#000000", &col);
-		gdk_cairo_set_source_color(cr, &col);
+	/* FIXME: Honour alpha as well */
+	gdk_color_parse("#000000", &col);
+	gdk_cairo_set_source_color(s->cr, &col);
+	pango_cairo_show_glyph_string(s->cr, s->font, glyphs);
 
-		pango_cairo_show_layout(cr, fr->pl);
+	pango_glyph_string_free(glyphs);
+	pango_item_free(item);
+}
 
-		//g_object_unref(G_OBJECT(layout));
+
+/* Render Level 1 Storycode */
+int render_sc(struct frame *fr, cairo_t *cr, double w, double h)
+{
+	PangoFontDescription *fontdesc;
+	struct renderstuff s;
+	GList *list;
+
+	if ( fr->sc == NULL ) return 0;
+
+	s.pc = pango_cairo_create_context(cr);
+	s.fr = fr;
+	s.cr = cr;
+
+	/* Find and load font */
+	s.fontmap = pango_cairo_font_map_get_default();
+	fontdesc = pango_font_description_from_string("Serif 20");
+	s.font = pango_font_map_load_font(s.fontmap, s.pc, fontdesc);
+	if ( s.font == NULL ) {
+		fprintf(stderr, "Failed to load font.\n");
+		return 1;
 	}
+
+	/* Create glyph string */
+	list = pango_itemize(s.pc, fr->sc, 0, strlen(fr->sc), NULL, NULL);
+	g_list_foreach(list, render_segment, &s);
+
+	g_list_free(list);
+	pango_font_description_free(fontdesc);
+	g_object_unref(s.fontmap);
+	g_object_unref(s.pc);
 
 	return 0;
 }
 
 
-int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
+int render_frame(struct frame *fr, cairo_t *cr)
 {
 	int i;
 	int d = 0;
@@ -99,7 +143,7 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 			cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t);
 			w = fr->w - (fr->lop.pad_l + fr->lop.pad_r);
 			h = fr->h - (fr->lop.pad_t + fr->lop.pad_b);
-			render_sc(fr, cr, w, h, pc);
+			render_sc(fr, cr, w, h);
 
 			d = 1;
 
@@ -111,7 +155,7 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 		cairo_translate(cr, fr->rendering_order[i]->offs_x,
 		                    fr->rendering_order[i]->offs_y);
 
-		render_frame(fr->rendering_order[i], cr, pc);
+		render_frame(fr->rendering_order[i], cr);
 
 	}
 
@@ -124,7 +168,7 @@ int render_frame(struct frame *fr, cairo_t *cr, PangoContext *pc)
 }
 
 
-cairo_surface_t *render_slide(struct slide *s, int w, int h, PangoContext *pc)
+cairo_surface_t *render_slide(struct slide *s, int w, int h)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
@@ -150,7 +194,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h, PangoContext *pc)
 	cairo_set_font_options(cr, fopts);
 
 	printf("rendered to %p %ix%i\n", surf, w, h);
-	render_frame(s->top, cr, pc);
+	render_frame(s->top, cr);
 
 	cairo_font_options_destroy(fopts);
 	cairo_destroy(cr);

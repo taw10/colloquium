@@ -43,8 +43,7 @@ static void copy_lop_from_style(struct frame *fr, struct style *style)
 }
 
 
-static void layout_subframe(struct frame *fr, double w, double h,
-                            PangoContext *pc)
+static void layout_subframe(struct frame *fr, double w, double h)
 {
 	int i;
 
@@ -56,8 +55,6 @@ static void layout_subframe(struct frame *fr, double w, double h,
 		struct frame *child;
 		double child_w, child_h;
 		double offs_x, offs_y;
-		PangoFontDescription *fontdesc;
-		PangoRectangle extents;
 
 		child = fr->rendering_order[i];
 
@@ -75,25 +72,8 @@ static void layout_subframe(struct frame *fr, double w, double h,
 		child_w -= (fr->lop.pad_l + fr->lop.pad_r);
 		child_h -= (fr->lop.pad_t + fr->lop.pad_b);
 
-		/* Put the contents inside, and see how much space is needed */
-		if ( child->pl == NULL ) {
-			child->pl = pango_layout_new(pc);
-			pango_layout_set_justify(child->pl, 1);
-			pango_layout_set_ellipsize(child->pl, 1);
-		}
-		pango_layout_set_width(child->pl, child_w*PANGO_SCALE);
-		pango_layout_set_height(child->pl, child_h*PANGO_SCALE);
-
-		/* FIXME: Check for Level 1 markup e.g. image */
-		pango_layout_set_text(child->pl, child->sc, -1);
-
-		fontdesc = pango_font_description_from_string("Sans 12");
-		pango_layout_set_font_description(child->pl, fontdesc);
-		pango_font_description_free(fontdesc);
-
-		pango_layout_get_extents(child->pl, NULL, &extents);
-		child_w = extents.width / PANGO_SCALE;
-		child_h = extents.height / PANGO_SCALE;
+		child_w = 150.0;
+		child_h = 30.0;  /* FIXME! */
 
 		/* Now, apply the minimum size if given */
 		if ( child->lop.min_w > 0.0 ) {
@@ -127,14 +107,14 @@ static void layout_subframe(struct frame *fr, double w, double h,
 		/* Record values and recurse */
 		child->offs_x = offs_x;
 		child->offs_y = offs_y;
-		layout_subframe(child, child_w, child_h, pc);
+		layout_subframe(child, child_w, child_h);
 
 	}
 }
 
 
-void layout_frame(struct frame *fr, double w, double h, PangoContext *pc)
+void layout_frame(struct frame *fr, double w, double h)
 {
 	copy_lop_from_style(fr, fr->style);
-	layout_subframe(fr, w, h, pc);
+	layout_subframe(fr, w, h);
 }

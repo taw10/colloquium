@@ -65,8 +65,6 @@ struct layout_parameters
 
 
 /* Calculate layout for frame (and all its children) based on size */
-extern void layout_frame(struct frame *fr, double w, double h,
-                         PangoContext *pc);
-
+extern void layout_frame(struct frame *fr, double w, double h);
 
 #endif	/* LAYOUT_H */

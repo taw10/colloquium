@@ -61,8 +61,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 
 	gtk_widget_get_allocation(da, &allocation);
 
-	layout_frame(fr, allocation.width, allocation.height, pc);
-	render_frame(fr, cr, pc);
+	layout_frame(fr, allocation.width, allocation.height);
+	render_frame(fr, cr);
 
 	return FALSE;
 }

@@ -1,0 +1,3 @@
+[submodule "harfatum"]
+	path = harfatum
+	url = ssh://git@git.bitwiz.org.uk/harfatum.git

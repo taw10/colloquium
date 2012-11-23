@@ -58,5 +58,6 @@ struct frame
 
 extern struct frame *frame_new(void);
 extern struct frame *add_subframe(struct frame *fr);
+extern struct frame *sc_unpack(const char *sc);
 
 #endif	/* FRAME_H */

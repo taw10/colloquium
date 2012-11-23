@@ -1,3 +1,6 @@
 [submodule "harfatum"]
 	path = harfatum
 	url = ssh://git@git.bitwiz.org.uk/harfatum.git
+[submodule "libstorycode"]
+	path = libstorycode
+	url = ssh://git@git.bitwiz.org.uk/libstorycode.git

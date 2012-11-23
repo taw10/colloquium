@@ -9,13 +9,13 @@ AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \
               -I$(top_srcdir)/lib
 LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 
-src_colloquium_SOURCES = src/colloquium.c src/storycode.c src/render.c \
+src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/layout.c src/mainwindow.c src/presentation.c \
                          src/stylesheet.c src/loadsave.c src/frame.c
 
 INCLUDES = "-I$(top_srcdir)/data"
 
-EXTRA_DIST += src/layout.h src/presentation.h src/render.h src/storycode.h \
+EXTRA_DIST += src/layout.h src/presentation.h src/render.h \
               src/stylesheet.h src/loadsave.h
 
 colloquiumdir = $(datadir)/colloquium
@@ -27,11 +27,8 @@ icons_DATA = data/colloquium-select.svg data/colloquium-text.svg \
 
 EXTRA_DIST += $(colloquium_DATA)
 
-noinst_PROGRAMS = tests/storycode_test tests/render_test tests/render_test_sc1
-TESTS = tests/storycode_test tests/render_test tests/render_test_sc1
-
-tests_storycode_test_SOURCES = tests/storycode_test.c src/storycode.c \
-                               src/frame.c
+noinst_PROGRAMS = tests/render_test tests/render_test_sc1
+TESTS = tests/render_test tests/render_test_sc1
 
 tests_render_test_SOURCES = tests/render_test.c src/storycode.c src/render.c \
                             src/layout.c src/frame.c

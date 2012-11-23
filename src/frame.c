@@ -82,3 +82,62 @@ struct frame *add_subframe(struct frame *fr)
 	return n;
 }
 
+
+static void show_heirarchy(struct frame *fr, const char *t)
+{
+	int i;
+	char tn[1024];
+
+	strcpy(tn, t);
+	strcat(tn, "  |-> ");
+
+	printf("%s%p %s\n", t, fr, fr->sc);
+
+	for ( i=0; i<fr->num_ro; i++ ) {
+		if ( fr->rendering_order[i] != fr ) {
+			show_heirarchy(fr->rendering_order[i], tn);
+		} else {
+			printf("%s<this frame>\n", tn);
+		}
+	}
+
+}
+
+
+static void recursive_unpack(struct frame *fr, const char *sc)
+{
+	SCBlockList *bl;
+	SCBlockListIterator *iter;
+	struct scblock *b;
+
+	bl = sc_find_blocks(sc, "f");
+
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+		struct frame *sfr;
+		sfr = add_subframe(fr);
+		sfr->sc = remove_blocks(b->contents, "f");
+		recursive_unpack(sfr, b->contents);
+	}
+	sc_block_list_free(bl);
+}
+
+
+/* Unpack level 2 StoryCode (content + subframes) into frames */
+struct frame *sc_unpack(const char *sc)
+{
+	struct frame *fr;
+
+	fr = frame_new();
+	if ( fr == NULL ) return NULL;
+
+	fr->sc = remove_blocks(sc, "f");
+	recursive_unpack(fr, sc);
+
+	show_heirarchy(fr, "");
+
+	return fr;
+}
+

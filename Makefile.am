@@ -1,5 +1,5 @@
 EXTRA_DIST = configure m4/gnulib-cache.m4
-SUBDIRS = lib
+SUBDIRS = lib libstorycode harfatum
 ACLOCAL_AMFLAGS = -I m4
 
 bin_PROGRAMS = src/colloquium
@@ -7,13 +7,14 @@ bin_PROGRAMS = src/colloquium
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \
               -I$(top_srcdir)/lib
-LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@
+LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@ \
+        libstorycode/src/libstorycode.la harfatum/src/libharfatum.la
 
 src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/layout.c src/mainwindow.c src/presentation.c \
                          src/stylesheet.c src/loadsave.c src/frame.c
 
-INCLUDES = "-I$(top_srcdir)/data"
+INCLUDES = -Ilibstorycode/src -Iharfatum/src
 
 EXTRA_DIST += src/layout.h src/presentation.h src/render.h \
               src/stylesheet.h src/loadsave.h
@@ -30,8 +31,8 @@ EXTRA_DIST += $(colloquium_DATA)
 noinst_PROGRAMS = tests/render_test tests/render_test_sc1
 TESTS = tests/render_test tests/render_test_sc1
 
-tests_render_test_SOURCES = tests/render_test.c src/storycode.c src/render.c \
+tests_render_test_SOURCES = tests/render_test.c src/render.c \
                             src/layout.c src/frame.c
 
-tests_render_test_sc1_SOURCES = tests/render_test_sc1.c src/storycode.c \
+tests_render_test_sc1_SOURCES = tests/render_test_sc1.c \
                                 src/render.c src/layout.c src/frame.c

@@ -11,9 +11,13 @@ config.status
 stamp-h1
 src/*.o
 src/.deps
+src/.libs
 src/colloquium
 src/.dirstamp
+tests/.libs
+m4
 *~
 INSTALL
 build-aux
 lib
+libtool

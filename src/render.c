@@ -32,7 +32,8 @@
 #include <gdk/gdk.h>
 #include <string.h>
 
-#include "storycode.h"
+#include <storycode.h>
+
 #include "stylesheet.h"
 #include "presentation.h"
 #include "frame.h"

@@ -17,7 +17,6 @@ src/.dirstamp
 tests/.libs
 *~
 INSTALL
-build-aux
 libtool
 m4/lt*.m4
 m4/libtool.m4
@@ -27,3 +26,10 @@ lib/*.o
 lib/*.lo
 lib/*.la
 lib/*.a
+build-aux/compile
+build-aux/config.guess
+build-aux/config.sub
+build-aux/depcomp
+build-aux/install-sh
+build-aux/ltmain.sh
+build-aux/missing

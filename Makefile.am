@@ -7,7 +7,7 @@ bin_PROGRAMS = src/colloquium
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \
               -I$(top_srcdir)/lib
-LDADD = $(top_builddir)/lib/libgnu.a @IGNORE_UNUSED_LIBRARIES_CFLAGS@ \
+LDADD = $(top_builddir)/lib/libgnu.la @IGNORE_UNUSED_LIBRARIES_CFLAGS@ \
         libstorycode/src/libstorycode.la harfatum/src/libharfatum.la
 
 src_colloquium_SOURCES = src/colloquium.c src/render.c \

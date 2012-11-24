@@ -15,9 +15,10 @@ src/.libs
 src/colloquium
 src/.dirstamp
 tests/.libs
-m4
 *~
 INSTALL
 build-aux
 lib
 libtool
+m4/lt*.m4
+m4/libtool.m4

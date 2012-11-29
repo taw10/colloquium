@@ -141,9 +141,10 @@ int render_frame(struct frame *fr, cairo_t *cr)
 			cairo_new_path(cr);
 
 			/* Set up padding, and then draw the contents */
-			cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t);
 			w = fr->w - (fr->lop.pad_l + fr->lop.pad_r);
 			h = fr->h - (fr->lop.pad_t + fr->lop.pad_b);
+
+			cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t+h);
 			render_sc(fr, cr, w, h);
 
 			d = 1;

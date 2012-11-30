@@ -11,12 +11,12 @@ LDADD = $(top_builddir)/lib/libgnu.la @IGNORE_UNUSED_LIBRARIES_CFLAGS@ \
         libstorycode/src/libstorycode.la harfatum/src/libharfatum.la
 
 src_colloquium_SOURCES = src/colloquium.c src/render.c \
-                         src/layout.c src/mainwindow.c src/presentation.c \
+                         src/mainwindow.c src/presentation.c \
                          src/stylesheet.c src/loadsave.c src/frame.c
 
 INCLUDES = -Ilibstorycode/src -Iharfatum/src
 
-EXTRA_DIST += src/layout.h src/presentation.h src/render.h \
+EXTRA_DIST += src/presentation.h src/render.h \
               src/stylesheet.h src/loadsave.h
 
 colloquiumdir = $(datadir)/colloquium
@@ -31,8 +31,7 @@ EXTRA_DIST += $(colloquium_DATA)
 noinst_PROGRAMS = tests/render_test tests/render_test_sc1
 TESTS = tests/render_test tests/render_test_sc1
 
-tests_render_test_SOURCES = tests/render_test.c src/render.c \
-                            src/layout.c src/frame.c
+tests_render_test_SOURCES = tests/render_test.c src/render.c src/frame.c
 
 tests_render_test_sc1_SOURCES = tests/render_test_sc1.c \
-                                src/render.c src/layout.c src/frame.c
+                                src/render.c src/frame.c

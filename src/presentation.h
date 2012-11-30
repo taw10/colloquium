@@ -30,8 +30,6 @@
 #include <cairo.h>
 #include <gtk/gtk.h>
 
-struct frame;
-#include "layout.h"
 #include "stylesheet.h"
 
 struct slide

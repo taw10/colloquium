@@ -32,7 +32,6 @@
 
 #include "../src/storycode.h"
 #include "../src/render.h"
-#include "../src/layout.h"
 #include "../src/stylesheet.h"
 #include "../src/frame.h"
 
@@ -44,8 +43,6 @@ static gint mw_destroy(GtkWidget *w, void *p)
 
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 {
-	PangoContext *pc;
-	GtkAllocation allocation;
 	gint w, h;
 
 	w = gtk_widget_get_allocated_width(da);
@@ -56,11 +53,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
-	pc = gtk_widget_get_pango_context(da);
-
-	gtk_widget_get_allocation(da, &allocation);
-
-	layout_frame(fr, allocation.width, allocation.height);
+	fr->w = w;  fr->h = h;
 	render_frame(fr, cr);
 
 	return FALSE;

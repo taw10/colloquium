@@ -29,7 +29,7 @@
 
 #include "presentation.h"
 
-extern int render_sc(const char *sc, cairo_t *cr, double w, double h);
+extern int render_sc(struct frame *fr, cairo_t *cr, double w, double h);
 
 extern int render_frame(struct frame *fr, cairo_t *cr);
 

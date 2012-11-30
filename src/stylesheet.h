@@ -28,9 +28,8 @@
 #endif
 
 
-struct frame;
-#include "layout.h"
 #include "loadsave.h"
+#include "frame.h"
 
 
 struct style

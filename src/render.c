@@ -3,7 +3,7 @@
  *
  * Colloquium - A tiny presentation program
  *
- * Copyright (c) 2011 Thomas White <taw@bitwiz.org.uk>
+ * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include "stylesheet.h"
 #include "presentation.h"
 #include "frame.h"
+#include "render.h"
 
 
 struct renderstuff

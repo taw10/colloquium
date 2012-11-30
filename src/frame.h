@@ -29,7 +29,38 @@
 
 #include <pango/pango.h>
 
-#include "layout.h"
+
+typedef enum
+{
+	DIR_NONE,
+	DIR_UL,
+	DIR_U,
+	DIR_UR,
+	DIR_R,
+	DIR_DR,
+	DIR_D,
+	DIR_DL,
+	DIR_L
+} Direction;
+
+
+struct layout_parameters
+{
+	double margin_l;
+	double margin_r;
+	double margin_t;
+	double margin_b;
+
+	double pad_l;
+	double pad_r;
+	double pad_t;
+	double pad_b;
+
+	Direction grav;
+
+	double min_w;
+	double min_h;
+};
 
 
 struct frame

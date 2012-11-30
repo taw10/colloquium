@@ -535,7 +535,6 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	fr->style = sty;
 	set_edit(p, p->cur_edit_slide);
 	fr->sc = "Hello";
-	layout_frame(p->cur_edit_slide->top, p->slide_width, p->slide_height);
 	set_selection(p, fr);
 	rerender_slide(p, p->pc);
 	redraw(p);

@@ -97,10 +97,9 @@ int render_sc(struct frame *fr, cairo_t *cr, double w, double h)
 	/* Create glyph string */
 	list = pango_itemize(s.pc, fr->sc, 0, strlen(fr->sc), NULL, NULL);
 	g_list_foreach(list, render_segment, &s);
-
 	g_list_free(list);
+
 	pango_font_description_free(fontdesc);
-	g_object_unref(s.fontmap);
 	g_object_unref(s.pc);
 
 	return 0;

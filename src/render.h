@@ -29,10 +29,6 @@
 
 #include "presentation.h"
 
-extern int render_sc(struct frame *fr, cairo_t *cr, double w, double h);
-
-extern int render_frame(struct frame *fr, cairo_t *cr);
-
 extern cairo_surface_t *render_slide(struct slide *s, int w, int h);
 
 #endif	/* RENDER_H */

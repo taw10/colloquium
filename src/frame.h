@@ -28,6 +28,7 @@
 #endif
 
 #include <pango/pango.h>
+#include <cairo.h>
 
 
 typedef enum
@@ -58,25 +59,29 @@ struct layout_parameters
 
 	Direction grav;
 
+	int use_min_w;
 	double min_w;
+	int use_min_h;
 	double min_h;
 };
 
 
 struct frame
 {
-	struct frame            **rendering_order;
-	int                       num_ro;
-	int                       max_ro;
+	struct frame            **children;
+	int                       num_children;
+	int                       max_children;
 
 	char                     *sc;  /* Storycode */
+
+	cairo_surface_t          *contents;
 
 	struct layout_parameters  lop;
 	struct style             *style;  /* Non-NULL if 'lop' came from SS */
 
-	/* Location relative to parent, calculated from layout parameters */
-	double                    offs_x;
-	double                    offs_y;
+	/* The rectangle allocated to this frame, determined by the renderer */
+	double                    x;
+	double                    y;
 	double                    w;
 	double                    h;
 

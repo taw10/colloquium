@@ -711,8 +711,8 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 	const double dash[] = {2.0, 2.0};
 	double xmin, ymin, width, height;
 
-	xmin = fr->offs_x;
-	ymin = fr->offs_y;
+	xmin = fr->x;
+	ymin = fr->y;
 	width = fr->w;
 	height = fr->h;
 

@@ -45,6 +45,7 @@ static gint mw_destroy(GtkWidget *w, void *p)
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 {
 	gint w, h;
+	double w_used, h_used;
 
 	w = gtk_widget_get_allocated_width(da);
 	h = gtk_widget_get_allocated_height(da);
@@ -54,8 +55,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
-	fr->w = w;  fr->h = h;
-	render_frame(fr, cr);
+	//render_frame(fr, cr, w, h, &w_used, &h_used);
 
 	return FALSE;
 }
@@ -96,9 +96,9 @@ int main(int argc, char *argv[])
 	sty2->name = strdup("Subframe1");
 
 	fr->style = sty;
-	fr->rendering_order[1]->style = sty2;
+	fr->children[1]->style = sty2;
 
-	assert(fr->rendering_order[0] == fr);
+	assert(fr->children[0] == fr);
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 

@@ -47,7 +47,25 @@ struct renderstuff
 	PangoFontMap *fontmap;
 	PangoFont *font;
 	struct frame *fr;
+	int width;
 };
+
+
+static void calc_width(gpointer data, gpointer user_data)
+{
+	struct renderstuff *s = user_data;
+	PangoItem *item = data;
+	PangoGlyphString *glyphs;
+	GdkColor col;
+
+	glyphs = pango_glyph_string_new();
+
+	pango_shape(s->fr->sc+item->offset, item->length, &item->analysis,
+	            glyphs);
+
+	s->width += pango_glyph_string_get_width(glyphs);
+	pango_glyph_string_free(glyphs);
+}
 
 
 static void render_segment(gpointer data, gpointer user_data)
@@ -67,23 +85,29 @@ static void render_segment(gpointer data, gpointer user_data)
 	gdk_cairo_set_source_color(s->cr, &col);
 	pango_cairo_show_glyph_string(s->cr, s->font, glyphs);
 
-	pango_glyph_string_free(glyphs);
 	pango_item_free(item);
 }
 
 
-/* Render Level 1 Storycode */
-int render_sc(struct frame *fr, cairo_t *cr, double w, double h)
+/* Render Level 1 Storycode (no subframes) */
+int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 {
 	PangoFontDescription *fontdesc;
 	struct renderstuff s;
 	GList *list;
+	double w, h;
 
 	if ( fr->sc == NULL ) return 0;
 
 	s.pc = pango_cairo_create_context(cr);
 	s.fr = fr;
 	s.cr = cr;
+
+	/* If a minimum size is set, start there */
+	if ( fr->lop.use_min_w ) w = fr->lop.min_w;
+	if ( fr->lop.use_min_h ) h = fr->lop.min_h;
+
+	/* FIXME: Handle images as well */
 
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();
@@ -96,77 +120,161 @@ int render_sc(struct frame *fr, cairo_t *cr, double w, double h)
 
 	/* Create glyph string */
 	list = pango_itemize(s.pc, fr->sc, 0, strlen(fr->sc), NULL, NULL);
-	g_list_foreach(list, render_segment, &s);
-	g_list_free(list);
+	s.width = 0;
+	g_list_foreach(list, calc_width, &s);
 
+	/* Determine width */
+	w = s.width;
+	if ( fr->lop.use_min_w && (s.width < fr->lop.min_w) ) {
+		w = fr->lop.min_w;
+	}
+	if ( w > max_w ) w = max_w;
+
+	h = 20.0;
+	if ( fr->lop.use_min_h && (h < fr->lop.min_h) ) {
+		h = fr->lop.min_h;
+	}
+	if ( h > max_h ) h = max_h;
+
+	if ( fr->contents != NULL ) cairo_surface_destroy(fr->contents);
+	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+	cr = cairo_create(fr->contents);
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+	cairo_fill(cr);
+
+	g_list_free(list);
 	pango_font_description_free(fontdesc);
 	g_object_unref(s.pc);
+
+	fr->w = w;
+	fr->h = h;
 
 	return 0;
 }
 
 
-int render_frame(struct frame *fr, cairo_t *cr)
+static void get_max_size(struct frame *fr, struct frame *parent,
+                         int this_subframe, double fixed_x, double fixed_y,
+                         double parent_max_width, double parent_max_height,
+                         double *p_width, double *p_height)
+{
+	double w, h;
+	int i;
+
+	w = parent_max_width - parent->lop.pad_l - parent->lop.pad_r;
+	w -= fr->lop.margin_l + fr->lop.margin_r;
+
+	h = parent_max_height - parent->lop.pad_t - parent->lop.pad_b;
+	h -= fr->lop.margin_t + fr->lop.margin_b;
+
+	for ( i=0; i<this_subframe; i++ ) {
+
+		struct frame *ch;
+
+		ch = parent->children[i];
+
+		/* FIXME: Shrink if this frame overlaps */
+		switch ( fr->lop.grav )
+		{
+			case DIR_UL:
+			/* Fix top left corner */
+			break;
+
+			case DIR_U:
+			case DIR_UR:
+			case DIR_R:
+			case DIR_DR:
+			case DIR_D:
+			case DIR_DL:
+			case DIR_L:
+			fprintf(stderr, "Gravity not implemented.\n");
+			break;
+
+			case DIR_NONE:
+			break;
+		}
+	}
+
+	*p_width = w;
+	*p_height = h;
+}
+
+
+
+static void position_frame(struct frame *fr, struct frame *parent)
+{
+	double x, y;
+
+	switch ( fr->lop.grav )
+	{
+		case DIR_UL:
+		/* Fix top left corner */
+		x = parent->x + parent->lop.pad_l + fr->lop.margin_l;
+		y = parent->y + parent->lop.pad_t + fr->lop.margin_t;
+		break;
+
+		case DIR_U:
+		case DIR_UR:
+		case DIR_R:
+		case DIR_DR:
+		case DIR_D:
+		case DIR_DL:
+		case DIR_L:
+		fprintf(stderr, "Gravity not implemented.\n");
+		break;
+
+		case DIR_NONE:
+		break;
+	}
+
+	fr->x = x;
+	fr->y = y;
+}
+
+
+static int render_frame(struct frame *fr, cairo_t *cr,
+                        double max_w, double max_h)
 {
 	int i;
-	int d = 0;
 
-	/* The rendering order is a list of children, but it also contains the
-	 * current frame.  In this way, it contains information about which
-	 * layer the current frame is to be rendered as relative to its
-	 * children. */
-	for ( i=0; i<fr->num_ro; i++ ) {
+	/* Render all subframes */
+	for ( i=0; i<fr->num_children; i++ ) {
 
-		if ( fr->rendering_order[i] == fr ) {
+		double x, y, child_max_w, child_max_h;
 
-			double w, h;
+		/* Determine the maximum possible size this subframe can be */
+		get_max_size(fr->children[i], fr, i, x, y,
+		             max_w, max_h, &child_max_w, &child_max_h);
 
-			/* Draw the frame itself (rectangle) */
-			cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
+		/* Render it and hence (recursives) find out how much space it
+		 * actually needs.*/
+		render_frame(fr->children[i], cr, max_w, max_h);
 
-			if ( (fr->style != NULL)
-			  && (strcmp(fr->style->name, "Default") == 0) )
-			{
-				cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-			} else {
-				cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-			}
-			cairo_fill_preserve(cr);
-			cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-
-			/* if draw_border */
-			//cairo_set_line_width(cr, 1.0);
-			//cairo_stroke(cr);
-
-			cairo_new_path(cr);
-
-			/* Set up padding, and then draw the contents */
-			w = fr->w - (fr->lop.pad_l + fr->lop.pad_r);
-			h = fr->h - (fr->lop.pad_t + fr->lop.pad_b);
-
-			cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t+h);
-			render_sc(fr, cr, w, h);
-
-			d = 1;
-
-			continue;
-
-		}
-
-		/* Sort out the transformation for the margins */
-		cairo_translate(cr, fr->rendering_order[i]->offs_x,
-		                    fr->rendering_order[i]->offs_y);
-
-		render_frame(fr->rendering_order[i], cr);
+		/* Position the frame within the parent */
+		position_frame(fr->children[i], fr);
 
 	}
 
-	if ( !d ) {
-		fprintf(stderr, "WARNING: Frame didn't appear on its own "
-		                "rendering list?\n");
-	}
+	/* Render the actual contents of this frame in the remaining space */
+	render_sc(fr, cr, max_w, max_h);
 
 	return 0;
+}
+
+
+static void composite_slide(struct slide *s)
+{
+	int level = 0;
+	int more = 0;
+
+	do {
+
+		int i;
+
+		composite_frames_at_level(s->top, level);
+
+	} while ( more );
 }
 
 
@@ -195,8 +303,14 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_SUBPIXEL);
 	cairo_set_font_options(cr, fopts);
 
-	printf("rendered to %p %ix%i\n", surf, w, h);
-	render_frame(s->top, cr);
+	s->top->lop.min_w = w;
+	s->top->lop.min_h = h;
+	s->top->lop.use_min_w = 1;
+	s->top->lop.use_min_h = 1;
+	render_frame(s->top, cr, w, h);
+	printf("size: %f x %f\n", s->top->w, s->top->h);
+
+	composite_slide(s);
 
 	cairo_font_options_destroy(fopts);
 	cairo_destroy(cr);

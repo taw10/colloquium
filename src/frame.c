@@ -38,11 +38,11 @@ static int alloc_ro(struct frame *fr)
 {
 	struct frame **new_ro;
 
-	new_ro = realloc(fr->rendering_order,
-	                 fr->max_ro*sizeof(struct frame *));
+	new_ro = realloc(fr->children,
+	                 fr->max_children*sizeof(struct frame *));
 	if ( new_ro == NULL ) return 1;
 
-	fr->rendering_order = new_ro;
+	fr->children = new_ro;
 
 	return 0;
 }
@@ -55,14 +55,15 @@ struct frame *frame_new()
 	n = calloc(1, sizeof(struct frame));
 	if ( n == NULL ) return NULL;
 
-	n->rendering_order = NULL;
-	n->max_ro = 32;
+	n->children = NULL;
+	n->max_children = 32;
 	alloc_ro(n);
 
-	n->num_ro = 1;
-	n->rendering_order[0] = n;
+	n->num_children = 1;
+	n->children[0] = n;
 
 	n->pl = NULL;
+	n->contents = NULL;
 
 	return n;
 }
@@ -75,12 +76,12 @@ struct frame *add_subframe(struct frame *fr)
 	n = frame_new();
 	if ( n == NULL ) return NULL;
 
-	if ( fr->num_ro == fr->max_ro ) {
-		fr->max_ro += 32;
+	if ( fr->num_children == fr->max_children ) {
+		fr->max_children += 32;
 		if ( alloc_ro(fr) ) return NULL;
 	}
 
-	fr->rendering_order[fr->num_ro++] = n;
+	fr->children[fr->num_children++] = n;
 
 	return n;
 }
@@ -96,9 +97,9 @@ static void show_heirarchy(struct frame *fr, const char *t)
 
 	printf("%s%p %s\n", t, fr, fr->sc);
 
-	for ( i=0; i<fr->num_ro; i++ ) {
-		if ( fr->rendering_order[i] != fr ) {
-			show_heirarchy(fr->rendering_order[i], tn);
+	for ( i=0; i<fr->num_children; i++ ) {
+		if ( fr->children[i] != fr ) {
+			show_heirarchy(fr->children[i], tn);
 		} else {
 			printf("%s<this frame>\n", tn);
 		}

@@ -34,6 +34,7 @@
 #include "../src/render.h"
 #include "../src/stylesheet.h"
 #include "../src/frame.h"
+#include "../src/presentation.h"
 
 
 static gint mw_destroy(GtkWidget *w, void *p)
@@ -41,9 +42,12 @@ static gint mw_destroy(GtkWidget *w, void *p)
 	exit(0);
 }
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
+static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 {
 	gint w, h;
+	double w_used, h_used;
+	cairo_surface_t *surf;
+	struct slide *s = data;
 
 	w = gtk_widget_get_allocated_width(da);
 	h = gtk_widget_get_allocated_height(da);
@@ -53,8 +57,10 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
-	fr->w = w;  fr->h = h;
-	render_frame(fr, cr);
+	surf = render_slide(s, w, h);
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_set_source_surface(cr, surf, 0.0, 0.0);
+	cairo_fill(cr);
 
 	return FALSE;
 }
@@ -68,6 +74,7 @@ int main(int argc, char *argv[])
 	struct frame *fr2;
 	struct style *sty1;
 	struct style *sty2;
+	struct slide s;
 
 	gtk_init(&argc, &argv);
 
@@ -91,27 +98,26 @@ int main(int argc, char *argv[])
 	sty2->lop.margin_r = 10.0;
 	sty2->lop.margin_t = 10.0;
 	sty2->lop.margin_b = 10.0;
+	sty2->lop.grav = DIR_UL;
 	sty2->name = strdup("Text frame");
-
 
 	fr2 = calloc(1, sizeof(struct frame));
 	if ( fr2 == NULL ) return 1;
 	fr2->sc = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur. Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros. Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.";
-	fr2->rendering_order = calloc(1, sizeof(struct frame *));
-	if ( fr2->rendering_order == NULL ) return 1;
-	fr2->rendering_order[0] = fr2;
-	fr2->num_ro = 1;
+	fr2->children = NULL;
+	fr2->num_children = 0;
 	fr2->style = sty2;
 
 	fr = calloc(1, sizeof(struct frame));
 	if ( fr == NULL ) return 1;
 	fr->sc = "";
-	fr->rendering_order = calloc(2, sizeof(struct frame *));
-	if ( fr->rendering_order == NULL ) return 1;
-	fr->rendering_order[0] = fr;  /* Render parent first */
-	fr->rendering_order[1] = fr2;
+	fr->children = calloc(2, sizeof(struct frame *));
+	if ( fr->children == NULL ) return 1;
+	fr->children[0] = fr2;
 	fr->style = sty1;
-	fr->num_ro = 2;
+	fr->num_children = 1;
+
+	s.top = fr;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
@@ -123,7 +129,7 @@ int main(int argc, char *argv[])
 	                 NULL);
 
 	g_signal_connect(G_OBJECT(drawingarea), "draw",
-			 G_CALLBACK(draw_sig), fr);
+			 G_CALLBACK(draw_sig), &s);
 
 	gtk_widget_show_all(window);
 	gtk_main();

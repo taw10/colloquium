@@ -56,7 +56,6 @@ static void calc_width(gpointer data, gpointer user_data)
 	struct renderstuff *s = user_data;
 	PangoItem *item = data;
 	PangoGlyphString *glyphs;
-	GdkColor col;
 
 	glyphs = pango_glyph_string_new();
 
@@ -84,7 +83,9 @@ static void render_segment(gpointer data, gpointer user_data)
 	gdk_color_parse("#000000", &col);
 	gdk_cairo_set_source_color(s->cr, &col);
 	pango_cairo_show_glyph_string(s->cr, s->font, glyphs);
+	cairo_fill(s->cr);
 
+	pango_glyph_string_free(glyphs);
 	pango_item_free(item);
 }
 
@@ -101,7 +102,6 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 
 	s.pc = pango_cairo_create_context(cr);
 	s.fr = fr;
-	s.cr = cr;
 
 	/* If a minimum size is set, start there */
 	if ( fr->lop.use_min_w ) w = fr->lop.min_w;
@@ -136,12 +136,18 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	}
 	if ( h > max_h ) h = max_h;
 
+	/* Having decided on the size, create surface and render the contents */
 	if ( fr->contents != NULL ) cairo_surface_destroy(fr->contents);
 	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	cr = cairo_create(fr->contents);
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-	cairo_fill(cr);
+	s.cr = cr;
+
+	//cairo_rectangle(cr, 0.0, 0.0, w/2, h/2);
+	//cairo_set_source_rgb(cr, 0.8, 0.8, 1.0);
+	//cairo_fill(cr);
+
+	cairo_move_to(cr, 0.0, 0.0);
+	g_list_foreach(list, render_segment, &s);
 
 	g_list_free(list);
 	pango_font_description_free(fontdesc);
@@ -170,9 +176,9 @@ static void get_max_size(struct frame *fr, struct frame *parent,
 
 	for ( i=0; i<this_subframe; i++ ) {
 
-		struct frame *ch;
+		//struct frame *ch;
 
-		ch = parent->children[i];
+		//ch = parent->children[i];
 
 		/* FIXME: Shrink if this frame overlaps */
 		switch ( fr->lop.grav )
@@ -204,14 +210,12 @@ static void get_max_size(struct frame *fr, struct frame *parent,
 
 static void position_frame(struct frame *fr, struct frame *parent)
 {
-	double x, y;
-
 	switch ( fr->lop.grav )
 	{
 		case DIR_UL:
 		/* Fix top left corner */
-		x = parent->x + parent->lop.pad_l + fr->lop.margin_l;
-		y = parent->y + parent->lop.pad_t + fr->lop.margin_t;
+		fr->x = parent->x + parent->lop.pad_l + fr->lop.margin_l;
+		fr->y = parent->y + parent->lop.pad_t + fr->lop.margin_t;
 		break;
 
 		case DIR_U:
@@ -227,9 +231,6 @@ static void position_frame(struct frame *fr, struct frame *parent)
 		case DIR_NONE:
 		break;
 	}
-
-	fr->x = x;
-	fr->y = y;
 }
 
 
@@ -263,18 +264,53 @@ static int render_frame(struct frame *fr, cairo_t *cr,
 }
 
 
-static void composite_slide(struct slide *s)
+static void do_composite(struct frame *fr, cairo_t *cr)
+{
+	if ( fr->contents == NULL ) return;
+
+	cairo_rectangle(cr, fr->x, fr->y, fr->w, fr->h);
+	cairo_set_source_surface(cr, fr->contents, 0.0, 0.0);
+	cairo_fill(cr);
+}
+
+
+static int composite_frames_at_level(struct frame *fr, cairo_t *cr,
+                                     int level, int cur_level)
+{
+	int i;
+
+	if ( level == cur_level ) {
+
+		/* This frame is at the right level, so composite it */
+		do_composite(fr, cr);
+		return 1;
+
+	} else {
+
+		int n = 0;
+
+		for ( i=0; i<fr->num_children; i++ ) {
+			n += composite_frames_at_level(fr->children[i], cr,
+			                               level, cur_level);
+		}
+
+		return n;
+
+	}
+}
+
+
+static void composite_slide(struct slide *s, cairo_t *cr)
 {
 	int level = 0;
 	int more = 0;
 
 	do {
+		more = composite_frames_at_level(s->top, cr, level, 0);
+		level++;
+	} while ( more != 0 );
 
-		int i;
-
-		composite_frames_at_level(s->top, level);
-
-	} while ( more );
+	printf("%i levels composited.\n", level-1);
 }
 
 
@@ -310,7 +346,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	render_frame(s->top, cr, w, h);
 	printf("size: %f x %f\n", s->top->w, s->top->h);
 
-	composite_slide(s);
+	composite_slide(s, cr);
 
 	cairo_font_options_destroy(fopts);
 	cairo_destroy(cr);

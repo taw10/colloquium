@@ -309,8 +309,6 @@ static void composite_slide(struct slide *s, cairo_t *cr)
 		more = composite_frames_at_level(s->top, cr, level, 0);
 		level++;
 	} while ( more != 0 );
-
-	printf("%i levels composited.\n", level-1);
 }
 
 
@@ -344,7 +342,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	s->top->lop.use_min_w = 1;
 	s->top->lop.use_min_h = 1;
 	render_frame(s->top, cr, w, h);
-	printf("size: %f x %f\n", s->top->w, s->top->h);
 
 	composite_slide(s, cr);
 

@@ -60,6 +60,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_surface(cr, surf, 0.0, 0.0);
 	cairo_fill(cr);
+	cairo_surface_destroy(surf);
 
 	return FALSE;
 }

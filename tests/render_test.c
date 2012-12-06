@@ -45,7 +45,6 @@ static gint mw_destroy(GtkWidget *w, void *p)
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 {
 	gint w, h;
-	double w_used, h_used;
 	cairo_surface_t *surf;
 	struct slide *s = data;
 

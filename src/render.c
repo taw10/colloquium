@@ -149,8 +149,10 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	cairo_move_to(cr, 0.0, 0.0);
 	g_list_foreach(list, render_segment, &s);
 
+	cairo_destroy(cr);
 	g_list_free(list);
 	pango_font_description_free(fontdesc);
+	g_object_unref(s.font);
 	g_object_unref(s.pc);
 
 	fr->w = w;

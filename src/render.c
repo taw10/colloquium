@@ -264,6 +264,32 @@ static int render_frame(struct frame *fr, cairo_t *cr,
 }
 
 
+void recursive_buffer_free(struct frame *fr)
+{
+	int i;
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		recursive_buffer_free(fr->children[i]);
+	}
+
+	if ( fr->contents != NULL ) {
+		cairo_surface_destroy(fr->contents);
+		fr->contents = NULL;
+	}
+}
+
+
+void free_render_buffers(struct slide *s)
+{
+	recursive_buffer_free(s->top);
+	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
+	if ( s->rendered_proj != NULL ) cairo_surface_destroy(s->rendered_proj);
+	if ( s->rendered_thumb != NULL ) {
+		cairo_surface_destroy(s->rendered_thumb);
+	}
+}
+
+
 static void do_composite(struct frame *fr, cairo_t *cr)
 {
 	if ( fr->contents == NULL ) return;

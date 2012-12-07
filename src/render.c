@@ -258,7 +258,7 @@ static int render_frame(struct frame *fr, cairo_t *cr,
 
 		/* Render it and hence (recursives) find out how much space it
 		 * actually needs.*/
-		render_frame(ch, cr, max_w, max_h);
+		render_frame(ch, cr, child_max_w, child_max_h);
 
 		/* Position the frame within the parent */
 		position_frame(ch, fr);
@@ -325,7 +325,7 @@ static int composite_frames_at_level(struct frame *fr, cairo_t *cr,
 
 		for ( i=0; i<fr->num_children; i++ ) {
 			n += composite_frames_at_level(fr->children[i], cr,
-			                               level, cur_level);
+			                               level, cur_level+1);
 		}
 
 		return n;

@@ -245,17 +245,23 @@ static int render_frame(struct frame *fr, cairo_t *cr,
 	for ( i=0; i<fr->num_children; i++ ) {
 
 		double x, y, child_max_w, child_max_h;
+		struct frame *ch = fr->children[i];
+
+		if ( ch->style != NULL ) {
+			memcpy(&ch->lop, &ch->style->lop,
+			       sizeof(struct layout_parameters));
+		}
 
 		/* Determine the maximum possible size this subframe can be */
-		get_max_size(fr->children[i], fr, i, x, y,
+		get_max_size(ch, fr, i, x, y,
 		             max_w, max_h, &child_max_w, &child_max_h);
 
 		/* Render it and hence (recursives) find out how much space it
 		 * actually needs.*/
-		render_frame(fr->children[i], cr, max_w, max_h);
+		render_frame(ch, cr, max_w, max_h);
 
 		/* Position the frame within the parent */
-		position_frame(fr->children[i], fr);
+		position_frame(ch, fr);
 
 	}
 

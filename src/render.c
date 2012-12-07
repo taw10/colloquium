@@ -90,8 +90,8 @@ static void render_segment(gpointer data, gpointer user_data)
 	/* FIXME: Honour alpha as well */
 	gdk_color_parse("#000000", &col);
 	gdk_cairo_set_source_color(s->cr, &col);
+	cairo_set_source_rgb(s->cr, 0.0, 1.0, 0.0);
 	pango_cairo_show_glyph_string(s->cr, s->font, glyphs);
-	cairo_fill(s->cr);
 
 	pango_glyph_string_free(glyphs);
 	pango_item_free(item);
@@ -142,13 +142,13 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	g_list_foreach(list, calc_width, &s);
 
 	/* Determine width */
-	w = s.width;
+	w = s.width / PANGO_SCALE;
 	if ( fr->lop.use_min_w && (s.width < fr->lop.min_w) ) {
 		w = fr->lop.min_w;
 	}
 	if ( w > max_w ) w = max_w;
 
-	h = 20.0;
+	h = 50.0;
 	if ( fr->lop.use_min_h && (h < fr->lop.min_h) ) {
 		h = fr->lop.min_h;
 	}
@@ -160,11 +160,12 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	cr = cairo_create(fr->contents);
 	s.cr = cr;
 
-	//cairo_rectangle(cr, 0.0, 0.0, w/2, h/2);
-	//cairo_set_source_rgb(cr, 0.8, 0.8, 1.0);
-	//cairo_fill(cr);
+	cairo_rectangle(cr, w/2, h/2, w/2, h/2);
+	cairo_set_source_rgb(cr, 0.0, 0.8, 1.0);
+	cairo_fill(cr);
 
-	cairo_move_to(cr, 0.0, 0.0);
+	/* FIXME: Add height of text to y coordinate */
+	cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t+h-fr->lop.pad_b);
 	g_list_foreach(list, render_segment, &s);
 
 	cairo_destroy(cr);
@@ -322,8 +323,10 @@ static void do_composite(struct frame *fr, cairo_t *cr)
 	if ( fr->contents == NULL ) return;
 
 	cairo_rectangle(cr, fr->x, fr->y, fr->w, fr->h);
-	cairo_set_source_surface(cr, fr->contents, 0.0, 0.0);
-	cairo_fill(cr);
+	cairo_set_source_surface(cr, fr->contents, fr->x, fr->y);
+	cairo_fill_preserve(cr);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_stroke(cr);
 }
 
 

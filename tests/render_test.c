@@ -94,10 +94,10 @@ int main(int argc, char *argv[])
 	sty2->lop.pad_r = 10.0;
 	sty2->lop.pad_t = 10.0;
 	sty2->lop.pad_b = 10.0;
-	sty2->lop.margin_l = 10.0;
-	sty2->lop.margin_r = 10.0;
-	sty2->lop.margin_t = 10.0;
-	sty2->lop.margin_b = 10.0;
+	sty2->lop.margin_l = 5.0;
+	sty2->lop.margin_r = 5.0;
+	sty2->lop.margin_t = 5.0;
+	sty2->lop.margin_b = 5.0;
 	sty2->lop.grav = DIR_UL;
 	sty2->name = strdup("Text frame");
 

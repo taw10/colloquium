@@ -227,10 +227,10 @@ static void position_frame(struct frame *fr, struct frame *parent)
 		case DIR_D:
 		case DIR_DL:
 		case DIR_L:
+		case DIR_NONE:
 		fprintf(stderr, "Gravity not implemented.\n");
 		break;
 
-		case DIR_NONE:
 		break;
 	}
 }

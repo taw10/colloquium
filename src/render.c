@@ -46,6 +46,7 @@ struct renderstuff
 	PangoContext *pc;
 	PangoFontMap *fontmap;
 	PangoFont *font;
+	PangoLogAttr *log_attrs;
 	struct frame *fr;
 	int width;
 };
@@ -72,12 +73,19 @@ static void render_segment(gpointer data, gpointer user_data)
 	struct renderstuff *s = user_data;
 	PangoItem *item = data;
 	PangoGlyphString *glyphs;
+	PangoGlyphItem gitem;
 	GdkColor col;
 
 	glyphs = pango_glyph_string_new();
 
 	pango_shape(s->fr->sc+item->offset, item->length, &item->analysis,
 	            glyphs);
+
+	gitem.item = item;
+	gitem.glyphs = glyphs;
+	pango_glyph_item_letter_space(&gitem, s->fr->sc+item->offset,
+	                              s->log_attrs+item->offset,
+	                              5.0*PANGO_SCALE);
 
 	/* FIXME: Honour alpha as well */
 	gdk_color_parse("#000000", &col);
@@ -97,6 +105,7 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	struct renderstuff s;
 	GList *list;
 	double w, h;
+	int len;
 
 	if ( fr->sc == NULL ) return 0;
 
@@ -117,6 +126,15 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 		fprintf(stderr, "Failed to load font.\n");
 		return 1;
 	}
+
+	len = strlen(fr->sc);
+	s.log_attrs = calloc(len+1, sizeof(PangoLogAttr));
+	if ( s.log_attrs == NULL ) {
+		fprintf(stderr, "Failed to allocate memory for log attrs\n");
+		return 1;
+	}
+	pango_get_log_attrs(fr->sc, len, -1,
+	                    pango_language_get_default(), s.log_attrs, len+1);
 
 	/* Create glyph string */
 	list = pango_itemize(s.pc, fr->sc, 0, strlen(fr->sc), NULL, NULL);
@@ -152,6 +170,7 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	cairo_destroy(cr);
 	g_list_free(list);
 	pango_font_description_free(fontdesc);
+	free(s.log_attrs);
 	g_object_unref(s.font);
 	g_object_unref(s.pc);
 

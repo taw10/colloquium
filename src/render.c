@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <gdk/gdk.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <storycode.h>
 
@@ -45,10 +46,11 @@ struct renderstuff
 	cairo_t *cr;
 	PangoContext *pc;
 	PangoFontMap *fontmap;
-	PangoFont *font;
 	PangoLogAttr *log_attrs;
 	struct frame *fr;
-	int width;
+	double width;
+	double height;
+	double ascent;
 };
 
 
@@ -57,13 +59,22 @@ static void calc_width(gpointer data, gpointer user_data)
 	struct renderstuff *s = user_data;
 	PangoItem *item = data;
 	PangoGlyphString *glyphs;
+	PangoRectangle extents;
 
 	glyphs = pango_glyph_string_new();
 
 	pango_shape(s->fr->sc+item->offset, item->length, &item->analysis,
 	            glyphs);
 
-	s->width += pango_glyph_string_get_width(glyphs);
+	pango_glyph_string_extents_range(glyphs, item->offset,
+	                                 item->offset+item->length,
+	                                 item->analysis.font,
+	                                 &extents, NULL);
+
+	s->width += extents.width;
+	s->height = extents.height;  /* FIXME: Total rubbish */
+	s->ascent = PANGO_ASCENT(extents);
+
 	pango_glyph_string_free(glyphs);
 }
 
@@ -83,15 +94,12 @@ static void render_segment(gpointer data, gpointer user_data)
 
 	gitem.item = item;
 	gitem.glyphs = glyphs;
-	pango_glyph_item_letter_space(&gitem, s->fr->sc+item->offset,
-	                              s->log_attrs+item->offset,
-	                              5.0*PANGO_SCALE);
 
 	/* FIXME: Honour alpha as well */
 	gdk_color_parse("#000000", &col);
 	gdk_cairo_set_source_color(s->cr, &col);
 	cairo_set_source_rgb(s->cr, 0.0, 1.0, 0.0);
-	pango_cairo_show_glyph_string(s->cr, s->font, glyphs);
+	pango_cairo_show_glyph_item(s->cr, s->fr->sc+item->offset, &gitem);
 
 	pango_glyph_string_free(glyphs);
 	pango_item_free(item);
@@ -106,6 +114,8 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	GList *list;
 	double w, h;
 	int len;
+	PangoAttrList *attrs;
+	PangoAttribute *attr_font;
 
 	if ( fr->sc == NULL ) return 0;
 
@@ -120,12 +130,12 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();
-	fontdesc = pango_font_description_from_string("Serif 20");
-	s.font = pango_font_map_load_font(s.fontmap, s.pc, fontdesc);
-	if ( s.font == NULL ) {
-		fprintf(stderr, "Failed to load font.\n");
-		return 1;
-	}
+	fontdesc = pango_font_description_from_string("Sans 24");
+
+	attrs = pango_attr_list_new();
+	attr_font = pango_attr_font_desc_new(fontdesc);
+	pango_attr_list_insert_before(attrs, attr_font);
+	pango_font_description_free(fontdesc);
 
 	len = strlen(fr->sc);
 	s.log_attrs = calloc(len+1, sizeof(PangoLogAttr));
@@ -137,18 +147,20 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	                    pango_language_get_default(), s.log_attrs, len+1);
 
 	/* Create glyph string */
-	list = pango_itemize(s.pc, fr->sc, 0, strlen(fr->sc), NULL, NULL);
+	list = pango_itemize(s.pc, fr->sc, 0, strlen(fr->sc), attrs, NULL);
 	s.width = 0;
 	g_list_foreach(list, calc_width, &s);
 
 	/* Determine width */
 	w = s.width / PANGO_SCALE;
+	w += fr->lop.pad_l + fr->lop.pad_r;
 	if ( fr->lop.use_min_w && (s.width < fr->lop.min_w) ) {
 		w = fr->lop.min_w;
 	}
 	if ( w > max_w ) w = max_w;
 
-	h = 50.0;
+	h = s.height / PANGO_SCALE;
+	h += fr->lop.pad_t + fr->lop.pad_b;
 	if ( fr->lop.use_min_h && (h < fr->lop.min_h) ) {
 		h = fr->lop.min_h;
 	}
@@ -164,15 +176,13 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	cairo_set_source_rgb(cr, 0.0, 0.8, 1.0);
 	cairo_fill(cr);
 
-	/* FIXME: Add height of text to y coordinate */
-	cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t+h-fr->lop.pad_b);
+	cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t + s.ascent/PANGO_SCALE);
 	g_list_foreach(list, render_segment, &s);
 
 	cairo_destroy(cr);
 	g_list_free(list);
-	pango_font_description_free(fontdesc);
 	free(s.log_attrs);
-	g_object_unref(s.font);
+	pango_attr_list_unref(attrs);
 	g_object_unref(s.pc);
 
 	fr->w = w;

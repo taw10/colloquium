@@ -29,7 +29,6 @@
 #include <cairo-pdf.h>
 #include <pango/pangocairo.h>
 #include <assert.h>
-#include <gdk/gdk.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -41,20 +40,56 @@
 #include "render.h"
 
 
+enum wrap_box_type
+{
+	WRAP_BOX_PANGO,
+};
+
+
+struct wrap_box
+{
+	enum wrap_box_type type;
+
+	/* WRAP_BOX_PANGO */
+	PangoGlyphItem *glyph_item;
+	const char *text;
+};
+
+
+struct wrap_line
+{
+	int n_boxes;
+	struct wrap_box *boxes;
+};
+
+
 struct renderstuff
 {
 	cairo_t *cr;
 	PangoContext *pc;
 	PangoFontMap *fontmap;
-	PangoLogAttr *log_attrs;
-	struct frame *fr;
+	PangoAttrList *attrs;
+
+	/* Text for the block currently being processed */
+	const char *cur_text;
+	PangoLogAttr *cur_log_attrs;
+
+	double ascent;
+	double descent;
+
 	double width;
 	double height;
-	double ascent;
+
+	double wrap_w;
+
+	/* Lines of boxes, where each box can be a load of glyphs, an image,
+	 * etc */
+	int n_lines;
+	struct wrap_line *lines;
 };
 
 
-static void calc_width(gpointer data, gpointer user_data)
+static void wrap_text(gpointer data, gpointer user_data)
 {
 	struct renderstuff *s = user_data;
 	PangoItem *item = data;
@@ -63,7 +98,7 @@ static void calc_width(gpointer data, gpointer user_data)
 
 	glyphs = pango_glyph_string_new();
 
-	pango_shape(s->fr->sc+item->offset, item->length, &item->analysis,
+	pango_shape(s->cur_text+item->offset, item->length, &item->analysis,
 	            glyphs);
 
 	pango_glyph_string_extents_range(glyphs, item->offset,
@@ -74,82 +109,136 @@ static void calc_width(gpointer data, gpointer user_data)
 	s->width += extents.width;
 	s->height = extents.height;  /* FIXME: Total rubbish */
 	s->ascent = PANGO_ASCENT(extents);
+	s->descent = PANGO_DESCENT(extents);
 
 	pango_glyph_string_free(glyphs);
 }
 
 
-static void render_segment(gpointer data, gpointer user_data)
+static void process_sc_block(struct renderstuff *s, const char *sc_name,
+                             const char *sc_options, const char *sc_contents)
 {
-	struct renderstuff *s = user_data;
-	PangoItem *item = data;
-	PangoGlyphString *glyphs;
-	PangoGlyphItem gitem;
-	GdkColor col;
+	size_t len;
+	GList *item_list;
 
-	glyphs = pango_glyph_string_new();
+	/* Only process textual blocks, for now */
+	if ( sc_name != NULL ) return;
+	if ( sc_options != NULL ) {
+		fprintf(stderr, "Block has options.  WTF?\n");
+		return;
+	}
 
-	pango_shape(s->fr->sc+item->offset, item->length, &item->analysis,
-	            glyphs);
+	/* Empty block? */
+	if ( sc_contents == NULL ) return;
 
-	gitem.item = item;
-	gitem.glyphs = glyphs;
+	len = strlen(sc_contents);
+	if ( len == 0 ) return;
 
-	/* FIXME: Honour alpha as well */
-	gdk_color_parse("#000000", &col);
-	gdk_cairo_set_source_color(s->cr, &col);
-	cairo_set_source_rgb(s->cr, 0.0, 1.0, 0.0);
-	pango_cairo_show_glyph_item(s->cr, s->fr->sc+item->offset, &gitem);
+	s->cur_log_attrs = calloc(len+1, sizeof(PangoLogAttr));
+	if ( s->cur_log_attrs == NULL ) {
+		fprintf(stderr, "Failed to allocate memory for log attrs\n");
+		return;
+	}
 
-	pango_glyph_string_free(glyphs);
-	pango_item_free(item);
+	pango_get_log_attrs(sc_contents, len, -1, pango_language_get_default(),
+	                    s->cur_log_attrs, len+1);
+
+	/* Create glyph string */
+	item_list = pango_itemize(s->pc, sc_contents, 0, len, s->attrs, NULL);
+	s->cur_text = sc_contents;
+	g_list_foreach(item_list, wrap_text, &s);
+
+	g_list_free(item_list);
+	free(s->cur_log_attrs);
+}
+
+
+static void render_boxes(struct wrap_line *line, struct renderstuff *s)
+{
+	int j;
+	double x_pos = 0.0;
+
+	for ( j=0; j<line->n_boxes; j++ ) {
+
+		struct wrap_box *box;
+
+		box = &line->boxes[j];
+		cairo_rel_move_to(s->cr, x_pos, 0.0);
+
+		switch ( line->boxes[j].type ) {
+
+			case WRAP_BOX_PANGO :
+			pango_cairo_show_glyph_item(s->cr, box->text,
+			                            box->glyph_item);
+			x_pos += pango_glyph_string_get_width(box->glyph_item->glyphs);
+			break;
+
+		}
+
+	}
+}
+
+
+static void render_lines(struct renderstuff *s)
+{
+	int i;
+	double spacing = (s->ascent+s->descent)/PANGO_SCALE;
+	double ascent = s->ascent/PANGO_SCALE;
+
+	cairo_set_source_rgba(s->cr, 0.4, 0.0, 0.7, 1.0);
+	for ( i=0; i<s->n_lines; i++ ) {
+
+		/* Move to beginning of the line */
+		cairo_move_to(s->cr, 0.0, ascent + i*spacing);
+
+		/* Render the line */
+		render_boxes(&s->lines[i], s);
+
+	}
 }
 
 
 /* Render Level 1 Storycode (no subframes) */
-int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
+static int render_sc(struct frame *fr, double max_w, double max_h)
 {
 	PangoFontDescription *fontdesc;
 	struct renderstuff s;
-	GList *list;
 	double w, h;
-	int len;
-	PangoAttrList *attrs;
 	PangoAttribute *attr_font;
+	SCBlockList *bl;
+	SCBlockListIterator *iter;
+	struct scblock *b;
 
 	if ( fr->sc == NULL ) return 0;
 
-	s.pc = pango_cairo_create_context(cr);
-	s.fr = fr;
+	bl = sc_find_blocks(fr->sc, NULL);
 
-	/* If a minimum size is set, start there */
-	if ( fr->lop.use_min_w ) w = fr->lop.min_w;
-	if ( fr->lop.use_min_h ) h = fr->lop.min_h;
+	if ( bl == NULL ) {
+		printf("Failed to find blocks.\n");
+		return 0;
+	}
 
-	/* FIXME: Handle images as well */
+	s.wrap_w = max_w;
 
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();
-	fontdesc = pango_font_description_from_string("Sans 24");
+	s.pc = pango_font_map_create_context(s.fontmap);
+	fontdesc = pango_font_description_from_string("Sorts Mill Goudy Bold 24");
 
-	attrs = pango_attr_list_new();
+	/* Set up attribute list to use the font */
+	s.attrs = pango_attr_list_new();
 	attr_font = pango_attr_font_desc_new(fontdesc);
-	pango_attr_list_insert_before(attrs, attr_font);
+	pango_attr_list_insert_before(s.attrs, attr_font);
 	pango_font_description_free(fontdesc);
 
-	len = strlen(fr->sc);
-	s.log_attrs = calloc(len+1, sizeof(PangoLogAttr));
-	if ( s.log_attrs == NULL ) {
-		fprintf(stderr, "Failed to allocate memory for log attrs\n");
-		return 1;
+	/* Iterate through SC blocks and send each one in turn for processing */
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+		process_sc_block(&s, b->name, b->options, b->contents);
 	}
-	pango_get_log_attrs(fr->sc, len, -1,
-	                    pango_language_get_default(), s.log_attrs, len+1);
-
-	/* Create glyph string */
-	list = pango_itemize(s.pc, fr->sc, 0, strlen(fr->sc), attrs, NULL);
-	s.width = 0;
-	g_list_foreach(list, calc_width, &s);
+	sc_block_list_free(bl);
 
 	/* Determine width */
 	w = s.width / PANGO_SCALE;
@@ -169,20 +258,13 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 	/* Having decided on the size, create surface and render the contents */
 	if ( fr->contents != NULL ) cairo_surface_destroy(fr->contents);
 	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
-	cr = cairo_create(fr->contents);
-	s.cr = cr;
+	s.cr = cairo_create(fr->contents);
 
-	cairo_rectangle(cr, w/2, h/2, w/2, h/2);
-	cairo_set_source_rgb(cr, 0.0, 0.8, 1.0);
-	cairo_fill(cr);
+	cairo_translate(s.cr, -fr->lop.pad_l, -fr->lop.pad_t);
+	render_lines(&s);
 
-	cairo_move_to(cr, fr->lop.pad_l, fr->lop.pad_t + s.ascent/PANGO_SCALE);
-	g_list_foreach(list, render_segment, &s);
-
-	cairo_destroy(cr);
-	g_list_free(list);
-	free(s.log_attrs);
-	pango_attr_list_unref(attrs);
+	cairo_destroy(s.cr);
+	pango_attr_list_unref(s.attrs);
 	g_object_unref(s.pc);
 
 	fr->w = w;
@@ -192,7 +274,7 @@ int render_sc(struct frame *fr, cairo_t *cr, double max_w, double max_h)
 }
 
 
-static void get_max_size(struct frame *fr, struct frame *parent,
+static int get_max_size(struct frame *fr, struct frame *parent,
                          int this_subframe, double fixed_x, double fixed_y,
                          double parent_max_width, double parent_max_height,
                          double *p_width, double *p_height)
@@ -236,6 +318,7 @@ static void get_max_size(struct frame *fr, struct frame *parent,
 
 	*p_width = w;
 	*p_height = h;
+	return 0;
 }
 
 
@@ -269,34 +352,48 @@ static void position_frame(struct frame *fr, struct frame *parent)
 static int render_frame(struct frame *fr, cairo_t *cr,
                         double max_w, double max_h)
 {
-	int i;
+	if ( fr->num_children > 0 ) {
 
-	/* Render all subframes */
-	for ( i=0; i<fr->num_children; i++ ) {
+		int i;
 
-		double x, y, child_max_w, child_max_h;
-		struct frame *ch = fr->children[i];
+		/* Render all subframes */
+		for ( i=0; i<fr->num_children; i++ ) {
 
-		if ( ch->style != NULL ) {
-			memcpy(&ch->lop, &ch->style->lop,
-			       sizeof(struct layout_parameters));
+			double x, y, child_max_w, child_max_h;
+			struct frame *ch = fr->children[i];
+			int changed;
+
+			if ( ch->style != NULL ) {
+				memcpy(&ch->lop, &ch->style->lop,
+				       sizeof(struct layout_parameters));
+			}
+
+			get_max_size(ch, fr, i, x, y, max_w, max_h,
+				     &child_max_w, &child_max_h);
+
+			do {
+
+				/* Render it and hence (recursively) find out
+				 * how much space it actually needs.*/
+				render_frame(ch, cr, child_max_w, child_max_h);
+
+				changed = get_max_size(ch, fr, i, x, y,
+				                       max_w, max_h,
+					               &child_max_w,
+					               &child_max_h);
+
+			} while ( changed );
+
+			/* Position the frame within the parent */
+			position_frame(ch, fr);
+
 		}
 
-		/* Determine the maximum possible size this subframe can be */
-		get_max_size(ch, fr, i, x, y,
-		             max_w, max_h, &child_max_w, &child_max_h);
+	} else {
 
-		/* Render it and hence (recursives) find out how much space it
-		 * actually needs.*/
-		render_frame(ch, cr, child_max_w, child_max_h);
-
-		/* Position the frame within the parent */
-		position_frame(ch, fr);
+		render_sc(fr, max_w, max_h);
 
 	}
-
-	/* Render the actual contents of this frame in the remaining space */
-	render_sc(fr, cr, max_w, max_h);
 
 	return 0;
 }

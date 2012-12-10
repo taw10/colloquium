@@ -49,6 +49,7 @@ enum wrap_box_type
 struct wrap_box
 {
 	enum wrap_box_type type;
+	int width;  /* Pango units */
 
 	/* WRAP_BOX_PANGO */
 	PangoGlyphItem *glyph_item;
@@ -58,7 +59,10 @@ struct wrap_box
 
 struct wrap_line
 {
+	int width;  /* Pango units */
+
 	int n_boxes;
+	int max_boxes;
 	struct wrap_box *boxes;
 };
 
@@ -72,7 +76,7 @@ struct renderstuff
 
 	/* Text for the block currently being processed */
 	const char *cur_text;
-	PangoLogAttr *cur_log_attrs;
+	int cur_len;
 
 	double ascent;
 	double descent;
@@ -80,13 +84,112 @@ struct renderstuff
 	double width;
 	double height;
 
-	double wrap_w;
+	int wrap_w;  /* Pango units */
 
 	/* Lines of boxes, where each box can be a load of glyphs, an image,
 	 * etc */
 	int n_lines;
+	int max_lines;
 	struct wrap_line *lines;
 };
+
+
+static void alloc_lines(struct renderstuff *s)
+{
+	struct wrap_line *lines_new;
+
+	lines_new = realloc(s->lines, s->max_lines * sizeof(struct wrap_line));
+	if ( lines_new == NULL ) {
+		fprintf(stderr, "Couldn't allocate memory for lines!\n");
+		return;
+	}
+
+	s->lines = lines_new;
+}
+
+
+static void alloc_boxes(struct wrap_line *l)
+{
+	struct wrap_box *boxes_new;
+
+	boxes_new = realloc(l->boxes, l->max_boxes * sizeof(struct wrap_box));
+	if ( boxes_new == NULL ) {
+		fprintf(stderr, "Couldn't allocate memory for boxes!\n");
+		return;
+	}
+
+	l->boxes = boxes_new;
+}
+
+
+static void add_glyph_box_to_line(struct wrap_line *line, PangoGlyphItem *gi)
+{
+	PangoRectangle rect;
+
+	if ( line->n_boxes == line->max_boxes ) {
+		line->max_boxes += 32;
+		alloc_boxes(line);
+		if ( line->n_boxes == line->max_boxes ) return;
+	}
+
+	pango_glyph_string_extents(gi->glyphs, gi->item->analysis.font,
+	                           NULL, &rect);
+
+	line->boxes[line->n_boxes].type = WRAP_BOX_PANGO;
+	line->boxes[line->n_boxes].glyph_item = gi;
+	line->boxes[line->n_boxes].width = rect.width;
+	line->n_boxes++;
+
+	line->width += rect.width;
+}
+
+
+static const char *add_chars_to_line(struct renderstuff *s,
+                                     PangoGlyphItem *orig, int n,
+                                     const char *cur_text_ptr)
+{
+	PangoGlyphItem *before;
+	int split_len;
+	char *split_ptr;
+
+	split_ptr = g_utf8_offset_to_pointer(cur_text_ptr, n);
+
+	if ( n < orig->item->num_chars ) {
+
+		split_len = split_ptr - cur_text_ptr;
+		printf("splitting at %i/%i chars\n", n, orig->item->num_chars);
+		printf("  -> %i/%i bytes\n", split_len, orig->item->length);
+
+		before = pango_glyph_item_split(orig, cur_text_ptr, split_len);
+
+		add_glyph_box_to_line(&s->lines[s->n_lines], before);
+
+	} else {
+
+		printf("adding final %i chars\n", n);
+		add_glyph_box_to_line(&s->lines[s->n_lines], orig);
+
+	}
+
+	return split_ptr;
+}
+
+
+static void dispatch_line(struct renderstuff *s)
+{
+	if ( s->n_lines == s->max_lines ) {
+		s->max_lines += 32;
+		alloc_lines(s);
+		if ( s->n_lines == s->max_lines ) return;
+	}
+
+	s->n_lines++;
+	s->lines[s->n_lines].n_boxes = 0;
+	s->lines[s->n_lines].max_boxes = 32;
+	s->lines[s->n_lines].boxes = NULL;
+	s->lines[s->n_lines].width = 0;
+	alloc_boxes(&s->lines[s->n_lines]);
+}
 
 
 static void wrap_text(gpointer data, gpointer user_data)
@@ -94,24 +197,75 @@ static void wrap_text(gpointer data, gpointer user_data)
 	struct renderstuff *s = user_data;
 	PangoItem *item = data;
 	PangoGlyphString *glyphs;
-	PangoRectangle extents;
+	PangoLogAttr *log_attrs;
+	PangoGlyphItem gitem;
+	int *log_widths;
+	int width_remain;
+	int width_used;
+	int i, pos, n;
+	const char *ptr;
+
+	log_attrs = calloc(item->num_chars+1, sizeof(PangoLogAttr));
+	if ( log_attrs == NULL ) {
+		fprintf(stderr, "Failed to allocate memory for log attrs\n");
+		return;
+	}
+
+	log_widths = calloc(item->num_chars+1, sizeof(int));
+	if ( log_widths == NULL ) {
+		fprintf(stderr, "Failed to allocate memory for log widths\n");
+		return;
+	}
+
+	pango_get_log_attrs(s->cur_text, s->cur_len, -1,
+	                    pango_language_get_default(),
+	                    log_attrs, item->num_chars+1);
 
 	glyphs = pango_glyph_string_new();
-
 	pango_shape(s->cur_text+item->offset, item->length, &item->analysis,
 	            glyphs);
 
-	pango_glyph_string_extents_range(glyphs, item->offset,
-	                                 item->offset+item->length,
-	                                 item->analysis.font,
-	                                 &extents, NULL);
+	pango_glyph_string_get_logical_widths(glyphs, s->cur_text+item->offset,
+	                                      item->length, 0, log_widths);
+	gitem.glyphs = glyphs;
+	gitem.item = item;
 
-	s->width += extents.width;
-	s->height = extents.height;  /* FIXME: Total rubbish */
-	s->ascent = PANGO_ASCENT(extents);
-	s->descent = PANGO_DESCENT(extents);
+	/* FIXME: Replace this with a real typesetting algorithm */
+	width_remain = s->wrap_w*PANGO_SCALE - s->lines[s->n_lines].width;
+	width_used = 0;
+	pos = 0;
+	n = item->num_chars;
+	ptr = s->cur_text;
+	for ( i=0; i<n; i++ ) {
 
-	pango_glyph_string_free(glyphs);
+		if ( log_widths[i] + width_used > width_remain ) {
+
+			ptr = add_chars_to_line(s, &gitem, pos, ptr);
+
+			/* New line */
+			dispatch_line(s);
+			width_remain = s->wrap_w * PANGO_SCALE;
+			width_used = 0;
+			pos = 0;
+			printf("Remaining: '%s'\n", ptr);
+
+		} else {
+			width_used += log_widths[i];
+		}
+
+		pos++;
+
+	}
+	ptr = add_chars_to_line(s, &gitem, pos, ptr);
+	for ( i=0; i<s->n_lines; i++ ) {
+		printf("Line %2i, width = %i\n", i, s->lines[i].width);
+	}
+
+	/* Don't dispatch the last line, because the next item might add
+	 * more text to it, or the next SC block might add something else. */
+
+	free(log_widths);
+	free(log_attrs);
 }
 
 
@@ -134,28 +288,23 @@ static void process_sc_block(struct renderstuff *s, const char *sc_name,
 	len = strlen(sc_contents);
 	if ( len == 0 ) return;
 
-	s->cur_log_attrs = calloc(len+1, sizeof(PangoLogAttr));
-	if ( s->cur_log_attrs == NULL ) {
-		fprintf(stderr, "Failed to allocate memory for log attrs\n");
-		return;
-	}
-
-	pango_get_log_attrs(sc_contents, len, -1, pango_language_get_default(),
-	                    s->cur_log_attrs, len+1);
-
 	/* Create glyph string */
 	item_list = pango_itemize(s->pc, sc_contents, 0, len, s->attrs, NULL);
 	s->cur_text = sc_contents;
+	s->cur_len = len;
 	g_list_foreach(item_list, wrap_text, s);
 
 	g_list_free(item_list);
-	free(s->cur_log_attrs);
 }
 
 
 static double render_glyph_box(cairo_t *cr, struct wrap_box *box)
 {
 	double box_w;
+	if ( box->glyph_item == NULL ) {
+		fprintf(stderr, "Box %p has NULL pointer.\n", box);
+		return 0.0;
+	}
 	pango_cairo_show_glyph_item(cr, box->text, box->glyph_item);
 	box_w = pango_glyph_string_get_width(box->glyph_item->glyphs);
 	return box_w;
@@ -226,6 +375,10 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	}
 
 	s.wrap_w = max_w;
+	s.lines = NULL;
+	s.n_lines = 0;
+	s.max_lines = 64;
+	alloc_lines(&s);
 
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();

@@ -146,7 +146,7 @@ static void process_sc_block(struct renderstuff *s, const char *sc_name,
 	/* Create glyph string */
 	item_list = pango_itemize(s->pc, sc_contents, 0, len, s->attrs, NULL);
 	s->cur_text = sc_contents;
-	g_list_foreach(item_list, wrap_text, &s);
+	g_list_foreach(item_list, wrap_text, s);
 
 	g_list_free(item_list);
 	free(s->cur_log_attrs);

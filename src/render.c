@@ -153,6 +153,15 @@ static void process_sc_block(struct renderstuff *s, const char *sc_name,
 }
 
 
+static double render_glyph_box(cairo_t *cr, struct wrap_box *box)
+{
+	double box_w;
+	pango_cairo_show_glyph_item(cr, box->text, box->glyph_item);
+	box_w = pango_glyph_string_get_width(box->glyph_item->glyphs);
+	return box_w;
+}
+
+
 static void render_boxes(struct wrap_line *line, struct renderstuff *s)
 {
 	int j;
@@ -168,9 +177,7 @@ static void render_boxes(struct wrap_line *line, struct renderstuff *s)
 		switch ( line->boxes[j].type ) {
 
 			case WRAP_BOX_PANGO :
-			pango_cairo_show_glyph_item(s->cr, box->text,
-			                            box->glyph_item);
-			x_pos += pango_glyph_string_get_width(box->glyph_item->glyphs);
+			render_glyph_box(s->cr, box);
 			break;
 
 		}

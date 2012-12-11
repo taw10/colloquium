@@ -53,7 +53,7 @@ struct wrap_box
 
 	/* For type == WRAP_BOX_PANGO */
 	PangoGlyphItem *glyph_item;
-	const char *text;
+	char *text;
 };
 
 
@@ -61,6 +61,7 @@ struct wrap_line
 {
 	int width;
 	int height;  /* Pango units */
+	int ascent;  /* Pango units */
 
 	int n_boxes;
 	int max_boxes;
@@ -87,6 +88,26 @@ struct renderstuff
 	int max_lines;
 	struct wrap_line *lines;
 };
+
+
+static void free_line_bits(struct wrap_line *l)
+{
+	int i;
+	for ( i=0; i<l->n_boxes; i++ ) {
+
+		switch ( l->boxes[i].type ) {
+
+			case WRAP_BOX_PANGO :
+			pango_glyph_item_free(l->boxes[i].glyph_item);
+			free(l->boxes[i].text);
+			break;
+
+		}
+
+	}
+
+	free(l->boxes);
+}
 
 
 static void alloc_lines(struct renderstuff *s)
@@ -121,6 +142,7 @@ static void add_glyph_box_to_line(struct wrap_line *line, PangoGlyphItem *gi,
                                   char *text)
 {
 	PangoRectangle rect;
+	int ascent;
 
 	if ( line->n_boxes == line->max_boxes ) {
 		line->max_boxes += 32;
@@ -139,6 +161,9 @@ static void add_glyph_box_to_line(struct wrap_line *line, PangoGlyphItem *gi,
 
 	line->width += rect.width;
 	if ( line->height < rect.height ) line->height = rect.height;
+
+	ascent = PANGO_ASCENT(rect);
+	if ( ascent > line->ascent ) line->ascent = ascent;
 }
 
 
@@ -161,17 +186,16 @@ static const char *add_chars_to_line(struct renderstuff *s,
 	if ( n < orig->item->num_chars ) {
 
 		split_len = split_ptr - cur_text_ptr;
-		printf("splitting at %i/%i chars\n", n, orig->item->num_chars);
-		printf("  -> %i/%i bytes\n", split_len, orig->item->length);
 
 		before = pango_glyph_item_split(orig, cur_text_ptr, split_len);
 
 		add_glyph_box_to_line(&s->lines[s->n_lines],
 		                      before, before_text);
 
+		orig->item->offset = 0;
+
 	} else {
 
-		printf("adding final %i chars\n", n);
 		add_glyph_box_to_line(&s->lines[s->n_lines], orig, before_text);
 
 	}
@@ -186,6 +210,8 @@ static void initialise_line(struct wrap_line *l)
 	l->max_boxes = 32;
 	l->boxes = NULL;
 	l->width = 0;
+	l->height = 0;
+	l->ascent = 0;
 	alloc_boxes(l);
 }
 
@@ -209,7 +235,7 @@ static void wrap_text(gpointer data, gpointer user_data)
 	PangoItem *item = data;
 	PangoGlyphString *glyphs;
 	PangoLogAttr *log_attrs;
-	PangoGlyphItem gitem;
+	PangoGlyphItem *gitem;
 	int *log_widths;
 	int width_remain;
 	int width_used;
@@ -238,8 +264,13 @@ static void wrap_text(gpointer data, gpointer user_data)
 
 	pango_glyph_string_get_logical_widths(glyphs, s->cur_text+item->offset,
 	                                      item->length, 0, log_widths);
-	gitem.glyphs = glyphs;
-	gitem.item = item;
+	gitem = malloc(sizeof(PangoGlyphItem));
+	if ( gitem == NULL ) {
+		fprintf(stderr, "Failed to allocate glyphItem\n");
+		return;
+	}
+	gitem->glyphs = glyphs;
+	gitem->item = item;
 
 	/* FIXME: Replace this with a real typesetting algorithm */
 	width_remain = s->wrap_w*PANGO_SCALE - s->lines[s->n_lines].width;
@@ -249,32 +280,26 @@ static void wrap_text(gpointer data, gpointer user_data)
 	ptr = s->cur_text;
 	for ( i=0; i<n; i++ ) {
 
+		width_used += log_widths[i];
+		pos++;
+
 		if ( !log_attrs[i].is_char_break ) continue;
 
 		if ( log_attrs[i].is_mandatory_break
 		 || (log_widths[i] + width_used > width_remain) ) {
 
-			ptr = add_chars_to_line(s, &gitem, pos, ptr);
+			ptr = add_chars_to_line(s, gitem, pos, ptr);
 
 			/* New line */
 			dispatch_line(s);
 			width_remain = s->wrap_w * PANGO_SCALE;
 			width_used = 0;
 			pos = 0;
-			printf("Remaining: '%s'\n", ptr);
 
-		} else {
-			width_used += log_widths[i];
 		}
 
-		pos++;
-
 	}
-	ptr = add_chars_to_line(s, &gitem, pos, ptr);
-
-	for ( i=0; i<s->n_lines; i++ ) {
-		printf("Line %2i, width = %i\n", i, s->lines[i].width);
-	}
+	ptr = add_chars_to_line(s, gitem, pos, ptr);
 
 	/* Don't dispatch the last line, because the next item might add
 	 * more text to it, or the next SC block might add something else. */
@@ -359,18 +384,19 @@ static void render_boxes(struct wrap_line *line, struct renderstuff *s)
 static void render_lines(struct renderstuff *s)
 {
 	int i;
+	double y_pos = 0.0;
 
 	cairo_set_source_rgba(s->cr, 0.4, 0.0, 0.7, 1.0);
 	for ( i=0; i<s->n_lines; i++ ) {
 
-		double spacing = 10.0;
-		double ascent = 10.0;
-
 		/* Move to beginning of the line */
-		cairo_move_to(s->cr, 0.0, ascent + i*spacing);
+		cairo_move_to(s->cr, 0.0, s->lines[i].ascent/PANGO_SCALE+y_pos);
 
 		/* Render the line */
 		render_boxes(&s->lines[i], s);
+
+		/* FIXME: line spacing */
+		y_pos += s->lines[i].height/PANGO_SCALE + 0.0;
 
 	}
 }
@@ -397,7 +423,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 		return 0;
 	}
 
-	s.wrap_w = max_w;
+	s.wrap_w = max_w - fr->lop.pad_l - fr->lop.pad_r;
 	s.lines = NULL;
 	s.n_lines = 0;
 	s.max_lines = 64;
@@ -407,7 +433,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();
 	s.pc = pango_font_map_create_context(s.fontmap);
-	fontdesc = pango_font_description_from_string("Sorts Mill Goudy Bold 24");
+	fontdesc = pango_font_description_from_string("Sorts Mill Goudy Bold 10");
 
 	/* Set up attribute list to use the font */
 	s.attrs = pango_attr_list_new();
@@ -423,6 +449,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 		process_sc_block(&s, b->name, b->options, b->contents);
 	}
 	sc_block_list_free(bl);
+	dispatch_line(&s);
 
 	w = 0.0;  h = 0.0;
 	for ( i=0; i<s.n_lines; i++ ) {
@@ -450,8 +477,13 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	s.cr = cairo_create(fr->contents);
 
-	cairo_translate(s.cr, -fr->lop.pad_l, -fr->lop.pad_t);
+	cairo_translate(s.cr, fr->lop.pad_l, fr->lop.pad_t);
 	render_lines(&s);
+
+	for ( i=0; i<s.n_lines; i++ ) {
+		free_line_bits(&s.lines[i]);
+	}
+	free(s.lines);
 
 	cairo_destroy(s.cr);
 	pango_attr_list_unref(s.attrs);

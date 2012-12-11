@@ -280,10 +280,11 @@ static void wrap_text(gpointer data, gpointer user_data)
 	ptr = s->cur_text;
 	for ( i=0; i<n; i++ ) {
 
-		width_used += log_widths[i];
-		pos++;
-
-		if ( !log_attrs[i].is_char_break ) continue;
+		if ( !log_attrs[i].is_char_break ) {
+			width_used += log_widths[i];
+			pos++;
+			continue;
+		}
 
 		if ( log_attrs[i].is_mandatory_break
 		 || (log_widths[i] + width_used > width_remain) ) {
@@ -297,6 +298,9 @@ static void wrap_text(gpointer data, gpointer user_data)
 			pos = 0;
 
 		}
+
+		pos++;
+		width_used += log_widths[i];
 
 	}
 	ptr = add_chars_to_line(s, gitem, pos, ptr);

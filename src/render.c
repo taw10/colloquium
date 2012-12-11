@@ -59,7 +59,10 @@ struct wrap_box
 
 struct wrap_line
 {
-	int width;  /* Pango units */
+	int width;
+	int height;  /* Pango units */
+	double ascent;
+	double descent;  /* Cairo units */
 
 	int n_boxes;
 	int max_boxes;
@@ -77,12 +80,6 @@ struct renderstuff
 	/* Text for the block currently being processed */
 	const char *cur_text;
 	int cur_len;
-
-	double ascent;
-	double descent;
-
-	double width;
-	double height;
 
 	int wrap_w;  /* Pango units */
 
@@ -257,6 +254,7 @@ static void wrap_text(gpointer data, gpointer user_data)
 
 	}
 	ptr = add_chars_to_line(s, &gitem, pos, ptr);
+
 	for ( i=0; i<s->n_lines; i++ ) {
 		printf("Line %2i, width = %i\n", i, s->lines[i].width);
 	}
@@ -338,11 +336,12 @@ static void render_boxes(struct wrap_line *line, struct renderstuff *s)
 static void render_lines(struct renderstuff *s)
 {
 	int i;
-	double spacing = (s->ascent+s->descent)/PANGO_SCALE;
-	double ascent = s->ascent/PANGO_SCALE;
 
 	cairo_set_source_rgba(s->cr, 0.4, 0.0, 0.7, 1.0);
 	for ( i=0; i<s->n_lines; i++ ) {
+
+		double spacing = (s->lines[i].ascent+s->lines[i].descent);
+		double ascent = s->lines[i].ascent;
 
 		/* Move to beginning of the line */
 		cairo_move_to(s->cr, 0.0, ascent + i*spacing);
@@ -364,6 +363,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
 	struct scblock *b;
+	int i;
 
 	if ( fr->sc == NULL ) return 0;
 
@@ -400,15 +400,21 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	}
 	sc_block_list_free(bl);
 
+	w = 0.0;  h = 0.0;
+	for ( i=0; i<s.n_lines; i++ ) {
+		if ( s.lines[i].width > w ) w = s.lines[i].width;
+		h += s.lines[i].height;
+	}
+	w /= PANGO_SCALE;
+	h /= PANGO_SCALE;
+
 	/* Determine width */
-	w = s.width / PANGO_SCALE;
 	w += fr->lop.pad_l + fr->lop.pad_r;
-	if ( fr->lop.use_min_w && (s.width < fr->lop.min_w) ) {
+	if ( fr->lop.use_min_w && (w < fr->lop.min_w) ) {
 		w = fr->lop.min_w;
 	}
 	if ( w > max_w ) w = max_w;
 
-	h = s.height / PANGO_SCALE;
 	h += fr->lop.pad_t + fr->lop.pad_b;
 	if ( fr->lop.use_min_h && (h < fr->lop.min_h) ) {
 		h = fr->lop.min_h;

@@ -42,10 +42,10 @@ static gint mw_destroy(GtkWidget *w, void *p)
 	exit(0);
 }
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
+static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 {
 	gint w, h;
-	double w_used, h_used;
+	struct slide *s = data;
 
 	w = gtk_widget_get_allocated_width(da);
 	h = gtk_widget_get_allocated_height(da);
@@ -55,7 +55,11 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct frame *fr)
 	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
-	//render_frame(fr, cr, w, h, &w_used, &h_used);
+	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
+	s->rendered_edit = render_slide(s, w, h);
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_set_source_surface(cr, s->rendered_edit, 0.0, 0.0);
+	cairo_fill(cr);
 
 	return FALSE;
 }
@@ -68,6 +72,7 @@ int main(int argc, char *argv[])
 	struct frame *fr;
 	struct style *sty;
 	struct style *sty2;
+	struct slide s;
 
 	gtk_init(&argc, &argv);
 
@@ -100,6 +105,11 @@ int main(int argc, char *argv[])
 
 	assert(fr->children[0] == fr);
 
+	s.top = fr;
+	s.rendered_edit = NULL;
+	s.rendered_proj = NULL;
+	s.rendered_thumb = NULL;
+
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 	drawingarea = gtk_drawing_area_new();
@@ -110,7 +120,7 @@ int main(int argc, char *argv[])
 	                 NULL);
 
 	g_signal_connect(G_OBJECT(drawingarea), "draw",
-			 G_CALLBACK(draw_sig), fr);
+			 G_CALLBACK(draw_sig), &s);
 
 	gtk_widget_show_all(window);
 	gtk_main();

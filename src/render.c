@@ -51,7 +51,7 @@ struct wrap_box
 	enum wrap_box_type type;
 	int width;  /* Pango units */
 
-	/* WRAP_BOX_PANGO */
+	/* For type == WRAP_BOX_PANGO */
 	PangoGlyphItem *glyph_item;
 	const char *text;
 };
@@ -61,8 +61,6 @@ struct wrap_line
 {
 	int width;
 	int height;  /* Pango units */
-	double ascent;
-	double descent;  /* Cairo units */
 
 	int n_boxes;
 	int max_boxes;
@@ -119,7 +117,8 @@ static void alloc_boxes(struct wrap_line *l)
 }
 
 
-static void add_glyph_box_to_line(struct wrap_line *line, PangoGlyphItem *gi)
+static void add_glyph_box_to_line(struct wrap_line *line, PangoGlyphItem *gi,
+                                  char *text)
 {
 	PangoRectangle rect;
 
@@ -134,10 +133,12 @@ static void add_glyph_box_to_line(struct wrap_line *line, PangoGlyphItem *gi)
 
 	line->boxes[line->n_boxes].type = WRAP_BOX_PANGO;
 	line->boxes[line->n_boxes].glyph_item = gi;
+	line->boxes[line->n_boxes].text = text;
 	line->boxes[line->n_boxes].width = rect.width;
 	line->n_boxes++;
 
 	line->width += rect.width;
+	if ( line->height < rect.height ) line->height = rect.height;
 }
 
 
@@ -148,8 +149,14 @@ static const char *add_chars_to_line(struct renderstuff *s,
 	PangoGlyphItem *before;
 	int split_len;
 	char *split_ptr;
+	char *before_text;
 
 	split_ptr = g_utf8_offset_to_pointer(cur_text_ptr, n);
+	before_text = strndup(cur_text_ptr, split_ptr-cur_text_ptr);
+	if ( before_text == NULL ) {
+		fprintf(stderr, "Failed to split text\n");
+		/* But continue */
+	}
 
 	if ( n < orig->item->num_chars ) {
 
@@ -159,12 +166,13 @@ static const char *add_chars_to_line(struct renderstuff *s,
 
 		before = pango_glyph_item_split(orig, cur_text_ptr, split_len);
 
-		add_glyph_box_to_line(&s->lines[s->n_lines], before);
+		add_glyph_box_to_line(&s->lines[s->n_lines],
+		                      before, before_text);
 
 	} else {
 
 		printf("adding final %i chars\n", n);
-		add_glyph_box_to_line(&s->lines[s->n_lines], orig);
+		add_glyph_box_to_line(&s->lines[s->n_lines], orig, before_text);
 
 	}
 
@@ -321,6 +329,8 @@ static void render_boxes(struct wrap_line *line, struct renderstuff *s)
 
 		struct wrap_box *box;
 
+		cairo_save(s->cr);
+
 		box = &line->boxes[j];
 		cairo_rel_move_to(s->cr, x_pos, 0.0);
 
@@ -331,6 +341,10 @@ static void render_boxes(struct wrap_line *line, struct renderstuff *s)
 			break;
 
 		}
+
+		x_pos += (double)line->boxes[j].width / PANGO_SCALE;
+
+		cairo_restore(s->cr);
 
 	}
 }
@@ -343,8 +357,8 @@ static void render_lines(struct renderstuff *s)
 	cairo_set_source_rgba(s->cr, 0.4, 0.0, 0.7, 1.0);
 	for ( i=0; i<s->n_lines; i++ ) {
 
-		double spacing = (s->lines[i].ascent+s->lines[i].descent);
-		double ascent = s->lines[i].ascent;
+		double spacing = 10.0;
+		double ascent = 10.0;
 
 		/* Move to beginning of the line */
 		cairo_move_to(s->cr, 0.0, ascent + i*spacing);

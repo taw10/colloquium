@@ -180,6 +180,16 @@ static const char *add_chars_to_line(struct renderstuff *s,
 }
 
 
+static void initialise_line(struct wrap_line *l)
+{
+	l->n_boxes = 0;
+	l->max_boxes = 32;
+	l->boxes = NULL;
+	l->width = 0;
+	alloc_boxes(l);
+}
+
+
 static void dispatch_line(struct renderstuff *s)
 {
 	if ( s->n_lines == s->max_lines ) {
@@ -189,11 +199,7 @@ static void dispatch_line(struct renderstuff *s)
 	}
 
 	s->n_lines++;
-	s->lines[s->n_lines].n_boxes = 0;
-	s->lines[s->n_lines].max_boxes = 32;
-	s->lines[s->n_lines].boxes = NULL;
-	s->lines[s->n_lines].width = 0;
-	alloc_boxes(&s->lines[s->n_lines]);
+	initialise_line(&s->lines[s->n_lines]);
 }
 
 
@@ -396,6 +402,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	s.n_lines = 0;
 	s.max_lines = 64;
 	alloc_lines(&s);
+	initialise_line(&s.lines[0]);
 
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();

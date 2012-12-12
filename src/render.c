@@ -653,10 +653,15 @@ static void do_composite(struct frame *fr, cairo_t *cr)
 {
 	if ( fr->contents == NULL ) return;
 
+	cairo_save(cr);
 	cairo_rectangle(cr, fr->x, fr->y, fr->w, fr->h);
+	cairo_clip(cr);
 	cairo_set_source_surface(cr, fr->contents, fr->x, fr->y);
-	cairo_fill_preserve(cr);
+	cairo_paint(cr);
+	cairo_restore(cr);
+
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_rectangle(cr, fr->x, fr->y, fr->w, fr->h);
 	cairo_stroke(cr);
 }
 

@@ -437,7 +437,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();
 	s.pc = pango_font_map_create_context(s.fontmap);
-	fontdesc = pango_font_description_from_string("Sorts Mill Goudy Bold 10");
+	fontdesc = pango_font_description_from_string("Sorts Mill Goudy 16");
 
 	/* Set up attribute list to use the font */
 	s.attrs = pango_attr_list_new();

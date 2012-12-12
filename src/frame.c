@@ -59,8 +59,7 @@ struct frame *frame_new()
 	n->max_children = 32;
 	alloc_ro(n);
 
-	n->num_children = 1;
-	n->children[0] = n;
+	n->num_children = 0;
 
 	n->pl = NULL;
 	n->contents = NULL;

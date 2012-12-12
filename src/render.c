@@ -347,6 +347,7 @@ static double render_glyph_box(cairo_t *cr, struct wrap_box *box)
 		fprintf(stderr, "Box %p has NULL pointer.\n", box);
 		return 0.0;
 	}
+	cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);  /* FIXME: Colour */
 	pango_cairo_show_glyph_item(cr, box->text, box->glyph_item);
 	box_w = pango_glyph_string_get_width(box->glyph_item->glyphs);
 	return box_w;
@@ -388,11 +389,18 @@ static void render_lines(struct renderstuff *s)
 	int i;
 	double y_pos = 0.0;
 
-	cairo_set_source_rgba(s->cr, 0.4, 0.0, 0.7, 1.0);
 	for ( i=0; i<s->n_lines; i++ ) {
 
+		double asc = s->lines[i].ascent/PANGO_SCALE;
+
+		//cairo_move_to(s->cr, 0, y_pos+asc+0.5);
+		//cairo_line_to(s->cr, s->lines[i].width, y_pos+asc+0.5);
+		//cairo_set_source_rgb(s->cr, 0.0, 0.0, 0.0);
+		//cairo_set_line_width(s->cr, 1.0);
+		//cairo_stroke(s->cr);
+
 		/* Move to beginning of the line */
-		cairo_move_to(s->cr, 0.0, s->lines[i].ascent/PANGO_SCALE+y_pos);
+		cairo_move_to(s->cr, 0.0, asc+y_pos);
 
 		/* Render the line */
 		render_boxes(&s->lines[i], s);
@@ -479,6 +487,13 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	s.cr = cairo_create(fr->contents);
 
+	cairo_font_options_t *fopts;
+	fopts = cairo_font_options_create();
+	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_NONE);
+	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_DEFAULT);
+	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_GRAY);
+	cairo_set_font_options(s.cr, fopts);
+
 	cairo_translate(s.cr, fr->lop.pad_l, fr->lop.pad_t);
 	render_lines(&s);
 
@@ -487,6 +502,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	}
 	free(s.lines);
 
+	cairo_font_options_destroy(fopts);
 	cairo_destroy(s.cr);
 	pango_attr_list_unref(s.attrs);
 	g_object_unref(s.pc);
@@ -708,7 +724,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
-	cairo_font_options_t *fopts;
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 
@@ -723,12 +738,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 
-	fopts = cairo_font_options_create();
-	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_NONE);
-	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_OFF);
-	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_SUBPIXEL);
-	cairo_set_font_options(cr, fopts);
-
 	s->top->lop.min_w = w;
 	s->top->lop.min_h = h;
 	s->top->lop.use_min_w = 1;
@@ -737,7 +746,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 
 	composite_slide(s, cr);
 
-	cairo_font_options_destroy(fopts);
 	cairo_destroy(cr);
 
 	return surf;

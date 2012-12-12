@@ -171,7 +171,6 @@ static const char *add_chars_to_line(struct renderstuff *s,
                                      PangoGlyphItem *orig, int n,
                                      const char *cur_text_ptr)
 {
-	PangoGlyphItem *before;
 	int split_len;
 	char *split_ptr;
 	char *before_text;
@@ -185,6 +184,8 @@ static const char *add_chars_to_line(struct renderstuff *s,
 
 	if ( n < orig->item->num_chars ) {
 
+		PangoGlyphItem *before;
+
 		split_len = split_ptr - cur_text_ptr;
 
 		before = pango_glyph_item_split(orig, cur_text_ptr, split_len);
@@ -196,7 +197,9 @@ static const char *add_chars_to_line(struct renderstuff *s,
 
 	} else {
 
-		add_glyph_box_to_line(&s->lines[s->n_lines], orig, before_text);
+		PangoGlyphItem *copy;
+		copy = pango_glyph_item_copy(orig);
+		add_glyph_box_to_line(&s->lines[s->n_lines], copy, before_text);
 
 	}
 
@@ -235,7 +238,7 @@ static void wrap_text(gpointer data, gpointer user_data)
 	PangoItem *item = data;
 	PangoGlyphString *glyphs;
 	PangoLogAttr *log_attrs;
-	PangoGlyphItem *gitem;
+	PangoGlyphItem gitem;
 	int *log_widths;
 	int width_remain;
 	int width_used;
@@ -264,13 +267,8 @@ static void wrap_text(gpointer data, gpointer user_data)
 
 	pango_glyph_string_get_logical_widths(glyphs, s->cur_text+item->offset,
 	                                      item->length, 0, log_widths);
-	gitem = malloc(sizeof(PangoGlyphItem));
-	if ( gitem == NULL ) {
-		fprintf(stderr, "Failed to allocate glyphItem\n");
-		return;
-	}
-	gitem->glyphs = glyphs;
-	gitem->item = item;
+	gitem.glyphs = glyphs;
+	gitem.item = item;
 
 	/* FIXME: Replace this with a real typesetting algorithm */
 	width_remain = s->wrap_w*PANGO_SCALE - s->lines[s->n_lines].width;
@@ -289,7 +287,7 @@ static void wrap_text(gpointer data, gpointer user_data)
 		if ( log_attrs[i].is_mandatory_break
 		 || (log_widths[i] + width_used > width_remain) ) {
 
-			ptr = add_chars_to_line(s, gitem, pos, ptr);
+			ptr = add_chars_to_line(s, &gitem, pos, ptr);
 
 			/* New line */
 			dispatch_line(s);
@@ -303,7 +301,7 @@ static void wrap_text(gpointer data, gpointer user_data)
 		width_used += log_widths[i];
 
 	}
-	ptr = add_chars_to_line(s, gitem, pos, ptr);
+	ptr = add_chars_to_line(s, &gitem, pos, ptr);
 
 	/* Don't dispatch the last line, because the next item might add
 	 * more text to it, or the next SC block might add something else. */

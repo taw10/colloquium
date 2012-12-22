@@ -59,10 +59,10 @@ struct layout_parameters
 
 	Direction grav;
 
-	int use_min_w;
-	double min_w;
-	int use_min_h;
-	double min_h;
+	double min_w_u;
+	double min_h_u;
+	double min_w_frac;
+	double min_h_frac;
 };
 
 

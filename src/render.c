@@ -461,6 +461,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	sc_block_list_free(bl);
 	dispatch_line(&s);
 
+	/* Determine size used */
 	w = 0.0;  h = 0.0;
 	for ( i=0; i<s.n_lines; i++ ) {
 		if ( s.lines[i].width > w ) w = s.lines[i].width;
@@ -468,17 +469,23 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	}
 	w /= PANGO_SCALE;
 	h /= PANGO_SCALE;
-
-	/* Determine width */
 	w += fr->lop.pad_l + fr->lop.pad_r;
-	if ( fr->lop.use_min_w && (w < fr->lop.min_w) ) {
-		w = fr->lop.min_w;
+	h += fr->lop.pad_t + fr->lop.pad_b;
+
+	/* Impose minimum and maximum widths */
+	if ( w < fr->lop.min_w_u ) {
+		w = fr->lop.min_w_u;
+	}
+	if ( w < max_w * fr->lop.min_w_frac ) {
+		w = fr->lop.min_w_frac * max_w;
 	}
 	if ( w > max_w ) w = max_w;
 
-	h += fr->lop.pad_t + fr->lop.pad_b;
-	if ( fr->lop.use_min_h && (h < fr->lop.min_h) ) {
-		h = fr->lop.min_h;
+	if ( h < fr->lop.min_h_u ) {
+		h = fr->lop.min_h_u;
+	}
+	if ( h < max_h * fr->lop.min_h_frac ) {
+		h = fr->lop.min_h_frac * max_h;
 	}
 	if ( h > max_h ) h = max_h;
 
@@ -562,19 +569,29 @@ static int get_max_size(struct frame *fr, struct frame *parent,
 }
 
 
-
 static void position_frame(struct frame *fr, struct frame *parent)
 {
+	const double frame_gw = fr->w + fr->lop.margin_l + fr->lop.margin_r;
+	const double frame_gh = fr->h + fr->lop.margin_t + fr->lop.margin_b;
+
 	switch ( fr->lop.grav )
 	{
 		case DIR_UL:
-		/* Fix top left corner */
 		fr->x = parent->x + parent->lop.pad_l + fr->lop.margin_l;
 		fr->y = parent->y + parent->lop.pad_t + fr->lop.margin_t;
 		break;
 
 		case DIR_U:
+		fr->x = parent->x + parent->lop.pad_l + fr->lop.margin_l +
+		        (parent->w - parent->lop.pad_l - parent->lop.pad_r)/2.0
+		        - frame_gw/2.0;
+		fr->y = 0.0;
+		break;
+
 		case DIR_UR:
+		fr->x = parent-_x + parent->lop
+		break
+
 		case DIR_R:
 		case DIR_DR:
 		case DIR_D:
@@ -676,9 +693,9 @@ static void do_composite(struct frame *fr, cairo_t *cr)
 	cairo_paint(cr);
 	cairo_restore(cr);
 
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	cairo_rectangle(cr, fr->x, fr->y, fr->w, fr->h);
-	cairo_stroke(cr);
+//	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+//	cairo_rectangle(cr, fr->x+0.5, fr->y+0.5, fr->w, fr->h);
+//	cairo_stroke(cr);
 }
 
 
@@ -738,10 +755,12 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 
-	s->top->lop.min_w = w;
-	s->top->lop.min_h = h;
-	s->top->lop.use_min_w = 1;
-	s->top->lop.use_min_h = 1;
+	s->top->lop.min_w_u = 0.0;
+	s->top->lop.min_h_u = 0.0;
+	s->top->lop.min_w_frac = 1.0;
+	s->top->lop.min_h_frac = 1.0;
+	s->top->w = w;
+	s->top->h = h;
 	render_frame(s->top, cr, w, h);
 
 	composite_slide(s, cr);

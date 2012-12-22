@@ -56,6 +56,12 @@ struct style *new_style(StyleSheet *ss, const char *name)
 
 	sty->name = strdup(name);
 
+	/* DS9K compatibility */
+	sty->lop.min_w_u = 0.0;
+	sty->lop.min_h_u = 0.0;
+	sty->lop.min_w_frac = 0.0;
+	sty->lop.min_w_frac = 0.0;
+
 	n = ss->n_styles;
 	styles_new = realloc(ss->styles, (n+1)*sizeof(sty));
 	if ( styles_new == NULL ) {
@@ -101,6 +107,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.margin_r = 20.0;
 	sty->lop.margin_t = 20.0;
 	sty->lop.margin_b = 20.0;
+	sty->lop.grav = DIR_U;
 	add_to_template(titlepage, sty);
 
 	sty = new_style(ss, "Content");
@@ -108,6 +115,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.margin_r = 20.0;
 	sty->lop.margin_t = 20.0;
 	sty->lop.margin_b = 20.0;
+	sty->lop.grav = DIR_NONE;
 	add_to_template(slide, sty);
 
 	sty = new_style(ss, "Slide title");
@@ -115,7 +123,18 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.margin_r = 20.0;
 	sty->lop.margin_t = 20.0;
 	sty->lop.margin_b = 20.0;
+	sty->lop.grav = DIR_U;
+	sty->lop.min_w_frac = 1.0;
 	add_to_template(slide, sty);
+
+	sty = new_style(ss, "Content");
+	sty->lop.margin_l = 20.0;
+	sty->lop.margin_r = 20.0;
+	sty->lop.margin_t = 20.0;
+	sty->lop.margin_b = 20.0;
+	sty->lop.grav = DIR_NONE;
+	add_to_template(acknowledgements, sty);
+
 }
 
 

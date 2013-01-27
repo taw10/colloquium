@@ -45,6 +45,13 @@ typedef enum
 } Direction;
 
 
+typedef enum
+{
+	UNITS_SLIDE,
+	UNITS_FRAC
+} LengthUnits;
+
+
 struct layout_parameters
 {
 	double margin_l;
@@ -59,8 +66,11 @@ struct layout_parameters
 
 	double x;
 	double y;
+
 	double w;
+	LengthUnits w_units;
 	double h;
+	LengthUnits h_units;
 };
 
 

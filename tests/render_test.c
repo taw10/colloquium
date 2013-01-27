@@ -89,8 +89,10 @@ int main(int argc, char *argv[])
 	sty1->lop.margin_b = 0.0;
 	sty1->lop.x = 0.0;
 	sty1->lop.y = 0.0;
-	sty1->lop.w = 100.0;
-	sty1->lop.h = 100.0;
+	sty1->lop.w = 1.0;
+	sty1->lop.w_units = UNITS_FRAC;
+	sty1->lop.h = 1.0;
+	sty1->lop.h_units = UNITS_FRAC;
 	sty1->name = strdup("Default");
 
 	sty2 = calloc(1, sizeof(struct style));
@@ -104,8 +106,10 @@ int main(int argc, char *argv[])
 	sty2->lop.margin_b = 5.0;
 	sty2->lop.x = 0.0;
 	sty2->lop.y = 0.0;
-	sty2->lop.w = 100.0;
-	sty2->lop.h = 100.0;
+	sty2->lop.w = 1.0;
+	sty2->lop.w_units = UNITS_FRAC;
+	sty2->lop.h = 1.0;
+	sty2->lop.h_units = UNITS_FRAC;
 	sty2->name = strdup("Text frame");
 
 	fr2 = calloc(1, sizeof(struct frame));

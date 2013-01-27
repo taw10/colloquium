@@ -507,8 +507,29 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 				       sizeof(struct layout_parameters));
 			}
 
-			ch->w = ch->lop.w;
-			ch->h = ch->lop.h;
+			switch ( ch->lop.w_units ) {
+
+				case UNITS_SLIDE :
+				ch->w = ch->lop.w;
+				break;
+
+				case UNITS_FRAC :
+				ch->w = fr->w * ch->lop.w;
+				break;
+
+			}
+
+			switch ( ch->lop.w_units ) {
+
+				case UNITS_SLIDE :
+				ch->h = ch->lop.h;
+				break;
+
+				case UNITS_FRAC :
+				ch->h = fr->h * ch->lop.h;
+				break;
+
+			}
 
 			render_frame(ch, cr);
 

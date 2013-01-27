@@ -847,7 +847,6 @@ static gint realise_sig(GtkWidget *da, struct presentation *p)
 {
 	/* FIXME: Can do this "properly" by setting up a separate font map */
 	p->pc = gtk_widget_get_pango_context(da);
-	printf("got context %p\n", p->pc);
 	rerender_slide(p, p->pc);
 	return FALSE;
 }

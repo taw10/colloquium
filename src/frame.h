@@ -57,12 +57,10 @@ struct layout_parameters
 	double pad_t;
 	double pad_b;
 
-	Direction grav;
-
-	double min_w_u;
-	double min_h_u;
-	double min_w_frac;
-	double min_h_frac;
+	double x;
+	double y;
+	double w;
+	double h;
 };
 
 

@@ -3,7 +3,7 @@
  *
  * Colloquium - A tiny presentation program
  *
- * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
+ * Copyright (c) 2013 Thomas White <taw@bitwiz.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -221,13 +221,14 @@ static void initialise_line(struct wrap_line *l)
 
 static void dispatch_line(struct renderstuff *s)
 {
+	s->n_lines++;
+
 	if ( s->n_lines == s->max_lines ) {
 		s->max_lines += 32;
 		alloc_lines(s);
 		if ( s->n_lines == s->max_lines ) return;
 	}
 
-	s->n_lines++;
 	initialise_line(&s->lines[s->n_lines]);
 }
 
@@ -413,11 +414,10 @@ static void render_lines(struct renderstuff *s)
 
 
 /* Render Level 1 Storycode (no subframes) */
-static int render_sc(struct frame *fr, double max_w, double max_h)
+static int render_sc(struct frame *fr)
 {
 	PangoFontDescription *fontdesc;
 	struct renderstuff s;
-	double w, h;
 	PangoAttribute *attr_font;
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
@@ -433,7 +433,7 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 		return 0;
 	}
 
-	s.wrap_w = max_w - fr->lop.pad_l - fr->lop.pad_r;
+	s.wrap_w = fr->w - fr->lop.pad_l - fr->lop.pad_r;
 	s.lines = NULL;
 	s.n_lines = 0;
 	s.max_lines = 64;
@@ -461,37 +461,10 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	sc_block_list_free(bl);
 	dispatch_line(&s);
 
-	/* Determine size used */
-	w = 0.0;  h = 0.0;
-	for ( i=0; i<s.n_lines; i++ ) {
-		if ( s.lines[i].width > w ) w = s.lines[i].width;
-		h += s.lines[i].height;
-	}
-	w /= PANGO_SCALE;
-	h /= PANGO_SCALE;
-	w += fr->lop.pad_l + fr->lop.pad_r;
-	h += fr->lop.pad_t + fr->lop.pad_b;
-
-	/* Impose minimum and maximum widths */
-	if ( w < fr->lop.min_w_u ) {
-		w = fr->lop.min_w_u;
-	}
-	if ( w < max_w * fr->lop.min_w_frac ) {
-		w = fr->lop.min_w_frac * max_w;
-	}
-	if ( w > max_w ) w = max_w;
-
-	if ( h < fr->lop.min_h_u ) {
-		h = fr->lop.min_h_u;
-	}
-	if ( h < max_h * fr->lop.min_h_frac ) {
-		h = fr->lop.min_h_frac * max_h;
-	}
-	if ( h > max_h ) h = max_h;
-
-	/* Having decided on the size, create surface and render the contents */
+	/* Create surface and render the contents */
 	if ( fr->contents != NULL ) cairo_surface_destroy(fr->contents);
-	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+	                                          fr->w, fr->h);
 	s.cr = cairo_create(fr->contents);
 
 	cairo_font_options_t *fopts;
@@ -514,100 +487,11 @@ static int render_sc(struct frame *fr, double max_w, double max_h)
 	pango_attr_list_unref(s.attrs);
 	g_object_unref(s.pc);
 
-	fr->w = w;
-	fr->h = h;
-
 	return 0;
 }
 
 
-static int get_max_size(struct frame *fr, struct frame *parent,
-                         int this_subframe, double fixed_x, double fixed_y,
-                         double parent_max_width, double parent_max_height,
-                         double *p_width, double *p_height)
-{
-	double w, h;
-	int i;
-
-	w = parent_max_width - parent->lop.pad_l - parent->lop.pad_r;
-	w -= fr->lop.margin_l + fr->lop.margin_r;
-
-	h = parent_max_height - parent->lop.pad_t - parent->lop.pad_b;
-	h -= fr->lop.margin_t + fr->lop.margin_b;
-
-	for ( i=0; i<this_subframe; i++ ) {
-
-		//struct frame *ch;
-
-		//ch = parent->children[i];
-
-		/* FIXME: Shrink if this frame overlaps */
-		switch ( fr->lop.grav )
-		{
-			case DIR_UL:
-			/* Fix top left corner */
-			break;
-
-			case DIR_U:
-			case DIR_UR:
-			case DIR_R:
-			case DIR_DR:
-			case DIR_D:
-			case DIR_DL:
-			case DIR_L:
-			fprintf(stderr, "Gravity not implemented.\n");
-			break;
-
-			case DIR_NONE:
-			break;
-		}
-	}
-
-	*p_width = w;
-	*p_height = h;
-	return 0;
-}
-
-
-static void position_frame(struct frame *fr, struct frame *parent)
-{
-	const double frame_gw = fr->w + fr->lop.margin_l + fr->lop.margin_r;
-	const double frame_gh = fr->h + fr->lop.margin_t + fr->lop.margin_b;
-
-	switch ( fr->lop.grav )
-	{
-		case DIR_UL:
-		fr->x = parent->x + parent->lop.pad_l + fr->lop.margin_l;
-		fr->y = parent->y + parent->lop.pad_t + fr->lop.margin_t;
-		break;
-
-		case DIR_U:
-		fr->x = parent->x + parent->lop.pad_l + fr->lop.margin_l +
-		        (parent->w - parent->lop.pad_l - parent->lop.pad_r)/2.0
-		        - frame_gw/2.0;
-		fr->y = 0.0;
-		break;
-
-		case DIR_UR:
-		fr->x = parent-_x + parent->lop
-		break
-
-		case DIR_R:
-		case DIR_DR:
-		case DIR_D:
-		case DIR_DL:
-		case DIR_L:
-		case DIR_NONE:
-		fprintf(stderr, "Gravity not implemented.\n");
-		break;
-
-		break;
-	}
-}
-
-
-static int render_frame(struct frame *fr, cairo_t *cr,
-                        double max_w, double max_h)
+static int render_frame(struct frame *fr, cairo_t *cr)
 {
 	if ( fr->num_children > 0 ) {
 
@@ -616,39 +500,26 @@ static int render_frame(struct frame *fr, cairo_t *cr,
 		/* Render all subframes */
 		for ( i=0; i<fr->num_children; i++ ) {
 
-			double x, y, child_max_w, child_max_h;
 			struct frame *ch = fr->children[i];
-			int changed;
 
 			if ( ch->style != NULL ) {
 				memcpy(&ch->lop, &ch->style->lop,
 				       sizeof(struct layout_parameters));
 			}
 
-			get_max_size(ch, fr, i, x, y, max_w, max_h,
-				     &child_max_w, &child_max_h);
+			ch->w = ch->lop.w;
+			ch->h = ch->lop.h;
 
-			do {
+			render_frame(ch, cr);
 
-				/* Render it and hence (recursively) find out
-				 * how much space it actually needs.*/
-				render_frame(ch, cr, child_max_w, child_max_h);
-
-				changed = get_max_size(ch, fr, i, x, y,
-				                       max_w, max_h,
-					               &child_max_w,
-					               &child_max_h);
-
-			} while ( changed );
-
-			/* Position the frame within the parent */
-			position_frame(ch, fr);
+			ch->x = ch->lop.x;
+			ch->y = ch->lop.y;
 
 		}
 
 	} else {
 
-		render_sc(fr, max_w, max_h);
+		render_sc(fr);
 
 	}
 
@@ -755,13 +626,13 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 
-	s->top->lop.min_w_u = 0.0;
-	s->top->lop.min_h_u = 0.0;
-	s->top->lop.min_w_frac = 1.0;
-	s->top->lop.min_h_frac = 1.0;
+	s->top->lop.x = 0.0;
+	s->top->lop.y = 0.0;
+	s->top->lop.w = w;
+	s->top->lop.h = h;
 	s->top->w = w;
 	s->top->h = h;
-	render_frame(s->top, cr, w, h);
+	render_frame(s->top, cr);
 
 	composite_slide(s, cr);
 

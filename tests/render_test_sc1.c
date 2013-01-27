@@ -87,7 +87,6 @@ int main(int argc, char *argv[])
 	sty->lop.margin_r = 0.0;
 	sty->lop.margin_t = 0.0;
 	sty->lop.margin_b = 0.0;
-	sty->lop.grav = DIR_UL;
 	sty->name = strdup("Default");
 
 	sty2 = calloc(1, sizeof(struct style));
@@ -99,7 +98,6 @@ int main(int argc, char *argv[])
 	sty2->lop.margin_r = 20.0;
 	sty2->lop.margin_t = 20.0;
 	sty2->lop.margin_b = 20.0;
-	sty2->lop.grav = DIR_UL;
 	sty2->name = strdup("Subframe1");
 
 	fr->style = sty;

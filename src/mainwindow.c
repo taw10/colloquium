@@ -710,6 +710,7 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 {
 	const double dash[] = {2.0, 2.0};
 	double xmin, ymin, width, height;
+	double ptot_w, ptot_h;
 
 	xmin = fr->x;
 	ymin = fr->y;
@@ -717,13 +718,16 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 	height = fr->h;
 
 	cairo_new_path(cr);
-	cairo_rectangle(cr, xmin-5.0, ymin-5.0, width+10.0, height+10.0);
+	cairo_rectangle(cr, xmin, ymin, width, height);
 	cairo_set_source_rgb(cr, 0.0, 0.69, 1.0);
 	cairo_set_line_width(cr, 0.5);
 	cairo_stroke(cr);
 
 	cairo_new_path(cr);
-	cairo_rectangle(cr, xmin, ymin, width, height);
+	ptot_w = fr->lop.pad_l + fr->lop.pad_r;
+	ptot_h = fr->lop.pad_t + fr->lop.pad_b;
+	cairo_rectangle(cr, xmin+fr->lop.pad_l, ymin+fr->lop.pad_t,
+	                    width-ptot_w, height-ptot_h);
 	cairo_set_dash(cr, dash, 2, 0.0);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 0.1);

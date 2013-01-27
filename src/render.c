@@ -523,7 +523,7 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 			}
 
 			mtot = ch->lop.margin_t + ch->lop.margin_b;
-			switch ( ch->lop.w_units ) {
+			switch ( ch->lop.h_units ) {
 
 				case UNITS_SLIDE :
 				ch->h = ch->lop.h - mtot;

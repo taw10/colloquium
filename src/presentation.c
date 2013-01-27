@@ -447,6 +447,8 @@ void set_selection(struct presentation *p, struct frame *fr)
 {
 	p->selection[0] = fr;
 	p->n_selection = 1;
+
+	if ( fr == NULL ) p->n_selection = 0;
 }
 
 

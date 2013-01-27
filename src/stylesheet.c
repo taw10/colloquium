@@ -134,6 +134,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.h_units = UNITS_SLIDE;
 	sty->lop.x = 0.0;
 	sty->lop.y = 0.0;
+	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}");
 	add_to_template(slide, sty);
 }
 

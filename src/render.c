@@ -575,6 +575,10 @@ void free_render_buffers(struct slide *s)
 	if ( s->rendered_thumb != NULL ) {
 		cairo_surface_destroy(s->rendered_thumb);
 	}
+
+	s->rendered_edit = NULL;
+	s->rendered_proj = NULL;
+	s->rendered_thumb = NULL;
 }
 
 

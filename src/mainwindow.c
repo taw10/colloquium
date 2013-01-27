@@ -43,17 +43,11 @@ static void rerender_slide(struct presentation *p, PangoContext *pc)
 	int w, h;
 	struct slide *s = p->cur_edit_slide;
 
-	if ( s->rendered_thumb != NULL ) {
-		cairo_surface_destroy(s->rendered_thumb);
-	}
+	free_render_buffers(s);
 
 	w = p->thumb_slide_width;
 	h = (p->slide_height/p->slide_width) * w;
 	s->rendered_thumb = render_slide(s, w, h);
-
-	if ( s->rendered_edit != NULL ) {
-		cairo_surface_destroy(s->rendered_edit);
-	}
 
 	w = p->edit_slide_width;
 	h = (p->slide_height/p->slide_width) * w;
@@ -61,10 +55,6 @@ static void rerender_slide(struct presentation *p, PangoContext *pc)
 
 	/* Is this slide currently being displayed on the projector? */
 	if ( s == s->parent->cur_proj_slide ) {
-
-		if ( s->rendered_proj != NULL ) {
-			cairo_surface_destroy(s->rendered_proj);
-		}
 
 		w = s->parent->proj_slide_width;
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
@@ -429,9 +419,11 @@ static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
 
 void notify_slide_changed(struct presentation *p, struct slide *np)
 {
+	free_render_buffers(p->cur_edit_slide);
 	p->cur_edit_slide = np;
+	rerender_slide(p, p->pc);
 
-	/* FIXME: Free old rendered stuff */
+	set_selection(p, NULL);
 
 	update_toolbar(p);
 	redraw(p);

@@ -501,40 +501,44 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 		for ( i=0; i<fr->num_children; i++ ) {
 
 			struct frame *ch = fr->children[i];
+			double mtot;
 
 			if ( ch->style != NULL ) {
 				memcpy(&ch->lop, &ch->style->lop,
 				       sizeof(struct layout_parameters));
 			}
 
+
+			mtot = ch->lop.margin_l + ch->lop.margin_r;
 			switch ( ch->lop.w_units ) {
 
 				case UNITS_SLIDE :
-				ch->w = ch->lop.w;
+				ch->w = ch->lop.w - mtot;
 				break;
 
 				case UNITS_FRAC :
-				ch->w = fr->w * ch->lop.w;
+				ch->w = fr->w * ch->lop.w - mtot;
 				break;
 
 			}
 
+			mtot = ch->lop.margin_t + ch->lop.margin_b;
 			switch ( ch->lop.w_units ) {
 
 				case UNITS_SLIDE :
-				ch->h = ch->lop.h;
+				ch->h = ch->lop.h - mtot;
 				break;
 
 				case UNITS_FRAC :
-				ch->h = fr->h * ch->lop.h;
+				ch->h = fr->h * ch->lop.h - mtot;
 				break;
 
 			}
 
 			render_frame(ch, cr);
 
-			ch->x = ch->lop.x;
-			ch->y = ch->lop.y;
+			ch->x = ch->lop.x + ch->lop.margin_l;
+			ch->y = ch->lop.y + ch->lop.margin_t;
 
 		}
 

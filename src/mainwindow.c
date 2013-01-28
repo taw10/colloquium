@@ -36,6 +36,7 @@
 #include "mainwindow.h"
 #include "render.h"
 #include "frame.h"
+#include "slideshow.h"
 
 
 static void rerender_slide(struct presentation *p, PangoContext *pc)
@@ -54,13 +55,9 @@ static void rerender_slide(struct presentation *p, PangoContext *pc)
 	s->rendered_edit = render_slide(s, w, h);
 
 	/* Is this slide currently being displayed on the projector? */
-	if ( s == s->parent->cur_proj_slide ) {
-
-		w = s->parent->proj_slide_width;
-		h = (s->parent->slide_height/s->parent->slide_width) * w;
-		s->rendered_proj = render_slide(s, w, h);
-
-	}
+	w = s->parent->proj_slide_width;
+	h = (s->parent->slide_height/s->parent->slide_width) * w;
+	s->rendered_proj = render_slide(s, w, h);
 }
 
 
@@ -411,8 +408,7 @@ static gint about_sig(GtkWidget *widget, struct presentation *p)
 
 static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
 {
-	/* FIXME */
-	//try_start_slideshow(p);
+	try_start_slideshow(p);
 	return FALSE;
 }
 
@@ -433,7 +429,7 @@ void notify_slide_changed(struct presentation *p, struct slide *np)
 	//}
 
 	if ( (p->slideshow != NULL) && p->slideshow_linked ) {
-		//notify_slideshow_slide_changed(p, np);
+		notify_slideshow_slide_changed(p, np);
 	}
 }
 

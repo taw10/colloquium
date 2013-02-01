@@ -39,6 +39,7 @@
 #include "slideshow.h"
 
 
+/* Update a slide, once it's been edited in some way. */
 static void rerender_slide(struct presentation *p, PangoContext *pc)
 {
 	int w, h;
@@ -54,14 +55,38 @@ static void rerender_slide(struct presentation *p, PangoContext *pc)
 	h = (p->slide_height/p->slide_width) * w;
 	s->rendered_edit = render_slide(s, w, h);
 
-	/* Is this slide currently being displayed on the projector? */
 	w = s->parent->proj_slide_width;
 	h = (s->parent->slide_height/s->parent->slide_width) * w;
 	s->rendered_proj = render_slide(s, w, h);
+	printf("rendered everything for %p\n", s);
 }
 
 
-static void redraw(struct presentation *p)
+/* Ensure that "edit" and "proj" renderings are in order */
+static void render_edit_and_proj(struct presentation *p, PangoContext *pc)
+{
+	int w, h;
+	struct slide *s = p->cur_edit_slide;
+
+	if ( s->rendered_edit == NULL ) {
+		w = p->edit_slide_width;
+		h = (p->slide_height/p->slide_width) * w;
+		s->rendered_edit = render_slide(s, w, h);
+		printf("rendered edit for %p\n", s);
+	}
+
+	if ( s->rendered_proj == NULL ) {
+		w = s->parent->proj_slide_width;
+		h = (s->parent->slide_height/s->parent->slide_width) * w;
+		s->rendered_proj = render_slide(s, w, h);
+		printf("rendered proj for %p\n", s);
+	}
+}
+
+
+
+/* Force a redraw of the editor window */
+void redraw_editor(struct presentation *p)
 {
 	gint w, h;
 
@@ -413,24 +438,29 @@ static gint start_slideshow_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
-void notify_slide_changed(struct presentation *p, struct slide *np)
+/* Change the editor's slide to "np" */
+void change_edit_slide(struct presentation *p, struct slide *np)
 {
-	free_render_buffers(p->cur_edit_slide);
+	/* If this slide is not being shown on the projector, we can free the
+	 * buffers */
+	if ( p->cur_proj_slide != p->cur_edit_slide ) {
+		free_render_buffers_except_thumb(p->cur_edit_slide);
+	}
+
 	p->cur_edit_slide = np;
-	rerender_slide(p, p->pc);
+	render_edit_and_proj(p, p->pc);
 
 	set_selection(p, NULL);
-
 	update_toolbar(p);
-	redraw(p);
+	redraw_editor(p);
 
 	//if ( p->notes != NULL ) {
 	//	notify_notes_slide_changed(p, np);
 	//}
 
 	if ( (p->slideshow != NULL) && p->slideshow_linked ) {
-		notify_slideshow_slide_changed(p, np);
-	}
+		change_proj_slide(p, np);
+	} /* else leave the slideshow alone */
 }
 
 
@@ -442,7 +472,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 
 	new = add_slide(p, cur_slide_number);
-	notify_slide_changed(p, new);
+	change_edit_slide(p, new);
 
 	return FALSE;
 }
@@ -450,7 +480,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint first_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	notify_slide_changed(p, p->slides[0]);
+	change_edit_slide(p, p->slides[0]);
 	return FALSE;
 }
 
@@ -462,7 +492,7 @@ static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 	if ( cur_slide_number == 0 ) return FALSE;
 
-	notify_slide_changed(p, p->slides[cur_slide_number-1]);
+	change_edit_slide(p, p->slides[cur_slide_number-1]);
 
 	return FALSE;
 }
@@ -475,7 +505,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 	if ( cur_slide_number == p->num_slides-1 ) return FALSE;
 
-	notify_slide_changed(p, p->slides[cur_slide_number+1]);
+	change_edit_slide(p, p->slides[cur_slide_number+1]);
 
 	return FALSE;
 }
@@ -483,7 +513,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 
 static gint last_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	notify_slide_changed(p, p->slides[p->num_slides-1]);
+	change_edit_slide(p, p->slides[p->num_slides-1]);
 
 	return FALSE;
 }
@@ -525,7 +555,7 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	fr->sc = "Hello";
 	set_selection(p, fr);
 	rerender_slide(p, p->pc);
-	redraw(p);
+	redraw_editor(p);
 
 	return 0;
 }
@@ -844,11 +874,79 @@ static gint realise_sig(GtkWidget *da, struct presentation *p)
 }
 
 
+static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
+                              struct presentation *p)
+{
+	if ( p->n_selection == 0 ) {
+		if ( str[0] == 'b' ) {
+			check_toggle_blank(p);
+		} else {
+			printf("IM keypress: %s\n", str);
+		}
+		return FALSE;
+	}
+
+	//im_commit(p->editing_object, str); FIXME!
+
+	return FALSE;
+}
+
+
+static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
+                              struct presentation *p)
+{
+	gboolean r;
+
+	/* Throw the event to the IM context and let it sort things out */
+	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context),
+		                           event);
+	if ( r ) return FALSE;  /* IM ate it */
+
+	switch ( event->keyval ) {
+
+		case GDK_KEY_Page_Up :
+		prev_slide_sig(NULL, p);
+		break;
+
+		case GDK_KEY_Page_Down :
+		next_slide_sig(NULL, p);
+		break;
+
+		case GDK_KEY_Escape :
+		if ( p->slideshow != NULL ) end_slideshow(p);
+		set_selection(p, NULL);
+		redraw_editor(p);
+		break;
+
+		case GDK_KEY_Return :
+		//im_commit(p->editing_object, "\n"); FIXME!
+		break;
+
+		case GDK_KEY_B :
+		case GDK_KEY_b :
+		if ( p->slideshow != NULL ) {
+			//if ( p->prefs->b_splits ) {
+				toggle_slideshow_link(p);
+			//} else {
+			//	p->ss_blank = 1-p->ss_blank;
+			//	redraw_slideshow(p);
+			//}
+		}
+		break;
+
+	}
+
+	return FALSE;
+}
+
+
+
 int open_mainwindow(struct presentation *p)
 {
 	GtkWidget *window;
 	GtkWidget *vbox;
 	GtkWidget *sw;
+	GdkWindow *win;
 
 	if ( p->window != NULL ) {
 		fprintf(stderr, "Presentation window is already open!\n");
@@ -895,13 +993,14 @@ int open_mainwindow(struct presentation *p)
 	g_signal_connect(G_OBJECT(p->drawingarea), "draw",
 			 G_CALLBACK(draw_sig), p);
 
-	/* Input method */
-	/* FIXME */
+	/* Keyboard and input method stuff */
 	p->im_context = gtk_im_multicontext_new();
-	//gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context),
-	//                                 p->drawingarea->window);
-	//g_signal_connect(G_OBJECT(p->im_context), "commit",
-	//		 G_CALLBACK(im_commit_sig), p);
+	win = gtk_widget_get_window(p->drawingarea);
+	gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context), win);
+	g_signal_connect(G_OBJECT(p->im_context), "commit",
+			 G_CALLBACK(im_commit_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "key-press-event",
+			 G_CALLBACK(key_press_sig), p);
 
 	/* Default size */
 	gtk_window_set_default_size(GTK_WINDOW(p->window), 1024+100, 768+100);

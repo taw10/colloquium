@@ -30,11 +30,12 @@
 
 extern void try_start_slideshow(struct presentation *p);
 
-extern void notify_slideshow_slide_changed(struct presentation *p,
-                                           struct slide *np);
+extern void change_proj_slide(struct presentation *p, struct slide *np);
 
 extern void toggle_slideshow_link(struct presentation *p);
 extern void check_toggle_blank(struct presentation *p);
+
+extern void redraw_slideshow(struct presentation *p);
 
 extern void end_slideshow(struct presentation *p);
 

@@ -33,6 +33,19 @@
 
 #include "presentation.h"
 #include "mainwindow.h"
+#include "render.h"
+
+
+/* Force a redraw of the slideshow */
+void redraw_slideshow(struct presentation *p)
+{
+	gint w, h;
+
+	w = gtk_widget_get_allocated_width(GTK_WIDGET(p->ss_drawingarea));
+	h = gtk_widget_get_allocated_height(GTK_WIDGET(p->ss_drawingarea));
+
+	gtk_widget_queue_draw_area(p->ss_drawingarea, 0, 0, w, h);
+}
 
 
 static gint ss_destroy_sig(GtkWidget *widget, struct presentation *p)
@@ -80,60 +93,38 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, struct presentation *p)
 }
 
 
-void notify_slideshow_slide_changed(struct presentation *p, struct slide *np)
+void change_proj_slide(struct presentation *p, struct slide *np)
 {
-	if ( (p->cur_proj_slide != NULL)
-	  && (p->cur_proj_slide->rendered_edit != NULL) )
-	{
-		cairo_surface_destroy(p->cur_proj_slide->rendered_proj);
-		p->cur_proj_slide->rendered_proj = NULL;
+	/* If this slide is not being shown on the editor, we can free the
+	 * buffers */
+	if ( p->cur_proj_slide != p->cur_edit_slide ) {
+		free_render_buffers_except_thumb(p->cur_proj_slide);
 	}
+
 	p->cur_proj_slide = np;
-}
 
-
-static void change_slide(struct presentation *p, signed int n)
-{
-
-	int cur_slide_number;
-
-	/* If linked, it doesn't matter whether we work from the editor or
-	 * slideshow position because they're showing the same thing.  If not,
-	 * then we must use the editor's slide. */
-	cur_slide_number = slide_number(p, p->cur_edit_slide);
-
-	if ( cur_slide_number+n < 0 ) return;
-	if ( cur_slide_number+n >= p->num_slides ) return;
-
-	p->ss_blank = 0;
-
-	if ( p->slideshow_linked ) {
-
-		/* If we are currently "linked", update both. */
-		notify_slideshow_slide_changed(p, p->slides[cur_slide_number+n]);
-		notify_slide_changed(p, p->slides[cur_slide_number+n]);
-
-	} else {
-
-		/* If we are not linked, a slide change on the "slideshow"
-		 * actually affects the editor. */
-		notify_slide_changed(p, p->slides[cur_slide_number+n]);
-		/* p->cur_proj_slide not changed */
-
-	}
+	/* The slide is already rendered, because the editor always gets there
+	 * first, so we only need to do this: */
+	redraw_slideshow(p);
 }
 
 
 static gint prev_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	change_slide(p, -1);
+	int cur_slide_number;
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
+	if ( cur_slide_number == 0 ) return FALSE;
+	change_edit_slide(p, p->slides[cur_slide_number-1]);
 	return FALSE;
 }
 
 
 static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 {
-	change_slide(p, +1);
+	int cur_slide_number;
+	cur_slide_number = slide_number(p, p->cur_edit_slide);
+	if ( cur_slide_number == p->num_slides-1 ) return FALSE;
+	change_edit_slide(p, p->slides[cur_slide_number+1]);
 	return FALSE;
 }
 
@@ -152,7 +143,7 @@ void end_slideshow(struct presentation *p)
 	}
 
 	p->cur_proj_slide = NULL;
-	/* FIXME: Update mainwindow */
+	redraw_editor(p);
 }
 
 
@@ -160,10 +151,9 @@ void toggle_slideshow_link(struct presentation *p)
 {
 	p->slideshow_linked = 1 - p->slideshow_linked;
 	if ( p->slideshow_linked ) {
-		p->cur_proj_slide = p->cur_edit_slide;
-		notify_slideshow_slide_changed(p, p->cur_proj_slide);
+		change_proj_slide(p, p->cur_proj_slide);
 	}
-	/* FIXME: Update mainwindow */
+	redraw_editor(p);
 }
 
 

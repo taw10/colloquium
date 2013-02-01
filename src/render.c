@@ -569,7 +569,6 @@ void recursive_buffer_free(struct frame *fr)
 
 void free_render_buffers(struct slide *s)
 {
-	recursive_buffer_free(s->top);
 	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
 	if ( s->rendered_proj != NULL ) cairo_surface_destroy(s->rendered_proj);
 	if ( s->rendered_thumb != NULL ) {
@@ -580,6 +579,17 @@ void free_render_buffers(struct slide *s)
 	s->rendered_proj = NULL;
 	s->rendered_thumb = NULL;
 }
+
+
+void free_render_buffers_except_thumb(struct slide *s)
+{
+	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
+	if ( s->rendered_proj != NULL ) cairo_surface_destroy(s->rendered_proj);
+
+	s->rendered_edit = NULL;
+	s->rendered_proj = NULL;
+}
+
 
 
 static void do_composite(struct frame *fr, cairo_t *cr)
@@ -666,6 +676,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	composite_slide(s, cr);
 
 	cairo_destroy(cr);
+	recursive_buffer_free(s->top);
 
 	return surf;
 }

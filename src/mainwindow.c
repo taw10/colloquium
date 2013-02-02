@@ -58,7 +58,6 @@ static void rerender_slide(struct presentation *p, PangoContext *pc)
 	w = s->parent->proj_slide_width;
 	h = (s->parent->slide_height/s->parent->slide_width) * w;
 	s->rendered_proj = render_slide(s, w, h);
-	printf("rendered everything for %p\n", s);
 }
 
 
@@ -72,14 +71,12 @@ static void render_edit_and_proj(struct presentation *p, PangoContext *pc)
 		w = p->edit_slide_width;
 		h = (p->slide_height/p->slide_width) * w;
 		s->rendered_edit = render_slide(s, w, h);
-		printf("rendered edit for %p\n", s);
 	}
 
 	if ( s->rendered_proj == NULL ) {
 		w = s->parent->proj_slide_width;
 		h = (s->parent->slide_height/s->parent->slide_width) * w;
 		s->rendered_proj = render_slide(s, w, h);
-		printf("rendered proj for %p\n", s);
 	}
 }
 
@@ -538,6 +535,19 @@ static gint open_notes_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static void do_slide_update(struct presentation *p, PangoContext *pc)
+{
+	rerender_slide(p, p->pc);
+	redraw_editor(p);
+	if ( (p->slideshow != NULL)
+	  && (p->cur_edit_slide == p->cur_proj_slide) )
+	{
+		redraw_slideshow(p);
+	}
+}
+
+
+
 static gint add_furniture(GtkWidget *widget, struct presentation *p)
 {
 	gchar *name;
@@ -554,8 +564,8 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	set_edit(p, p->cur_edit_slide);
 	fr->sc = "Hello";
 	set_selection(p, fr);
-	rerender_slide(p, p->pc);
-	redraw_editor(p);
+
+	do_slide_update(p, p->pc);
 
 	return 0;
 }

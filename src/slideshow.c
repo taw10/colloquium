@@ -151,7 +151,7 @@ void toggle_slideshow_link(struct presentation *p)
 {
 	p->slideshow_linked = 1 - p->slideshow_linked;
 	if ( p->slideshow_linked ) {
-		change_proj_slide(p, p->cur_proj_slide);
+		change_proj_slide(p, p->cur_edit_slide);
 	}
 	redraw_editor(p);
 }

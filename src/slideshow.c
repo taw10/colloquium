@@ -74,6 +74,8 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, struct presentation *p)
 
 		int h;
 
+		/* FIXME: Assumes that monitor and slide sizes are such that
+		 * letterboxing at sides.  This needn't be the case. */
 		h = p->proj_slide_width * p->slide_height / p->slide_width;
 
 		/* Get the overall size */
@@ -82,7 +84,7 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, struct presentation *p)
 		yoff = (allocation.height - h)/2.0;
 
 		/* Draw the slide from the cache */
-		cairo_rectangle(cr, 0.0, 0.0, width, height);
+		cairo_rectangle(cr, xoff, yoff, p->proj_slide_width, h);
 		cairo_set_source_surface(cr, p->cur_proj_slide->rendered_proj,
 		                         xoff, yoff);
 		cairo_fill(cr);
@@ -134,14 +136,6 @@ void end_slideshow(struct presentation *p)
 	gtk_widget_destroy(p->ss_drawingarea);
 	gtk_widget_destroy(p->slideshow);
 	p->slideshow = NULL;
-
-	if ( (p->cur_proj_slide != NULL)
-	  && (p->cur_proj_slide->rendered_edit != NULL) )
-	{
-		cairo_surface_destroy(p->cur_proj_slide->rendered_proj);
-		p->cur_proj_slide->rendered_proj = NULL;
-	}
-
 	p->cur_proj_slide = NULL;
 	redraw_editor(p);
 }

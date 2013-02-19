@@ -562,8 +562,10 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	fr = add_subframe(p->cur_edit_slide->top);
 	fr->style = sty;
 	set_edit(p, p->cur_edit_slide);
-	fr->sc = "Hello";
+	fr->sc = strdup("Hello");
+	fr->sc_len = 6;
 	set_selection(p, fr);
+	fr->pos = 0;
 
 	do_slide_update(p, p->pc);
 
@@ -765,12 +767,11 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 }
 
 
-static void draw_caret(cairo_t *cr, struct frame *fr)
+static void draw_caret(cairo_t *cr, struct frame *fr, int pos)
 {
 #if 0
 	double xposd, yposd, cx;
 	double clow, chigh;
-	PangoRectangle pos;
 	const double t = 1.8;
 
 	pango_layout_get_cursor_pos(o->layout,
@@ -778,9 +779,9 @@ static void draw_caret(cairo_t *cr, struct frame *fr)
 	                            &pos, NULL);
 
 	xposd = pos.x/PANGO_SCALE;
-	cx = o->base.x - o->offs_x + xposd;
+	cx = fr->x + xposd;
 	yposd = pos.y/PANGO_SCALE;
-	clow = o->base.y - o->offs_y + yposd;
+	clow = fr->y + yposd;
 	chigh = clow + (pos.height/PANGO_SCALE);
 
 	cairo_move_to(cr, cx, clow);
@@ -813,7 +814,7 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 
 	/* If only one frame is selected, draw the caret */
 	if ( p->n_selection == 1 ) {
-		draw_caret(cr, p->selection[0]);
+		draw_caret(cr, p->selection[0], p->cursor_pos);
 	}
 }
 
@@ -884,6 +885,53 @@ static gint realise_sig(GtkWidget *da, struct presentation *p)
 }
 
 
+static void insert_text(struct frame *fr, char *t, struct presentation *p)
+{
+	char *tmp;
+	size_t tlen, olen, offs;
+	int i;
+
+	tlen = strlen(t);
+	olen = strlen(fr->sc);
+
+	if ( tlen + olen + 1 > fr->sc_len ) {
+
+		char *try;
+
+		try = realloc(fr->sc, fr->sc_len + tlen + 64);
+		if ( try == NULL ) return;  /* Failed to insert */
+		fr->sc = try;
+		fr->sc_len += 64;
+		fr->sc_len += tlen;
+
+	}
+
+	tmp = malloc(fr->sc_len);
+	if ( tmp == NULL ) return;
+
+	offs = fr->pos;
+
+	for ( i=0; i<offs; i++ ) {
+		tmp[i] = fr->sc[i];
+	}
+	for ( i=0; i<tlen; i++ ) {
+		tmp[i+offs] = t[i];
+	}
+	for ( i=0; i<olen-fr->pos; i++ ) {
+		tmp[i+offs+tlen] = fr->sc[i+offs];
+	}
+	tmp[olen+tlen] = '\0';
+	memcpy(fr->sc, tmp, fr->sc_len);
+	free(tmp);
+
+	rerender_slide(p, p->pc);
+	redraw_editor(p);
+	fr->pos += tlen;
+	fr->empty = 0;
+}
+
+
+
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
 {
@@ -896,7 +944,7 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 		return FALSE;
 	}
 
-	//im_commit(p->editing_object, str); FIXME!
+	insert_text(p->selection[0], str, p);
 
 	return FALSE;
 }

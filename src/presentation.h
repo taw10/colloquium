@@ -76,6 +76,7 @@ struct presentation
 	struct frame    **selection;
 	int               n_selection;
 	int               max_selection;
+	size_t            cursor_pos;
 
 	/* This is the "native" size of the slide.  It only exists to give
 	 * font size some meaning in the context of a somewhat arbitrary DPI */

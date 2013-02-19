@@ -40,35 +40,6 @@
 #include "render.h"
 
 
-enum wrap_box_type
-{
-	WRAP_BOX_PANGO,
-};
-
-
-struct wrap_box
-{
-	enum wrap_box_type type;
-	int width;  /* Pango units */
-
-	/* For type == WRAP_BOX_PANGO */
-	PangoGlyphItem *glyph_item;
-	char *text;
-};
-
-
-struct wrap_line
-{
-	int width;
-	int height;  /* Pango units */
-	int ascent;  /* Pango units */
-
-	int n_boxes;
-	int max_boxes;
-	struct wrap_box *boxes;
-};
-
-
 struct renderstuff
 {
 	cairo_t *cr;
@@ -82,11 +53,7 @@ struct renderstuff
 
 	int wrap_w;  /* Pango units */
 
-	/* Lines of boxes, where each box can be a load of glyphs, an image,
-	 * etc */
-	int n_lines;
-	int max_lines;
-	struct wrap_line *lines;
+	struct frame *fr;
 };
 
 
@@ -110,17 +77,17 @@ static void free_line_bits(struct wrap_line *l)
 }
 
 
-static void alloc_lines(struct renderstuff *s)
+static void alloc_lines(struct frame *fr)
 {
 	struct wrap_line *lines_new;
 
-	lines_new = realloc(s->lines, s->max_lines * sizeof(struct wrap_line));
+	lines_new = realloc(fr->lines, fr->max_lines * sizeof(struct wrap_line));
 	if ( lines_new == NULL ) {
 		fprintf(stderr, "Couldn't allocate memory for lines!\n");
 		return;
 	}
 
-	s->lines = lines_new;
+	fr->lines = lines_new;
 }
 
 
@@ -190,7 +157,7 @@ static const char *add_chars_to_line(struct renderstuff *s,
 
 		before = pango_glyph_item_split(orig, cur_text_ptr, split_len);
 
-		add_glyph_box_to_line(&s->lines[s->n_lines],
+		add_glyph_box_to_line(&s->fr->lines[s->fr->n_lines],
 		                      before, before_text);
 
 		orig->item->offset = 0;
@@ -199,7 +166,8 @@ static const char *add_chars_to_line(struct renderstuff *s,
 
 		PangoGlyphItem *copy;
 		copy = pango_glyph_item_copy(orig);
-		add_glyph_box_to_line(&s->lines[s->n_lines], copy, before_text);
+		add_glyph_box_to_line(&s->fr->lines[s->fr->n_lines],
+		                      copy, before_text);
 
 	}
 
@@ -221,15 +189,15 @@ static void initialise_line(struct wrap_line *l)
 
 static void dispatch_line(struct renderstuff *s)
 {
-	s->n_lines++;
+	s->fr->n_lines++;
 
-	if ( s->n_lines == s->max_lines ) {
-		s->max_lines += 32;
-		alloc_lines(s);
-		if ( s->n_lines == s->max_lines ) return;
+	if ( s->fr->n_lines == s->fr->max_lines ) {
+		s->fr->max_lines += 32;
+		alloc_lines(s->fr);
+		if ( s->fr->n_lines == s->fr->max_lines ) return;
 	}
 
-	initialise_line(&s->lines[s->n_lines]);
+	initialise_line(&s->fr->lines[s->fr->n_lines]);
 }
 
 
@@ -272,7 +240,8 @@ static void wrap_text(gpointer data, gpointer user_data)
 	gitem.item = item;
 
 	/* FIXME: Replace this with a real typesetting algorithm */
-	width_remain = s->wrap_w*PANGO_SCALE - s->lines[s->n_lines].width;
+	width_remain = s->wrap_w*PANGO_SCALE
+	               - s->fr->lines[s->fr->n_lines].width;
 	width_used = 0;
 	pos = 0;
 	n = item->num_chars;
@@ -390,9 +359,9 @@ static void render_lines(struct renderstuff *s)
 	int i;
 	double y_pos = 0.0;
 
-	for ( i=0; i<s->n_lines; i++ ) {
+	for ( i=0; i<s->fr->n_lines; i++ ) {
 
-		double asc = s->lines[i].ascent/PANGO_SCALE;
+		double asc = s->fr->lines[i].ascent/PANGO_SCALE;
 
 		//cairo_move_to(s->cr, 0, y_pos+asc+0.5);
 		//cairo_line_to(s->cr, s->lines[i].width, y_pos+asc+0.5);
@@ -404,10 +373,10 @@ static void render_lines(struct renderstuff *s)
 		cairo_move_to(s->cr, 0.0, asc+y_pos);
 
 		/* Render the line */
-		render_boxes(&s->lines[i], s);
+		render_boxes(&s->fr->lines[i], s);
 
 		/* FIXME: line spacing */
-		y_pos += s->lines[i].height/PANGO_SCALE + 0.0;
+		y_pos += s->fr->lines[i].height/PANGO_SCALE + 0.0;
 
 	}
 }
@@ -424,6 +393,14 @@ static int render_sc(struct frame *fr)
 	struct scblock *b;
 	int i;
 
+	for ( i=0; i<fr->n_lines; i++ ) {
+		free_line_bits(&fr->lines[i]);
+	}
+	free(fr->lines);
+	fr->lines = NULL;
+	fr->n_lines = 0;
+	fr->max_lines = 0;
+
 	if ( fr->sc == NULL ) return 0;
 
 	bl = sc_find_blocks(fr->sc, NULL);
@@ -434,11 +411,12 @@ static int render_sc(struct frame *fr)
 	}
 
 	s.wrap_w = fr->w - fr->lop.pad_l - fr->lop.pad_r;
-	s.lines = NULL;
-	s.n_lines = 0;
-	s.max_lines = 64;
-	alloc_lines(&s);
-	initialise_line(&s.lines[0]);
+	s.fr = fr;
+	s.fr->lines = NULL;
+	s.fr->n_lines = 0;
+	s.fr->max_lines = 64;
+	alloc_lines(s.fr);
+	initialise_line(&s.fr->lines[0]);
 
 	/* Find and load font */
 	s.fontmap = pango_cairo_font_map_get_default();
@@ -476,11 +454,6 @@ static int render_sc(struct frame *fr)
 
 	cairo_translate(s.cr, fr->lop.pad_l, fr->lop.pad_t);
 	render_lines(&s);
-
-	for ( i=0; i<s.n_lines; i++ ) {
-		free_line_bits(&s.lines[i]);
-	}
-	free(s.lines);
 
 	cairo_font_options_destroy(fopts);
 	cairo_destroy(s.cr);

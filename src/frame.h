@@ -74,6 +74,35 @@ struct layout_parameters
 };
 
 
+enum wrap_box_type
+{
+	WRAP_BOX_PANGO,
+};
+
+
+struct wrap_box
+{
+	enum wrap_box_type type;
+	int width;  /* Pango units */
+
+	/* For type == WRAP_BOX_PANGO */
+	PangoGlyphItem *glyph_item;
+	char *text;
+};
+
+
+struct wrap_line
+{
+	int width;
+	int height;  /* Pango units */
+	int ascent;  /* Pango units */
+
+	int n_boxes;
+	int max_boxes;
+	struct wrap_box *boxes;
+};
+
+
 struct frame
 {
 	struct frame            **children;
@@ -81,8 +110,15 @@ struct frame
 	int                       max_children;
 
 	char                     *sc;  /* Storycode */
+	size_t                    sc_len;  /* Space allocated for sc */
 
 	cairo_surface_t          *contents;
+
+	int                       n_lines;
+	int                       max_lines;
+	struct wrap_line         *lines;
+
+	size_t                    pos;
 
 	struct layout_parameters  lop;
 	struct style             *style;  /* Non-NULL if 'lop' came from SS */

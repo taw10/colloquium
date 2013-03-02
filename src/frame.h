@@ -74,35 +74,6 @@ struct layout_parameters
 };
 
 
-enum wrap_box_type
-{
-	WRAP_BOX_PANGO,
-};
-
-
-struct wrap_box
-{
-	enum wrap_box_type type;
-	int width;  /* Pango units */
-
-	/* For type == WRAP_BOX_PANGO */
-	PangoGlyphItem *glyph_item;
-	char *text;
-};
-
-
-struct wrap_line
-{
-	int width;
-	int height;  /* Pango units */
-	int ascent;  /* Pango units */
-
-	int n_boxes;
-	int max_boxes;
-	struct wrap_box *boxes;
-};
-
-
 struct frame
 {
 	struct frame            **children;

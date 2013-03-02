@@ -769,20 +769,15 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 
 static void draw_caret(cairo_t *cr, struct frame *fr, int pos)
 {
-#if 0
-	double xposd, yposd, cx;
-	double clow, chigh;
+	double xposd, yposd, line_height;
+	double cx, clow, chigh;
 	const double t = 1.8;
 
-	pango_layout_get_cursor_pos(o->layout,
-	                            o->insertion_point+o->insertion_trail,
-	                            &pos, NULL);
+	get_cursor_pos(fr, pos, &xposd, &yposd, &line_height);
 
-	xposd = pos.x/PANGO_SCALE;
 	cx = fr->x + xposd;
-	yposd = pos.y/PANGO_SCALE;
 	clow = fr->y + yposd;
-	chigh = clow + (pos.height/PANGO_SCALE);
+	chigh = clow + line_height;
 
 	cairo_move_to(cr, cx, clow);
 	cairo_line_to(cr, cx, chigh);
@@ -800,7 +795,6 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int pos)
 	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
-#endif
 }
 
 

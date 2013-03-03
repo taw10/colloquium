@@ -75,7 +75,7 @@ struct wrap_box
 
 struct wrap_line
 {
-	int width;
+	int width;   /* Pango units */
 	int height;  /* Pango units */
 	int ascent;  /* Pango units */
 

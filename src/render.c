@@ -106,7 +106,8 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 		double asc = pango_units_to_double(fr->lines[i].ascent);
 
 		cairo_move_to(cr, 0, y_pos+asc+0.5);
-		cairo_line_to(cr, fr->lines[i].width, y_pos+asc+0.5);
+		cairo_line_to(cr, pango_units_to_double(fr->lines[i].width),
+		                  y_pos+asc+0.5);
 		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);

@@ -189,6 +189,7 @@ static int add_wrap_box(struct wrap_line *line, char *text,
 
 
 static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
+                       PangoLanguage *lang,
                        PangoFont *font, PangoFontDescription *fontdesc,
                        double col[4])
 {
@@ -206,8 +207,7 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 	if ( log_attrs == NULL ) return 1;
 
 	/* Create glyph string */
-	pango_get_log_attrs(sc, len, -1, pango_language_get_default(),
-	                    log_attrs, len+1);
+	pango_get_log_attrs(sc, len, -1, lang, log_attrs, len+1);
 
 	start = 0;
 	for ( i=0; i<len; i++ ) {
@@ -216,22 +216,28 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 
 			char *word;
 			enum wrap_box_space type;
+			size_t len;
 
 			/* Stuff up to (but not including) sc[i] forms a
-			 * wap box */
-			word = strndup(sc+start, i-start);
+			 * wrap box */
+			len = i-start;
+			if ( log_attrs[i].is_mandatory_break ) {
+				type = WRAP_SPACE_EOP;
+				if ( (i>0) && (sc[i-1] == '\n') ) len--;
+				if ( (i>0) && (sc[i-1] == '\r') ) len--;
+			} else if ( (i>0)
+			         && log_attrs[i-1].is_expandable_space ) {
+				type = WRAP_SPACE_INTERWORD;
+				len--;  /* Not interested in spaces */
+			} else {
+				type = WRAP_SPACE_NONE;
+			}
+
+			word = strndup(sc+start, len);
 			if ( word == NULL ) {
 				fprintf(stderr, "strndup() failed.\n");
 				free(log_attrs);
 				return 1;
-			}
-
-			if ( log_attrs[i].is_mandatory_break ) {
-				type = WRAP_SPACE_EOP;
-			} else if ( log_attrs[i].is_expandable_space ) {
-				type = WRAP_SPACE_INTERWORD;
-			} else {
-				type = WRAP_SPACE_NONE;
 			}
 
 			if ( add_wrap_box(boxes, word, type, pc, font, fontdesc,
@@ -272,6 +278,7 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 	PangoFontDescription *fontdesc;
 	PangoFont *font;
 	double col[4];
+	PangoLanguage *lang;
 
 	boxes = malloc(sizeof(struct wrap_line));
 	if ( boxes == NULL ) {
@@ -287,6 +294,9 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 		return NULL;
 	}
 
+	/* FIXME: Determine proper language (somehow...) */
+	lang = pango_language_from_string("en_GB");
+	
 	/* FIXME: Determine the proper font to use */
 	fontdesc = pango_font_description_from_string("Sorts Mill Goudy 16");
 	if ( fontdesc == NULL ) {
@@ -307,8 +317,8 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 	      b = sc_block_list_next(bl, iter) )
 	{
 		if ( b->name == NULL ) {
-			if ( split_words(boxes, pc, b->contents, font, fontdesc,
-			                 col) ) {
+			if ( split_words(boxes, pc, b->contents, lang,
+			                 font, fontdesc, col) ) {
 				fprintf(stderr, "Splitting failed.\n");
 			}
 		}

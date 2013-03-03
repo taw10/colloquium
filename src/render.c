@@ -43,13 +43,21 @@
 
 static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 {
+	cairo_new_path(cr);
+	cairo_move_to(cr, 0.0, box->ascent/PANGO_SCALE);
 	if ( box->glyphs == NULL ) {
 		fprintf(stderr, "Box %p has NULL pointer.\n", box);
 		return;
 	}
+	pango_cairo_glyph_string_path(cr, box->font, box->glyphs);
 	cairo_set_source_rgba(cr, box->col[0], box->col[1], box->col[2],
 	                      box->col[3]);
-	pango_cairo_glyph_string_path(cr, box->font, box->glyphs);
+	cairo_fill(cr);
+
+	cairo_rectangle(cr, 0.0, 0.0, box->width/PANGO_SCALE, box->height/PANGO_SCALE);
+	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 0.1);
+	cairo_stroke(cr);
 }
 
 
@@ -65,7 +73,7 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 		cairo_save(cr);
 
 		box = &line->boxes[j];
-		cairo_rel_move_to(cr, x_pos, 0.0);
+		cairo_translate(cr, x_pos, 0.0);
 
 		switch ( line->boxes[j].type ) {
 
@@ -96,11 +104,11 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 
 		double asc = fr->lines[i].ascent/PANGO_SCALE;
 
-		//cairo_move_to(cr, 0, y_pos+asc+0.5);
-		//cairo_line_to(cr, s->lines[i].width, y_pos+asc+0.5);
-		//cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-		//cairo_set_line_width(cr, 1.0);
-		//cairo_stroke(cr);
+		cairo_move_to(cr, 0, y_pos+asc+0.5);
+		cairo_line_to(cr, fr->lines[i].width, y_pos+asc+0.5);
+		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
 
 		/* Move to beginning of the line */
 		cairo_move_to(cr, 0.0, asc+y_pos);

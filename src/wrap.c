@@ -125,6 +125,8 @@ static void shape_and_measure(gpointer data, gpointer user_data)
 	if ( PANGO_ASCENT(rect) > box->ascent ) {
 		box->ascent = PANGO_ASCENT(rect);
 	}
+
+	pango_item_free(item);
 }
 
 
@@ -150,6 +152,7 @@ static int add_wrap_box(struct wrap_line *line, char *text,
 {
 	GList *pango_items;
 	struct wrap_box *box;
+	PangoAttrList *attrs;
 
 	if ( line->n_boxes == line->max_boxes ) {
 		line->max_boxes += 32;
@@ -165,11 +168,17 @@ static int add_wrap_box(struct wrap_line *line, char *text,
 	box->width = 0;
 	box->ascent = 0;
 	box->height = 0;
+	box->col[0] = col[0];  /* Red */
+	box->col[1] = col[1];  /* Green */
+	box->col[2] = col[2];  /* Blue */
+	box->col[3] = col[3];  /* Alpha */
 	line->n_boxes++;
 
-	pango_items = pango_itemize(pc, text, 0, strlen(text), NULL, NULL);
+	attrs = pango_attr_list_new();
+	pango_items = pango_itemize(pc, text, 0, strlen(text), attrs, NULL);
 	g_list_foreach(pango_items, shape_and_measure, box);
 	g_list_free(pango_items);
+	pango_attr_list_unref(attrs);
 
 	return 0;
 }
@@ -220,7 +229,9 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 				type = WRAP_SPACE_NONE;
 			}
 
-			add_wrap_box(boxes, word, type, pc, font, col);
+			if ( add_wrap_box(boxes, word, type, pc, font, col) ) {
+				fprintf(stderr, "Failed to add wrap box.\n");
+			}
 			start = i;
 
 		}

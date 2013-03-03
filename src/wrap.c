@@ -148,11 +148,13 @@ static void calc_line_geometry(struct wrap_line *line)
 /* Add "text", followed by a space of type "space", to "line" */
 static int add_wrap_box(struct wrap_line *line, char *text,
                         enum wrap_box_space space, PangoContext *pc,
-                        PangoFont *font, double col[4])
+                        PangoFont *font, PangoFontDescription *fontdesc,
+                        double col[4])
 {
 	GList *pango_items;
 	struct wrap_box *box;
 	PangoAttrList *attrs;
+	PangoAttribute *attr;
 
 	if ( line->n_boxes == line->max_boxes ) {
 		line->max_boxes += 32;
@@ -175,6 +177,8 @@ static int add_wrap_box(struct wrap_line *line, char *text,
 	line->n_boxes++;
 
 	attrs = pango_attr_list_new();
+	attr = pango_attr_font_desc_new(fontdesc);
+	pango_attr_list_insert_before(attrs, attr);
 	pango_items = pango_itemize(pc, text, 0, strlen(text), attrs, NULL);
 	g_list_foreach(pango_items, shape_and_measure, box);
 	g_list_free(pango_items);
@@ -185,7 +189,8 @@ static int add_wrap_box(struct wrap_line *line, char *text,
 
 
 static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
-                       PangoFont *font, double col[4])
+                       PangoFont *font, PangoFontDescription *fontdesc,
+                       double col[4])
 {
 	PangoLogAttr *log_attrs;
 	size_t len;
@@ -229,7 +234,8 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 				type = WRAP_SPACE_NONE;
 			}
 
-			if ( add_wrap_box(boxes, word, type, pc, font, col) ) {
+			if ( add_wrap_box(boxes, word, type, pc, font, fontdesc,
+			                  col) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = i;
@@ -247,7 +253,8 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			return 1;
 		}
 
-		add_wrap_box(boxes, word, WRAP_SPACE_NONE, pc, font, col);
+		add_wrap_box(boxes, word, WRAP_SPACE_NONE, pc, font, fontdesc,
+		             col);
 
 	}
 
@@ -282,9 +289,16 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 
 	/* FIXME: Determine the proper font to use */
 	fontdesc = pango_font_description_from_string("Sorts Mill Goudy 16");
+	if ( fontdesc == NULL ) {
+		fprintf(stderr, "Couldn't describe font.\n");
+		return NULL;
+	}
 	font = pango_font_map_load_font(pango_context_get_font_map(pc),
 	                                pc, fontdesc);
-	pango_font_description_free(fontdesc);
+	if ( font == NULL ) {
+		fprintf(stderr, "Couldn't load font.\n");
+		return NULL;
+	}
 	col[0] = 0.0;  col[1] = 0.0;  col[2] = 0.0;  col[3] = 1.0;
 
 	/* Iterate through SC blocks and send each one in turn for processing */
@@ -293,7 +307,8 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 	      b = sc_block_list_next(bl, iter) )
 	{
 		if ( b->name == NULL ) {
-			if ( split_words(boxes, pc, b->contents, font, col) ) {
+			if ( split_words(boxes, pc, b->contents, font, fontdesc,
+			                 col) ) {
 				fprintf(stderr, "Splitting failed.\n");
 			}
 		}
@@ -301,6 +316,8 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 		/* FIXME: Handle images */
 	}
 	sc_block_list_free(bl);
+
+	pango_font_description_free(fontdesc);
 
 	return boxes;
 }

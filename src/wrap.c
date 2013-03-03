@@ -93,7 +93,7 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 			break;
 		}
 		*yposd += fr->lines[i].height;
-		*line_height = fr->lines[i].height / PANGO_SCALE;
+		*line_height = pango_units_to_double(fr->lines[i].height);
 	}
 	assert(line >= 0);
 

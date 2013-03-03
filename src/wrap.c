@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pango/pangocairo.h>
+#include <math.h>
 
 #include <storycode.h>
 
@@ -296,7 +297,7 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 
 	/* FIXME: Determine proper language (somehow...) */
 	lang = pango_language_from_string("en_GB");
-	
+
 	/* FIXME: Determine the proper font to use */
 	fontdesc = pango_font_description_from_string("Sorts Mill Goudy 16");
 	if ( fontdesc == NULL ) {
@@ -333,6 +334,198 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 }
 
 
+/* Normal width of space */
+static double sp_x(enum wrap_box_space s)
+{
+	switch ( s ) {
+
+		case WRAP_SPACE_INTERWORD :
+		return 20.0;
+
+		case WRAP_SPACE_EOP :
+		default:
+		return 0.0;
+
+		case WRAP_SPACE_NONE :
+		return 0.0;
+
+	}
+}
+
+
+/* Stretchability of space */
+static double sp_y(enum wrap_box_space s)
+{
+	switch ( s ) {
+
+		case WRAP_SPACE_INTERWORD :
+		return 10.0;
+
+		case WRAP_SPACE_EOP :
+		default:
+		return 0.0;
+
+		case WRAP_SPACE_NONE :
+		return INFINITY;
+
+	}
+}
+
+
+/* Shrinkability of space */
+static double sp_z(enum wrap_box_space s)
+{
+	switch ( s ) {
+
+		case WRAP_SPACE_INTERWORD :
+		return 7.0;
+
+		case WRAP_SPACE_EOP :
+		default:
+		return 0.0;
+
+		case WRAP_SPACE_NONE :
+		return 0.0;
+
+	}
+}
+
+
+static void consider_break(double sigma_prime, double sigma_prime_max,
+                           double sigma_prime_min, double line_length, int *s,
+                           int j, int *dprime, int *jprime)
+{
+	double r;
+	double d;
+	const double rho = 2.0;  /* Max space ratio */
+
+	if ( sigma_prime < line_length ) {
+		r = rho*(line_length - sigma_prime)
+		       / (sigma_prime_max - sigma_prime);
+	} else if ( sigma_prime > line_length ) {
+		r = rho*(line_length - sigma_prime)
+		       / (sigma_prime - sigma_prime_min);
+	} else {
+		/* FIXME: Probably never happens, because sigma etc are floating
+		 * point */
+		r = 0.0;
+	}
+
+	d = s[j] + pow(1.0 + 100.0 * pow(abs(r),3.0), 2.0);
+	if ( d < *dprime ) {
+		*dprime = d;
+		*jprime = j;
+	}
+}
+
+
+/* This is the "suboptimal fit" algorithm from Knuth and Plass, Software -
+ * Practice and Experience 11 (1981) p1119-1184.  Despite the name, it's
+ * supposed to work as well as the full TeX algorithm in almost all of the cases
+ * that we care about here. */
+static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
+{
+	int a = 0;
+	int *p;
+	int *s;
+
+	p = malloc(boxes->n_boxes*sizeof(int));
+	if ( p == NULL ) {
+		fprintf(stderr, "Failed to allocate p_k\n");
+		return;
+	}
+
+	s = malloc(boxes->n_boxes*sizeof(int));
+	if ( s == NULL ) {
+		fprintf(stderr, "Failed to allocate s_k\n");
+		return;
+	}
+
+	do {
+
+		int i = a;
+		int k = i+1;
+		double sigma = boxes->boxes[k].width;
+		double sigma_min = sigma;
+		double sigma_max = sigma;
+		int m = 1;
+		int dprime;
+		int jprime;
+
+		s[i] = 0;
+
+		while ( sigma_min > line_length ) {
+
+			/* Begin <advance i by 1> */
+			if ( s[i] < 1000 ) m--;
+			i++;
+			sigma -= boxes->boxes[i].width;
+
+			sigma -= sp_z(boxes->boxes[i].space);
+			sigma_max -= sp_y(boxes->boxes[i].space);
+			sigma_min -= sp_z(boxes->boxes[i].space);
+			/* End */
+
+			/* Begin <examine all feasible lines ending at k> */
+			int j = i;
+			int sigma_prime = sigma;
+			int sigma_max_prime = sigma_max;
+			int sigma_min_prime = sigma_min;
+			dprime = 1000;
+			while ( sigma_max_prime >= line_length ) {
+				if ( s[j] < 1000 ) {
+					consider_break(sigma_prime,
+					               sigma_max_prime,
+					               sigma_min_prime,
+					               line_length, s, j,
+					               &dprime, &jprime);
+				}
+				j++;
+				sigma_prime -= boxes->boxes[j].width
+				               + sp_x(boxes->boxes[j].space);
+				sigma_max_prime -= boxes->boxes[j].width
+				               + sp_y(boxes->boxes[j].space);
+				sigma_min_prime -= boxes->boxes[j].width
+				               + sp_z(boxes->boxes[j].space);
+			}
+			/* End */
+
+			s[k] = dprime;
+			if ( dprime < 1000 ) {
+				m++;
+				p[k] = jprime;
+			}
+			if ( (m==0) || (k>boxes->n_boxes) ) break;
+			sigma += boxes->boxes[k].width;
+			sigma += sp_x(boxes->boxes[k].space);
+			sigma_max += sp_y(boxes->boxes[k].space);
+			sigma_min += sp_z(boxes->boxes[k].space);
+			k++;
+		};
+
+		if ( k > boxes->n_boxes ) {
+			//output(a, boxes->n_boxes+1);
+			break;
+		} else {
+			do {
+				sigma += boxes->boxes[i].width
+				           + sp_x(boxes->boxes[i].space);
+				sigma_max += boxes->boxes[i].width
+					   + sp_y(boxes->boxes[i].space);
+				sigma_min += boxes->boxes[i].width
+					   + sp_z(boxes->boxes[i].space);
+				i--;
+
+			} while ( s[i] > 1000 );
+			//output(a, i);
+
+			a = k-1;
+		}
+
+	} while ( 1 );
+}
+
+
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
 int wrap_contents(struct frame *fr, PangoContext *pc)
@@ -346,11 +539,11 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 		return 1;
 	}
 
-	/* FIXME: Hack for test purposes */
+	//knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r);
+
 	calc_line_geometry(boxes);
 	fr->lines = boxes;
 	fr->n_lines = 1;
-	fr->max_lines = 1;
 
 	return 0;
 }

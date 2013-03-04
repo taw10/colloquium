@@ -86,6 +86,10 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 			/* FIXME ! */
 			break;
 
+			case WRAP_BOX_NOTHING :
+			/* Do nothing */
+			break;
+
 		}
 
 		x_pos += pango_units_to_double(line->boxes[j].width);
@@ -138,6 +142,9 @@ static void free_line_bits(struct wrap_line *l)
 			break;
 
 			case WRAP_BOX_IMAGE :
+			break;
+
+			case WRAP_BOX_NOTHING :
 			break;
 
 		}

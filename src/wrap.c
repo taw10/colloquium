@@ -340,7 +340,7 @@ static double sp_x(enum wrap_box_space s)
 	switch ( s ) {
 
 		case WRAP_SPACE_INTERWORD :
-		return 20.0;
+		return 20.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
 		default:
@@ -359,7 +359,7 @@ static double sp_y(enum wrap_box_space s)
 	switch ( s ) {
 
 		case WRAP_SPACE_INTERWORD :
-		return 10.0;
+		return 10.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
 		default:
@@ -378,7 +378,7 @@ static double sp_z(enum wrap_box_space s)
 	switch ( s ) {
 
 		case WRAP_SPACE_INTERWORD :
-		return 7.0;
+		return 7.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
 		default:
@@ -391,13 +391,27 @@ static double sp_z(enum wrap_box_space s)
 }
 
 
+/* Minimum width of space */
+static double sp_zp(enum wrap_box_space s)
+{
+	return sp_x(s) - sp_z(s);
+}
+
+
+/* Maximum width of space */
+static double sp_yp(enum wrap_box_space s, double rho)
+{
+	return sp_x(s) + rho*sp_y(s);
+}
+
+
 static void consider_break(double sigma_prime, double sigma_prime_max,
-                           double sigma_prime_min, double line_length, int *s,
-                           int j, int *dprime, int *jprime)
+                           double sigma_prime_min, double line_length,
+                           double *s, int j, double *dprime, int *jprime,
+                           double rho)
 {
 	double r;
 	double d;
-	const double rho = 2.0;  /* Max space ratio */
 
 	if ( sigma_prime < line_length ) {
 		r = rho*(line_length - sigma_prime)
@@ -406,8 +420,6 @@ static void consider_break(double sigma_prime, double sigma_prime_max,
 		r = rho*(line_length - sigma_prime)
 		       / (sigma_prime - sigma_prime_min);
 	} else {
-		/* FIXME: Probably never happens, because sigma etc are floating
-		 * point */
 		r = 0.0;
 	}
 
@@ -419,6 +431,12 @@ static void consider_break(double sigma_prime, double sigma_prime_max,
 }
 
 
+static void output(int a, int i)
+{
+	printf("Output %i %i\n", a, i);
+}
+
+
 /* This is the "suboptimal fit" algorithm from Knuth and Plass, Software -
  * Practice and Experience 11 (1981) p1119-1184.  Despite the name, it's
  * supposed to work as well as the full TeX algorithm in almost all of the cases
@@ -427,7 +445,43 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 {
 	int a = 0;
 	int *p;
-	int *s;
+	double *s;
+	const double rho = 2.0;
+	struct wrap_box *box;
+	int j;
+	double sigma_prime, sigma_max_prime, sigma_min_prime;
+	double dprime;
+	int n;
+	int reject;
+
+	/* Add empty zero-width box at end */
+	if ( boxes->n_boxes == boxes->max_boxes ) {
+		boxes->max_boxes += 32;
+		alloc_boxes(boxes);
+		if ( boxes->n_boxes == boxes->max_boxes ) return;
+	}
+	box = &boxes->boxes[boxes->n_boxes];
+	box->type = WRAP_BOX_NOTHING;
+	box->text = NULL;
+	box->space = WRAP_SPACE_NONE;
+	box->font = NULL;
+	box->width = 0;
+	box->ascent = 0;
+	box->height = 0;
+	n = boxes->n_boxes;
+	boxes->n_boxes++;
+
+	line_length *= PANGO_SCALE;
+
+	reject = 0;
+	for ( j=0; j<boxes->n_boxes; j++ ) {
+		if ( boxes->boxes[j].width > line_length ) {
+			fprintf(stderr, "ERROR: Box %i too long (%i %f)\n", j,
+			                boxes->boxes[j].width, line_length);
+			reject = 1;
+		}
+	}
+	if ( reject ) return;
 
 	p = malloc(boxes->n_boxes*sizeof(int));
 	if ( p == NULL ) {
@@ -435,7 +489,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 		return;
 	}
 
-	s = malloc(boxes->n_boxes*sizeof(int));
+	s = malloc(boxes->n_boxes*sizeof(double));
 	if ( s == NULL ) {
 		fprintf(stderr, "Failed to allocate s_k\n");
 		return;
@@ -449,7 +503,6 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 		double sigma_min = sigma;
 		double sigma_max = sigma;
 		int m = 1;
-		int dprime;
 		int jprime;
 
 		s[i] = 0;
@@ -457,67 +510,93 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 		while ( sigma_min > line_length ) {
 
 			/* Begin <advance i by 1> */
-			if ( s[i] < 1000 ) m--;
+			if ( s[i] < INFINITY ) m--;
 			i++;
 			sigma -= boxes->boxes[i].width;
-
 			sigma -= sp_z(boxes->boxes[i].space);
-			sigma_max -= sp_y(boxes->boxes[i].space);
-			sigma_min -= sp_z(boxes->boxes[i].space);
+
+			sigma_max -= boxes->boxes[i].width;
+			sigma_max -= sp_yp(boxes->boxes[i].space, rho);
+
+			sigma_min -= boxes->boxes[i].width;
+			sigma_min -= sp_zp(boxes->boxes[i].space);
 			/* End */
 
 			/* Begin <examine all feasible lines ending at k> */
-			int j = i;
-			int sigma_prime = sigma;
-			int sigma_max_prime = sigma_max;
-			int sigma_min_prime = sigma_min;
-			dprime = 1000;
+			j = i;
+			sigma_prime = sigma;
+			sigma_max_prime = sigma_max;
+			sigma_min_prime = sigma_min;
+			dprime = INFINITY;
 			while ( sigma_max_prime >= line_length ) {
-				if ( s[j] < 1000 ) {
+				if ( s[j] < INFINITY ) {
 					consider_break(sigma_prime,
 					               sigma_max_prime,
 					               sigma_min_prime,
 					               line_length, s, j,
-					               &dprime, &jprime);
+					               &dprime, &jprime,
+					               rho);
 				}
 				j++;
-				sigma_prime -= boxes->boxes[j].width
-				               + sp_x(boxes->boxes[j].space);
-				sigma_max_prime -= boxes->boxes[j].width
-				               + sp_y(boxes->boxes[j].space);
-				sigma_min_prime -= boxes->boxes[j].width
-				               + sp_z(boxes->boxes[j].space);
+				sigma_prime -= boxes->boxes[j].width;
+				sigma_prime -= sp_x(boxes->boxes[j].space);
+
+				sigma_max_prime -= boxes->boxes[j].width;
+				sigma_max_prime -= sp_yp(boxes->boxes[j].space,
+				                         rho);
+
+				sigma_min_prime -= boxes->boxes[j].width;
+				sigma_min_prime -= sp_zp(boxes->boxes[j].space);
 			}
 			/* End */
 
 			s[k] = dprime;
-			if ( dprime < 1000 ) {
+			if ( dprime < INFINITY ) {
 				m++;
 				p[k] = jprime;
 			}
-			if ( (m==0) || (k>boxes->n_boxes) ) break;
-			sigma += boxes->boxes[k].width;
+			if ( (m == 0) || (k > n) ) break;
+			sigma += boxes->boxes[k+1].width;
 			sigma += sp_x(boxes->boxes[k].space);
-			sigma_max += sp_y(boxes->boxes[k].space);
-			sigma_min += sp_z(boxes->boxes[k].space);
+
+			sigma_max += sp_yp(boxes->boxes[k].space, rho);
+
+			sigma_min += sp_zp(boxes->boxes[k].space);
 			k++;
+
 		};
 
-		if ( k > boxes->n_boxes ) {
-			//output(a, boxes->n_boxes+1);
+		if ( k > n ) {
+			output(a, n+1);
 			break;
 		} else {
+
+			/* Begin <try hyphenation> */
 			do {
-				sigma += boxes->boxes[i].width
-				           + sp_x(boxes->boxes[i].space);
-				sigma_max += boxes->boxes[i].width
-					   + sp_y(boxes->boxes[i].space);
-				sigma_min += boxes->boxes[i].width
-					   + sp_z(boxes->boxes[i].space);
+
+				sigma += boxes->boxes[i].width;
+				sigma += sp_x(boxes->boxes[i].space);
+
+				sigma_max += boxes->boxes[i].width;
+				sigma_max += sp_yp(boxes->boxes[i].space, rho);
+
+				sigma_min += boxes->boxes[i].width;
+				sigma_min += sp_zp(boxes->boxes[i].space);
 				i--;
 
-			} while ( s[i] > 1000 );
-			//output(a, i);
+			} while ( s[i] >= INFINITY );
+			output(a, i);
+
+			/* Begin <split box k at the best place> */
+			jprime = 0;
+			dprime = INFINITY;
+			/* Test hyphenation points here */
+			/* End */
+
+			/* Begin <output and adjust w_k> */
+			/* End */
+
+			/* End */
 
 			a = k-1;
 		}
@@ -539,7 +618,7 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 		return 1;
 	}
 
-	//knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r);
+	knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r);
 
 	calc_line_geometry(boxes);
 	fr->lines = boxes;

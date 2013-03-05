@@ -6,10 +6,6 @@ libtoolize --force --copy \
 && automake --add-missing --copy --force \
 && autoconf --force
 
-pushd libstorycode
-./autogen.sh
-popd
-
 pushd harfatum
 ./autogen.sh
 popd

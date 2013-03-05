@@ -29,8 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <storycode.h>
-
+#include "storycode.h"
 #include "frame.h"
 
 

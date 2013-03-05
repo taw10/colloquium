@@ -32,8 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <storycode.h>
-
+#include "storycode.h"
 #include "stylesheet.h"
 #include "presentation.h"
 #include "frame.h"

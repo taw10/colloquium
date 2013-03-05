@@ -31,8 +31,7 @@
 #include <pango/pangocairo.h>
 #include <math.h>
 
-#include <storycode.h>
-
+#include "storycode.h"
 #include "wrap.h"
 #include "frame.h"
 

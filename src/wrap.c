@@ -454,7 +454,7 @@ static void output(int a, int i, int *p, struct frame *fr,
 	while ( q != i ) {
 
 		struct wrap_line *l;
-		int j, k;
+		int j;
 
 		if ( fr->n_lines == fr->max_lines ) {
 			fr->max_lines += 32;
@@ -466,18 +466,13 @@ static void output(int a, int i, int *p, struct frame *fr,
 		fr->n_lines++;
 		initialise_line(l);
 
-		k = 0;
+		l->max_boxes = s-q;
+		alloc_boxes(l);
 		for ( j=q+1; j<=s; j++ ) {
-
-			if ( l->n_boxes == l->max_boxes ) {
-				l->max_boxes += 32;
-				alloc_boxes(l);
-				if ( l->n_boxes == l->max_boxes ) return;
-			}
-
-			l->boxes[k++] = boxes->boxes[j];
-
+			l->boxes[l->n_boxes++] = boxes->boxes[j];
 		}
+
+		calc_line_geometry(l);
 
 		q = s;
 		s = p[q];
@@ -668,7 +663,6 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 int wrap_contents(struct frame *fr, PangoContext *pc)
 {
 	struct wrap_line *boxes;
-	int i;
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
 	boxes = sc_to_wrap_boxes(fr->sc, pc);
@@ -678,10 +672,6 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 	}
 
 	knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r, fr);
-
-	for ( i=0; i<fr->n_lines; i++ ) {
-		calc_line_geometry(&fr->lines[i]);
-	}
 
 	return 0;
 }

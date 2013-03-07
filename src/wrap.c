@@ -432,9 +432,57 @@ static void consider_break(double sigma_prime, double sigma_prime_max,
 }
 
 
-static void output(int a, int i)
+static void output(int a, int i, int *p, struct frame *fr,
+                   struct wrap_line *boxes)
 {
-	printf("Output %i %i\n", a, i);
+	int q = i;
+	int r;
+	int s = 0;
+
+	fr->n_lines = 0;
+	fr->max_lines = 32;
+	fr->lines = NULL;
+	alloc_lines(fr);
+
+	while ( q != a ) {
+		r = p[q];
+		p[q] = s;
+		s = q;
+		q = r;
+	}
+
+	while ( q != i ) {
+
+		struct wrap_line *l;
+		int j, k;
+
+		if ( fr->n_lines == fr->max_lines ) {
+			fr->max_lines += 32;
+			alloc_lines(fr);
+			if ( fr->n_lines == fr->max_lines ) return;
+		}
+
+		l = &fr->lines[fr->n_lines];
+		fr->n_lines++;
+		initialise_line(l);
+
+		k = 0;
+		for ( j=q+1; j<=s; j++ ) {
+
+			if ( l->n_boxes == l->max_boxes ) {
+				l->max_boxes += 32;
+				alloc_boxes(l);
+				if ( l->n_boxes == l->max_boxes ) return;
+			}
+
+			l->boxes[k++] = boxes->boxes[j];
+
+		}
+
+		q = s;
+		s = p[q];
+
+	}
 }
 
 
@@ -442,7 +490,8 @@ static void output(int a, int i)
  * Practice and Experience 11 (1981) p1119-1184.  Despite the name, it's
  * supposed to work as well as the full TeX algorithm in almost all of the cases
  * that we care about here. */
-static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
+static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
+                                 struct frame *fr)
 {
 	int a = 0;
 	int *p;
@@ -469,7 +518,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 	box->width = 0;
 	box->ascent = 0;
 	box->height = 0;
-	n = boxes->n_boxes;
+	n = boxes->n_boxes-1;
 	boxes->n_boxes++;
 
 	line_length *= PANGO_SCALE;
@@ -508,20 +557,24 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 
 		s[i] = 0;
 
-		while ( sigma_min > line_length ) {
+		do {
 
-			/* Begin <advance i by 1> */
-			if ( s[i] < INFINITY ) m--;
-			i++;
-			sigma -= boxes->boxes[i].width;
-			sigma -= sp_z(boxes->boxes[i].space);
+			while ( sigma_min > line_length ) {
 
-			sigma_max -= boxes->boxes[i].width;
-			sigma_max -= sp_yp(boxes->boxes[i].space, rho);
+				/* Begin <advance i by 1> */
+				if ( s[i] < INFINITY ) m--;
+				i++;
+				sigma -= boxes->boxes[i].width;
+				sigma -= sp_z(boxes->boxes[i].space);
 
-			sigma_min -= boxes->boxes[i].width;
-			sigma_min -= sp_zp(boxes->boxes[i].space);
-			/* End */
+				sigma_max -= boxes->boxes[i].width;
+				sigma_max -= sp_yp(boxes->boxes[i].space, rho);
+
+				sigma_min -= boxes->boxes[i].width;
+				sigma_min -= sp_zp(boxes->boxes[i].space);
+				/* End */
+
+			}
 
 			/* Begin <examine all feasible lines ending at k> */
 			j = i;
@@ -532,11 +585,11 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 			while ( sigma_max_prime >= line_length ) {
 				if ( s[j] < INFINITY ) {
 					consider_break(sigma_prime,
-					               sigma_max_prime,
-					               sigma_min_prime,
-					               line_length, s, j,
-					               &dprime, &jprime,
-					               rho);
+						       sigma_max_prime,
+						       sigma_min_prime,
+						       line_length, s, j,
+						       &dprime, &jprime,
+						       rho);
 				}
 				j++;
 				sigma_prime -= boxes->boxes[j].width;
@@ -544,7 +597,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 
 				sigma_max_prime -= boxes->boxes[j].width;
 				sigma_max_prime -= sp_yp(boxes->boxes[j].space,
-				                         rho);
+					                 rho);
 
 				sigma_min_prime -= boxes->boxes[j].width;
 				sigma_min_prime -= sp_zp(boxes->boxes[j].space);
@@ -565,10 +618,10 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 			sigma_min += sp_zp(boxes->boxes[k].space);
 			k++;
 
-		};
+		} while ( 1 );
 
 		if ( k > n ) {
-			output(a, n+1);
+			output(a, n+1, p, fr, boxes);
 			break;
 		} else {
 
@@ -586,7 +639,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 				i--;
 
 			} while ( s[i] >= INFINITY );
-			output(a, i);
+			output(a, i, p, fr, boxes);
 
 			/* Begin <split box k at the best place> */
 			jprime = 0;
@@ -600,9 +653,13 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 			/* End */
 
 			a = k-1;
+
 		}
 
 	} while ( 1 );
+
+	free(p);
+	free(s);
 }
 
 
@@ -611,6 +668,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length)
 int wrap_contents(struct frame *fr, PangoContext *pc)
 {
 	struct wrap_line *boxes;
+	int i;
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
 	boxes = sc_to_wrap_boxes(fr->sc, pc);
@@ -619,11 +677,11 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 		return 1;
 	}
 
-	knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r);
+	knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r, fr);
 
-	calc_line_geometry(boxes);
-	fr->lines = boxes;
-	fr->n_lines = 1;
+	for ( i=0; i<fr->n_lines; i++ ) {
+		calc_line_geometry(&fr->lines[i]);
+	}
 
 	return 0;
 }

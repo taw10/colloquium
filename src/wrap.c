@@ -468,7 +468,7 @@ static void output(int a, int i, int *p, struct frame *fr,
 
 		l->max_boxes = s-q;
 		alloc_boxes(l);
-		for ( j=q+1; j<=s; j++ ) {
+		for ( j=q; j<s; j++ ) {
 			l->boxes[l->n_boxes++] = boxes->boxes[j];
 		}
 
@@ -528,13 +528,13 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	}
 	if ( reject ) return;
 
-	p = malloc(boxes->n_boxes*sizeof(int));
+	p = calloc(boxes->n_boxes, sizeof(int));
 	if ( p == NULL ) {
 		fprintf(stderr, "Failed to allocate p_k\n");
 		return;
 	}
 
-	s = malloc(boxes->n_boxes*sizeof(double));
+	s = calloc(boxes->n_boxes, sizeof(double));
 	if ( s == NULL ) {
 		fprintf(stderr, "Failed to allocate s_k\n");
 		return;

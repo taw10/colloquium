@@ -106,23 +106,26 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 
 	for ( i=0; i<fr->n_lines; i++ ) {
 
-		double asc = pango_units_to_double(fr->lines[i].ascent);
+		cairo_save(cr);
 
-		cairo_move_to(cr, 0, y_pos+asc+0.5);
+		/* Move to beginning of the line */
+		cairo_translate(cr, 0.0, y_pos);
+
+		cairo_move_to(cr, 0.0,
+		                0.5+pango_units_to_double(fr->lines[i].ascent));
 		cairo_line_to(cr, pango_units_to_double(fr->lines[i].width),
-		                  y_pos+asc+0.5);
+		                0.5+pango_units_to_double(fr->lines[i].ascent));
 		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
-
-		/* Move to beginning of the line */
-		cairo_move_to(cr, 0.0, asc+y_pos);
 
 		/* Render the line */
 		render_boxes(&fr->lines[i], cr);
 
 		/* FIXME: line spacing */
 		y_pos += pango_units_to_double(fr->lines[i].height) + 0.0;
+
+		cairo_restore(cr);
 
 	}
 }

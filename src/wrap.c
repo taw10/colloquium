@@ -528,13 +528,13 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	}
 	if ( reject ) return;
 
-	p = calloc(boxes->n_boxes, sizeof(int));
+	p = malloc(boxes->n_boxes * sizeof(int));
 	if ( p == NULL ) {
 		fprintf(stderr, "Failed to allocate p_k\n");
 		return;
 	}
 
-	s = calloc(boxes->n_boxes, sizeof(double));
+	s = malloc(boxes->n_boxes * sizeof(double));
 	if ( s == NULL ) {
 		fprintf(stderr, "Failed to allocate s_k\n");
 		return;

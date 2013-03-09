@@ -106,13 +106,14 @@ static void show_heirarchy(struct frame *fr, const char *t)
 }
 
 
-static void recursive_unpack(struct frame *fr, const char *sc)
+static int recursive_unpack(struct frame *fr, const char *sc)
 {
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
 	struct scblock *b;
 
 	bl = sc_find_blocks(sc, "f");
+	if ( bl == NULL ) return 1;
 
 	for ( b = sc_block_list_first(bl, &iter);
 	      b != NULL;
@@ -121,9 +122,14 @@ static void recursive_unpack(struct frame *fr, const char *sc)
 		struct frame *sfr;
 		sfr = add_subframe(fr);
 		sfr->sc = remove_blocks(b->contents, "f");
-		recursive_unpack(sfr, b->contents);
+		if ( recursive_unpack(sfr, b->contents) ) {
+			sc_block_list_free(bl);
+			return 1;
+		}
 	}
 	sc_block_list_free(bl);
+
+	return 0;
 }
 
 
@@ -136,7 +142,9 @@ struct frame *sc_unpack(const char *sc)
 	if ( fr == NULL ) return NULL;
 
 	fr->sc = remove_blocks(sc, "f");
-	recursive_unpack(fr, sc);
+	if ( recursive_unpack(fr, sc) ) {
+		return NULL;
+	}
 
 	show_heirarchy(fr, "");
 

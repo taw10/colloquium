@@ -608,8 +608,10 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 			sigma += boxes->boxes[k+1].width;
 			sigma += sp_x(boxes->boxes[k].space);
 
+			sigma_max += boxes->boxes[k+1].width;
 			sigma_max += sp_yp(boxes->boxes[k].space, rho);
 
+			sigma_min += boxes->boxes[k+1].width;
 			sigma_min += sp_zp(boxes->boxes[k].space);
 			k++;
 

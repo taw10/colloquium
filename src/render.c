@@ -92,6 +92,7 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 		}
 
 		x_pos += pango_units_to_double(line->boxes[j].width);
+		x_pos += pango_units_to_double(line->boxes[j].sp);
 
 		cairo_restore(cr);
 

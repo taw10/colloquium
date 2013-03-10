@@ -64,6 +64,7 @@ struct wrap_box
 	int ascent;
 
 	enum wrap_box_space space;  /* Type of "space" following box */
+	double sp;  /* Calculated space (Pango units) after box */
 
 	/* For type == WRAP_BOX_PANGO */
 	PangoGlyphString *glyphs;

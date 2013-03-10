@@ -141,6 +141,7 @@ static void calc_line_geometry(struct wrap_line *line)
 	for ( i=0; i<line->n_boxes; i++ ) {
 		struct wrap_box *box = &line->boxes[i];
 		line->width += box->width;
+		line->width += box->sp;
 		if ( box->height > line->height ) line->height = box->height;
 		if ( box->ascent > line->ascent ) line->ascent = box->ascent;
 	}
@@ -432,6 +433,27 @@ static void consider_break(double sigma_prime, double sigma_prime_max,
 }
 
 
+static void distribute_spaces(struct wrap_line *l, double w)
+{
+	int i;
+	double total;
+	double sp;
+
+	total = 0.0;
+	for ( i=0; i<l->n_boxes; i++ ) {
+		total += l->boxes[i].width;
+	}
+
+	sp = (pango_units_from_double(w)-total) / (l->n_boxes-1);
+
+	for ( i=0; i<l->n_boxes-1; i++ ) {
+		l->boxes[i].sp = sp;
+		printf("Calculated space %f\n", pango_units_to_double(sp));
+	}
+	l->boxes[l->n_boxes-1].sp = 0.0;
+}
+
+
 static void output(int a, int i, int *p, struct frame *fr,
                    struct wrap_line *boxes)
 {
@@ -439,10 +461,11 @@ static void output(int a, int i, int *p, struct frame *fr,
 	int r;
 	int s = 0;
 
-	fr->n_lines = 0;
-	fr->max_lines = 32;
-	fr->lines = NULL;
-	alloc_lines(fr);
+	if ( fr->n_lines + (i-a) + 1 > fr->max_lines ) {
+		fr->max_lines += 32;
+		alloc_lines(fr);
+		if ( fr->n_lines == fr->max_lines ) return;
+	}
 
 	while ( q != a ) {
 		r = p[q];
@@ -456,12 +479,6 @@ static void output(int a, int i, int *p, struct frame *fr,
 		struct wrap_line *l;
 		int j;
 
-		if ( fr->n_lines == fr->max_lines ) {
-			fr->max_lines += 32;
-			alloc_lines(fr);
-			if ( fr->n_lines == fr->max_lines ) return;
-		}
-
 		l = &fr->lines[fr->n_lines];
 		fr->n_lines++;
 		initialise_line(l);
@@ -472,6 +489,7 @@ static void output(int a, int i, int *p, struct frame *fr,
 			l->boxes[l->n_boxes++] = boxes->boxes[j];
 		}
 
+		distribute_spaces(l, fr->w);
 		calc_line_geometry(l);
 
 		q = s;
@@ -498,6 +516,11 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	double dprime;
 	int n;
 	int reject;
+
+	fr->n_lines = 0;
+	fr->max_lines = 32;
+	fr->lines = NULL;
+	alloc_lines(fr);
 
 	/* Add empty zero-width box at end */
 	if ( boxes->n_boxes == boxes->max_boxes ) {

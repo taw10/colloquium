@@ -448,9 +448,29 @@ static void distribute_spaces(struct wrap_line *l, double w)
 
 	for ( i=0; i<l->n_boxes-1; i++ ) {
 		l->boxes[i].sp = sp;
-		printf("Calculated space %f\n", pango_units_to_double(sp));
 	}
 	l->boxes[l->n_boxes-1].sp = 0.0;
+}
+
+
+
+static void output_line(int q, int s, struct frame *fr, struct wrap_line *boxes)
+{
+	struct wrap_line *l;
+	int j;
+
+	l = &fr->lines[fr->n_lines];
+	fr->n_lines++;
+	initialise_line(l);
+
+	l->max_boxes = s-q;
+	alloc_boxes(l);
+	for ( j=q; j<s; j++ ) {
+		l->boxes[l->n_boxes++] = boxes->boxes[j];
+	}
+
+	distribute_spaces(l, fr->w);
+	calc_line_geometry(l);
 }
 
 
@@ -476,26 +496,13 @@ static void output(int a, int i, int *p, struct frame *fr,
 
 	while ( q != i ) {
 
-		struct wrap_line *l;
-		int j;
-
-		l = &fr->lines[fr->n_lines];
-		fr->n_lines++;
-		initialise_line(l);
-
-		l->max_boxes = s-q;
-		alloc_boxes(l);
-		for ( j=q; j<s; j++ ) {
-			l->boxes[l->n_boxes++] = boxes->boxes[j];
-		}
-
-		distribute_spaces(l, fr->w);
-		calc_line_geometry(l);
+		output_line(q, s, fr, boxes);
 
 		q = s;
 		s = p[q];
 
 	}
+
 }
 
 
@@ -668,6 +675,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 			/* End */
 
 			/* Begin <output and adjust w_k> */
+			output_line(i, k-1, fr, boxes);
 			/* End */
 
 			/* End */

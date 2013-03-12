@@ -123,6 +123,15 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 		/* Render the line */
 		render_boxes(&fr->lines[i], cr);
 
+		if ( fr->lines[i].overfull ) {
+			cairo_move_to(cr, fr->w, 0.0);
+			cairo_line_to(cr, fr->w,
+			            pango_units_to_double(fr->lines[i].height));
+			cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+			cairo_set_line_width(cr, 4.0);
+			cairo_stroke(cr);
+		}
+
 		/* FIXME: line spacing */
 		y_pos += pango_units_to_double(fr->lines[i].height) + 0.0;
 

@@ -438,6 +438,7 @@ static void distribute_spaces(struct wrap_line *l, double w)
 	int i;
 	double total;
 	double sp;
+	int overfull = 0;
 
 	total = 0.0;
 	for ( i=0; i<l->n_boxes; i++ ) {
@@ -447,9 +448,15 @@ static void distribute_spaces(struct wrap_line *l, double w)
 	sp = (pango_units_from_double(w)-total) / (l->n_boxes-1);
 
 	for ( i=0; i<l->n_boxes-1; i++ ) {
-		l->boxes[i].sp = sp;
+		if ( sp < sp_zp(l->boxes[i].space) ) {
+			l->boxes[i].sp = sp_zp(l->boxes[i].space);
+			overfull = 1;
+		} else {
+			l->boxes[i].sp = sp;
+		}
 	}
 	l->boxes[l->n_boxes-1].sp = 0.0;
+	l->overfull = overfull;
 }
 
 

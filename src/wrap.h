@@ -88,6 +88,7 @@ struct wrap_line
 	struct wrap_box *boxes;
 
 	int overfull;
+	int last_line;
 	size_t sc_offset;
 };
 

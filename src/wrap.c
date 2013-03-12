@@ -74,6 +74,8 @@ static void initialise_line(struct wrap_line *l)
 	l->width = 0;
 	l->height = 0;
 	l->ascent = 0;
+	l->last_line = 0;
+	l->overfull = 0;
 	alloc_boxes(l);
 }
 
@@ -451,6 +453,8 @@ static void distribute_spaces(struct wrap_line *l, double w)
 		if ( sp < sp_zp(l->boxes[i].space) ) {
 			l->boxes[i].sp = sp_zp(l->boxes[i].space);
 			overfull = 1;
+		} else if ( l->last_line ) {
+			l->boxes[i].sp = sp_x(l->boxes[i].space);
 		} else {
 			l->boxes[i].sp = sp;
 		}
@@ -475,9 +479,6 @@ static void output_line(int q, int s, struct frame *fr, struct wrap_line *boxes)
 	for ( j=q; j<s; j++ ) {
 		l->boxes[l->n_boxes++] = boxes->boxes[j];
 	}
-
-	distribute_spaces(l, fr->w);
-	calc_line_geometry(l);
 }
 
 
@@ -693,6 +694,8 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 
 	} while ( 1 );
 
+	fr->lines[fr->n_lines-1].last_line = 1;
+
 	free(p);
 	free(s);
 }
@@ -703,6 +706,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 int wrap_contents(struct frame *fr, PangoContext *pc)
 {
 	struct wrap_line *boxes;
+	int i;
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
 	boxes = sc_to_wrap_boxes(fr->sc, pc);
@@ -712,6 +716,11 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 	}
 
 	knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r, fr);
+
+	for ( i=0; i<fr->n_lines; i++ ) {
+		distribute_spaces(&fr->lines[i], fr->w);
+		calc_line_geometry(&fr->lines[i]);
+	}
 
 	return 0;
 }

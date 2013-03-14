@@ -124,8 +124,8 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 		render_boxes(&fr->lines[i], cr);
 
 		if ( fr->lines[i].overfull ) {
-			cairo_move_to(cr, fr->w, 0.0);
-			cairo_line_to(cr, fr->w,
+			cairo_move_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r, 0.0);
+			cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
 			            pango_units_to_double(fr->lines[i].height));
 			cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 			cairo_set_line_width(cr, 4.0);
@@ -240,6 +240,7 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 
 
 			mtot = ch->lop.margin_l + ch->lop.margin_r;
+			mtot += fr->lop.pad_l + fr->lop.pad_r;
 			switch ( ch->lop.w_units ) {
 
 				case UNITS_SLIDE :
@@ -253,6 +254,7 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 			}
 
 			mtot = ch->lop.margin_t + ch->lop.margin_b;
+			mtot += fr->lop.pad_t + fr->lop.pad_b;
 			switch ( ch->lop.h_units ) {
 
 				case UNITS_SLIDE :
@@ -264,11 +266,11 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 				break;
 
 			}
-
+			
 			render_frame(ch, cr);
 
-			ch->x = ch->lop.x + ch->lop.margin_l;
-			ch->y = ch->lop.y + ch->lop.margin_t;
+			ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;
+			ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
 
 		}
 
@@ -395,6 +397,10 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 
+	if ( s->top->style != NULL ) {
+		memcpy(&s->top->lop, &s->top->style->lop,
+		       sizeof(struct layout_parameters));
+	}
 	s->top->lop.x = 0.0;
 	s->top->lop.y = 0.0;
 	s->top->lop.w = w;

@@ -344,7 +344,7 @@ static double sp_x(enum wrap_box_space s)
 	switch ( s ) {
 
 		case WRAP_SPACE_INTERWORD :
-		return 20.0*PANGO_SCALE;
+		return 10.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
 		default:
@@ -363,7 +363,7 @@ static double sp_y(enum wrap_box_space s)
 	switch ( s ) {
 
 		case WRAP_SPACE_INTERWORD :
-		return 10.0*PANGO_SCALE;
+		return 30.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
 		default:
@@ -707,6 +707,7 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 {
 	struct wrap_line *boxes;
 	int i;
+	const double wrap_w = fr->w - fr->lop.pad_l - fr->lop.pad_r;
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
 	boxes = sc_to_wrap_boxes(fr->sc, pc);
@@ -715,10 +716,10 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 		return 1;
 	}
 
-	knuth_suboptimal_fit(boxes, fr->w - fr->lop.pad_l - fr->lop.pad_r, fr);
+	knuth_suboptimal_fit(boxes, wrap_w, fr);
 
 	for ( i=0; i<fr->n_lines; i++ ) {
-		distribute_spaces(&fr->lines[i], fr->w);
+		distribute_spaces(&fr->lines[i], wrap_w);
 		calc_line_geometry(&fr->lines[i]);
 	}
 

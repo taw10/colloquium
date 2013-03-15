@@ -53,11 +53,11 @@ static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 	                      box->col[3]);
 	cairo_fill(cr);
 
-	cairo_rectangle(cr, 0.0, 0.0, pango_units_to_double(box->width),
-	                              pango_units_to_double(box->height));
-	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-	cairo_set_line_width(cr, 0.1);
-	cairo_stroke(cr);
+//	cairo_rectangle(cr, 0.0, 0.0, pango_units_to_double(box->width),
+//	                              pango_units_to_double(box->height));
+//	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+//	cairo_set_line_width(cr, 0.1);
+//	cairo_stroke(cr);
 }
 
 
@@ -100,6 +100,17 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 }
 
 
+static void draw_overfull_marker(cairo_t *cr, struct frame *fr, int i)
+{
+	cairo_move_to(cr, fr->w - fr->lop.pad_l- fr->lop.pad_r, 0.0);
+	cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
+	                  pango_units_to_double(fr->lines[i].height));
+	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 4.0);
+	cairo_stroke(cr);
+}
+
+
 static void render_lines(struct frame *fr, cairo_t *cr)
 {
 	int i;
@@ -112,6 +123,7 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 		/* Move to beginning of the line */
 		cairo_translate(cr, 0.0, y_pos);
 
+		#if 0
 		cairo_move_to(cr, 0.0,
 		                0.5+pango_units_to_double(fr->lines[i].ascent));
 		cairo_line_to(cr, pango_units_to_double(fr->lines[i].width),
@@ -119,17 +131,13 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
+		#endif
 
 		/* Render the line */
 		render_boxes(&fr->lines[i], cr);
 
 		if ( fr->lines[i].overfull ) {
-			cairo_move_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r, 0.0);
-			cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
-			            pango_units_to_double(fr->lines[i].height));
-			cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-			cairo_set_line_width(cr, 4.0);
-			cairo_stroke(cr);
+			draw_overfull_marker(cr, fr, i);
 		}
 
 		/* FIXME: line spacing */
@@ -240,7 +248,7 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 				break;
 
 			}
-			
+
 			render_frame(ch, cr);
 
 			ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;

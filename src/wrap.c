@@ -435,6 +435,23 @@ static void consider_break(double sigma_prime, double sigma_prime_max,
 }
 
 
+static double width(struct wrap_line *boxes, int i)
+{
+	/* Indices in Knuth paper go from 1...n.  Indices in array go
+	 * from 0...n-1 */
+	return boxes->boxes[i-1].width;
+}
+
+
+static enum wrap_box_space space(struct wrap_line *boxes, int i)
+{
+	/* Indices in Knuth paper go from 1...n.  Indices in array go
+	 * from 0...n-1 */
+	return boxes->boxes[i-1].space;
+}
+
+
+
 static void distribute_spaces(struct wrap_line *l, double w)
 {
 	int i;
@@ -537,6 +554,8 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	fr->lines = NULL;
 	alloc_lines(fr);
 
+	n = boxes->n_boxes;
+
 	/* Add empty zero-width box at end */
 	if ( boxes->n_boxes == boxes->max_boxes ) {
 		boxes->max_boxes += 32;
@@ -551,7 +570,6 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	box->width = 0;
 	box->ascent = 0;
 	box->height = 0;
-	n = boxes->n_boxes-1;
 	boxes->n_boxes++;
 
 	line_length *= PANGO_SCALE;
@@ -566,13 +584,13 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	}
 	if ( reject ) return;
 
-	p = malloc(boxes->n_boxes * sizeof(int));
+	p = malloc((n+2) * sizeof(int));  /* p[0]..p[n+1] inclusive */
 	if ( p == NULL ) {
 		fprintf(stderr, "Failed to allocate p_k\n");
 		return;
 	}
 
-	s = malloc(boxes->n_boxes * sizeof(double));
+	s = malloc((n+2) * sizeof(double));  /* s[0]..s[n+1] inclusive */
 	if ( s == NULL ) {
 		fprintf(stderr, "Failed to allocate s_k\n");
 		return;
@@ -582,7 +600,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 
 		int i = a;
 		int k = i+1;
-		double sigma = boxes->boxes[k].width;
+		double sigma = width(boxes, k);
 		double sigma_min = sigma;
 		double sigma_max = sigma;
 		int m = 1;
@@ -597,14 +615,14 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 				/* Begin <advance i by 1> */
 				if ( s[i] < INFINITY ) m--;
 				i++;
-				sigma -= boxes->boxes[i].width;
-				sigma -= sp_z(boxes->boxes[i].space);
+				sigma -= width(boxes, i);
+				sigma -= sp_z(space(boxes, i));
 
-				sigma_max -= boxes->boxes[i].width;
-				sigma_max -= sp_yp(boxes->boxes[i].space, rho);
+				sigma_max -= width(boxes, i);
+				sigma_max -= sp_yp(space(boxes, i), rho);
 
-				sigma_min -= boxes->boxes[i].width;
-				sigma_min -= sp_zp(boxes->boxes[i].space);
+				sigma_min -= width(boxes, i);
+				sigma_min -= sp_zp(space(boxes, i));
 				/* End */
 
 			}
@@ -625,15 +643,15 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 						       rho);
 				}
 				j++;
-				sigma_prime -= boxes->boxes[j].width;
-				sigma_prime -= sp_x(boxes->boxes[j].space);
+				sigma_prime -= width(boxes, j);
+				sigma_prime -= sp_x(space(boxes, j));
 
-				sigma_max_prime -= boxes->boxes[j].width;
-				sigma_max_prime -= sp_yp(boxes->boxes[j].space,
+				sigma_max_prime -= width(boxes, j);
+				sigma_max_prime -= sp_yp(space(boxes, j),
 					                 rho);
 
-				sigma_min_prime -= boxes->boxes[j].width;
-				sigma_min_prime -= sp_zp(boxes->boxes[j].space);
+				sigma_min_prime -= width(boxes, j);
+				sigma_min_prime -= sp_zp(space(boxes, j));
 			}
 			/* End */
 
@@ -643,14 +661,14 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 				p[k] = jprime;
 			}
 			if ( (m == 0) || (k > n) ) break;
-			sigma += boxes->boxes[k+1].width;
-			sigma += sp_x(boxes->boxes[k].space);
+			sigma += width(boxes, k+1);
+			sigma += sp_x(space(boxes, k));
 
-			sigma_max += boxes->boxes[k+1].width;
-			sigma_max += sp_yp(boxes->boxes[k].space, rho);
+			sigma_max += width(boxes, k+1);
+			sigma_max += sp_yp(space(boxes, k), rho);
 
-			sigma_min += boxes->boxes[k+1].width;
-			sigma_min += sp_zp(boxes->boxes[k].space);
+			sigma_min += width(boxes, k+1);
+			sigma_min += sp_zp(space(boxes, k));
 			k++;
 
 		} while ( 1 );
@@ -663,14 +681,14 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 			/* Begin <try hyphenation> */
 			do {
 
-				sigma += boxes->boxes[i].width;
-				sigma += sp_x(boxes->boxes[i].space);
+				sigma += width(boxes, i);
+				sigma += sp_x(space(boxes, i));
 
-				sigma_max += boxes->boxes[i].width;
-				sigma_max += sp_yp(boxes->boxes[i].space, rho);
+				sigma_max += width(boxes, i);
+				sigma_max += sp_yp(space(boxes, i), rho);
 
-				sigma_min += boxes->boxes[i].width;
-				sigma_min += sp_zp(boxes->boxes[i].space);
+				sigma_min += width(boxes, i);
+				sigma_min += sp_zp(space(boxes, i));
 				i--;
 
 			} while ( s[i] >= INFINITY );

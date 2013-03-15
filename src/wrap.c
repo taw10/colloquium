@@ -719,6 +719,32 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 }
 
 
+void wrap_line_free(struct wrap_line *l)
+{
+	int i;
+	for ( i=0; i<l->n_boxes; i++ ) {
+
+		switch ( l->boxes[i].type ) {
+
+			case WRAP_BOX_PANGO :
+			pango_glyph_string_free(l->boxes[i].glyphs);
+			free(l->boxes[i].text);
+			break;
+
+			case WRAP_BOX_IMAGE :
+			break;
+
+			case WRAP_BOX_NOTHING :
+			break;
+
+		}
+
+	}
+
+	free(l->boxes);
+}
+
+
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
 int wrap_contents(struct frame *fr, PangoContext *pc)
@@ -735,6 +761,8 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 	}
 
 	knuth_suboptimal_fit(boxes, wrap_w, fr);
+	free(boxes->boxes);
+	free(boxes);
 
 	for ( i=0; i<fr->n_lines; i++ ) {
 		distribute_spaces(&fr->lines[i], wrap_w);

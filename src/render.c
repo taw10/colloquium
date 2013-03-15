@@ -141,32 +141,6 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 }
 
 
-static void free_line_bits(struct wrap_line *l)
-{
-	int i;
-	for ( i=0; i<l->n_boxes; i++ ) {
-
-		switch ( l->boxes[i].type ) {
-
-			case WRAP_BOX_PANGO :
-			pango_glyph_string_free(l->boxes[i].glyphs);
-			free(l->boxes[i].text);
-			break;
-
-			case WRAP_BOX_IMAGE :
-			break;
-
-			case WRAP_BOX_NOTHING :
-			break;
-
-		}
-
-	}
-
-	free(l->boxes);
-}
-
-
 /* Render Level 1 Storycode (no subframes) */
 static int render_sc(struct frame *fr)
 {
@@ -176,7 +150,7 @@ static int render_sc(struct frame *fr)
 	PangoContext *pc;
 
 	for ( i=0; i<fr->n_lines; i++ ) {
-		free_line_bits(&fr->lines[i]);
+		wrap_line_free(&fr->lines[i]);
 	}
 	free(fr->lines);
 	fr->lines = NULL;

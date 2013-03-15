@@ -99,4 +99,6 @@ extern void get_cursor_pos(struct frame *fr, size_t pos,
                            double *xposd, double *yposd, double *line_height);
 
 
+extern void wrap_line_free(struct wrap_line *l);
+
 #endif	/* WRAP_H */

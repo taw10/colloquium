@@ -454,10 +454,37 @@ static enum wrap_box_space space(struct wrap_line *boxes, int i)
 static void distribute_spaces_last_line(struct wrap_line *l, double w,
                                         double sp)
 {
+	int i;
 	int overfull = 0;
 
 	for ( i=0; i<l->n_boxes-1; i++ ) {
-		l->boxes[i].sp = sp_x(l->boxes[i].space);
+		if ( sp < sp_zp(l->boxes[i].space) ) {
+			l->boxes[i].sp = sp_zp(l->boxes[i].space);
+			overfull = 1;
+		} else if ( sp > sp_x(l->boxes[i].space) ) {
+			l->boxes[i].sp = sp_x(l->boxes[i].space);
+		} else {
+			l->boxes[i].sp = sp;
+		}
+	}
+	l->boxes[l->n_boxes-1].sp = 0.0;
+	l->overfull = overfull;
+}
+
+
+static void distribute_spaces_normal_line(struct wrap_line *l, double w,
+                                          double sp)
+{
+	int i;
+	int overfull = 0;
+
+	for ( i=0; i<l->n_boxes-1; i++ ) {
+		if ( sp < sp_zp(l->boxes[i].space) ) {
+			l->boxes[i].sp = sp_zp(l->boxes[i].space);
+			overfull = 1;
+		} else {
+			l->boxes[i].sp = sp;
+		}
 	}
 	l->boxes[l->n_boxes-1].sp = 0.0;
 	l->overfull = overfull;
@@ -469,7 +496,6 @@ static void distribute_spaces(struct wrap_line *l, double w)
 	int i;
 	double total;
 	double sp;
-	int overfull = 0;
 
 	total = 0.0;
 	for ( i=0; i<l->n_boxes; i++ ) {

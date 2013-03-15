@@ -363,7 +363,7 @@ static double sp_y(enum wrap_box_space s)
 	switch ( s ) {
 
 		case WRAP_SPACE_INTERWORD :
-		return 30.0*PANGO_SCALE;
+		return 10.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
 		default:

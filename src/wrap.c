@@ -473,7 +473,7 @@ static void distribute_spaces_last_line(struct wrap_line *l, double w,
 
 
 static void distribute_spaces_normal_line(struct wrap_line *l, double w,
-                                          double sp)
+                                          double sp, double rho)
 {
 	int i;
 	int overfull = 0;
@@ -482,6 +482,9 @@ static void distribute_spaces_normal_line(struct wrap_line *l, double w,
 		if ( sp < sp_zp(l->boxes[i].space) ) {
 			l->boxes[i].sp = sp_zp(l->boxes[i].space);
 			overfull = 1;
+		} else if ( sp > sp_yp(l->boxes[i].space, rho) ) {
+			l->boxes[i].sp = sp_yp(l->boxes[i].space, rho);
+			printf("underfull.\n");
 		} else {
 			l->boxes[i].sp = sp;
 		}
@@ -491,7 +494,7 @@ static void distribute_spaces_normal_line(struct wrap_line *l, double w,
 }
 
 
-static void distribute_spaces(struct wrap_line *l, double w)
+static void distribute_spaces(struct wrap_line *l, double w, double rho)
 {
 	int i;
 	double total;
@@ -507,7 +510,7 @@ static void distribute_spaces(struct wrap_line *l, double w)
 	if ( l->last_line ) {
 		distribute_spaces_last_line(l, w, sp);
 	} else {
-		distribute_spaces_normal_line(l, w, sp);
+		distribute_spaces_normal_line(l, w, sp, rho);
 	}
 }
 
@@ -567,12 +570,11 @@ static void output(int a, int i, int *p, struct frame *fr,
  * supposed to work as well as the full TeX algorithm in almost all of the cases
  * that we care about here. */
 static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
-                                 struct frame *fr)
+                                 struct frame *fr, double rho)
 {
 	int a = 0;
 	int *p;
 	double *s;
-	const double rho = 2.0;
 	struct wrap_box *box;
 	int j;
 	double sigma_prime, sigma_max_prime, sigma_min_prime;
@@ -782,6 +784,7 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 {
 	struct wrap_line *boxes;
 	int i;
+	const double rho = 2.0;
 	const double wrap_w = fr->w - fr->lop.pad_l - fr->lop.pad_r;
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
@@ -791,12 +794,12 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 		return 1;
 	}
 
-	knuth_suboptimal_fit(boxes, wrap_w, fr);
+	knuth_suboptimal_fit(boxes, wrap_w, fr, rho);
 	free(boxes->boxes);
 	free(boxes);
 
 	for ( i=0; i<fr->n_lines; i++ ) {
-		distribute_spaces(&fr->lines[i], wrap_w);
+		distribute_spaces(&fr->lines[i], wrap_w, rho);
 		calc_line_geometry(&fr->lines[i]);
 	}
 

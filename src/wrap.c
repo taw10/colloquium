@@ -582,11 +582,6 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	int n;
 	int reject;
 
-	fr->n_lines = 0;
-	fr->max_lines = 32;
-	fr->lines = NULL;
-	alloc_lines(fr);
-
 	n = boxes->n_boxes;
 
 	/* Set the space for the last box to be "end of paragraph" */
@@ -781,11 +776,46 @@ void wrap_line_free(struct wrap_line *l)
 }
 
 
+static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n)
+{
+	int i;
+	int start = *n;
+	int end;
+
+	if ( start >= boxes->n_boxes ) return NULL;
+
+	for ( i=start; i<boxes->n_boxes; i++ ) {
+		if ( boxes->boxes[i].space == WRAP_SPACE_EOP ) {
+			break;
+		}
+	}
+	end = i + 1;
+	*n = end;
+	if ( i == boxes->n_boxes ) end--;
+
+	if ( end-start > 0 ) {
+		struct wrap_line *para;
+		para = malloc(sizeof(struct wrap_line));
+		para->boxes = NULL;
+		para->max_boxes = end-start;
+		para->n_boxes = end-start;
+		alloc_boxes(para);
+		for ( i=start; i<end; i++ ) {
+			para->boxes[i-start] = boxes->boxes[i];
+		}
+		return para;
+	}
+
+	return NULL;
+}
+
+
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
 int wrap_contents(struct frame *fr, PangoContext *pc)
 {
 	struct wrap_line *boxes;
+	struct wrap_line *para;
 	int i;
 	const double rho = 2.0;
 	const double wrap_w = fr->w - fr->lop.pad_l - fr->lop.pad_r;
@@ -797,7 +827,30 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 		return 1;
 	}
 
-	knuth_suboptimal_fit(boxes, wrap_w, fr, rho);
+	/* Clear lines */
+	fr->n_lines = 0;
+	fr->max_lines = 32;
+	fr->lines = NULL;
+	alloc_lines(fr);
+
+	/* Split text into paragraphs */
+	i = 0;
+	do {
+
+		para = split_paragraph(boxes, &i);
+
+		/* Split paragraphs into lines */
+		if ( para != NULL ) {
+
+			knuth_suboptimal_fit(para, wrap_w, fr, rho);
+
+			free(para->boxes);
+			free(para);
+
+		}
+
+	} while ( para != NULL );
+
 	free(boxes->boxes);
 	free(boxes);
 

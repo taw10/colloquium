@@ -477,6 +477,7 @@ static void distribute_spaces_normal_line(struct wrap_line *l, double w,
 {
 	int i;
 	int overfull = 0;
+	int underfull = 0;
 
 	for ( i=0; i<l->n_boxes-1; i++ ) {
 		if ( sp < sp_zp(l->boxes[i].space) ) {
@@ -484,13 +485,14 @@ static void distribute_spaces_normal_line(struct wrap_line *l, double w,
 			overfull = 1;
 		} else if ( sp > sp_yp(l->boxes[i].space, rho) ) {
 			l->boxes[i].sp = sp_yp(l->boxes[i].space, rho);
-			printf("underfull.\n");
+			underfull = 1;
 		} else {
 			l->boxes[i].sp = sp;
 		}
 	}
 	l->boxes[l->n_boxes-1].sp = 0.0;
 	l->overfull = overfull;
+	l->underfull = underfull;
 }
 
 

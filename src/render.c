@@ -111,6 +111,17 @@ static void draw_overfull_marker(cairo_t *cr, struct frame *fr, int i)
 }
 
 
+static void draw_underfull_marker(cairo_t *cr, struct frame *fr, int i)
+{
+	cairo_move_to(cr, fr->w - fr->lop.pad_l- fr->lop.pad_r, 0.0);
+	cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
+	                  pango_units_to_double(fr->lines[i].height));
+	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+	cairo_set_line_width(cr, 4.0);
+	cairo_stroke(cr);
+}
+
+
 static void render_lines(struct frame *fr, cairo_t *cr)
 {
 	int i;
@@ -138,6 +149,9 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 
 		if ( fr->lines[i].overfull ) {
 			draw_overfull_marker(cr, fr, i);
+		}
+		if ( fr->lines[i].underfull ) {
+			draw_underfull_marker(cr, fr, i);
 		}
 
 		/* FIXME: line spacing */

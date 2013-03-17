@@ -347,9 +347,9 @@ static double sp_x(enum wrap_box_space s)
 		return 10.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
-		default:
 		return 0.0;
 
+		default:
 		case WRAP_SPACE_NONE :
 		return 0.0;
 
@@ -366,9 +366,9 @@ static double sp_y(enum wrap_box_space s)
 		return 10.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
-		default:
 		return 0.0;
 
+		default:
 		case WRAP_SPACE_NONE :
 		return INFINITY;
 
@@ -385,9 +385,9 @@ static double sp_z(enum wrap_box_space s)
 		return 7.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
-		default:
 		return 0.0;
 
+		default:
 		case WRAP_SPACE_NONE :
 		return 0.0;
 

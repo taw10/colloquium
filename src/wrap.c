@@ -366,11 +366,11 @@ static double sp_y(enum wrap_box_space s)
 		return 10.0*PANGO_SCALE;
 
 		case WRAP_SPACE_EOP :
-		return 0.0;
+		return INFINITY;
 
 		default:
 		case WRAP_SPACE_NONE :
-		return INFINITY;
+		return 0.0;
 
 	}
 }
@@ -588,6 +588,9 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	alloc_lines(fr);
 
 	n = boxes->n_boxes;
+
+	/* Set the space for the last box to be "end of paragraph" */
+	boxes->boxes[boxes->n_boxes-1].space = WRAP_SPACE_EOP;
 
 	/* Add empty zero-width box at end */
 	if ( boxes->n_boxes == boxes->max_boxes ) {

@@ -123,7 +123,7 @@ struct scblock *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter)
 }
 
 
-static int sc_block_list_add(SCBlockList *bl,
+static int sc_block_list_add(SCBlockList *bl, size_t offset,
                              char *name, char *options, char *contents)
 {
 	if ( bl->n_blocks == bl->max_blocks ) {
@@ -134,6 +134,7 @@ static int sc_block_list_add(SCBlockList *bl,
 	bl->blocks[bl->n_blocks].name = name;
 	bl->blocks[bl->n_blocks].options = options;
 	bl->blocks[bl->n_blocks].contents = contents;
+	bl->blocks[bl->n_blocks].offset = offset;
 	bl->n_blocks++;
 
 	return 0;
@@ -254,7 +255,7 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 {
 	SCBlockList *bl;
 	char *tbuf;
-	size_t len, i, j;
+	size_t len, i, j, start;
 
 	bl = sc_block_list_new();
 	if ( bl == NULL ) return NULL;
@@ -278,7 +279,7 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 
 			if ( (blockname == NULL) && (j != 0) ) {
 				tbuf[j] = '\0';
-				if ( sc_block_list_add(bl, NULL, NULL,
+				if ( sc_block_list_add(bl, i, NULL, NULL,
 				                       strdup(tbuf)) )
 				{
 					fprintf(stderr,
@@ -302,7 +303,7 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 			if ( (blockname == NULL)
 			  || ((blockname != NULL) && !strcmp(blockname, name)) )
 			{
-				if ( sc_block_list_add(bl, name, options,
+				if ( sc_block_list_add(bl, i, name, options,
 				                       contents) )
 				{
 					fprintf(stderr,
@@ -313,6 +314,10 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 				}
 			}
 
+			/* Start of the next block */
+			start = i;
+
+
 		} else {
 
 			tbuf[j++] = sc[i++];
@@ -322,7 +327,7 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 
 	if ( (blockname == NULL) && (j != 0) ) {
 		tbuf[j] = '\0';
-		if ( sc_block_list_add(bl, NULL, NULL, tbuf) )
+		if ( sc_block_list_add(bl, start, NULL, NULL, tbuf) )
 		{
 			fprintf(stderr,
 			        "Failed to add block.\n");

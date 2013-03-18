@@ -37,6 +37,7 @@
 #include "render.h"
 #include "frame.h"
 #include "slideshow.h"
+#include "wrap.h"
 
 
 /* Update a slide, once it's been edited in some way. */
@@ -566,6 +567,7 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 	fr->sc_len = 6;
 	set_selection(p, fr);
 	fr->pos = 0;
+	p->cursor_pos = 0;
 
 	do_slide_update(p, p->pc);
 
@@ -919,8 +921,9 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 	free(tmp);
 
 	rerender_slide(p, p->pc);
-	redraw_editor(p);
 	fr->pos += tlen;
+	p->cursor_pos = fr->pos;
+	redraw_editor(p);
 	fr->empty = 0;
 }
 

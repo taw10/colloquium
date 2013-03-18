@@ -83,28 +83,43 @@ static void initialise_line(struct wrap_line *l)
 void get_cursor_pos(struct frame *fr, size_t pos,
                     double *xposd, double *yposd, double *line_height)
 {
-	signed int line;
+	int line, box;
 	int i;
+	struct wrap_line *l;
+	struct wrap_box *b;
+	int p;
 
 	*xposd = 0;
 	*yposd = 0;
 
 	line = 0;
-	for ( i=0; i<fr->n_lines; i++ ) {
+	for ( i=0; i<fr->n_lines-1; i++ ) {
 		line = i;
-		if ( fr->lines[i].sc_offset > pos ) {
-			line = i-1;
-			break;
-		}
+		if ( fr->lines[i+1].sc_offset > pos ) break;
 		*yposd += fr->lines[i].height;
-		*line_height = pango_units_to_double(fr->lines[i].height);
 	}
 	assert(line >= 0);
 
-	*xposd += fr->lop.pad_l;
-
+	*line_height = pango_units_to_double(fr->lines[line].height);
 	*yposd /= PANGO_SCALE;
 	*yposd += fr->lop.pad_t;
+
+	l = &fr->lines[line];
+	box = 0;
+	for ( i=0; i<l->n_boxes-1; i++ ) {
+		box = i;
+		if ( l->boxes[i+1].sc_offset > pos ) break;
+		*xposd += l->boxes[i].width;
+		*xposd += l->boxes[i].sp;
+	}
+
+	b = &l->boxes[box];
+	pango_glyph_string_index_to_x(b->glyphs, b->text, strlen(b->text),
+	                              &b->item->analysis, pos - b->sc_offset,
+	                              FALSE, &p);
+	*xposd += p;
+	*xposd /= PANGO_SCALE;
+	*xposd += fr->lop.pad_l;
 }
 
 
@@ -116,6 +131,7 @@ static void shape_and_measure(gpointer data, gpointer user_data)
 
 	/* FIXME: Don't assume only one run per wrap box */
 	box->glyphs = pango_glyph_string_new();
+	box->item = item;
 
 	pango_shape(box->text+item->offset, item->length, &item->analysis,
 	            box->glyphs);
@@ -129,8 +145,6 @@ static void shape_and_measure(gpointer data, gpointer user_data)
 	if ( PANGO_ASCENT(rect) > box->ascent ) {
 		box->ascent = PANGO_ASCENT(rect);
 	}
-
-	pango_item_free(item);
 }
 
 
@@ -151,7 +165,7 @@ static void calc_line_geometry(struct wrap_line *line)
 
 
 /* Add "text", followed by a space of type "space", to "line" */
-static int add_wrap_box(struct wrap_line *line, char *text,
+static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
                         enum wrap_box_space space, PangoContext *pc,
                         PangoFont *font, PangoFontDescription *fontdesc,
                         double col[4])
@@ -168,6 +182,7 @@ static int add_wrap_box(struct wrap_line *line, char *text,
 	}
 
 	box = &line->boxes[line->n_boxes];
+	box->sc_offset = offset;
 	box->type = WRAP_BOX_PANGO;
 	box->text = text;
 	box->space = space;
@@ -194,7 +209,7 @@ static int add_wrap_box(struct wrap_line *line, char *text,
 
 
 static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
-                       PangoLanguage *lang,
+                       size_t sc_offset, PangoLanguage *lang,
                        PangoFont *font, PangoFontDescription *fontdesc,
                        double col[4])
 {
@@ -245,8 +260,8 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 				return 1;
 			}
 
-			if ( add_wrap_box(boxes, word, type, pc, font, fontdesc,
-			                  col) ) {
+			if ( add_wrap_box(boxes, word, start, type, pc,
+			                  font, fontdesc, col) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = i;
@@ -264,8 +279,8 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			return 1;
 		}
 
-		add_wrap_box(boxes, word, WRAP_SPACE_NONE, pc, font, fontdesc,
-		             col);
+		add_wrap_box(boxes, word, start, WRAP_SPACE_NONE, pc,
+		             font, fontdesc, col);
 
 	}
 
@@ -322,8 +337,8 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 	      b = sc_block_list_next(bl, iter) )
 	{
 		if ( b->name == NULL ) {
-			if ( split_words(boxes, pc, b->contents, lang,
-			                 font, fontdesc, col) ) {
+			if ( split_words(boxes, pc, b->contents, b->offset,
+			                 lang, font, fontdesc, col) ) {
 				fprintf(stderr, "Splitting failed.\n");
 			}
 		}
@@ -507,6 +522,7 @@ static void output_line(int q, int s, struct frame *fr, struct wrap_line *boxes)
 
 	l->max_boxes = s-q;
 	alloc_boxes(l);
+	l->sc_offset = boxes->boxes[q].sc_offset;
 	for ( j=q; j<s; j++ ) {
 		l->boxes[l->n_boxes++] = boxes->boxes[j];
 	}
@@ -739,6 +755,7 @@ void wrap_line_free(struct wrap_line *l)
 
 			case WRAP_BOX_PANGO :
 			pango_glyph_string_free(l->boxes[i].glyphs);
+			pango_item_free(l->boxes[i].item);
 			free(l->boxes[i].text);
 			break;
 

@@ -57,6 +57,7 @@ enum wrap_box_space
 struct wrap_box
 {
 	enum wrap_box_type type;
+	size_t sc_offset;  /* How far into the SC for this frame */
 
 	/* Pango units */
 	int width;
@@ -68,6 +69,7 @@ struct wrap_box
 
 	/* For type == WRAP_BOX_PANGO */
 	PangoGlyphString *glyphs;
+	PangoItem *item;
 	PangoFont *font;
 	char *text;
 	double col[4];  /* rgba colour */

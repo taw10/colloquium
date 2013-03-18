@@ -33,6 +33,8 @@ struct scblock
 	char *name;
 	char *options;
 	char *contents;
+
+	size_t offset;
 };
 
 struct scblock *sc_block_list_first(SCBlockList *bl,

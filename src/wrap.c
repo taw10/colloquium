@@ -451,69 +451,47 @@ static enum wrap_box_space space(struct wrap_line *boxes, int i)
 }
 
 
-static void distribute_spaces_last_line(struct wrap_line *l, double w,
-                                        double sp)
+static void distribute_spaces(struct wrap_line *line, double l, double rho)
 {
 	int i;
-	int overfull = 0;
-
-	for ( i=0; i<l->n_boxes-1; i++ ) {
-		if ( sp < sp_zp(l->boxes[i].space) ) {
-			l->boxes[i].sp = sp_zp(l->boxes[i].space);
-			overfull = 1;
-		} else if ( sp > sp_x(l->boxes[i].space) ) {
-			l->boxes[i].sp = sp_x(l->boxes[i].space);
-		} else {
-			l->boxes[i].sp = sp;
-		}
-	}
-	l->boxes[l->n_boxes-1].sp = 0.0;
-	l->overfull = overfull;
-}
-
-
-static void distribute_spaces_normal_line(struct wrap_line *l, double w,
-                                          double sp, double rho)
-{
-	int i;
+	double L, Y, Z, r;
 	int overfull = 0;
 	int underfull = 0;
 
-	for ( i=0; i<l->n_boxes-1; i++ ) {
-		if ( sp < sp_zp(l->boxes[i].space) ) {
-			l->boxes[i].sp = sp_zp(l->boxes[i].space);
-			overfull = 1;
-		} else if ( sp > sp_yp(l->boxes[i].space, rho) ) {
-			l->boxes[i].sp = sp_yp(l->boxes[i].space, rho);
-			underfull = 1;
-		} else {
-			l->boxes[i].sp = sp;
+	l = pango_units_from_double(l);
+
+	L = 0.0;  Y = 0.0;  Z = 0.0;
+	for ( i=0; i<line->n_boxes-1; i++ ) {
+		L += line->boxes[i].width;
+		L += sp_x(line->boxes[i].space);
+		Y += sp_y(line->boxes[i].space);
+		Z += sp_z(line->boxes[i].space);
+	}
+	L += line->boxes[line->n_boxes-1].width;
+
+	if ( L < l ) {
+		r = (l - L)/Y;
+	} else if ( L > l ) {
+		r = (l - L)/Z;
+	} else {
+		r = 0.0;
+	}
+
+	if ( r >= 0.0 ) {
+		for ( i=0; i<line->n_boxes-1; i++ ) {
+			line->boxes[i].sp = sp_x(line->boxes[i].space);
+			line->boxes[i].sp += r*sp_y(line->boxes[i].space);
+		}
+	} else {
+		for ( i=0; i<line->n_boxes-1; i++ ) {
+			line->boxes[i].sp = sp_x(line->boxes[i].space);
+			line->boxes[i].sp += r*sp_z(line->boxes[i].space);
 		}
 	}
-	l->boxes[l->n_boxes-1].sp = 0.0;
-	l->overfull = overfull;
-	l->underfull = underfull;
-}
 
-
-static void distribute_spaces(struct wrap_line *l, double w, double rho)
-{
-	int i;
-	double total;
-	double sp;
-
-	total = 0.0;
-	for ( i=0; i<l->n_boxes; i++ ) {
-		total += l->boxes[i].width;
-	}
-
-	sp = (pango_units_from_double(w)-total) / (l->n_boxes-1);
-
-	if ( l->last_line ) {
-		distribute_spaces_last_line(l, w, sp);
-	} else {
-		distribute_spaces_normal_line(l, w, sp, rho);
-	}
+	line->boxes[line->n_boxes-1].sp = 0.0;
+	line->overfull = overfull;
+	line->underfull = underfull;
 }
 
 

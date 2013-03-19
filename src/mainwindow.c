@@ -1,11 +1,11 @@
 /*
  * mainwindow.c
  *
- * Colloquium - A tiny presentation program
+ * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
  *
- * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
+ * This file is part of Colloquium.
  *
- * This program is free software: you can redistribute it and/or modify
+ * Colloquium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -411,11 +411,11 @@ static gint about_sig(GtkWidget *widget, struct presentation *p)
 	gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(window),
 	        PACKAGE_VERSION);
 	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
-		"(c) 2012 Thomas White <taw@bitwiz.org.uk>");
+		"© 2013 Thomas White <taw@bitwiz.org.uk>");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
 		"A tiny presentation program");
 	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
-		"(c) 2012 Thomas White <taw@bitwiz.org.uk>\n");
+		"© 2013 Thomas White <taw@bitwiz.org.uk>\n");
 	gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(window),
 		"http://www.bitwiz.org.uk/");
 	gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(window), authors);

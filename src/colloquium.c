@@ -1,11 +1,11 @@
 /*
  * colloquium.c
  *
- * Colloquium - A tiny presentation program
+ * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
  *
- * Copyright (c) 2012 Thomas White <taw@bitwiz.org.uk>
+ * This file is part of Colloquium.
  *
- * This program is free software: you can redistribute it and/or modify
+ * Colloquium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.

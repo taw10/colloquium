@@ -947,6 +947,23 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 }
 
 
+static void move_cursor(struct presentation *p, signed int x, signed int y)
+{
+	ssize_t pos = p->cursor_pos;
+
+	pos += x;
+
+	if ( pos < 0 ) pos = 0;
+
+	if ( pos > strlen(p->selection[0]->sc) ) {
+		pos = strlen(p->selection[0]->sc);
+	}
+
+	p->selection[0]->pos = pos;
+	p->cursor_pos = pos;
+}
+
+
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct presentation *p)
 {
@@ -973,8 +990,37 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		redraw_editor(p);
 		break;
 
+		case GDK_KEY_Left :
+		if ( p->n_selection == 1 ) {
+			move_cursor(p, -1, 0);
+			redraw_editor(p);
+		}
+		break;
+
+		case GDK_KEY_Right :
+		if ( p->n_selection == 1 ) {
+			move_cursor(p, +1, 0);
+			redraw_editor(p);
+		}
+		break;
+
+		case GDK_KEY_Up :
+		if ( p->n_selection == 1 ) {
+			move_cursor(p, -1, -1);
+			redraw_editor(p);
+		}
+		break;
+
+		case GDK_KEY_Down :
+		if ( p->n_selection == 1 ) {
+			move_cursor(p, +1, +1);
+			redraw_editor(p);
+		}
+		break;
+
+
 		case GDK_KEY_Return :
-		//im_commit(p->editing_object, "\n"); FIXME!
+		im_commit_sig(NULL, "\n", p);
 		break;
 
 		case GDK_KEY_B :

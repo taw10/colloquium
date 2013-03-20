@@ -110,16 +110,22 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 		box = i;
 		if ( l->boxes[i+1].sc_offset > pos ) break;
 		*xposd += l->boxes[i].width;
-		*xposd += l->boxes[i].sp;
+		if ( i < l->n_boxes-2 ) {
+			*xposd += l->boxes[i].sp;
+			printf("%f\n", l->boxes[i].sp);
+		}
 	}
 
 	b = &l->boxes[box];
 	pango_glyph_string_index_to_x(b->glyphs, b->text, strlen(b->text),
 	                              &b->item->analysis, pos - b->sc_offset,
 	                              FALSE, &p);
+	printf("offset %i in '%s' -> %i\n", pos-b->sc_offset, b->text, p);
+
 	*xposd += p;
 	*xposd /= PANGO_SCALE;
 	*xposd += fr->lop.pad_l;
+	printf("%i  ->  line %i, box %i  -> %f, %f\n", pos, line, box, *xposd, *yposd);
 }
 
 

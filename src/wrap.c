@@ -109,6 +109,7 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	for ( i=0; i<l->n_boxes-1; i++ ) {
 		box = i;
 		if ( l->boxes[i+1].sc_offset > pos ) break;
+		if ( l->boxes[i+1].type == WRAP_BOX_SENTINEL ) break;
 		*xposd += l->boxes[i].width;
 		if ( i < l->n_boxes-2 ) {
 			*xposd += l->boxes[i].sp;
@@ -596,7 +597,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 		if ( boxes->n_boxes == boxes->max_boxes ) return;
 	}
 	box = &boxes->boxes[boxes->n_boxes];
-	box->type = WRAP_BOX_NOTHING;
+	box->type = WRAP_BOX_SENTINEL;
 	box->text = NULL;
 	box->space = WRAP_SPACE_NONE;
 	box->font = NULL;
@@ -769,6 +770,7 @@ void wrap_line_free(struct wrap_line *l)
 			break;
 
 			case WRAP_BOX_NOTHING :
+			case WRAP_BOX_SENTINEL :
 			break;
 
 		}

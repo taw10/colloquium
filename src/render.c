@@ -86,6 +86,7 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 			break;
 
 			case WRAP_BOX_NOTHING :
+			case WRAP_BOX_SENTINEL :
 			/* Do nothing */
 			break;
 

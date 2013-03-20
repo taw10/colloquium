@@ -35,6 +35,7 @@
 enum wrap_box_type
 {
 	WRAP_BOX_NOTHING,
+	WRAP_BOX_SENTINEL,
 	WRAP_BOX_PANGO,
 	WRAP_BOX_IMAGE
 };

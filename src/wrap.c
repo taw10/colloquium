@@ -84,21 +84,31 @@ void get_cursor_pos(struct frame *fr, size_t pos,
                     double *xposd, double *yposd, double *line_height)
 {
 	int line, box;
-	int i;
+	signed int i;
 	struct wrap_line *l;
 	struct wrap_box *b;
 	int p;
+	int found = 0;
 
 	*xposd = 0;
 	*yposd = 0;
 
 	line = 0;
-	for ( i=0; i<fr->n_lines-1; i++ ) {
-		line = i;
-		if ( fr->lines[i+1].sc_offset > pos ) break;
-		*yposd += fr->lines[i].height;
+	for ( i=0; i<fr->n_lines; i++ ) {
+		if ( fr->lines[i].sc_offset > pos ) {
+			line = i-1;
+			found = 1;
+			break;
+		}
+	}
+	if ( !found ) {
+		/* Cursor is on the last line */
+		line = fr->n_lines-1;
 	}
 	assert(line >= 0);
+	for ( i=0; i<line; i++ ) {
+		*yposd += fr->lines[i].height;
+	}
 
 	*line_height = pango_units_to_double(fr->lines[line].height);
 	*yposd /= PANGO_SCALE;
@@ -113,7 +123,6 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 		*xposd += l->boxes[i].width;
 		if ( i < l->n_boxes-2 ) {
 			*xposd += l->boxes[i].sp;
-			printf("%f\n", l->boxes[i].sp);
 		}
 	}
 
@@ -121,12 +130,13 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	pango_glyph_string_index_to_x(b->glyphs, b->text, strlen(b->text),
 	                              &b->item->analysis, pos - b->sc_offset,
 	                              FALSE, &p);
-	printf("offset %i in '%s' -> %i\n", pos-b->sc_offset, b->text, p);
+	//printf("offset %i in '%s' -> %i\n", (int)pos-(int)b->sc_offset, b->text, p);
 
 	*xposd += p;
 	*xposd /= PANGO_SCALE;
 	*xposd += fr->lop.pad_l;
-	printf("%i  ->  line %i, box %i  -> %f, %f\n", pos, line, box, *xposd, *yposd);
+	//printf("%i  ->  line %i, box %i  -> %f, %f\n",
+	//       (int)pos, line, box, *xposd, *yposd);
 }
 
 

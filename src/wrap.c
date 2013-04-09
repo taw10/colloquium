@@ -203,6 +203,11 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 	box->col[3] = col[3];  /* Alpha */
 	line->n_boxes++;
 
+	if ( strlen(text) == 0 ) {
+		box->type = WRAP_BOX_NOTHING;
+		return 0;
+	}
+
 	attrs = pango_attr_list_new();
 	attr = pango_attr_font_desc_new(fontdesc);
 	pango_attr_list_insert_before(attrs, attr);

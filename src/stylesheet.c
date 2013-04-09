@@ -136,6 +136,41 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.y = 0.0;
 	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}");
 	add_to_template(slide, sty);
+
+	sty = new_style(ss, "Slide title");
+	sty->lop.margin_r = 0.0;
+	sty->lop.margin_t = 0.0;
+	sty->lop.margin_b = 0.0;
+	sty->lop.pad_l = 20.0;
+	sty->lop.pad_r = 20.0;
+	sty->lop.pad_t = 20.0;
+	sty->lop.pad_b = 20.0;
+	sty->lop.w = 1.0;
+	sty->lop.w_units = UNITS_FRAC;
+	sty->lop.h = 100.0;
+	sty->lop.h_units = UNITS_SLIDE;
+	sty->lop.x = 0.0;
+	sty->lop.y = 0.0;
+	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}");
+	add_to_template(acknowledgements, sty);
+
+	sty = new_style(ss, "Content");
+	sty->lop.margin_l = 0.0;
+	sty->lop.margin_r = 0.0;
+	sty->lop.margin_t = 0.0;
+	sty->lop.margin_b = 0.0;
+	sty->lop.pad_l = 20.0;
+	sty->lop.pad_r = 20.0;
+	sty->lop.pad_t = 20.0;
+	sty->lop.pad_b = 20.0;
+	sty->lop.w = 1.0;
+	sty->lop.w_units = UNITS_FRAC;
+	sty->lop.h = 1.0;
+	sty->lop.h_units = UNITS_FRAC;
+	sty->lop.x = 0.0;
+	sty->lop.y = 0.0;
+	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}Acknowledgements");
+	add_to_template(acknowledgements, sty);
 }
 
 

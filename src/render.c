@@ -52,12 +52,26 @@ static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 	cairo_set_source_rgba(cr, box->col[0], box->col[1], box->col[2],
 	                      box->col[3]);
 	cairo_fill(cr);
+}
 
-//	cairo_rectangle(cr, 0.0, 0.0, pango_units_to_double(box->width),
-//	                              pango_units_to_double(box->height));
-//	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-//	cairo_set_line_width(cr, 0.1);
-//	cairo_stroke(cr);
+
+static void draw_outline(cairo_t *cr, struct wrap_box *box)
+{
+	char tmp[32];
+
+	cairo_rectangle(cr, 0.0, 0.0, pango_units_to_double(box->width),
+	                              pango_units_to_double(box->height));
+	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 0.1);
+	cairo_stroke(cr);
+
+	snprintf(tmp, 31, "%i", box->sc_offset);
+	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_ITALIC,
+	                                   CAIRO_FONT_WEIGHT_NORMAL);
+	cairo_set_font_size(cr, 10.0);
+	cairo_move_to(cr, 0.0, 0.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.7);
+	cairo_show_text(cr, tmp);
 }
 
 
@@ -91,6 +105,8 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 			break;
 
 		}
+
+		draw_outline(cr, box);
 
 		x_pos += pango_units_to_double(line->boxes[j].width);
 		x_pos += pango_units_to_double(line->boxes[j].sp);

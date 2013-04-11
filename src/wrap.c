@@ -301,8 +301,22 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			return 1;
 		}
 
-		add_wrap_box(boxes, word, start, WRAP_SPACE_NONE, pc,
-		             font, fontdesc, col);
+		if ( (word[i-start-1] == '\n')  ) {
+
+			/* There is a newline at the end of the SC */
+			char *word2;
+			word2 = strndup(word, i-start-1);
+			add_wrap_box(boxes, word2, start, WRAP_SPACE_EOP, pc,
+		                     font, fontdesc, col);
+			add_wrap_box(boxes, strdup(""), i, WRAP_SPACE_NONE, pc,
+		                     font, fontdesc, col);
+
+		} else {
+
+			add_wrap_box(boxes, word, start, WRAP_SPACE_NONE, pc,
+				     font, fontdesc, col);
+
+		}
 
 	}
 

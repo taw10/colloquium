@@ -1006,14 +1006,14 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Up :
 		if ( p->n_selection == 1 ) {
-			move_cursor(p, -1, -1);
+			move_cursor(p, 0, -1);
 			redraw_editor(p);
 		}
 		break;
 
 		case GDK_KEY_Down :
 		if ( p->n_selection == 1 ) {
-			move_cursor(p, +1, +1);
+			move_cursor(p, 0, +1);
 			redraw_editor(p);
 		}
 		break;

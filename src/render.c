@@ -93,6 +93,7 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 
 			case WRAP_BOX_PANGO :
 			render_glyph_box(cr, box);
+			draw_outline(cr, box);
 			break;
 
 			case WRAP_BOX_IMAGE :
@@ -100,13 +101,14 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr)
 			break;
 
 			case WRAP_BOX_NOTHING :
+			draw_outline(cr, box);
+			break;
+
 			case WRAP_BOX_SENTINEL :
 			/* Do nothing */
 			break;
 
 		}
-
-		draw_outline(cr, box);
 
 		x_pos += pango_units_to_double(line->boxes[j].width);
 		x_pos += pango_units_to_double(line->boxes[j].sp);

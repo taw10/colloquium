@@ -118,8 +118,8 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	box = 0;
 	for ( i=0; i<l->n_boxes-1; i++ ) {
 		box = i;
-		if ( l->boxes[i+1].sc_offset > pos ) break;
 		if ( l->boxes[i+1].type == WRAP_BOX_SENTINEL ) break;
+		if ( l->boxes[i+1].sc_offset > pos ) break;
 		*xposd += l->boxes[i].width;
 		if ( i < l->n_boxes-2 ) {
 			*xposd += l->boxes[i].sp;
@@ -127,16 +127,23 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	}
 
 	b = &l->boxes[box];
-	pango_glyph_string_index_to_x(b->glyphs, b->text, strlen(b->text),
-	                              &b->item->analysis, pos - b->sc_offset,
-	                              FALSE, &p);
-	//printf("offset %i in '%s' -> %i\n", (int)pos-(int)b->sc_offset, b->text, p);
+	if ( b->type == WRAP_BOX_PANGO ) {
+		pango_glyph_string_index_to_x(b->glyphs, b->text,
+		                              strlen(b->text),
+			                      &b->item->analysis,
+			                      pos - b->sc_offset,
+			                      FALSE, &p);
+		//printf("offset %i in '%s' -> %i\n",
+		//       (int)pos-(int)b->sc_offset, b->text, p);
 
-	*xposd += p;
-	*xposd /= PANGO_SCALE;
-	*xposd += fr->lop.pad_l;
-	//printf("%i  ->  line %i, box %i  -> %f, %f\n",
-	//       (int)pos, line, box, *xposd, *yposd);
+		*xposd += p;
+		*xposd /= PANGO_SCALE;
+		*xposd += fr->lop.pad_l;
+		//printf("%i  ->  line %i, box %i  -> %f, %f\n",
+		//       (int)pos, line, box, *xposd, *yposd);
+
+	} else {
+	}
 }
 
 

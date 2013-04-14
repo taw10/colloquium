@@ -83,6 +83,7 @@ void free_stylesheet(StyleSheet *ss)
 
 	for ( i=0; i<ss->n_styles; i++ ) {
 		free(ss->styles[i]->name);
+		free(ss->styles[i]->sc_prologue);
 		free(ss->styles[i]);
 	}
 
@@ -117,6 +118,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.h_units = UNITS_SLIDE;
 	sty->lop.x = 0.0;
 	sty->lop.y = 300.0;
+	sty->sc_prologue = strdup("\\font[Sans 40]");
 	add_to_template(titlepage, sty);
 
 	sty = new_style(ss, "Slide title");
@@ -134,7 +136,8 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.h_units = UNITS_SLIDE;
 	sty->lop.x = 0.0;
 	sty->lop.y = 0.0;
-	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}");
+	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}"
+	                          "\\font[Sans 40]");
 	add_to_template(slide, sty);
 
 	sty = new_style(ss, "Slide title");
@@ -151,7 +154,8 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.h_units = UNITS_SLIDE;
 	sty->lop.x = 0.0;
 	sty->lop.y = 0.0;
-	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}");
+	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}"
+	                          "\\font[Sans 40]Acknowledgements");
 	add_to_template(acknowledgements, sty);
 
 	sty = new_style(ss, "Content");
@@ -169,7 +173,8 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.h_units = UNITS_FRAC;
 	sty->lop.x = 0.0;
 	sty->lop.y = 0.0;
-	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}Acknowledgements");
+	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}"
+	                          "\\font[Sans 24]");
 	add_to_template(acknowledgements, sty);
 }
 

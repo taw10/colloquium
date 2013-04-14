@@ -36,6 +36,7 @@
 #include "storycode.h"
 #include "wrap.h"
 #include "frame.h"
+#include "stylesheet.h"
 
 
 static void alloc_lines(struct frame *fr)
@@ -505,7 +506,8 @@ static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
 }
 
 
-static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
+static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
+                                          PangoContext *pc)
 {
 	struct wrap_line *boxes;
 	PangoLanguage *lang;
@@ -530,6 +532,9 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 	/* The "ultimate" default font */
 	fonts = push_font(fonts, "Sans 12", &n_fonts, &max_fonts, pc);
 
+	if ( prefix != NULL ) {
+		run_sc(prefix, fonts, &n_fonts, &max_fonts, pc, boxes, lang);
+	}
 	run_sc(sc, fonts, &n_fonts, &max_fonts, pc, boxes, lang);
 
 	for ( i=0; i<n_fonts; i++ ) {
@@ -1004,9 +1009,16 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 	int i;
 	const double rho = 2.0;
 	const double wrap_w = fr->w - fr->lop.pad_l - fr->lop.pad_r;
+	char *prologue;
+
+	if ( fr->style != NULL ) {
+		prologue = fr->style->sc_prologue;
+	} else {
+		prologue = NULL;
+	}
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
-	boxes = sc_to_wrap_boxes(fr->sc, pc);
+	boxes = sc_to_wrap_boxes(fr->sc, prologue, pc);
 	if ( boxes == NULL ) {
 		fprintf(stderr, "Failed to create wrap boxes.\n");
 		return 1;

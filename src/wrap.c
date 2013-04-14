@@ -823,7 +823,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 		double sigma_min = sigma;
 		double sigma_max = sigma;
 		int m = 1;
-		int jprime;
+		int jprime = 999;
 
 		s[i] = 0;
 

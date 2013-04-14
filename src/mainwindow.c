@@ -872,15 +872,6 @@ void update_titlebar(struct presentation *p)
 }
 
 
-static gint realise_sig(GtkWidget *da, struct presentation *p)
-{
-	/* FIXME: Can do this "properly" by setting up a separate font map */
-	p->pc = gtk_widget_get_pango_context(da);
-	rerender_slide(p, p->pc);
-	return FALSE;
-}
-
-
 static void insert_text(struct frame *fr, char *t, struct presentation *p)
 {
 	char *tmp;
@@ -968,6 +959,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct presentation *p)
 {
 	gboolean r;
+	int claim = 0;
 
 	/* Throw the event to the IM context and let it sort things out */
 	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(p->im_context),
@@ -978,16 +970,19 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Page_Up :
 		prev_slide_sig(NULL, p);
+		claim = 1;
 		break;
 
 		case GDK_KEY_Page_Down :
 		next_slide_sig(NULL, p);
+		claim = 1;
 		break;
 
 		case GDK_KEY_Escape :
 		if ( p->slideshow != NULL ) end_slideshow(p);
 		set_selection(p, NULL);
 		redraw_editor(p);
+		claim = 1;
 		break;
 
 		case GDK_KEY_Left :
@@ -995,6 +990,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			move_cursor(p, -1, 0);
 			redraw_editor(p);
 		}
+		claim = 1;
 		break;
 
 		case GDK_KEY_Right :
@@ -1002,6 +998,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			move_cursor(p, +1, 0);
 			redraw_editor(p);
 		}
+		claim = 1;
 		break;
 
 		case GDK_KEY_Up :
@@ -1009,6 +1006,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			move_cursor(p, 0, -1);
 			redraw_editor(p);
 		}
+		claim = 1;
 		break;
 
 		case GDK_KEY_Down :
@@ -1016,11 +1014,13 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			move_cursor(p, 0, +1);
 			redraw_editor(p);
 		}
+		claim = 1;
 		break;
 
 
 		case GDK_KEY_Return :
 		im_commit_sig(NULL, "\n", p);
+		claim = 1;
 		break;
 
 		case GDK_KEY_B :
@@ -1033,13 +1033,36 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			//	redraw_slideshow(p);
 			//}
 		}
+		claim = 1;
 		break;
 
 	}
 
+	if ( claim ) return TRUE;
 	return FALSE;
 }
 
+
+static gint realise_sig(GtkWidget *da, struct presentation *p)
+{
+	GdkWindow *win;
+
+	/* Keyboard and input method stuff */
+	p->im_context = gtk_im_multicontext_new();
+	win = gtk_widget_get_window(p->drawingarea);
+	gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context), win);
+	gdk_window_set_accept_focus(win, TRUE);
+	g_signal_connect(G_OBJECT(p->im_context), "commit",
+			 G_CALLBACK(im_commit_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "key-press-event",
+			 G_CALLBACK(key_press_sig), p);
+
+	/* FIXME: Can do this "properly" by setting up a separate font map */
+	p->pc = gtk_widget_get_pango_context(da);
+	rerender_slide(p, p->pc);
+
+	return FALSE;
+}
 
 
 int open_mainwindow(struct presentation *p)
@@ -1047,7 +1070,6 @@ int open_mainwindow(struct presentation *p)
 	GtkWidget *window;
 	GtkWidget *vbox;
 	GtkWidget *sw;
-	GdkWindow *win;
 
 	if ( p->window != NULL ) {
 		fprintf(stderr, "Presentation window is already open!\n");
@@ -1093,15 +1115,6 @@ int open_mainwindow(struct presentation *p)
 
 	g_signal_connect(G_OBJECT(p->drawingarea), "draw",
 			 G_CALLBACK(draw_sig), p);
-
-	/* Keyboard and input method stuff */
-	p->im_context = gtk_im_multicontext_new();
-	win = gtk_widget_get_window(p->drawingarea);
-	gtk_im_context_set_client_window(GTK_IM_CONTEXT(p->im_context), win);
-	g_signal_connect(G_OBJECT(p->im_context), "commit",
-			 G_CALLBACK(im_commit_sig), p);
-	g_signal_connect(G_OBJECT(p->drawingarea), "key-press-event",
-			 G_CALLBACK(key_press_sig), p);
 
 	/* Default size */
 	gtk_window_set_default_size(GTK_WINDOW(p->window), 1024+100, 768+100);

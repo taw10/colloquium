@@ -147,6 +147,74 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 }
 
 
+#if 0
+size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
+{
+	int line, box;
+	signed int i;
+	struct wrap_line *l;
+	struct wrap_box *b;
+	int p;
+	int found = 0;
+
+	*xposd = 0;
+	*yposd = 0;
+
+	line = 0;
+	for ( i=0; i<fr->n_lines; i++ ) {
+		if ( fr->lines[i].sc_offset > pos ) {
+			line = i-1;
+			found = 1;
+			break;
+		}
+	}
+	if ( !found ) {
+		/* Cursor is on the last line */
+		line = fr->n_lines-1;
+	}
+	assert(line >= 0);
+	for ( i=0; i<line; i++ ) {
+		*yposd += fr->lines[i].height;
+	}
+
+	*line_height = pango_units_to_double(fr->lines[line].height);
+	*yposd /= PANGO_SCALE;
+	*yposd += fr->lop.pad_t;
+
+	l = &fr->lines[line];
+	box = 0;
+	for ( i=0; i<l->n_boxes-1; i++ ) {
+		box = i;
+		if ( l->boxes[i+1].type == WRAP_BOX_SENTINEL ) break;
+		if ( l->boxes[i+1].sc_offset > pos ) break;
+		*xposd += l->boxes[i].width;
+		if ( i < l->n_boxes-2 ) {
+			*xposd += l->boxes[i].sp;
+		}
+	}
+
+	b = &l->boxes[box];
+	if ( b->type == WRAP_BOX_PANGO ) {
+		pango_glyph_string_index_to_x(b->glyphs, b->text,
+		                              strlen(b->text),
+			                      &b->item->analysis,
+			                      pos - b->sc_offset,
+			                      FALSE, &p);
+		//printf("offset %i in '%s' -> %i\n",
+		//       (int)pos-(int)b->sc_offset, b->text, p);
+
+		*xposd += p;
+		*xposd /= PANGO_SCALE;
+		*xposd += fr->lop.pad_l;
+		//printf("%i  ->  line %i, box %i  -> %f, %f\n",
+		//       (int)pos, line, box, *xposd, *yposd);
+
+	} else {
+	}
+}
+#endif
+
+
 static void shape_and_measure(gpointer data, gpointer user_data)
 {
 	struct wrap_box *box = user_data;
@@ -188,11 +256,18 @@ static void calc_line_geometry(struct wrap_line *line)
 }
 
 
+struct sc_font
+{
+	PangoFontDescription *fontdesc;
+	PangoFont *font;
+	double col[4];
+};
+
+
 /* Add "text", followed by a space of type "space", to "line" */
 static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
                         enum wrap_box_space space, PangoContext *pc,
-                        PangoFont *font, PangoFontDescription *fontdesc,
-                        double col[4])
+                        struct sc_font *font)
 {
 	GList *pango_items;
 	struct wrap_box *box;
@@ -210,14 +285,14 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 	box->type = WRAP_BOX_PANGO;
 	box->text = text;
 	box->space = space;
-	box->font = font;
+	box->font = font->font;
 	box->width = 0;
 	box->ascent = 0;
 	box->height = 0;
-	box->col[0] = col[0];  /* Red */
-	box->col[1] = col[1];  /* Green */
-	box->col[2] = col[2];  /* Blue */
-	box->col[3] = col[3];  /* Alpha */
+	box->col[0] = font->col[0];  /* Red */
+	box->col[1] = font->col[1];  /* Green */
+	box->col[2] = font->col[2];  /* Blue */
+	box->col[3] = font->col[3];  /* Alpha */
 	line->n_boxes++;
 
 	if ( strlen(text) == 0 ) {
@@ -226,7 +301,7 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 	}
 
 	attrs = pango_attr_list_new();
-	attr = pango_attr_font_desc_new(fontdesc);
+	attr = pango_attr_font_desc_new(font->fontdesc);
 	pango_attr_list_insert_before(attrs, attr);
 	pango_items = pango_itemize(pc, text, 0, strlen(text), attrs, NULL);
 	g_list_foreach(pango_items, shape_and_measure, box);
@@ -239,8 +314,7 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 
 static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
                        size_t sc_offset, PangoLanguage *lang,
-                       PangoFont *font, PangoFontDescription *fontdesc,
-                       double col[4])
+                       struct sc_font *font)
 {
 	PangoLogAttr *log_attrs;
 	size_t len;
@@ -290,7 +364,7 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			}
 
 			if ( add_wrap_box(boxes, word, start, type, pc,
-			                  font, fontdesc, col) ) {
+			                  font) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = i;
@@ -314,14 +388,14 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			char *word2;
 			word2 = strndup(word, i-start-1);
 			add_wrap_box(boxes, word2, start, WRAP_SPACE_EOP, pc,
-		                     font, fontdesc, col);
+		                     font);
 			add_wrap_box(boxes, strdup(""), i, WRAP_SPACE_NONE, pc,
-		                     font, fontdesc, col);
+		                     font);
 
 		} else {
 
 			add_wrap_box(boxes, word, start, WRAP_SPACE_NONE, pc,
-				     font, fontdesc, col);
+				     font);
 
 		}
 
@@ -332,16 +406,112 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 }
 
 
-static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
+static void set_font(struct sc_font *scf, const char *font_name,
+                     PangoContext *pc)
 {
-	struct wrap_line *boxes;
+	scf->fontdesc = pango_font_description_from_string(font_name);
+	if ( scf->fontdesc == NULL ) {
+		fprintf(stderr, "Couldn't describe font.\n");
+		return;
+	}
+	scf->font = pango_font_map_load_font(pango_context_get_font_map(pc),
+	                                     pc, scf->fontdesc);
+	if ( scf->font == NULL ) {
+		fprintf(stderr, "Couldn't load font.\n");
+		return;
+	}
+	scf->col[0] = 0.0;  scf->col[1] = 0.0;  scf->col[2] = 0.0;
+	scf->col[3] = 1.0;
+}
+
+
+
+static struct sc_font *push_font(struct sc_font *stack, const char *font_name,
+                                 int *n_fonts, int *max_fonts,
+                                 PangoContext *pc)
+{
+	if ( *n_fonts == *max_fonts ) {
+
+		struct sc_font *stack_new;
+
+		stack_new = realloc(stack,
+		                    sizeof(struct sc_font)*((*max_fonts)+8));
+		if ( stack_new == NULL ) {
+			fprintf(stderr, "Failed to push font.\n");
+			return stack;
+		}
+
+		stack = stack_new;
+		*max_fonts += 8;
+
+	}
+
+	set_font(&stack[*n_fonts], font_name, pc);
+	(*n_fonts)++;
+
+	return stack;
+}
+
+
+static void pop_font(struct sc_font *stack, int *n_fonts, int *max_fonts)
+{
+	pango_font_description_free(stack[(*n_fonts)-1].fontdesc);
+	(*n_fonts)--;
+}
+
+
+static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
+                   int *max_fonts, PangoContext *pc, struct wrap_line *boxes,
+                   PangoLanguage *lang)
+{
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
 	struct scblock *b;
-	PangoFontDescription *fontdesc;
-	PangoFont *font;
-	double col[4];
+
+	bl = sc_find_blocks(sc, NULL);
+
+	if ( bl == NULL ) {
+		printf("Failed to find blocks.\n");
+		return;
+	}
+
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+
+		if ( b->name == NULL ) {
+			if ( split_words(boxes, pc, b->contents, b->offset,
+			                 lang, &fonts[(*n_fonts)-1]) ) {
+				fprintf(stderr, "Splitting failed.\n");
+			}
+
+		} else if ( (strcmp(b->name, "font")==0)
+		         && (b->contents == NULL) ) {
+			set_font(&fonts[(*n_fonts)-1], b->options, pc);
+
+		} else if ( (strcmp(b->name, "font")==0)
+		         && (b->contents != NULL) ) {
+			push_font(fonts, b->options, n_fonts, max_fonts, pc);
+			run_sc(b->contents, fonts, n_fonts, max_fonts, pc,
+			       boxes, lang);
+			pop_font(fonts, n_fonts, max_fonts);
+		}
+
+		/* FIXME: Handle images */
+
+	}
+	sc_block_list_free(bl);
+}
+
+
+static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
+{
+	struct wrap_line *boxes;
 	PangoLanguage *lang;
+	struct sc_font *fonts;
+	int n_fonts, max_fonts;
+	int i;
 
 	boxes = malloc(sizeof(struct wrap_line));
 	if ( boxes == NULL ) {
@@ -350,47 +520,21 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, PangoContext *pc)
 	}
 	initialise_line(boxes);
 
-	bl = sc_find_blocks(sc, NULL);
-
-	if ( bl == NULL ) {
-		printf("Failed to find blocks.\n");
-		return NULL;
-	}
+	fonts = NULL;
+	n_fonts = 0;
+	max_fonts = 0;
 
 	/* FIXME: Determine proper language (somehow...) */
 	lang = pango_language_from_string("en_GB");
 
-	/* FIXME: Determine the proper font to use */
-	fontdesc = pango_font_description_from_string("Sorts Mill Goudy 16");
-	if ( fontdesc == NULL ) {
-		fprintf(stderr, "Couldn't describe font.\n");
-		return NULL;
-	}
-	font = pango_font_map_load_font(pango_context_get_font_map(pc),
-	                                pc, fontdesc);
-	if ( font == NULL ) {
-		fprintf(stderr, "Couldn't load font.\n");
-		return NULL;
-	}
-	col[0] = 0.0;  col[1] = 0.0;  col[2] = 0.0;  col[3] = 1.0;
+	/* The "ultimate" default font */
+	fonts = push_font(fonts, "Sans 12", &n_fonts, &max_fonts, pc);
 
-	/* Iterate through SC blocks and send each one in turn for processing */
-	for ( b = sc_block_list_first(bl, &iter);
-	      b != NULL;
-	      b = sc_block_list_next(bl, iter) )
-	{
-		if ( b->name == NULL ) {
-			if ( split_words(boxes, pc, b->contents, b->offset,
-			                 lang, font, fontdesc, col) ) {
-				fprintf(stderr, "Splitting failed.\n");
-			}
-		}
+	run_sc(sc, fonts, &n_fonts, &max_fonts, pc, boxes, lang);
 
-		/* FIXME: Handle images */
+	for ( i=0; i<n_fonts; i++ ) {
+		pango_font_description_free(fonts[i].fontdesc);
 	}
-	sc_block_list_free(bl);
-
-	pango_font_description_free(fontdesc);
 
 	return boxes;
 }

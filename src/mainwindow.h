@@ -28,6 +28,8 @@
 #endif
 
 
+extern void rerender_slide(struct presentation *p);
+
 extern int open_mainwindow(struct presentation *p);
 extern void change_edit_slide(struct presentation *p, struct slide *np);
 extern void redraw_editor(struct presentation *p);

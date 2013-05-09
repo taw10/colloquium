@@ -100,6 +100,10 @@ struct frame
 	double                    w;
 	double                    h;
 
+	/* Size of frame in pixels */
+	int                       pix_w;
+	int                       pix_h;
+
 	PangoLayout              *pl;
 
 	/* True if this frame should be deleted on the next mouse click */

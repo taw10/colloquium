@@ -108,17 +108,17 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.margin_r = 0.0;
 	sty->lop.margin_t = 0.0;
 	sty->lop.margin_b = 0.0;
-	sty->lop.pad_l = 0.0;
-	sty->lop.pad_r = 0.0;
-	sty->lop.pad_t = 0.0;
-	sty->lop.pad_b = 0.0;
+	sty->lop.pad_l = 40.0;
+	sty->lop.pad_r = 40.0;
+	sty->lop.pad_t = 40.0;
+	sty->lop.pad_b = 40.0;
 	sty->lop.w = 1.0;
 	sty->lop.w_units = UNITS_FRAC;
 	sty->lop.h = 100.0;
 	sty->lop.h_units = UNITS_SLIDE;
 	sty->lop.x = 0.0;
 	sty->lop.y = 300.0;
-	sty->sc_prologue = strdup("\\font[Sans 40]");
+	sty->sc_prologue = strdup("\\font[Sorts Mill Goudy 64]");
 	add_to_template(titlepage, sty);
 
 	sty = new_style(ss, "Slide title");

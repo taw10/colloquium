@@ -41,43 +41,36 @@
 
 
 /* Update a slide, once it's been edited in some way. */
-static void rerender_slide(struct presentation *p, PangoContext *pc)
+void rerender_slide(struct presentation *p)
 {
-	int w, h;
 	struct slide *s = p->cur_edit_slide;
 
 	free_render_buffers(s);
 
-	w = p->thumb_slide_width;
-	h = (p->slide_height/p->slide_width) * w;
-	s->rendered_thumb = render_slide(s, w, h);
+	s->rendered_thumb = render_slide(s, s->parent->thumb_slide_width,
+		                        p->slide_width, p->slide_height);
 
-	w = p->edit_slide_width;
-	h = (p->slide_height/p->slide_width) * w;
-	s->rendered_edit = render_slide(s, w, h);
+	s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
+		                        p->slide_width, p->slide_height);
 
-	w = s->parent->proj_slide_width;
-	h = (s->parent->slide_height/s->parent->slide_width) * w;
-	s->rendered_proj = render_slide(s, w, h);
+	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
+		                        p->slide_width, p->slide_height);
 }
 
 
 /* Ensure that "edit" and "proj" renderings are in order */
-static void render_edit_and_proj(struct presentation *p, PangoContext *pc)
+static void render_edit_and_proj(struct presentation *p)
 {
-	int w, h;
 	struct slide *s = p->cur_edit_slide;
 
 	if ( s->rendered_edit == NULL ) {
-		w = p->edit_slide_width;
-		h = (p->slide_height/p->slide_width) * w;
-		s->rendered_edit = render_slide(s, w, h);
+		s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
+		                               p->slide_width, p->slide_height);
 	}
 
 	if ( s->rendered_proj == NULL ) {
-		w = s->parent->proj_slide_width;
-		h = (s->parent->slide_height/s->parent->slide_width) * w;
-		s->rendered_proj = render_slide(s, w, h);
+		s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
+		                               p->slide_width, p->slide_height);
 	}
 }
 
@@ -183,7 +176,7 @@ static gint open_response_sig(GtkWidget *d, gint response,
 				show_error(p, "Failed to open presentation");
 			}
 			p->cur_edit_slide = p->slides[0];
-			rerender_slide(p, p->pc);
+			rerender_slide(p);
 			update_toolbar(p);
 
 		} else {
@@ -446,7 +439,7 @@ void change_edit_slide(struct presentation *p, struct slide *np)
 	}
 
 	p->cur_edit_slide = np;
-	render_edit_and_proj(p, p->pc);
+	render_edit_and_proj(p);
 
 	set_selection(p, NULL);
 	update_toolbar(p);
@@ -538,7 +531,7 @@ static gint open_notes_sig(GtkWidget *widget, struct presentation *p)
 
 static void do_slide_update(struct presentation *p, PangoContext *pc)
 {
-	rerender_slide(p, p->pc);
+	rerender_slide(p);
 	redraw_editor(p);
 	if ( (p->slideshow != NULL)
 	  && (p->cur_edit_slide == p->cur_proj_slide) )
@@ -911,7 +904,7 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 	memcpy(fr->sc, tmp, fr->sc_len);
 	free(tmp);
 
-	rerender_slide(p, p->pc);
+	rerender_slide(p);
 	fr->pos += tlen;
 	p->cursor_pos = fr->pos;
 	redraw_editor(p);
@@ -1059,7 +1052,7 @@ static gint realise_sig(GtkWidget *da, struct presentation *p)
 
 	/* FIXME: Can do this "properly" by setting up a separate font map */
 	p->pc = gtk_widget_get_pango_context(da);
-	rerender_slide(p, p->pc);
+	rerender_slide(p);
 
 	return FALSE;
 }

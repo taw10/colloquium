@@ -58,7 +58,6 @@ static gint ss_destroy_sig(GtkWidget *widget, struct presentation *p)
 
 static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, struct presentation *p)
 {
-	GtkAllocation allocation;
 	double xoff, yoff;
 	double width, height;
 
@@ -79,9 +78,8 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, struct presentation *p)
 		h = p->proj_slide_width * p->slide_height / p->slide_width;
 
 		/* Get the overall size */
-		gtk_widget_get_allocation(da, &allocation);
-		xoff = (allocation.width - p->proj_slide_width)/2.0;
-		yoff = (allocation.height - h)/2.0;
+		xoff = (width - p->proj_slide_width)/2.0;
+		yoff = (height - h)/2.0;
 
 		/* Draw the slide from the cache */
 		cairo_rectangle(cr, xoff, yoff, p->proj_slide_width, h);
@@ -257,6 +255,8 @@ void try_start_slideshow(struct presentation *p)
 		p->proj_slide_width = w;
 
 	} /* FIXME: Sensible (configurable) choice of monitor */
+
+	rerender_slide(p);
 
 	p->slideshow = n;
 	p->slideshow_linked = 1;

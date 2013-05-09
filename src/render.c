@@ -65,7 +65,7 @@ static void draw_outline(cairo_t *cr, struct wrap_box *box)
 	cairo_set_line_width(cr, 0.1);
 	cairo_stroke(cr);
 
-	snprintf(tmp, 31, "%i", box->sc_offset);
+	snprintf(tmp, 31, "%lli", (long long int)box->sc_offset);
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_ITALIC,
 	                                   CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, 10.0);
@@ -182,8 +182,46 @@ static void render_lines(struct frame *fr, cairo_t *cr)
 }
 
 
+static void run_render_sc(cairo_t *cr, struct frame *fr, const char *sc)
+{
+	SCBlockList *bl;
+	SCBlockListIterator *iter;
+	struct scblock *b;
+
+	bl = sc_find_blocks(sc, "bgcol");
+
+	if ( bl == NULL ) {
+		printf("Failed to find blocks.\n");
+		return;
+	}
+
+	for ( b = sc_block_list_first(bl, &iter);
+	      b != NULL;
+	      b = sc_block_list_next(bl, iter) )
+	{
+		GdkColor col;
+
+		if ( b->contents == NULL ) continue;
+		gdk_color_parse(b->contents, &col);
+		cairo_rectangle(cr, 0, 0, fr->w, fr->h);
+		gdk_cairo_set_source_color(cr, &col);
+		cairo_fill(cr);
+
+	}
+	sc_block_list_free(bl);
+}
+
+
+
+static void do_background(cairo_t *cr, struct frame *fr)
+{
+	run_render_sc(cr, fr, fr->style->sc_prologue);
+	run_render_sc(cr, fr, fr->sc);
+}
+
+
 /* Render Level 1 Storycode (no subframes) */
-static int render_sc(struct frame *fr)
+static int render_sc(struct frame *fr, double scale)
 {
 	int i;
 	cairo_t *cr;
@@ -202,9 +240,13 @@ static int render_sc(struct frame *fr)
 
 	/* Create surface and Cairo stuff */
 	if ( fr->contents != NULL ) cairo_surface_destroy(fr->contents);
+	/* Rounding to get the bitmap size */
 	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-	                                          fr->w, fr->h);
+	                                          fr->pix_w, fr->pix_h);
 	cr = cairo_create(fr->contents);
+	cairo_scale(cr, scale, scale);
+
+	do_background(cr, fr);
 
 	cairo_font_options_t *fopts;
 	fopts = cairo_font_options_create();
@@ -216,6 +258,7 @@ static int render_sc(struct frame *fr)
 	/* Find and load font */
 	fontmap = pango_cairo_font_map_get_default();
 	pc = pango_font_map_create_context(fontmap);
+	pango_cairo_update_context(cr, pc);
 
 	/* Set up lines */
 	if ( wrap_contents(fr, pc) ) {
@@ -236,7 +279,7 @@ static int render_sc(struct frame *fr)
 }
 
 
-static int render_frame(struct frame *fr, cairo_t *cr)
+static int render_frame(struct frame *fr, double scale)
 {
 	if ( fr->num_children > 0 ) {
 
@@ -259,7 +302,7 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 			switch ( ch->lop.w_units ) {
 
 				case UNITS_SLIDE :
-				ch->w = ch->lop.w - mtot;
+				ch->w = ch->lop.w;
 				break;
 
 				case UNITS_FRAC :
@@ -273,7 +316,7 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 			switch ( ch->lop.h_units ) {
 
 				case UNITS_SLIDE :
-				ch->h = ch->lop.h - mtot;
+				ch->h = ch->lop.h;
 				break;
 
 				case UNITS_FRAC :
@@ -282,7 +325,10 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 
 			}
 
-			render_frame(ch, cr);
+			/* Rounding to get bitmap size */
+			ch->pix_w =  ch->w*scale;
+			ch->pix_h = ch->h*scale;
+			render_frame(ch, scale);
 
 			ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;
 			ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
@@ -291,7 +337,7 @@ static int render_frame(struct frame *fr, cairo_t *cr)
 
 	} else {
 
-		render_sc(fr);
+		render_sc(fr, scale);
 
 	}
 
@@ -338,33 +384,29 @@ void free_render_buffers_except_thumb(struct slide *s)
 }
 
 
-
-static void do_composite(struct frame *fr, cairo_t *cr)
+static void do_composite(struct frame *fr, cairo_t *cr, double scale)
 {
 	if ( fr->contents == NULL ) return;
 
-	cairo_save(cr);
-	cairo_rectangle(cr, fr->x, fr->y, fr->w, fr->h);
-	cairo_clip(cr);
-	cairo_set_source_surface(cr, fr->contents, fr->x, fr->y);
-	cairo_paint(cr);
-	cairo_restore(cr);
+	cairo_rectangle(cr, scale*fr->x, scale*fr->y, fr->pix_w, fr->pix_h);
+	cairo_set_source_surface(cr, fr->contents, scale*fr->x, scale*fr->y);
+	cairo_fill(cr);
 
+//	cairo_rectangle(cr, scale*fr->x, scale*fr->y, fr->pix_w, fr->pix_h);
 //	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-//	cairo_rectangle(cr, fr->x+0.5, fr->y+0.5, fr->w, fr->h);
 //	cairo_stroke(cr);
 }
 
 
 static int composite_frames_at_level(struct frame *fr, cairo_t *cr,
-                                     int level, int cur_level)
+                                     int level, int cur_level, double scale)
 {
 	int i;
 
 	if ( level == cur_level ) {
 
 		/* This frame is at the right level, so composite it */
-		do_composite(fr, cr);
+		do_composite(fr, cr, scale);
 		return 1;
 
 	} else {
@@ -373,7 +415,8 @@ static int composite_frames_at_level(struct frame *fr, cairo_t *cr,
 
 		for ( i=0; i<fr->num_children; i++ ) {
 			n += composite_frames_at_level(fr->children[i], cr,
-			                               level, cur_level+1);
+			                               level, cur_level+1,
+			                               scale);
 		}
 
 		return n;
@@ -382,22 +425,73 @@ static int composite_frames_at_level(struct frame *fr, cairo_t *cr,
 }
 
 
-static void composite_slide(struct slide *s, cairo_t *cr)
+static void composite_slide(struct slide *s, cairo_t *cr, double scale)
 {
 	int level = 0;
 	int more = 0;
 
 	do {
-		more = composite_frames_at_level(s->top, cr, level, 0);
+		more = composite_frames_at_level(s->top, cr, level, 0, scale);
 		level++;
 	} while ( more != 0 );
 }
 
 
-cairo_surface_t *render_slide(struct slide *s, int w, int h)
+static void show_heirarchy(struct frame *fr, const char *t)
+{
+	int i;
+	char tn[1024];
+
+	strcpy(tn, t);
+	strcat(tn, "  |-> ");
+
+	printf("%s%p %s (%i x %i) / (%.2f x %.2f)\n", t, fr, fr->sc,
+	       fr->pix_w, fr->pix_h, fr->w, fr->h);
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		if ( fr->children[i] != fr ) {
+			show_heirarchy(fr->children[i], tn);
+		} else {
+			printf("%s<this frame>\n", tn);
+		}
+	}
+
+}
+
+
+
+/**
+ * render_slide:
+ * @s: A slide.
+ * @w: Width of the bitmap to produce
+ * @ww: Width of the slide in Cairo units
+ * @hh: Height of the slide in Cairo units
+ *
+ * Render the entire slide.
+ */
+cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
+	int h;
+	double scale;
+
+	h = (hh/ww)*w;
+	scale = w/ww;
+
+	if ( s->top->style != NULL ) {
+		memcpy(&s->top->lop, &s->top->style->lop,
+		       sizeof(struct layout_parameters));
+	}
+	s->top->lop.x = 0.0;
+	s->top->lop.y = 0.0;
+	s->top->lop.w = ww;
+	s->top->lop.h = hh;
+	s->top->w = ww;
+	s->top->h = hh;
+	s->top->pix_w = w;
+	s->top->pix_h = h;
+	render_frame(s->top, scale);
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 
@@ -412,19 +506,9 @@ cairo_surface_t *render_slide(struct slide *s, int w, int h)
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 
-	if ( s->top->style != NULL ) {
-		memcpy(&s->top->lop, &s->top->style->lop,
-		       sizeof(struct layout_parameters));
-	}
-	s->top->lop.x = 0.0;
-	s->top->lop.y = 0.0;
-	s->top->lop.w = w;
-	s->top->lop.h = h;
-	s->top->w = w;
-	s->top->h = h;
-	render_frame(s->top, cr);
+	show_heirarchy(s->top, "");
 
-	composite_slide(s, cr);
+	composite_slide(s, cr, scale);
 
 	cairo_destroy(cr);
 	recursive_buffer_free(s->top);

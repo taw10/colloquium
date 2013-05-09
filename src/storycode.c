@@ -259,6 +259,8 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 	char *tbuf;
 	size_t len, i, j, start;
 
+	if ( sc == NULL ) return NULL;
+
 	bl = sc_block_list_new();
 	if ( bl == NULL ) return NULL;
 

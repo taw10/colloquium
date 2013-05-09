@@ -189,11 +189,7 @@ static void run_render_sc(cairo_t *cr, struct frame *fr, const char *sc)
 	struct scblock *b;
 
 	bl = sc_find_blocks(sc, "bgcol");
-
-	if ( bl == NULL ) {
-		printf("Failed to find blocks.\n");
-		return;
-	}
+	if ( bl == NULL ) return;
 
 	for ( b = sc_block_list_first(bl, &iter);
 	      b != NULL;
@@ -506,7 +502,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh)
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 
-	show_heirarchy(s->top, "");
+	//show_heirarchy(s->top, "");
 
 	composite_slide(s, cr, scale);
 

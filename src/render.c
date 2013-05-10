@@ -497,11 +497,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh)
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-	cairo_set_line_width(cr, 1.0);
-	cairo_stroke(cr);
-
 	//show_heirarchy(s->top, "");
 
 	composite_slide(s, cr, scale);

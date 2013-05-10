@@ -211,7 +211,9 @@ static void run_render_sc(cairo_t *cr, struct frame *fr, const char *sc)
 
 static void do_background(cairo_t *cr, struct frame *fr)
 {
-	run_render_sc(cr, fr, fr->style->sc_prologue);
+	if ( fr->style != NULL ) {
+		run_render_sc(cr, fr, fr->style->sc_prologue);
+	}
 	run_render_sc(cr, fr, fr->sc);
 }
 

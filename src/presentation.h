@@ -50,6 +50,22 @@ struct slide
 };
 
 
+enum drag_reason
+{
+	DRAG_REASON_NONE,
+	DRAG_REASON_CREATE,
+	DRAG_REASON_IMPORT,
+};
+
+
+enum drag_status
+{
+	DRAG_STATUS_NONE,
+	DRAG_STATUS_COULD_DRAG,
+	DRAG_STATUS_DRAGGING,
+};
+
+
 struct presentation
 {
 	char             *titlebar;
@@ -92,6 +108,14 @@ struct presentation
 	 * editing window. */
 	double            border_offs_x;
 	double            border_offs_y;
+
+	/* Rubber band boxes and related stuff */
+	double            start_corner_x;
+	double            start_corner_y;
+	double            drag_corner_x;
+	double            drag_corner_y;
+	enum drag_reason  drag_reason;
+	enum drag_status  drag_status;
 
 	/* Slideshow stuff */
 	GtkWidget        *slideshow;

@@ -805,6 +805,20 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 	if ( p->n_selection == 1 ) {
 		draw_caret(cr, p->selection[0], p->cursor_pos);
 	}
+
+	if ( (p->drag_status == DRAG_STATUS_DRAGGING)
+	  && ((p->drag_reason == DRAG_REASON_CREATE)
+	      || (p->drag_reason == DRAG_REASON_IMPORT)) )
+	{
+		cairo_new_path(cr);
+		cairo_rectangle(cr, p->start_corner_x, p->start_corner_y,
+		                    p->drag_corner_x - p->start_corner_x,
+		                    p->drag_corner_y - p->start_corner_y);
+		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+		cairo_set_line_width(cr, 0.5);
+		cairo_stroke(cr);
+	}
+
 }
 
 
@@ -927,6 +941,148 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 
 	insert_text(p->selection[0], str, p);
 
+	return FALSE;
+}
+
+
+static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
+                                 struct presentation *p)
+{
+	struct frame *clicked;
+	gdouble x, y;
+
+	x = event->x - p->border_offs_x;
+	y = event->y - p->border_offs_y;
+
+	clicked = NULL;//find_object_at_position(p->cur_edit_slide, x, y);
+
+	if ( clicked == NULL ) {
+
+		/* Clicked no object. Deselect old object and set up for
+		 * (maybe) creating a new one. */
+
+		set_selection(p, NULL);
+		p->start_corner_x = event->x - p->border_offs_x;
+		p->start_corner_y = event->y - p->border_offs_y;
+		p->drag_status = DRAG_STATUS_COULD_DRAG;
+		p->drag_reason = DRAG_REASON_CREATE;
+
+	} else {
+
+		/* If the clicked object is not the same as the previously
+		 * selected one, deselect the old one. */
+		if ( p->selection[0] != clicked ) {
+			set_selection(p, NULL);
+		}
+
+		p->drag_status = DRAG_STATUS_NONE;
+		p->drag_reason = DRAG_REASON_NONE;
+
+		set_selection(p, clicked);
+
+	}
+
+	gtk_widget_grab_focus(GTK_WIDGET(da));
+	redraw_editor(p);
+	return FALSE;
+}
+
+
+static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
+                           struct presentation *p)
+{
+	if ( p->drag_status == DRAG_STATUS_COULD_DRAG ) {
+
+		/* We just got a motion signal, and the status was "could drag",
+		 * therefore the drag has started. */
+		p->drag_status = DRAG_STATUS_DRAGGING;
+
+	}
+
+	switch ( p->drag_reason ) {
+
+		case DRAG_REASON_NONE :
+		break;
+
+		case DRAG_REASON_CREATE :
+		p->drag_corner_x = event->x - p->border_offs_x;
+		p->drag_corner_y = event->y - p->border_offs_y;
+		redraw_editor(p);
+		break;
+
+		case DRAG_REASON_IMPORT :
+		/* Do nothing, handled by dnd_motion() */
+		break;
+
+	}
+
+	gdk_event_request_motions(event);
+	return FALSE;
+}
+
+
+static void create_frame(struct presentation *p, double x, double y,
+                         double w, double h)
+{
+	struct frame *parent;
+	struct frame *fr;
+
+	if ( p->n_selection != 1 ) {
+		parent = p->cur_edit_slide->top;
+	} else {
+		parent = p->selection[0];
+	}
+
+	fr = add_subframe(parent);
+	fr->sc = strdup("New frame!");
+	fr->style = NULL;
+	fr->lop.x = x;
+	fr->lop.y = y;
+	fr->lop.w = w;
+	fr->lop.h = h;
+	rerender_slide(p);
+	set_selection(p, fr);
+}
+
+
+static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
+                                   struct presentation *p)
+{
+	gdouble x, y;
+
+	x = event->x - p->border_offs_x;
+	y = event->y - p->border_offs_y;
+
+	/* Not dragging?  Then I don't care. */
+	if ( p->drag_status != DRAG_STATUS_DRAGGING ) return FALSE;
+
+	p->drag_corner_x = x;
+	p->drag_corner_y = y;
+	p->drag_status = DRAG_STATUS_NONE;
+
+	switch ( p->drag_reason )
+	{
+
+		case DRAG_REASON_NONE :
+		printf("Release on pointless drag.\n");
+		break;
+
+		case DRAG_REASON_CREATE :
+		create_frame(p, p->start_corner_x, p->start_corner_y,
+		                p->drag_corner_x - p->start_corner_x,
+		                p->drag_corner_y - p->start_corner_y);
+		break;
+
+		case DRAG_REASON_IMPORT :
+		/* Do nothing, handled in dnd_drop() or dnd_leave() */
+		break;
+
+	}
+
+	p->drag_reason = DRAG_REASON_NONE;
+
+	gtk_widget_grab_focus(GTK_WIDGET(da));
+	redraw_editor(p);
 	return FALSE;
 }
 
@@ -1098,6 +1254,12 @@ int open_mainwindow(struct presentation *p)
 	gtk_box_pack_start(GTK_BOX(vbox), sw, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(p->drawingarea), "realize",
 	                 G_CALLBACK(realise_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "button-press-event",
+			 G_CALLBACK(button_press_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "button-release-event",
+			 G_CALLBACK(button_release_sig), p);
+	g_signal_connect(G_OBJECT(p->drawingarea), "motion-notify-event",
+			 G_CALLBACK(motion_sig), p);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(p->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(p->drawingarea),

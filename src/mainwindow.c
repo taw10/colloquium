@@ -555,6 +555,7 @@ static gint add_furniture(GtkWidget *widget, struct presentation *p)
 
 	fr = add_subframe(p->cur_edit_slide->top);
 	fr->style = sty;
+	fr->lop_from_style = 1;
 	set_edit(p, p->cur_edit_slide);
 	fr->sc = strdup("Hello");
 	fr->sc_len = 6;
@@ -1035,7 +1036,8 @@ static void create_frame(struct presentation *p, double x, double y,
 
 	fr = add_subframe(parent);
 	fr->sc = strdup("New frame!");
-	fr->style = NULL;
+	fr->style = find_style(p->ss, "Content");
+	fr->lop_from_style = 0;
 	fr->lop.x = x;
 	fr->lop.y = y;
 	fr->lop.w = w;

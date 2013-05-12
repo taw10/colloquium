@@ -92,7 +92,8 @@ struct frame
 	size_t                    pos;
 
 	struct layout_parameters  lop;
-	struct style             *style;  /* Non-NULL if 'lop' came from SS */
+	struct style             *style;
+	int                       lop_from_style;/* Trye if lop came from SS */
 
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;

@@ -289,7 +289,7 @@ static int render_frame(struct frame *fr, double scale)
 			struct frame *ch = fr->children[i];
 			double mtot;
 
-			if ( ch->style != NULL ) {
+			if ( (ch->style != NULL) && ch->lop_from_style ) {
 				memcpy(&ch->lop, &ch->style->lop,
 				       sizeof(struct layout_parameters));
 			}

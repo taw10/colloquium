@@ -159,10 +159,10 @@ void default_stylesheet(StyleSheet *ss)
 	add_to_template(acknowledgements, sty);
 
 	sty = new_style(ss, "Content");
-	sty->lop.margin_l = 0.0;
-	sty->lop.margin_r = 0.0;
-	sty->lop.margin_t = 0.0;
-	sty->lop.margin_b = 0.0;
+	sty->lop.margin_l = 10.0;
+	sty->lop.margin_r = 10.0;
+	sty->lop.margin_t = 120.0;
+	sty->lop.margin_b = 10.0;
 	sty->lop.pad_l = 20.0;
 	sty->lop.pad_r = 20.0;
 	sty->lop.pad_t = 20.0;
@@ -173,7 +173,7 @@ void default_stylesheet(StyleSheet *ss)
 	sty->lop.h_units = UNITS_FRAC;
 	sty->lop.x = 0.0;
 	sty->lop.y = 0.0;
-	sty->sc_prologue = strdup("\\bgcol{#00a6eb}\\fgcol{#ffffff}"
+	sty->sc_prologue = strdup("\\bgcol{#dddddd}\\fgcol{#ffffff}"
 	                          "\\font[Sans 24]");
 	add_to_template(acknowledgements, sty);
 }

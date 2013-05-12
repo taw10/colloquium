@@ -946,6 +946,12 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 }
 
 
+static struct frame *find_frame_at_position(struct slide *slide,
+                                            double x, double y)
+{
+}
+
+
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  struct presentation *p)
 {
@@ -955,7 +961,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
-	clicked = NULL;//find_object_at_position(p->cur_edit_slide, x, y);
+	clicked = find_frame_at_position(p->cur_edit_slide, x, y);
 
 	if ( clicked == NULL ) {
 

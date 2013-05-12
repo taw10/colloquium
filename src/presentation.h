@@ -117,6 +117,14 @@ struct presentation
 	enum drag_reason  drag_reason;
 	enum drag_status  drag_status;
 
+	/* Stuff to do with drag and drop import of "content" */
+	int               drag_preview_pending;
+	int               have_drag_data;
+	int               drag_highlight;
+	double            import_width;
+	double            import_height;
+	int               import_acceptable;
+
 	/* Slideshow stuff */
 	GtkWidget        *slideshow;
 	GtkWidget        *ss_drawingarea;

@@ -1288,19 +1288,19 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 	if ( p->drag_preview_pending ) {
 
 		gchar *filename = NULL;
-		GError *error = NULL;
 		GdkPixbufFormat *f;
-		const gchar *uri;
+		gchar **uris;
 		int w, h;
 
 		p->have_drag_data = 1;
 		p->drag_preview_pending = 0;
-		uri = (gchar *)gtk_selection_data_get_text(seldata); /* Yuk */
-
-		printf("Testing '%s'\n", uri);
-		if ( uri != NULL ) {
-			filename = g_filename_from_uri(uri, NULL, &error);
+		uris = gtk_selection_data_get_uris(seldata);
+		if ( uris != NULL ) {
+			filename = g_filename_from_uri(uris[0], NULL, NULL);
 		}
+		g_strfreev(uris);
+
+		printf("Testing '%s'\n", filename);
 		if ( filename == NULL ) {
 
 			/* This doesn't even look like a sensible URI.
@@ -1336,7 +1336,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		} else {
 
 			/* Looks like a sensible image */
-			gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
+			gdk_drag_status(drag_context, GDK_ACTION_PRIVATE, time);
 			p->import_acceptable = 1;
 
 			if ( !p->drag_highlight ) {
@@ -1352,13 +1352,15 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 	} else {
 
-		gchar *uri;
-		char *filename;
-		GError *error = NULL;
+		gchar **uris;
+		char *filename = NULL;
 
-		uri = (gchar *)gtk_selection_data_get_text(seldata);  /* Yuk */
+		uris = gtk_selection_data_get_uris(seldata);
+		if ( uris != NULL ) {
+			filename = g_filename_from_uri(uris[0], NULL, NULL);
+		}
+		g_strfreev(uris);
 
-		filename = g_filename_from_uri(uri, NULL, &error);
 		if ( filename != NULL ) {
 
 			gtk_drag_finish(drag_context, TRUE, FALSE, time);

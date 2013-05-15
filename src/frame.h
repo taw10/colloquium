@@ -115,5 +115,6 @@ struct frame
 extern struct frame *frame_new(void);
 extern struct frame *add_subframe(struct frame *fr);
 extern struct frame *sc_unpack(const char *sc);
+extern void show_heirarchy(struct frame *fr, const char *t);
 
 #endif	/* FRAME_H */

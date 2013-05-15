@@ -279,65 +279,59 @@ static int render_sc(struct frame *fr, double scale)
 
 static int render_frame(struct frame *fr, double scale)
 {
-	if ( fr->num_children > 0 ) {
+	int i;
 
-		int i;
+	/* Render all subframes */
+	for ( i=0; i<fr->num_children; i++ ) {
 
-		/* Render all subframes */
-		for ( i=0; i<fr->num_children; i++ ) {
+		struct frame *ch = fr->children[i];
+		double mtot;
 
-			struct frame *ch = fr->children[i];
-			double mtot;
-
-			if ( (ch->style != NULL) && ch->lop_from_style ) {
-				memcpy(&ch->lop, &ch->style->lop,
-				       sizeof(struct layout_parameters));
-			}
+		if ( (ch->style != NULL) && ch->lop_from_style ) {
+			memcpy(&ch->lop, &ch->style->lop,
+			       sizeof(struct layout_parameters));
+		}
 
 
-			mtot = ch->lop.margin_l + ch->lop.margin_r;
-			mtot += fr->lop.pad_l + fr->lop.pad_r;
-			switch ( ch->lop.w_units ) {
+		mtot = ch->lop.margin_l + ch->lop.margin_r;
+		mtot += fr->lop.pad_l + fr->lop.pad_r;
+		switch ( ch->lop.w_units ) {
 
-				case UNITS_SLIDE :
-				ch->w = ch->lop.w;
-				break;
+			case UNITS_SLIDE :
+			ch->w = ch->lop.w;
+			break;
 
-				case UNITS_FRAC :
-				ch->w = fr->w * ch->lop.w - mtot;
-				break;
-
-			}
-
-			mtot = ch->lop.margin_t + ch->lop.margin_b;
-			mtot += fr->lop.pad_t + fr->lop.pad_b;
-			switch ( ch->lop.h_units ) {
-
-				case UNITS_SLIDE :
-				ch->h = ch->lop.h;
-				break;
-
-				case UNITS_FRAC :
-				ch->h = fr->h * ch->lop.h - mtot;
-				break;
-
-			}
-
-			/* Rounding to get bitmap size */
-			ch->pix_w =  ch->w*scale;
-			ch->pix_h = ch->h*scale;
-			render_frame(ch, scale);
-
-			ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;
-			ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
+			case UNITS_FRAC :
+			ch->w = fr->w * ch->lop.w - mtot;
+			break;
 
 		}
 
-	} else {
+		mtot = ch->lop.margin_t + ch->lop.margin_b;
+		mtot += fr->lop.pad_t + fr->lop.pad_b;
+		switch ( ch->lop.h_units ) {
 
-		render_sc(fr, scale);
+			case UNITS_SLIDE :
+			ch->h = ch->lop.h;
+			break;
+
+			case UNITS_FRAC :
+			ch->h = fr->h * ch->lop.h - mtot;
+			break;
+
+		}
+
+		/* Rounding to get bitmap size */
+		ch->pix_w =  ch->w*scale;
+		ch->pix_h = ch->h*scale;
+		render_frame(ch, scale);
+
+		ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;
+		ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
 
 	}
+
+	render_sc(fr, scale);
 
 	return 0;
 }
@@ -433,29 +427,6 @@ static void composite_slide(struct slide *s, cairo_t *cr, double scale)
 		level++;
 	} while ( more != 0 );
 }
-
-
-static void show_heirarchy(struct frame *fr, const char *t)
-{
-	int i;
-	char tn[1024];
-
-	strcpy(tn, t);
-	strcat(tn, "  |-> ");
-
-	printf("%s%p %s (%i x %i) / (%.2f x %.2f)\n", t, fr, fr->sc,
-	       fr->pix_w, fr->pix_h, fr->w, fr->h);
-
-	for ( i=0; i<fr->num_children; i++ ) {
-		if ( fr->children[i] != fr ) {
-			show_heirarchy(fr->children[i], tn);
-		} else {
-			printf("%s<this frame>\n", tn);
-		}
-	}
-
-}
-
 
 
 /**

@@ -94,6 +94,8 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	*xposd = 0;
 	*yposd = 0;
 
+	if ( fr->n_lines == 0 ) return;
+
 	line = 0;
 	for ( i=0; i<fr->n_lines; i++ ) {
 		if ( fr->lines[i].sc_offset > pos ) {

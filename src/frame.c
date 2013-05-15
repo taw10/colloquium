@@ -85,27 +85,6 @@ struct frame *add_subframe(struct frame *fr)
 }
 
 
-static void show_heirarchy(struct frame *fr, const char *t)
-{
-	int i;
-	char tn[1024];
-
-	strcpy(tn, t);
-	strcat(tn, "  |-> ");
-
-	printf("%s%p %s\n", t, fr, fr->sc);
-
-	for ( i=0; i<fr->num_children; i++ ) {
-		if ( fr->children[i] != fr ) {
-			show_heirarchy(fr->children[i], tn);
-		} else {
-			printf("%s<this frame>\n", tn);
-		}
-	}
-
-}
-
-
 static int recursive_unpack(struct frame *fr, const char *sc)
 {
 	SCBlockList *bl;
@@ -151,3 +130,20 @@ struct frame *sc_unpack(const char *sc)
 	return fr;
 }
 
+
+void show_heirarchy(struct frame *fr, const char *t)
+{
+	int i;
+	char tn[1024];
+
+	strcpy(tn, t);
+	strcat(tn, "      ");
+
+	printf("%s%p %s %p (%i x %i) / (%.2f x %.2f)\n", t, fr, fr->sc, fr->contents,
+	       fr->pix_w, fr->pix_h, fr->w, fr->h);
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		show_heirarchy(fr->children[i], tn);
+	}
+
+}

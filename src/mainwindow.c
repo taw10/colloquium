@@ -1028,8 +1028,8 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 }
 
 
-static void create_frame(struct presentation *p, double x, double y,
-                         double w, double h)
+static struct frame *create_frame(struct presentation *p, double x, double y,
+                                  double w, double h)
 {
 	struct frame *parent;
 	struct frame *fr;
@@ -1041,15 +1041,15 @@ static void create_frame(struct presentation *p, double x, double y,
 	}
 
 	fr = add_subframe(parent);
-	fr->sc = strdup("New frame!");
+	fr->sc = NULL;
 	fr->style = find_style(p->ss, "Content");
 	fr->lop_from_style = 0;
 	fr->lop.x = x;
 	fr->lop.y = y;
 	fr->lop.w = w;
 	fr->lop.h = h;
-	rerender_slide(p);
-	set_selection(p, fr);
+
+	return fr;
 }
 
 
@@ -1057,6 +1057,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
                                    struct presentation *p)
 {
 	gdouble x, y;
+	struct frame *fr;
 
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
@@ -1076,9 +1077,12 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		break;
 
 		case DRAG_REASON_CREATE :
-		create_frame(p, p->start_corner_x, p->start_corner_y,
-		                p->drag_corner_x - p->start_corner_x,
-		                p->drag_corner_y - p->start_corner_y);
+		fr = create_frame(p, p->start_corner_x, p->start_corner_y,
+		                     p->drag_corner_x - p->start_corner_x,
+		                     p->drag_corner_y - p->start_corner_y);
+		fr->sc = strdup("");
+		rerender_slide(p);
+		set_selection(p, fr);
 		break;
 
 		case DRAG_REASON_IMPORT :
@@ -1300,7 +1304,6 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		}
 		g_strfreev(uris);
 
-		printf("Testing '%s'\n", filename);
 		if ( filename == NULL ) {
 
 			/* This doesn't even look like a sensible URI.
@@ -1363,10 +1366,27 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 		if ( filename != NULL ) {
 
+			struct frame *fr;
+			char *sc;
+
 			gtk_drag_finish(drag_context, TRUE, FALSE, time);
 			chomp(filename);
-			printf("Adding '%s'\n", filename);
-			/* FIXME: Actually add it */
+
+			sc = malloc(strlen(filename)+10);
+			if ( sc == NULL ) {
+				free(filename);
+				fprintf(stderr, "Failed to allocate SC\n");
+				return;
+			}
+
+			fr = create_frame(p, p->start_corner_x,
+			                  p->start_corner_y,
+		                          p->drag_corner_x - p->start_corner_x,
+		                          p->drag_corner_y - p->start_corner_y);
+			fr->sc = sc;
+			rerender_slide(p);
+			set_selection(p, fr);
+			redraw_editor(p);
 			free(filename);
 		}
 

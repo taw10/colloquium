@@ -484,10 +484,8 @@ static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
 	{
 
 		if ( b->name == NULL ) {
-			if ( split_words(boxes, pc, b->contents, b->offset,
-			                 lang, &fonts[(*n_fonts)-1]) ) {
-				fprintf(stderr, "Splitting failed.\n");
-			}
+			split_words(boxes, pc, b->contents, b->offset,
+			            lang, &fonts[(*n_fonts)-1]);
 
 		} else if ( (strcmp(b->name, "font")==0)
 		         && (b->contents == NULL) ) {

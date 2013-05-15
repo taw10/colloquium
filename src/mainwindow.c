@@ -1389,7 +1389,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		                          p->drag_corner_y - p->start_corner_y);
 			fr->sc = sc;
 			fr->sc_len = len;
-			show_hierarchy(fr, "");
+			show_hierarchy(p->cur_edit_slide->top, "");
 			rerender_slide(p);
 			set_selection(p, fr);
 			redraw_editor(p);

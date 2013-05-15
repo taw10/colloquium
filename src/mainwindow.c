@@ -1081,6 +1081,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		                     p->drag_corner_x - p->start_corner_x,
 		                     p->drag_corner_y - p->start_corner_y);
 		fr->sc = strdup("");
+		fr->sc_len = 1;
 		rerender_slide(p);
 		set_selection(p, fr);
 		break;
@@ -1368,22 +1369,27 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 			struct frame *fr;
 			char *sc;
+			size_t len;
 
 			gtk_drag_finish(drag_context, TRUE, FALSE, time);
 			chomp(filename);
 
-			sc = malloc(strlen(filename)+10);
+			len = strlen(filename)+10;
+			sc = malloc(len);
 			if ( sc == NULL ) {
 				free(filename);
 				fprintf(stderr, "Failed to allocate SC\n");
 				return;
 			}
+			snprintf(sc, len, "\\image{%s}", filename);
 
 			fr = create_frame(p, p->start_corner_x,
 			                  p->start_corner_y,
 		                          p->drag_corner_x - p->start_corner_x,
 		                          p->drag_corner_y - p->start_corner_y);
 			fr->sc = sc;
+			fr->sc_len = len;
+			show_hierarchy(fr, "");
 			rerender_slide(p);
 			set_selection(p, fr);
 			redraw_editor(p);

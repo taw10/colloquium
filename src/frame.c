@@ -62,6 +62,7 @@ struct frame *frame_new()
 
 	n->pl = NULL;
 	n->contents = NULL;
+	n->sc = NULL;
 
 	return n;
 }
@@ -125,13 +126,13 @@ struct frame *sc_unpack(const char *sc)
 		return NULL;
 	}
 
-	show_heirarchy(fr, "");
+	show_hierarchy(fr, "");
 
 	return fr;
 }
 
 
-void show_heirarchy(struct frame *fr, const char *t)
+void show_hierarchy(struct frame *fr, const char *t)
 {
 	int i;
 	char tn[1024];
@@ -143,7 +144,7 @@ void show_heirarchy(struct frame *fr, const char *t)
 	       fr->pix_w, fr->pix_h, fr->w, fr->h);
 
 	for ( i=0; i<fr->num_children; i++ ) {
-		show_heirarchy(fr->children[i], tn);
+		show_hierarchy(fr->children[i], tn);
 	}
 
 }

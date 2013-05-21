@@ -79,7 +79,7 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 
 	w = lrint(pango_units_to_double(scale*box->width));
 	pixbuf = lookup_image(is, box->filename, w, isz);
-	show_imagestore(is);
+	//show_imagestore(is);
 
 	if ( pixbuf == NULL ) {
 		cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);

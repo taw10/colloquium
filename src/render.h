@@ -31,7 +31,8 @@
 #include "imagestore.h"
 
 extern cairo_surface_t *render_slide(struct slide *s, int w,
-                                     double ww, double hh, ImageStore *is);
+                                     double ww, double hh, ImageStore *is,
+                                     enum is_size isz);
 extern void free_render_buffers(struct slide *s);
 extern void free_render_buffers_except_thumb(struct slide *s);
 

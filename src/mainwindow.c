@@ -48,13 +48,16 @@ void rerender_slide(struct presentation *p)
 	free_render_buffers(s);
 
 	s->rendered_thumb = render_slide(s, s->parent->thumb_slide_width,
-		                        p->slide_width, p->slide_height, p->is);
+		                        p->slide_width, p->slide_height, p->is,
+		                        ISZ_THUMBNAIL);
 
 	s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
-		                        p->slide_width, p->slide_height, p->is);
+		                        p->slide_width, p->slide_height, p->is,
+		                        ISZ_EDITOR);
 
 	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
-		                        p->slide_width, p->slide_height, p->is);
+		                        p->slide_width, p->slide_height, p->is,
+		                        ISZ_SLIDESHOW);
 }
 
 
@@ -66,13 +69,13 @@ static void render_edit_and_proj(struct presentation *p)
 	if ( s->rendered_edit == NULL ) {
 		s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
 		                               p->slide_width, p->slide_height,
-		                               p->is);
+		                               p->is, ISZ_EDITOR);
 	}
 
 	if ( s->rendered_proj == NULL ) {
 		s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
 		                               p->slide_width, p->slide_height,
-		                               p->is);
+		                               p->is, ISZ_SLIDESHOW);
 	}
 }
 
@@ -1372,23 +1375,25 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			struct frame *fr;
 			char *sc;
 			size_t len;
+			int w, h;
 
 			gtk_drag_finish(drag_context, TRUE, FALSE, time);
 			chomp(filename);
 
-			len = strlen(filename)+10;
+			w = p->drag_corner_x - p->start_corner_x;
+			h = p->drag_corner_y - p->start_corner_y;
+
+			len = strlen(filename)+64;
 			sc = malloc(len);
 			if ( sc == NULL ) {
 				free(filename);
 				fprintf(stderr, "Failed to allocate SC\n");
 				return;
 			}
-			snprintf(sc, len, "\\image{%s}", filename);
+			snprintf(sc, len, "\\image[%ix%i]{%s}", w, h, filename);
 
 			fr = create_frame(p, p->start_corner_x,
-			                  p->start_corner_y,
-		                          p->drag_corner_x - p->start_corner_x,
-		                          p->drag_corner_y - p->start_corner_y);
+			                     p->start_corner_y, w, h);
 			fr->sc = sc;
 			fr->sc_len = len;
 			show_hierarchy(p->cur_edit_slide->top, "");

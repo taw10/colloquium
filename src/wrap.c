@@ -483,6 +483,34 @@ static void pop_font(struct sc_font *stack, int *n_fonts, int *max_fonts)
 }
 
 
+static int get_size(const char *a, int *wp, int *hp)
+{
+	char *x;
+	char *ws;
+	char *hs;
+
+	x = index(a, 'x');
+	if ( x == NULL ) goto invalid;
+
+	if ( rindex(a, 'x') != x ) goto invalid;
+
+	ws = strndup(a, x-a);
+	hs = strdup(x+1);
+
+	*wp = strtoul(ws, NULL, 10);
+	*hp = strtoul(hs, NULL, 10);
+
+	free(ws);
+	free(hs);
+
+	return 0;
+
+invalid:
+	fprintf(stderr, "Invalid dimensions '%s'\n", a);
+	return 1;
+}
+
+
 static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
                    int *max_fonts, PangoContext *pc, struct wrap_line *boxes,
                    PangoLanguage *lang)
@@ -518,10 +546,12 @@ static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
 			       boxes, lang);
 			pop_font(fonts, n_fonts, max_fonts);
 		} else if ( (strcmp(b->name, "image")==0)
-		         && (b->contents != NULL) ) {
-		        /* FIXME: Proper w/h from SC */
-			add_image_box(boxes, b->contents, b->offset,
-			              100.0, 100.0);
+		         && (b->contents != NULL) && (b->options != NULL) ) {
+			int w, h;
+			if ( get_size(b->options, &w, &h) == 0 ) {
+				add_image_box(boxes, b->contents, b->offset,
+				              w, h);
+			}
 		}
 
 	}

@@ -1,5 +1,5 @@
 /*
- * render.h
+ * imagestore.h
  *
  * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
  *
@@ -20,19 +20,32 @@
  *
  */
 
-#ifndef RENDER_H
-#define RENDER_H
+#ifndef IMAGESTORE_H
+#define IMAGESTORE_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include "presentation.h"
-#include "imagestore.h"
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
-extern cairo_surface_t *render_slide(struct slide *s, int w,
-                                     double ww, double hh, ImageStore *is);
-extern void free_render_buffers(struct slide *s);
-extern void free_render_buffers_except_thumb(struct slide *s);
 
-#endif	/* RENDER_H */
+typedef struct _imagestore ImageStore;
+
+enum is_size {
+	ISZ_SLIDESHOW = 0,
+	ISZ_EDITOR = 1,
+	ISZ_THUMBNAIL = 2,
+	NUM_ISZ_SIZES
+};
+
+extern ImageStore *imagestore_new(void);
+
+extern void imagestore_destroy(ImageStore *is);
+
+extern GdkPixbuf *lookup_image(ImageStore *is, const char *filename, int w,
+                               enum is_size isz);
+
+extern void show_imagestore(ImageStore *is);
+
+#endif	/* IMAGESTORE_H */

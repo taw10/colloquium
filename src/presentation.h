@@ -31,6 +31,7 @@
 #include <gtk/gtk.h>
 
 #include "stylesheet.h"
+#include "imagestore.h"
 
 struct slide
 {
@@ -81,6 +82,7 @@ struct presentation
 	GtkWidget       **menu_rebuild_list;
 	int               n_menu_rebuild;
 	PangoContext     *pc;
+	ImageStore       *is;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;

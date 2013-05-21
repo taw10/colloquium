@@ -48,13 +48,13 @@ void rerender_slide(struct presentation *p)
 	free_render_buffers(s);
 
 	s->rendered_thumb = render_slide(s, s->parent->thumb_slide_width,
-		                        p->slide_width, p->slide_height);
+		                        p->slide_width, p->slide_height, p->is);
 
 	s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
-		                        p->slide_width, p->slide_height);
+		                        p->slide_width, p->slide_height, p->is);
 
 	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
-		                        p->slide_width, p->slide_height);
+		                        p->slide_width, p->slide_height, p->is);
 }
 
 
@@ -65,12 +65,14 @@ static void render_edit_and_proj(struct presentation *p)
 
 	if ( s->rendered_edit == NULL ) {
 		s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
-		                               p->slide_width, p->slide_height);
+		                               p->slide_width, p->slide_height,
+		                               p->is);
 	}
 
 	if ( s->rendered_proj == NULL ) {
 		s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
-		                               p->slide_width, p->slide_height);
+		                               p->slide_width, p->slide_height,
+		                               p->is);
 	}
 }
 

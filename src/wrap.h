@@ -76,7 +76,7 @@ struct wrap_box
 	double col[4];  /* rgba colour */
 
 	/* For type == WRAP_BOX_IMAGE */
-	/* Nothing yet */
+	char *filename;
 };
 
 

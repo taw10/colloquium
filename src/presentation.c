@@ -35,6 +35,7 @@
 #include "loadsave.h"
 #include "mainwindow.h"
 #include "frame.h"
+#include "imagestore.h"
 
 
 static int num_presentations = 0;
@@ -54,6 +55,7 @@ void free_presentation(struct presentation *p)
 
 	/* FIXME: Loads of stuff leaks here */
 	free(p->filename);
+	imagestore_destroy(p->is);
 	free(p);
 
 	if ( final ) {
@@ -246,6 +248,8 @@ struct presentation *new_presentation()
 	new->n_selection = 0;
 	new->max_selection = 64;
 	if ( alloc_selection(new) ) return NULL;
+
+	new->is = imagestore_new();
 
 	return new;
 }

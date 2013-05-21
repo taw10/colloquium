@@ -56,7 +56,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	cairo_fill(cr);
 
 	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
-	s->rendered_edit = render_slide(s, w, w, h);
+	s->rendered_edit = render_slide(s, w, w, h, NULL);
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_surface(cr, s->rendered_edit, 0.0, 0.0);
 	cairo_fill(cr);
@@ -118,7 +118,9 @@ int main(int argc, char *argv[])
 	sty2->name = strdup("Subframe1");
 
 	fr->style = sty;
+	fr->lop_from_style = 1;
 	fr->children[0]->style = sty2;
+	fr->children[0]->lop_from_style = 1;
 
 	s.top = fr;
 	s.rendered_edit = NULL;

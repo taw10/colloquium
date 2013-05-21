@@ -108,7 +108,10 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 		/* Cursor is on the last line */
 		line = fr->n_lines-1;
 	}
-	assert(line >= 0);
+	if ( line < 0 ) {
+		printf("Couldn't find cursor.\n");
+		return;
+	}
 	for ( i=0; i<line; i++ ) {
 		*yposd += fr->lines[i].height;
 	}
@@ -315,6 +318,23 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 }
 
 
+static void add_image_box(struct wrap_line *line, const char *filename,
+                          size_t offset, int w, int h)
+{
+	struct wrap_box *box;
+
+	box = &line->boxes[line->n_boxes];
+	box->sc_offset = offset;
+	box->type = WRAP_BOX_IMAGE;
+	box->space = WRAP_SPACE_NONE;
+	box->width = pango_units_from_double(w);
+	box->ascent = pango_units_from_double(h);
+	box->height = pango_units_from_double(h);
+	box->filename = strdup(filename);
+	line->n_boxes++;
+}
+
+
 static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
                        size_t sc_offset, PangoLanguage *lang,
                        struct sc_font *font)
@@ -497,9 +517,12 @@ static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
 			run_sc(b->contents, fonts, n_fonts, max_fonts, pc,
 			       boxes, lang);
 			pop_font(fonts, n_fonts, max_fonts);
+		} else if ( (strcmp(b->name, "image")==0)
+		         && (b->contents != NULL) ) {
+		        /* FIXME: Proper w/h from SC */
+			add_image_box(boxes, b->contents, b->offset,
+			              100.0, 100.0);
 		}
-
-		/* FIXME: Handle images */
 
 	}
 	sc_block_list_free(bl);

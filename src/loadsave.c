@@ -226,19 +226,19 @@ static void parse_line(struct ds_node *root, struct ds_node **cn,
 	if ( (h_openbracket && !h_closebracket)
 	  || (!h_openbracket && h_closebracket) )
 	{
-		fprintf(stderr, "Mismatched square brackets: %s", line);
+		fprintf(stderr, "Mismatched square brackets: %s\n", line);
 		return;
 	}
 
 	if ( !h_openbracket && !h_equals ) return;
 
 	if ( !h_openbracket && (!h_start || !h_val || !h_equals) ) {
-		fprintf(stderr, "Incomplete assignment: %s", line);
+		fprintf(stderr, "Incomplete assignment: %s\n", line);
 		return;
 	}
 
 	if ( h_equals && (h_openbracket || h_closebracket) ) {
-		fprintf(stderr, "Brackets and equals: %s", line);
+		fprintf(stderr, "Brackets and equals: %s\n", line);
 		return;
 	}
 

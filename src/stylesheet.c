@@ -294,6 +294,38 @@ StyleSheet *load_stylesheet(const char *filename)
 }
 
 
+static const char *units(LengthUnits un)
+{
+	switch ( un ) {
+		case UNITS_SLIDE : return "u";
+		case UNITS_FRAC : return "fr";
+	}
+	return "annoyingly unspecified units";
+}
+
+
+static void serialize_f_units(struct serializer *s, const char *key, double val,
+                              LengthUnits un)
+{
+	char tmp[64];
+
+	snprintf(tmp, 63, "%.2f %s", val, units(un));
+	serialize_s(s, key, tmp);
+}
+
+
+static int style_number(StyleSheet *ss, struct style *s)
+{
+	int i;
+
+	for ( i=0; i<ss->n_styles; i++ ) {
+		if ( ss->styles[i] == s ) return i;
+	}
+
+	return -1;
+}
+
+
 void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 {
 	int i;
@@ -312,10 +344,44 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 		serialize_f(ser, "margin_r", s->lop.margin_r);
 		serialize_f(ser, "margin_t", s->lop.margin_t);
 		serialize_f(ser, "margin_b", s->lop.margin_b);
+		serialize_f(ser, "pad_l", s->lop.pad_l);
+		serialize_f(ser, "pad_r", s->lop.pad_r);
+		serialize_f(ser, "pad_t", s->lop.pad_t);
+		serialize_f(ser, "pad_b", s->lop.pad_b);
+		serialize_f_units(ser, "w", s->lop.w, s->lop.w_units);
+		serialize_f_units(ser, "h", s->lop.h, s->lop.h_units);
+		serialize_s(ser, "prologue", s->sc_prologue);
 		serialize_end(ser);
 
 	}
 	serialize_end(ser);
+
+	serialize_start(ser, "templates");
+	for ( i=0; i<ss->n_templates; i++ ) {
+
+		struct slide_template *t = ss->templates[i];
+		char id[32];
+		int j;
+
+		snprintf(id, 31, "%i", i);
+
+		serialize_start(ser, id);
+		serialize_s(ser, "name", t->name);
+		for ( j=0; j<t->n_styles; j++ ) {
+
+			struct style *s = t->styles[j];
+			char id[32];
+
+			snprintf(id, 31, "sty%i", i);
+
+			serialize_i(ser, id, style_number(ss, s));
+
+		}
+		serialize_end(ser);
+
+	}
+	serialize_end(ser);
+
 }
 
 

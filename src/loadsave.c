@@ -623,6 +623,13 @@ void serialize_b(struct serializer *ser, const char *key, int val)
 }
 
 
+void serialize_i(struct serializer *ser, const char *key, int val)
+{
+	check_prefix_output(ser);
+	fprintf(ser->fh, "%s = %i\n", key, val);
+}
+
+
 void serialize_end(struct serializer *ser)
 {
 	free(ser->stack[--ser->stack_depth]);

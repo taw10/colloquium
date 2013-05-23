@@ -64,6 +64,7 @@ extern void serialize_start(struct serializer *s, const char *id);
 extern void serialize_s(struct serializer *s, const char *key, const char *val);
 extern void serialize_f(struct serializer *s, const char *key, double val);
 extern void serialize_b(struct serializer *s, const char *key, int val);
+extern void serialize_i(struct serializer *s, const char *key, int val);
 extern void serialize_end(struct serializer *s);
 
 extern int get_field_f(struct ds_node *root, const char *key, double *val);

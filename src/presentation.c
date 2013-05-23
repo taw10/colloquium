@@ -255,6 +255,47 @@ struct presentation *new_presentation()
 }
 
 
+static char *packed_sc(struct frame *fr)
+{
+	char *sc;
+	int i;
+	size_t len = 0;
+
+	if ( fr->sc != NULL ) {
+		len += strlen(fr->sc)+1;
+		sc = malloc(len);
+		memcpy(sc, fr->sc, len+1);
+	} else {
+		len = 0;
+		sc = malloc(1);
+		sc[0] = '\0';
+	}
+
+	for ( i=0; i<fr->num_children; i++ ) {
+
+		char *ch_sc;
+		char *scn;
+		size_t ch_len;
+
+		ch_sc = packed_sc(fr->children[i]);
+		ch_len = strlen(ch_sc);
+
+		len += ch_len + 64;
+		scn = malloc(len + ch_len);
+		snprintf(scn, len, "%s\\f[%.1fx%.1f+%.1f+%.1f]{%s}", sc,
+		         fr->children[i]->lop.w, fr->children[i]->lop.h,
+		         fr->children[i]->lop.x, fr->children[i]->lop.y,
+		         ch_sc);
+		free(ch_sc);
+		free(sc);
+		sc = scn;
+
+	}
+
+	return sc;
+}
+
+
 int save_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
@@ -289,13 +330,16 @@ int save_presentation(struct presentation *p, const char *filename)
 
 		struct slide *s;
 		char s_id[32];
+		char *sc;
 
 		s = p->slides[i];
 
 		snprintf(s_id, 31, "%i", i);
 		serialize_start(&ser, s_id);
 
-		/* FIXME: Save stuff */
+		sc = packed_sc(s->top);
+		serialize_s(&ser, "sc", sc);
+		free(sc);
 
 		serialize_end(&ser);
 

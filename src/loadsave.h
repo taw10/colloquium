@@ -54,6 +54,7 @@ struct serializer
 extern struct ds_node *new_ds_node(const char *key);
 extern void free_ds_tree(struct ds_node *root);
 extern int deserialize_file(FILE *fh, struct ds_node *root);
+extern int deserialize_memory(const char *s, struct ds_node *root);
 
 extern void show_tree(struct ds_node *root, const char *path);
 

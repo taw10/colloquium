@@ -358,6 +358,34 @@ int deserialize_file(FILE *fh, struct ds_node *root)
 }
 
 
+int deserialize_memory(const char *s, struct ds_node *root)
+{
+	char *end;
+	int done;
+	struct ds_node *cur_node = root;
+
+	done = 0;
+	do {
+
+		char *line;
+
+		end = strchr(s, '\n');
+		if ( end == NULL ) {
+			parse_line(root, &cur_node, s);
+			done = 1;
+		} else {
+			line = strndup(s, end-s);
+			parse_line(root, &cur_node, line);
+			free(line);
+			s = end+1;
+		}
+
+	} while ( !done );
+
+	return 0;
+}
+
+
 void free_ds_tree(struct ds_node *root)
 {
 	int i;

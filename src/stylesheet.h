@@ -60,7 +60,7 @@ struct presentation;
 extern StyleSheet *new_stylesheet();
 extern StyleSheet *load_stylesheet(const char *filename);
 extern void free_stylesheet(StyleSheet *ss);
-extern void default_stylesheet(StyleSheet *ss);
+extern StyleSheet *default_stylesheet(void);
 
 extern struct style *new_style(StyleSheet *ss, const char *name);
 extern struct style *find_style(StyleSheet *ss, const char *name);

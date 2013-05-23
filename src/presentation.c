@@ -238,8 +238,7 @@ struct presentation *new_presentation()
 
 	new->completely_empty = 1;
 
-	new->ss = new_stylesheet();
-	default_stylesheet(new->ss);
+	new->ss = default_stylesheet();
 
 	new->n_menu_rebuild = 0;
 	new->menu_rebuild_list = NULL;

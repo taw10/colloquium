@@ -8,7 +8,7 @@ AM_CFLAGS = -Wall
 AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \
               -I$(top_srcdir)/lib
 LDADD = $(top_builddir)/lib/libgnu.la @IGNORE_UNUSED_LIBRARIES_CFLAGS@ \
-        harfatum/src/libharfatum.la
+        harfatum/src/libharfatum.la src/default_stylesheet.o
 
 src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/mainwindow.c src/presentation.c \
@@ -21,6 +21,9 @@ INCLUDES = -Iharfatum/src
 EXTRA_DIST += src/presentation.h src/render.h src/wrap.h \
               src/stylesheet.h src/loadsave.h src/slideshow.h src/storycode.h \
               src/imagestore.h
+
+src/default_stylesheet.o: src/default_stylesheet.sty
+	ld -r -b binary -o src/default_stylesheet.o src/default_stylesheet.sty
 
 colloquiumdir = $(datadir)/colloquium
 colloquium_DATA = data/colloquium.ui

@@ -318,7 +318,7 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 			struct style *s = t->styles[j];
 			char id[32];
 
-			snprintf(id, 31, "sty%i", i);
+			snprintf(id, 31, "sty%i", j);
 
 			serialize_i(ser, id, style_number(ss, s));
 

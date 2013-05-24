@@ -309,10 +309,9 @@ static gint save_ss_response_sig(GtkWidget *d, gint response,
 
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
 
-		/* FIXME */
-		//if ( save_stylesheet(p->ss, filename) ) {
-		//	show_error(p, "Failed to save style sheet");
-		//}
+		if ( save_stylesheet(p->ss, filename) ) {
+			show_error(p, "Failed to save style sheet");
+		}
 
 		g_free(filename);
 

@@ -321,6 +321,8 @@ int save_stylesheet(StyleSheet *ss, const char *filename)
 	write_stylesheet(ss, &ser);
 	serialize_end(&ser);
 
+	fclose(fh);
+
 	return 0;
 }
 

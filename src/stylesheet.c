@@ -92,8 +92,8 @@ void free_stylesheet(StyleSheet *ss)
 }
 
 
-extern const char *_binary_src_default_stylesheet_sty_start;
-extern const char *_binary_src_default_stylesheet_sty_size;
+extern void *_binary_src_default_stylesheet_sty_start;
+extern void *_binary_src_default_stylesheet_sty_size;
 
 StyleSheet *default_stylesheet()
 {
@@ -125,12 +125,84 @@ StyleSheet *default_stylesheet()
 }
 
 
+static void get_field_f_units(struct ds_node *root, const char *key,
+                              double *val, LengthUnits *units)
+{
+	char *s;
+	char *u;
+	double v;
+	char *check;
+
+	get_field_s(root, key, &s);
+	u = index(s, ' ');
+	if ( u == NULL ) {
+		fprintf(stderr, "Invalid value '%s'\n", s);
+		return;
+	}
+
+	u[0] = '\0';
+	u++;
+	v = strtod(s, &check);
+	if ( check == s ) {
+		fprintf(stderr, "Invalid value '%s'\n", s);
+		return;
+	}
+
+	if ( strcmp(u, "fr") == 0 ) *units = UNITS_FRAC;
+	else if ( strcmp(u, "u") == 0 ) *units = UNITS_SLIDE;
+	else {
+		fprintf(stderr, "Invalid unit '%s'\n", u);
+		return;
+	}
+
+	*val = v;
+}
+
+
+static int read_template(struct slide_template *t, StyleSheet *ss,
+                         struct ds_node *node)
+{
+	int i;
+
+	for ( i=0; i<node->n_children; i++ ) {
+
+		long v;
+		char *check;
+		struct style *sty;
+
+		if ( strncmp(node->children[i]->key, "sty", 3) != 0 ) {
+			continue;
+		}
+
+		v = strtol(node->children[i]->value, &check, 10);
+		if ( check == node->children[i]->value ) {
+			fprintf(stderr, "Invalid number '%s'\n",
+			        node->children[i]->value);
+		}
+		sty = ss->styles[v];
+
+		add_to_template(t, sty);
+	}
+
+	return 0;
+}
+
+
 static int read_style(struct style *sty, struct ds_node *root)
 {
 	get_field_f(root, "margin_l", &sty->lop.margin_l);
 	get_field_f(root, "margin_r", &sty->lop.margin_r);
 	get_field_f(root, "margin_t", &sty->lop.margin_t);
 	get_field_f(root, "margin_b", &sty->lop.margin_b);
+	get_field_f(root, "pad_l", &sty->lop.pad_l);
+	get_field_f(root, "pad_r", &sty->lop.pad_r);
+	get_field_f(root, "pad_t", &sty->lop.pad_t);
+	get_field_f(root, "pad_b", &sty->lop.pad_b);
+	get_field_f(root, "x", &sty->lop.x);
+	get_field_f(root, "y", &sty->lop.y);
+	get_field_f_units(root, "w", &sty->lop.w, &sty->lop.w_units);
+	get_field_f_units(root, "h", &sty->lop.h, &sty->lop.h_units);
+	get_field_s(root, "prologue", &sty->sc_prologue);
 
 	return 0;
 }
@@ -183,6 +255,32 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 		fprintf(stderr, "Couldn't find templates\n");
 		free_stylesheet(ss);
 		return NULL;
+	}
+
+	for ( i=0; i<node->n_children; i++ ) {
+
+		struct slide_template *nt;
+		char *v;
+
+		get_field_s(node->children[i], "name", &v);
+		if ( v == NULL ) {
+			fprintf(stderr, "No name for template '%s'\n",
+			        node->children[i]->key);
+			continue;
+		}
+
+		nt = new_template(ss, v);
+		if ( nt == NULL ) {
+			fprintf(stderr, "Couldn't create template for '%s'\n",
+			        node->children[i]->key);
+			continue;
+		}
+
+		if ( read_template(nt, ss, node->children[i]) ) {
+			fprintf(stderr, "Couldn't read template '%s'\n", v);
+			continue;
+		}
+
 	}
 
 	return ss;
@@ -296,6 +394,8 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 		serialize_f(ser, "pad_b", s->lop.pad_b);
 		serialize_f_units(ser, "w", s->lop.w, s->lop.w_units);
 		serialize_f_units(ser, "h", s->lop.h, s->lop.h_units);
+		serialize_f(ser, "x", s->lop.x);
+		serialize_f(ser, "y", s->lop.y);
 		serialize_s(ser, "prologue", s->sc_prologue);
 		serialize_end(ser);
 

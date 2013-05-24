@@ -454,9 +454,13 @@ char *unescape_text(const char *a)
 
 		if ( escape ) {
 			if ( c == 'r' ) b[l++] = '\r';
-			if ( c == 'n' ) b[l++] = '\n';
-			if ( c == '\"' ) b[l++] = '\"';
-			if ( c == 't' ) b[l++] = '\t';
+			else if ( c == 'n' ) b[l++] = '\n';
+			else if ( c == '\"' ) b[l++] = '\"';
+			else if ( c == 't' ) b[l++] = '\t';
+			else {
+				b[l++] = '\\';
+				b[l++] = c;
+			}
 			escape = 0;
 			continue;
 		}

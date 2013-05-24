@@ -67,6 +67,14 @@ enum drag_status
 };
 
 
+/* Inelegance to make furniture selection menus work */
+struct menu_pl
+{
+	struct presentation *p;
+	struct style *sty;
+};
+
+
 struct presentation
 {
 	char             *titlebar;
@@ -80,6 +88,7 @@ struct presentation
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
 	GtkWidget       **menu_rebuild_list;
+	struct menu_pl   *menu_path_list;
 	int               n_menu_rebuild;
 	PangoContext     *pc;
 	ImageStore       *is;

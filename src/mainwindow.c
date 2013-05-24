@@ -547,16 +547,11 @@ static void do_slide_update(struct presentation *p, PangoContext *pc)
 
 
 
-static gint add_furniture(GtkWidget *widget, struct presentation *p)
+static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 {
-	gchar *name;
-	struct style *sty;
 	struct frame *fr;
-
-	g_object_get(G_OBJECT(widget), "label", &name, NULL);
-	sty = find_style(p->ss, name);
-	g_free(name);
-	if ( sty == NULL ) return 0;
+	struct style *sty = pl->sty;
+	struct presentation *p = pl->p;
 
 	fr = add_subframe(p->cur_edit_slide->top);
 	fr->style = sty;
@@ -586,6 +581,7 @@ static void update_style_menus(struct presentation *p)
 		gtk_widget_destroy(p->menu_rebuild_list[i]);
 	}
 	free(p->menu_rebuild_list);
+	free(p->menu_path_list);
 
 	/* Add the styles to the "Insert" menu */
 	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
@@ -605,6 +601,9 @@ static void update_style_menus(struct presentation *p)
 	p->menu_rebuild_list = calloc(n, sizeof(GtkWidget *));
 	if ( p->menu_rebuild_list == NULL ) return;
 
+	p->menu_path_list = calloc(n, sizeof(struct menu_pl));
+	if ( p->menu_path_list == NULL ) return;
+
 	j = 0;
 	for ( t = template_first(p->ss, &iter);
 	      t != NULL;
@@ -622,14 +621,21 @@ static void update_style_menus(struct presentation *p)
 
 			struct style *s = t->styles[i];
 
+			p->menu_path_list[j].p = p;
+			p->menu_path_list[j].sty = s;
+
 			item = gtk_menu_item_new_with_label(s->name);
 			gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
-			p->menu_rebuild_list[j++] = item;
+			p->menu_rebuild_list[j] = item;
 			g_signal_connect(G_OBJECT(item), "activate",
-			                 G_CALLBACK(add_furniture), p);
+			                 G_CALLBACK(add_furniture),
+			                 &p->menu_path_list[j]);
+			j++;
 
 		}
 	}
+
+	p->n_menu_rebuild = j;
 }
 
 

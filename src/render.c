@@ -527,3 +527,42 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 
 	return surf;
 }
+
+
+int export_pdf(struct presentation *p, const char *filename)
+{
+	int i;
+	cairo_surface_t *surf;
+	cairo_t *cr;
+
+	surf = cairo_pdf_surface_create(filename, p->slide_width,
+	                                          p->slide_height);
+
+	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
+		fprintf(stderr, "Couldn't create Cairo surface\n");
+		return 1;
+	}
+
+	cr = cairo_create(surf);
+
+	for ( i=0; i<p->num_slides; i++ ) {
+
+		cairo_surface_t *sf;
+		struct slide *s;
+
+		s = p->slides[i];
+		sf = render_slide(s, 1024, p->slide_width, p->slide_height,
+		                  p->is, ISZ_SLIDESHOW);
+		cairo_rectangle(cr, 0.0, 0.0, p->slide_width, p->slide_height);
+		cairo_set_source_surface(cr, sf, 0.0, 0.0);
+		cairo_fill(cr);
+		cairo_surface_show_page(surf);
+		cairo_surface_destroy(sf);
+
+	}
+
+	cairo_surface_finish(surf);
+	cairo_destroy(cr);
+
+	return 0;
+}

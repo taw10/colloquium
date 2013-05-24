@@ -354,10 +354,9 @@ static gint export_pdf_response_sig(GtkWidget *d, gint response,
 
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
 
-		/* FIXME */
-		//if ( export_pdf(p, filename) ) {
-		//	show_error(p, "Failed to export as PDF");
-		//}
+		if ( export_pdf(p, filename) ) {
+			show_error(p, "Failed to export as PDF");
+		}
 
 		g_free(filename);
 

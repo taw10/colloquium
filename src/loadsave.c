@@ -211,12 +211,12 @@ static void parse_line(struct ds_node *root, struct ds_node **cn,
 			s_equals = i;
 			h_equals = 1;
 		}
-		if ( !h_openbracket && (line[i] == '[') ) {
+		if ( !h_openbracket && (line[i] == '[') && !h_equals ) {
 			s_openbracket = i;
 			h_openbracket = 1;
 		}
 		if ( h_openbracket && !h_closebracket
-		     && (line[i] == ']') )
+		     && (line[i] == ']')  && !h_equals )
 		{
 			s_closebracket = i;
 			h_closebracket = 1;

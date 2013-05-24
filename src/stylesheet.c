@@ -99,6 +99,7 @@ StyleSheet *default_stylesheet()
 {
 	char *v;
 	struct ds_node *root;
+	struct ds_node *ss_root;
 	StyleSheet *ss;
 	size_t len;
 
@@ -111,7 +112,14 @@ StyleSheet *default_stylesheet()
 
 	root = new_ds_node("root");
 	deserialize_memory(v, root);
-	ss = tree_to_stylesheet(root);
+
+	ss_root = find_node(root, "stylesheet", 0);
+	if ( ss_root == NULL ) {
+		fprintf(stderr, "Doesn't look like a stylesheet.\n");
+		return NULL;
+	}
+	ss = tree_to_stylesheet(ss_root);
+	free_ds_tree(root);
 	free(v);
 	return ss;
 }
@@ -170,9 +178,9 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 
 	}
 
-	node = find_node(root, "bgblocks", 0);
+	node = find_node(root, "templates", 0);
 	if ( node == NULL ) {
-		fprintf(stderr, "Couldn't find bgblocks\n");
+		fprintf(stderr, "Couldn't find templates\n");
 		free_stylesheet(ss);
 		return NULL;
 	}

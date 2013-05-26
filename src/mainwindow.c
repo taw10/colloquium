@@ -1051,7 +1051,7 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 
 	fr = add_subframe(parent);
 	fr->sc = NULL;
-	fr->style = find_style(p->ss, "Content");
+	fr->style = default_style(p->ss);
 	fr->lop_from_style = 0;
 	fr->lop.x = x;
 	fr->lop.y = y;

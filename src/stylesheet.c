@@ -42,6 +42,8 @@ struct _stylesheet
 
 	struct slide_template **templates;
 	int                     n_templates;
+
+	struct style           *default_style;
 };
 
 
@@ -61,6 +63,8 @@ struct style *new_style(StyleSheet *ss, const char *name)
 	sty->lop.y = 0.0;
 	sty->lop.w = 100.0;
 	sty->lop.h = 100.0;
+
+	if ( ss->default_style == NULL ) ss->default_style = sty;
 
 	n = ss->n_styles;
 	styles_new = realloc(ss->styles, (n+1)*sizeof(sty));
@@ -250,6 +254,10 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 
 	}
 
+	if ( get_field_i(root, "default_style", &i) == 0 ) {
+		ss->default_style = ss->styles[i];
+	}
+
 	node = find_node(root, "templates", 0);
 	if ( node == NULL ) {
 		fprintf(stderr, "Couldn't find templates\n");
@@ -296,6 +304,7 @@ StyleSheet *new_stylesheet()
 
 	ss->n_styles = 0;
 	ss->styles = NULL;
+	ss->default_style = NULL;
 
 	return ss;
 }
@@ -433,16 +442,9 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 }
 
 
-struct style *find_style(StyleSheet *ss, const char *name)
+struct style *default_style(StyleSheet *ss)
 {
-	int i;
-	for ( i=0; i<ss->n_styles; i++ ) {
-		if ( strcmp(ss->styles[i]->name, name) == 0 ) {
-			return ss->styles[i];
-		}
-	}
-
-	return NULL;
+	return ss->default_style;
 }
 
 

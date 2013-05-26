@@ -63,7 +63,7 @@ extern void free_stylesheet(StyleSheet *ss);
 extern StyleSheet *default_stylesheet(void);
 
 extern struct style *new_style(StyleSheet *ss, const char *name);
-extern struct style *find_style(StyleSheet *ss, const char *name);
+extern struct style *default_style(StyleSheet *ss);
 
 extern struct slide_template *new_template(StyleSheet *ss, const char *name);
 extern void add_to_template(struct slide_template *t, struct style *sty);

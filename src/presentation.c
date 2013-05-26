@@ -255,7 +255,17 @@ struct presentation *new_presentation()
 }
 
 
-static char *packed_sc(struct frame *fr)
+static char *maybe_star(int i)
+{
+	if ( i ) {
+		return "*";
+	} else {
+		return "";
+	}
+}
+
+
+static char *packed_sc(struct frame *fr, StyleSheet *ss)
 {
 	char *sc;
 	int i;
@@ -277,14 +287,20 @@ static char *packed_sc(struct frame *fr)
 		char *scn;
 		size_t ch_len;
 
-		ch_sc = packed_sc(fr->children[i]);
+		ch_sc = packed_sc(fr->children[i], ss);
 		ch_len = strlen(ch_sc);
 
 		len += ch_len + 64;
 		scn = malloc(len + ch_len);
-		snprintf(scn, len, "%s\\f[%.1fx%.1f+%.1f+%.1f]{%s}", sc,
-		         fr->children[i]->lop.w, fr->children[i]->lop.h,
+		snprintf(scn, len,
+		         "%s\\f[%.1f%sx%.1f%s+%.1f+%.1f,style=%i%s]{%s}", sc,
+		         fr->children[i]->lop.w,
+		         units(fr->children[i]->lop.w_units),
+		         fr->children[i]->lop.h,
+		         units(fr->children[i]->lop.h_units),
 		         fr->children[i]->lop.x, fr->children[i]->lop.y,
+		         style_number(ss, fr->style),
+		         maybe_star(fr->lop_from_style),
 		         ch_sc);
 		free(ch_sc);
 		free(sc);
@@ -337,7 +353,7 @@ int save_presentation(struct presentation *p, const char *filename)
 		snprintf(s_id, 31, "%i", i);
 		serialize_start(&ser, s_id);
 
-		sc = packed_sc(s->top);
+		sc = packed_sc(s->top, p->ss);
 		serialize_s(&ser, "sc", sc);
 		free(sc);
 

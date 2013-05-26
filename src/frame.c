@@ -86,6 +86,80 @@ struct frame *add_subframe(struct frame *fr)
 }
 
 
+static void parse_option(struct frame *fr, const char *opt)
+{
+	printf("Option '%s'\n", opt);
+
+	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
+	  && (index(opt, '+') != rindex(opt, '+')) )
+	{
+		char *w;
+		char *h;
+		char *x;
+		char *y;
+
+		/* Looks like a dimension/position thing */
+		w = strdup(opt);
+		h = index(w, 'x');
+		h[0] = '\0';  h++;
+
+		x = index(h, '+');
+		if ( x == NULL ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		x[0] = '\0';  x++;
+
+		y = index(x, '+');
+		if ( x == NULL ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		y[0] = '\0';  y++;
+
+		printf("'%s' x '%s' + '%s' + '%s'\n", w, h, x, y);
+		/* FIXME: Parse length/unit couples */
+		/* FIXME: Turn x and y into numbers */
+
+		free(w);
+	}
+
+	/* FIXME: Handle styles */
+}
+
+
+static void parse_options(struct frame *fr, const char *opth)
+{
+	int i;
+	size_t len;
+	size_t start;
+	char *opt = strdup(opth);
+
+	printf("Processing options '%s'\n", opt);
+
+	len = strlen(opt);
+	start = 0;
+
+	for ( i=0; i<len; i++ ) {
+
+		/* FIXME: comma might be escaped or quoted */
+		if ( opt[i] == ',' ) {
+			opt[i] = '\0';
+			parse_option(fr, opt+start);
+			start = i+1;
+		}
+
+	}
+
+	if ( start != len ) {
+		parse_option(fr, opt+start);
+	}
+
+	free(opt);
+	printf("Done.\n");
+}
+
+
 static int recursive_unpack(struct frame *fr, const char *sc)
 {
 	SCBlockList *bl;
@@ -100,7 +174,10 @@ static int recursive_unpack(struct frame *fr, const char *sc)
 	      b = sc_block_list_next(bl, iter) )
 	{
 		struct frame *sfr;
+
 		sfr = add_subframe(fr);
+		parse_options(sfr, b->options);
+
 		sfr->sc = remove_blocks(b->contents, "f");
 		if ( recursive_unpack(sfr, b->contents) ) {
 			sc_block_list_free(bl);

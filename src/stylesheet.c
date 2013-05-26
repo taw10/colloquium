@@ -349,7 +349,7 @@ StyleSheet *load_stylesheet(const char *filename)
 }
 
 
-static const char *units(LengthUnits un)
+const char *units(LengthUnits un)
 {
 	switch ( un ) {
 		case UNITS_SLIDE : return "u";
@@ -369,7 +369,7 @@ static void serialize_f_units(struct serializer *s, const char *key, double val,
 }
 
 
-static int style_number(StyleSheet *ss, struct style *s)
+int style_number(StyleSheet *ss, struct style *s)
 {
 	int i;
 
@@ -384,6 +384,8 @@ static int style_number(StyleSheet *ss, struct style *s)
 void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 {
 	int i;
+
+	serialize_i(ser, "default_style", style_number(ss, ss->default_style));
 
 	serialize_start(ser, "styles");
 	for ( i=0; i<ss->n_styles; i++ ) {
@@ -438,7 +440,6 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 
 	}
 	serialize_end(ser);
-
 }
 
 

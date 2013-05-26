@@ -361,11 +361,14 @@ int save_presentation(struct presentation *p, const char *filename)
 static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 {
 	struct slide *s;
+	char *sc;
 
 	s = new_slide();
 	s->parent = p;
 
-	/* FIXME: Load stuff */
+	get_field_s(root, "sc", &sc);
+	s->top = sc_unpack(sc);
+	free(sc);
 
 	return s;
 }

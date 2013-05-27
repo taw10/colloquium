@@ -299,8 +299,8 @@ static char *packed_sc(struct frame *fr, StyleSheet *ss)
 		         fr->children[i]->lop.h,
 		         units(fr->children[i]->lop.h_units),
 		         fr->children[i]->lop.x, fr->children[i]->lop.y,
-		         style_number(ss, fr->style),
-		         maybe_star(fr->lop_from_style),
+		         style_number(ss, fr->children[i]->style),
+		         maybe_star(fr->children[i]->lop_from_style),
 		         ch_sc);
 		free(ch_sc);
 		free(sc);

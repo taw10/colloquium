@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <gdk/gdkkeysyms.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include <math.h>
 
 #include "presentation.h"
 #include "mainwindow.h"
@@ -803,12 +804,35 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int pos)
 }
 
 
+static void draw_resize_handle(cairo_t *cr, double x, double y)
+{
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x, y, 20.0, 20.0);
+	cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
+	cairo_fill(cr);
+}
+
+
 static void draw_overlay(cairo_t *cr, struct presentation *p)
 {
 	int i;
 
 	for ( i=0; i<p->n_selection; i++ ) {
+
+		double x, y, w, h;
+
 		draw_editing_box(cr, p->selection[i]);
+
+		x = p->selection[i]->lop.x;
+		y = p->selection[i]->lop.y;
+		w = p->selection[i]->lop.w;
+		h = p->selection[i]->lop.h;
+
+		/* Draw resize handles */
+		draw_resize_handle(cr, x, y+h-20.0);
+		draw_resize_handle(cr, x+w-20.0, y);
+		draw_resize_handle(cr, x, y);
+		draw_resize_handle(cr, x+w-20.0, y+h-20.0);
 	}
 
 	/* If only one frame is selected, draw the caret */
@@ -824,6 +848,17 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 		cairo_rectangle(cr, p->start_corner_x, p->start_corner_y,
 		                    p->drag_corner_x - p->start_corner_x,
 		                    p->drag_corner_y - p->start_corner_y);
+		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+		cairo_set_line_width(cr, 0.5);
+		cairo_stroke(cr);
+	}
+
+	if ( (p->drag_status == DRAG_STATUS_DRAGGING)
+	  && (p->drag_reason == DRAG_REASON_RESIZE) )
+	{
+		cairo_new_path(cr);
+		cairo_rectangle(cr, p->box_x, p->box_y,
+		                    p->box_width, p->box_height);
 		cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
 		cairo_set_line_width(cr, 0.5);
 		cairo_stroke(cr);
@@ -955,9 +990,145 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 }
 
 
-static struct frame *find_frame_at_position(struct slide *slide,
+static int within_frame(struct frame *fr, double x, double y)
+{
+	if ( x < fr->x ) return 0;
+	if ( y < fr->y ) return 0;
+	if ( x > fr->x + fr->w ) return 0;
+	if ( y > fr->y + fr->h ) return 0;
+	return 1;
+}
+
+
+static struct frame *find_frame_at_position(struct frame *fr,
                                             double x, double y)
 {
+	int i;
+
+	for ( i=0; i<fr->num_children; i++ ) {
+
+		if ( within_frame(fr->children[i], x, y) ) {
+			return find_frame_at_position(fr->children[i], x, y);
+		}
+
+	}
+
+	if ( within_frame(fr, x, y) ) return fr;
+	return NULL;
+}
+
+
+static enum corner which_corner(double xp, double yp, struct frame *fr)
+{
+	double x, y;  /* Relative to object position */
+
+	x = xp - fr->x;
+	y = yp - fr->y;
+
+	if ( x < 0.0 ) return CORNER_NONE;
+	if ( y < 0.0 ) return CORNER_NONE;
+	if ( x > fr->w ) return CORNER_NONE;
+	if ( y > fr->h ) return CORNER_NONE;
+
+	/* Top left? */
+	if ( (x<20.0) && (y<20.0) ) return CORNER_TL;
+	if ( (x>fr->w-20.0) && (y<20.0) ) return CORNER_TR;
+	if ( (x<20.0) && (y>fr->h-20.0) ) {
+		return CORNER_BL;
+	}
+	if ( (x>fr->w-20.0) && (y>fr->h-20.0) ) {
+		return CORNER_BR;
+	}
+
+	return CORNER_NONE;
+}
+
+
+static void calculate_box_size(struct frame *fr, struct presentation *p,
+                               double x, double y)
+{
+	double ddx, ddy, dlen, mult;
+	double vx, vy, dbx, dby;
+
+	ddx = x - p->start_corner_x;
+	ddy = y - p->start_corner_y;
+
+	switch ( p->drag_corner ) {
+
+		case CORNER_BR :
+		vx = fr->w;
+		vy = fr->h;
+		break;
+
+		case CORNER_BL :
+		vx = -fr->w;
+		vy = fr->h;
+		break;
+
+		case CORNER_TL :
+		vx = -fr->w;
+		vy = -fr->h;
+		break;
+
+		case CORNER_TR :
+		vx = fr->w;
+		vy = -fr->h;
+		break;
+
+		case CORNER_NONE :
+		default:
+		vx = 0.0;
+		vy = 0.0;
+		break;
+
+	}
+
+	dlen = (ddx*vx + ddy*vy) / p->diagonal_length;
+	mult = (dlen+p->diagonal_length) / p->diagonal_length;
+
+	p->box_width = fr->w * mult;
+	p->box_height = fr->h * mult;
+	dbx = p->box_width - fr->w;
+	dby = p->box_height - fr->h;
+
+	if ( p->box_width < 40.0 ) {
+		mult = 40.0 / fr->w;
+	}
+	if ( p->box_height < 40.0 ) {
+		mult = 40.0 / fr->h;
+	}
+	p->box_width = fr->w * mult;
+	p->box_height = fr->h * mult;
+	dbx = p->box_width - fr->w;
+	dby = p->box_height - fr->h;
+
+	switch ( p->drag_corner ) {
+
+		case CORNER_BR :
+		p->box_x = fr->x;
+		p->box_y = fr->y;
+		break;
+
+		case CORNER_BL :
+		p->box_x = fr->x - dbx;
+		p->box_y = fr->y;
+		break;
+
+		case CORNER_TL :
+		p->box_x = fr->x - dbx;
+		p->box_y = fr->y - dby;
+		break;
+
+		case CORNER_TR :
+		p->box_x = fr->x;
+		p->box_y = fr->y - dby;
+		break;
+
+		case CORNER_NONE :
+		break;
+
+	}
+
 }
 
 
@@ -970,7 +1141,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
-	clicked = find_frame_at_position(p->cur_edit_slide, x, y);
+	clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
 
 	if ( clicked == NULL ) {
 
@@ -989,12 +1160,37 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		 * selected one, deselect the old one. */
 		if ( p->selection[0] != clicked ) {
 			set_selection(p, NULL);
+			p->drag_status = DRAG_STATUS_NONE;
+			p->drag_reason = DRAG_REASON_NONE;
+			set_selection(p, clicked);
+		} else {
+
+			enum corner c;
+			struct frame *fr;
+
+			fr = p->selection[0];
+
+			/* Within the resizing region? */
+			c = which_corner(x, y, fr);
+			if ( c != CORNER_NONE ) {
+
+				p->drag_reason = DRAG_REASON_RESIZE;
+				p->drag_corner = c;
+
+				p->start_corner_x = x;
+				p->start_corner_y = y;
+				p->diagonal_length = pow(fr->w, 2.0);
+				p->diagonal_length += pow(fr->h, 2.0);
+				p->diagonal_length = sqrt(p->diagonal_length);
+
+				calculate_box_size(fr, p, x, y);
+
+				p->drag_status = DRAG_STATUS_COULD_DRAG;
+				p->drag_reason = DRAG_REASON_RESIZE;
+				printf("could drag resize\n");
+			}
+
 		}
-
-		p->drag_status = DRAG_STATUS_NONE;
-		p->drag_reason = DRAG_REASON_NONE;
-
-		set_selection(p, clicked);
 
 	}
 
@@ -1007,6 +1203,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
                            struct presentation *p)
 {
+	struct frame *fr = p->selection[0];
+
 	if ( p->drag_status == DRAG_STATUS_COULD_DRAG ) {
 
 		/* We just got a motion signal, and the status was "could drag",
@@ -1028,6 +1226,12 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 		case DRAG_REASON_IMPORT :
 		/* Do nothing, handled by dnd_motion() */
+		break;
+
+		case DRAG_REASON_RESIZE :
+		calculate_box_size(fr, p,  event->x - p->border_offs_x,
+		                           event->y - p->border_offs_y);
+		redraw_editor(p);
 		break;
 
 	}
@@ -1097,6 +1301,10 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 		case DRAG_REASON_IMPORT :
 		/* Do nothing, handled in dnd_drop() or dnd_leave() */
+		break;
+
+		case DRAG_REASON_RESIZE :
+		/* FIXME: Implement */
 		break;
 
 	}

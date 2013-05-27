@@ -56,6 +56,17 @@ enum drag_reason
 	DRAG_REASON_NONE,
 	DRAG_REASON_CREATE,
 	DRAG_REASON_IMPORT,
+	DRAG_REASON_RESIZE,
+};
+
+
+enum corner
+{
+	CORNER_NONE,
+	CORNER_TL,
+	CORNER_TR,
+	CORNER_BL,
+	CORNER_BR
 };
 
 
@@ -125,8 +136,14 @@ struct presentation
 	double            start_corner_y;
 	double            drag_corner_x;
 	double            drag_corner_y;
+	double            diagonal_length;
+	double            box_x;
+	double            box_y;
+	double            box_width;
+	double            box_height;
 	enum drag_reason  drag_reason;
 	enum drag_status  drag_status;
+	enum corner       drag_corner;
 
 	/* Stuff to do with drag and drop import of "content" */
 	int               drag_preview_pending;

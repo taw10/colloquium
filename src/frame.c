@@ -31,6 +31,7 @@
 
 #include "storycode.h"
 #include "frame.h"
+#include "stylesheet.h"
 
 
 static int alloc_ro(struct frame *fr)
@@ -86,10 +87,20 @@ struct frame *add_subframe(struct frame *fr)
 }
 
 
-static void parse_option(struct frame *fr, const char *opt)
+static LengthUnits get_units(const char *t)
 {
-	printf("Option '%s'\n", opt);
+	size_t len = strlen(t);
 
+	if ( t[len-1] == 'f' ) return UNITS_FRAC;
+	if ( t[len-1] == 'u' ) return UNITS_SLIDE;
+
+	fprintf(stderr, "Invalid units in '%s'\n", t);
+	return UNITS_SLIDE;
+}
+
+
+static void parse_option(struct frame *fr, const char *opt, StyleSheet *ss)
+{
 	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
 	  && (index(opt, '+') != rindex(opt, '+')) )
 	{
@@ -97,6 +108,7 @@ static void parse_option(struct frame *fr, const char *opt)
 		char *h;
 		char *x;
 		char *y;
+		char *check;
 
 		/* Looks like a dimension/position thing */
 		w = strdup(opt);
@@ -117,25 +129,67 @@ static void parse_option(struct frame *fr, const char *opt)
 		}
 		y[0] = '\0';  y++;
 
-		printf("'%s' x '%s' + '%s' + '%s'\n", w, h, x, y);
-		/* FIXME: Parse length/unit couples */
-		/* FIXME: Turn x and y into numbers */
+		fr->lop.w = strtod(w, &check);
+		if ( check == w ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		fr->lop.w_units = get_units(w);
 
-		free(w);
+		fr->lop.h = strtod(h, &check);
+		if ( check == h ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		fr->lop.h_units = get_units(h);
+
+		fr->lop.x = strtod(x, &check);
+		if ( check == x ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		fr->lop.y = strtod(y, &check);
+		if ( check == y ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+
 	}
 
-	/* FIXME: Handle styles */
+	if ( strncmp(opt, "style=", 6) == 0 ) {
+		char *s;
+		int sn;
+		char *check;
+
+		if ( opt[strlen(opt)-1] == '*' ) {
+			fr->lop_from_style = 1;
+		} else {
+			fr->lop_from_style = 0;
+		}
+
+		s = index(opt, '=');
+		s++;
+		sn = strtol(s, &check, 10);
+		if ( check == s ) {
+			fprintf(stderr, "Invalid style number '%s'\n", opt);
+			return;
+		}
+
+		fr->style = lookup_style(ss, sn);
+		if ( fr->style == NULL ) {
+			fprintf(stderr, "Invalid style number '%s'\n", opt);
+			return;
+		}
+	}
 }
 
 
-static void parse_options(struct frame *fr, const char *opth)
+static void parse_options(struct frame *fr, const char *opth, StyleSheet *ss)
 {
 	int i;
 	size_t len;
 	size_t start;
 	char *opt = strdup(opth);
-
-	printf("Processing options '%s'\n", opt);
 
 	len = strlen(opt);
 	start = 0;
@@ -145,22 +199,21 @@ static void parse_options(struct frame *fr, const char *opth)
 		/* FIXME: comma might be escaped or quoted */
 		if ( opt[i] == ',' ) {
 			opt[i] = '\0';
-			parse_option(fr, opt+start);
+			parse_option(fr, opt+start, ss);
 			start = i+1;
 		}
 
 	}
 
 	if ( start != len ) {
-		parse_option(fr, opt+start);
+		parse_option(fr, opt+start, ss);
 	}
 
 	free(opt);
-	printf("Done.\n");
 }
 
 
-static int recursive_unpack(struct frame *fr, const char *sc)
+static int recursive_unpack(struct frame *fr, const char *sc, StyleSheet *ss)
 {
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
@@ -176,10 +229,10 @@ static int recursive_unpack(struct frame *fr, const char *sc)
 		struct frame *sfr;
 
 		sfr = add_subframe(fr);
-		parse_options(sfr, b->options);
+		parse_options(sfr, b->options, ss);
 
 		sfr->sc = remove_blocks(b->contents, "f");
-		if ( recursive_unpack(sfr, b->contents) ) {
+		if ( recursive_unpack(sfr, b->contents, ss) ) {
 			sc_block_list_free(bl);
 			return 1;
 		}
@@ -191,7 +244,7 @@ static int recursive_unpack(struct frame *fr, const char *sc)
 
 
 /* Unpack level 2 StoryCode (content + subframes) into frames */
-struct frame *sc_unpack(const char *sc)
+struct frame *sc_unpack(const char *sc, StyleSheet *ss)
 {
 	struct frame *fr;
 
@@ -199,7 +252,7 @@ struct frame *sc_unpack(const char *sc)
 	if ( fr == NULL ) return NULL;
 
 	fr->sc = remove_blocks(sc, "f");
-	if ( recursive_unpack(fr, sc) ) {
+	if ( recursive_unpack(fr, sc, ss) ) {
 		return NULL;
 	}
 

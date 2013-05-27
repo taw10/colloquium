@@ -81,6 +81,14 @@ struct style *new_style(StyleSheet *ss, const char *name)
 }
 
 
+struct style *lookup_style(StyleSheet *ss, int n)
+{
+	if ( n < 0 ) return NULL;
+	if ( n >= ss->n_styles ) return NULL;
+	return ss->styles[n];
+}
+
+
 void free_stylesheet(StyleSheet *ss)
 {
 	int i;
@@ -152,7 +160,7 @@ static void get_field_f_units(struct ds_node *root, const char *key,
 		return;
 	}
 
-	if ( strcmp(u, "fr") == 0 ) *units = UNITS_FRAC;
+	if ( strcmp(u, "f") == 0 ) *units = UNITS_FRAC;
 	else if ( strcmp(u, "u") == 0 ) *units = UNITS_SLIDE;
 	else {
 		fprintf(stderr, "Invalid unit '%s'\n", u);
@@ -353,7 +361,7 @@ const char *units(LengthUnits un)
 {
 	switch ( un ) {
 		case UNITS_SLIDE : return "u";
-		case UNITS_FRAC : return "fr";
+		case UNITS_FRAC : return "f";
 	}
 	return "annoyingly unspecified units";
 }

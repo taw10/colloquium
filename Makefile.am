@@ -38,8 +38,10 @@ noinst_PROGRAMS = tests/render_test tests/render_test_sc1
 TESTS = tests/render_test tests/render_test_sc1
 
 tests_render_test_SOURCES = tests/render_test.c src/render.c src/frame.c \
-                            src/wrap.c src/storycode.c src/imagestore.c
+                            src/wrap.c src/storycode.c src/imagestore.c \
+                            src/stylesheet.c src/loadsave.c
 
 tests_render_test_sc1_SOURCES = tests/render_test_sc1.c src/storycode.c \
                                 src/render.c src/frame.c src/wrap.c \
-                                src/imagestore.c
+                                src/imagestore.c src/stylesheet.c \
+                                src/loadsave.c

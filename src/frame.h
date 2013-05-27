@@ -30,6 +30,8 @@
 #include <pango/pango.h>
 #include <cairo.h>
 
+typedef struct _stylesheet StyleSheet;
+
 
 typedef enum
 {
@@ -114,7 +116,7 @@ struct frame
 
 extern struct frame *frame_new(void);
 extern struct frame *add_subframe(struct frame *fr);
-extern struct frame *sc_unpack(const char *sc);
+extern struct frame *sc_unpack(const char *sc, StyleSheet *ss);
 extern void show_hierarchy(struct frame *fr, const char *t);
 
 #endif	/* FRAME_H */

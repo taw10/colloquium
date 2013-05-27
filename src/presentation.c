@@ -265,6 +265,29 @@ static char *maybe_star(int i)
 }
 
 
+static char *frame_options_string(struct frame *fr, StyleSheet *ss)
+{
+	char *opt;
+
+	opt = malloc(64);
+	if ( opt == NULL ) return NULL;
+
+	snprintf(opt, 31, "style=%i%s",
+	         style_number(ss, fr->style), maybe_star(fr->lop_from_style));
+
+	if ( !fr->lop_from_style ) {
+		char tmp[32];
+		snprintf(tmp, 31, ",%.1f%sx%.1f%s+%.1f+%.1f",
+			         fr->lop.w, units(fr->lop.w_units),
+				 fr->lop.h, units(fr->lop.h_units),
+				 fr->lop.x, fr->lop.y);
+		strcat(opt, tmp);
+	}
+
+	return opt;
+}
+
+
 static char *packed_sc(struct frame *fr, StyleSheet *ss)
 {
 	char *sc;
@@ -286,22 +309,16 @@ static char *packed_sc(struct frame *fr, StyleSheet *ss)
 		char *ch_sc;
 		char *scn;
 		size_t ch_len;
+		char *frame_opts;
 
 		ch_sc = packed_sc(fr->children[i], ss);
 		ch_len = strlen(ch_sc);
 
+		frame_opts = frame_options_string(fr->children[i], ss);
+
 		len += ch_len + 64;
 		scn = malloc(len + ch_len);
-		snprintf(scn, len,
-		         "%s\\f[%.1f%sx%.1f%s+%.1f+%.1f,style=%i%s]{%s}", sc,
-		         fr->children[i]->lop.w,
-		         units(fr->children[i]->lop.w_units),
-		         fr->children[i]->lop.h,
-		         units(fr->children[i]->lop.h_units),
-		         fr->children[i]->lop.x, fr->children[i]->lop.y,
-		         style_number(ss, fr->children[i]->style),
-		         maybe_star(fr->children[i]->lop_from_style),
-		         ch_sc);
+		snprintf(scn, len, "%s\\f[%s]{%s}", sc, frame_opts, ch_sc);
 		free(ch_sc);
 		free(sc);
 		sc = scn;
@@ -383,7 +400,7 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 	s->parent = p;
 
 	get_field_s(root, "sc", &sc);
-	s->top = sc_unpack(sc);
+	s->top = sc_unpack(sc, p->ss);
 	free(sc);
 
 	return s;

@@ -1266,6 +1266,24 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 }
 
 
+static void do_resize(struct presentation *p, double x, double y,
+                                              double w, double h)
+{
+	struct frame *fr;
+
+	assert(p->n_selection > 0);
+
+	fr = p->selection[0];
+	fr->lop.x = x;
+	fr->lop.y = y;
+	fr->lop.w = w;
+	fr->lop.h = h;
+
+	rerender_slide(p);
+	redraw_editor(p);
+}
+
+
 static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
                                    struct presentation *p)
 {
@@ -1304,7 +1322,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		break;
 
 		case DRAG_REASON_RESIZE :
-		/* FIXME: Implement */
+		do_resize(p, p->box_x, p->box_y, p->box_width, p->box_height);
 		break;
 
 	}

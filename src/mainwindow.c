@@ -892,10 +892,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 
 	/* Draw the slide from the cache */
 	if ( p->cur_edit_slide->rendered_edit != NULL ) {
-		cairo_rectangle(cr, xoff, yoff, p->slide_width, p->slide_height);
 		cairo_set_source_surface(cr, p->cur_edit_slide->rendered_edit,
 			                 xoff, yoff);
-		cairo_fill(cr);
+		cairo_paint(cr);
 	} else {
 		fprintf(stderr, "Current slide not rendered yet!\n");
 	}

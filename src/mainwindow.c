@@ -1134,65 +1134,84 @@ static void calculate_box_size(struct frame *fr, struct presentation *p,
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  struct presentation *p)
 {
-	struct frame *clicked;
+	enum corner c;
 	gdouble x, y;
 
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
-	clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
+	if ( p->n_selection == 0 ) {
+	
+		struct frame *clicked;
 
-	if ( clicked == NULL ) {
-
-		/* Clicked no object. Deselect old object and set up for
-		 * (maybe) creating a new one. */
-
-		set_selection(p, NULL);
-		p->start_corner_x = event->x - p->border_offs_x;
-		p->start_corner_y = event->y - p->border_offs_y;
-		p->drag_status = DRAG_STATUS_COULD_DRAG;
-		p->drag_reason = DRAG_REASON_CREATE;
-
-	} else {
-
-		/* If the clicked object is not the same as the previously
-		 * selected one, deselect the old one. */
-		if ( p->selection[0] != clicked ) {
+		clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
+		
+		if ( clicked == NULL ) {
+			
+			/* Clicked no object. Deselect old object and set up for
+			 * (maybe) creating a new one. */
+			
 			set_selection(p, NULL);
+			p->start_corner_x = event->x - p->border_offs_x;
+			p->start_corner_y = event->y - p->border_offs_y;
+			p->drag_status = DRAG_STATUS_COULD_DRAG;
+			p->drag_reason = DRAG_REASON_CREATE;
+			
+		} else {
+			
+			/* Select new frame */
 			p->drag_status = DRAG_STATUS_NONE;
 			p->drag_reason = DRAG_REASON_NONE;
 			set_selection(p, clicked);
-		} else {
-
-			enum corner c;
-			struct frame *fr;
-
-			fr = p->selection[0];
-
-			/* Within the resizing region? */
-			c = which_corner(x, y, fr);
-			if ( c != CORNER_NONE ) {
-
-				p->drag_reason = DRAG_REASON_RESIZE;
-				p->drag_corner = c;
-
-				p->start_corner_x = x;
-				p->start_corner_y = y;
-				p->diagonal_length = pow(fr->w, 2.0);
-				p->diagonal_length += pow(fr->h, 2.0);
-				p->diagonal_length = sqrt(p->diagonal_length);
-
-				calculate_box_size(fr, p, x, y);
-
-				p->drag_status = DRAG_STATUS_COULD_DRAG;
-				p->drag_reason = DRAG_REASON_RESIZE;
-				printf("could drag resize\n");
-			}
-
+			
 		}
-
+		
+	} else {
+		
+		struct frame *fr;
+		
+		fr = p->selection[0];
+	
+		/* Within the resizing region? */
+		c = which_corner(x, y, fr);
+		if ( c != CORNER_NONE ) {
+			
+			p->drag_reason = DRAG_REASON_RESIZE;
+			p->drag_corner = c;
+			
+			p->start_corner_x = x;
+			p->start_corner_y = y;
+			p->diagonal_length = pow(fr->w, 2.0);
+			p->diagonal_length += pow(fr->h, 2.0);
+			p->diagonal_length = sqrt(p->diagonal_length);
+			
+			calculate_box_size(fr, p, x, y);
+			
+			p->drag_status = DRAG_STATUS_COULD_DRAG;
+			p->drag_reason = DRAG_REASON_RESIZE;
+			printf("could drag resize\n");
+			
+			
+		} else {
+			
+			struct frame *clicked;
+			
+			clicked = find_frame_at_position(p->cur_edit_slide->top,
+							 x, y);
+			
+			if ( clicked == fr ) {
+				p->drag_status = DRAG_STATUS_COULD_DRAG;
+				p->drag_reason = DRAG_REASON_MOVE;
+			} else {
+				/* Select new frame */
+				p->drag_status = DRAG_STATUS_NONE;
+				p->drag_reason = DRAG_REASON_NONE;
+				set_selection(p, clicked);
+			}
+		}
+	
 	}
-
+	
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 	redraw_editor(p);
 	return FALSE;
@@ -1231,6 +1250,10 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		calculate_box_size(fr, p,  event->x - p->border_offs_x,
 		                           event->y - p->border_offs_y);
 		redraw_editor(p);
+		break;
+		
+		case DRAG_REASON_MOVE :
+
 		break;
 
 	}
@@ -1322,6 +1345,10 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 		case DRAG_REASON_RESIZE :
 		do_resize(p, p->box_x, p->box_y, p->box_width, p->box_height);
+		break;
+		
+		case DRAG_REASON_MOVE :
+		/* FIXME */
 		break;
 
 	}

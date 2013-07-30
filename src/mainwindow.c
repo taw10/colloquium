@@ -1139,37 +1139,35 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 {
 	enum corner c;
 	gdouble x, y;
+	struct frame *clicked;
 
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
-	if ( p->n_selection == 0 ) {
 
-		struct frame *clicked;
+	clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
 
-		clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
+	if ( clicked == NULL ) {
 
-		if ( clicked == NULL ) {
+		/* Clicked no object. Deselect old object and set up for
+		 * (maybe) creating a new one. */
 
-			/* Clicked no object. Deselect old object and set up for
-			 * (maybe) creating a new one. */
-
-			set_selection(p, NULL);
-			p->start_corner_x = event->x - p->border_offs_x;
-			p->start_corner_y = event->y - p->border_offs_y;
-			p->drag_status = DRAG_STATUS_COULD_DRAG;
-			p->drag_reason = DRAG_REASON_CREATE;
-
-		} else {
-
-			/* Select new frame */
-			p->drag_status = DRAG_STATUS_NONE;
-			p->drag_reason = DRAG_REASON_NONE;
-			set_selection(p, clicked);
-
-		}
+		set_selection(p, NULL);
+		p->start_corner_x = event->x - p->border_offs_x;
+		p->start_corner_y = event->y - p->border_offs_y;
+		p->drag_status = DRAG_STATUS_COULD_DRAG;
+		p->drag_reason = DRAG_REASON_CREATE;
 
 	} else {
+
+		/* Select new frame */
+		p->drag_status = DRAG_STATUS_NONE;
+		p->drag_reason = DRAG_REASON_NONE;
+		set_selection(p, clicked);
+
+	}
+
+	if ( p->n_selection > 0 ) {
 
 		struct frame *fr;
 

@@ -929,6 +929,9 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 	size_t tlen, olen, offs;
 	int i;
 
+	/* If this is, say, the top level frame, do nothing */
+	if ( fr->sc == NULL ) return;
+
 	tlen = strlen(t);
 	olen = strlen(fr->sc);
 

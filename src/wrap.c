@@ -251,6 +251,8 @@ static void calc_line_geometry(struct wrap_line *line)
 	int i;
 
 	line->width = 0;
+	line->ascent = 0;
+	line->height = 0;
 
 	for ( i=0; i<line->n_boxes; i++ ) {
 		struct wrap_box *box = &line->boxes[i];
@@ -267,6 +269,8 @@ struct sc_font
 	PangoFontDescription *fontdesc;
 	PangoFont *font;
 	double col[4];
+	int ascent;
+	int height;
 };
 
 
@@ -293,8 +297,8 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 	box->space = space;
 	box->font = font->font;
 	box->width = 0;
-	box->ascent = 0;
-	box->height = 0;
+	box->ascent = font->ascent;
+	box->height = font->height;
 	box->col[0] = font->col[0];  /* Red */
 	box->col[1] = font->col[1];  /* Green */
 	box->col[2] = font->col[2];  /* Blue */
@@ -432,6 +436,8 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 static void set_font(struct sc_font *scf, const char *font_name,
                      PangoContext *pc)
 {
+	PangoFontMetrics *metrics;
+
 	scf->fontdesc = pango_font_description_from_string(font_name);
 	if ( scf->fontdesc == NULL ) {
 		fprintf(stderr, "Couldn't describe font.\n");
@@ -443,8 +449,15 @@ static void set_font(struct sc_font *scf, const char *font_name,
 		fprintf(stderr, "Couldn't load font.\n");
 		return;
 	}
+
 	scf->col[0] = 0.0;  scf->col[1] = 0.0;  scf->col[2] = 0.0;
 	scf->col[3] = 1.0;
+
+	/* FIXME: Language for box */
+	metrics = pango_font_get_metrics(scf->font, NULL);
+	scf->ascent = pango_font_metrics_get_ascent(metrics);
+	scf->height = scf->ascent + pango_font_metrics_get_descent(metrics);
+	pango_font_metrics_unref(metrics);
 }
 
 

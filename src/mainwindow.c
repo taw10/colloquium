@@ -829,6 +829,7 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 		h = p->selection[i]->lop.h;
 
 		/* Draw resize handles */
+		/* FIXME: Not if this frame can't be resized */
 		draw_resize_handle(cr, x, y+h-20.0);
 		draw_resize_handle(cr, x+w-20.0, y);
 		draw_resize_handle(cr, x, y);

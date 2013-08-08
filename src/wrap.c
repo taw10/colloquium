@@ -1067,6 +1067,25 @@ static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n)
 }
 
 
+void show_boxes(struct wrap_line *boxes)
+{
+	int i;
+
+	if ( boxes == NULL ) {
+		printf("Empty line.\n");
+		return;
+	}
+
+	for ( i=0; i<boxes->n_boxes; i++ ) {
+		printf("%3i", i);
+		printf(" '%s'", boxes->boxes[i].text);
+		printf(" t=%i s=%i %i %5.2f\n",
+		       boxes->boxes[i].type, boxes->boxes[i].space,
+		       boxes->boxes[i].width, boxes->boxes[i].sp);
+	}
+}
+
+
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
 int wrap_contents(struct frame *fr, PangoContext *pc)

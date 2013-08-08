@@ -104,5 +104,6 @@ extern void get_cursor_pos(struct frame *fr, size_t pos,
 
 
 extern void wrap_line_free(struct wrap_line *l);
+extern void show_boxes(struct wrap_line *boxes);
 
 #endif	/* WRAP_H */

@@ -330,6 +330,7 @@ static void add_image_box(struct wrap_line *line, const char *filename,
 	box = &line->boxes[line->n_boxes];
 	box->sc_offset = offset;
 	box->type = WRAP_BOX_IMAGE;
+	box->text = NULL;
 	box->space = WRAP_SPACE_NONE;
 	box->width = pango_units_from_double(w);
 	box->ascent = pango_units_from_double(h);

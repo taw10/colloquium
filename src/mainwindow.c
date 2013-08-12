@@ -927,7 +927,7 @@ void update_titlebar(struct presentation *p)
 static void insert_text(struct frame *fr, char *t, struct presentation *p)
 {
 	char *tmp;
-	size_t tlen, olen, offs;
+	size_t tlen, olen;
 	int i;
 
 	/* If this is, say, the top level frame, do nothing */
@@ -951,16 +951,14 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 	tmp = malloc(fr->sc_len);
 	if ( tmp == NULL ) return;
 
-	offs = fr->pos;
-
-	for ( i=0; i<offs; i++ ) {
+	for ( i=0; i<fr->pos; i++ ) {
 		tmp[i] = fr->sc[i];
 	}
 	for ( i=0; i<tlen; i++ ) {
-		tmp[i+offs] = t[i];
+		tmp[i+fr->pos] = t[i];
 	}
 	for ( i=0; i<olen-fr->pos; i++ ) {
-		tmp[i+offs+tlen] = fr->sc[i+offs];
+		tmp[i+fr->pos+tlen] = fr->sc[i+fr->pos];
 	}
 	tmp[olen+tlen] = '\0';
 	memcpy(fr->sc, tmp, fr->sc_len);

@@ -258,6 +258,7 @@ static void calc_line_geometry(struct wrap_line *line)
 	for ( i=0; i<line->n_boxes; i++ ) {
 		struct wrap_box *box = &line->boxes[i];
 		line->width += box->width;
+		if ( box->space == WRAP_SPACE_EOP ) box->sp = 0.0;
 		line->width += box->sp;
 		if ( box->height > line->height ) line->height = box->height;
 		if ( box->ascent > line->ascent ) line->ascent = box->ascent;

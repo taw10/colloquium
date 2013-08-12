@@ -329,7 +329,7 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 
 	} while ( i<len );
 
-	if ( (blockname == NULL) && (j != 0) ) {
+	if ( (blockname == NULL) && (j > 1) ) {
 		tbuf[j] = '\0';
 		if ( sc_block_list_add(bl, start, NULL, NULL, tbuf) )
 		{

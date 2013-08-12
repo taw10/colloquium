@@ -232,6 +232,7 @@ static int recursive_unpack(struct frame *fr, const char *sc, StyleSheet *ss)
 		parse_options(sfr, b->options, ss);
 
 		sfr->sc = remove_blocks(b->contents, "f");
+		sfr->sc_len = strlen(sfr->sc)+1;
 		if ( recursive_unpack(sfr, b->contents, ss) ) {
 			sc_block_list_free(bl);
 			return 1;

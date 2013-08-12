@@ -144,12 +144,13 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 
 		*xposd += p;
 		*xposd /= PANGO_SCALE;
-		*xposd += fr->lop.pad_l;
 		//printf("%i  ->  line %i, box %i  -> %f, %f\n",
 		//       (int)pos, line, box, *xposd, *yposd);
 
 	} else {
 	}
+
+	*xposd += fr->lop.pad_l;
 }
 
 

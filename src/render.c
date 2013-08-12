@@ -97,9 +97,15 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 static void draw_outline(cairo_t *cr, struct wrap_box *box)
 {
 	char tmp[32];
+	double asc, desc;
 
-	cairo_rectangle(cr, 0.0, 0.0, pango_units_to_double(box->width),
-	                              pango_units_to_double(box->height));
+	if ( box->type == WRAP_BOX_SENTINEL ) return;
+
+	asc = pango_units_to_double(box->ascent);
+	desc = pango_units_to_double(box->height) - asc;
+
+	cairo_rectangle(cr, 0.0, -asc, pango_units_to_double(box->width),
+			         asc + desc);
 	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 0.1);
 	cairo_stroke(cr);
@@ -108,7 +114,7 @@ static void draw_outline(cairo_t *cr, struct wrap_box *box)
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_ITALIC,
 	                                   CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, 10.0);
-	cairo_move_to(cr, 0.0, 0.0);
+	cairo_move_to(cr, 0.0, desc);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.7);
 	cairo_show_text(cr, tmp);
 }

@@ -81,22 +81,16 @@ static void initialise_line(struct wrap_line *l)
 }
 
 
-void get_cursor_pos(struct frame *fr, size_t pos,
-                    double *xposd, double *yposd, double *line_height)
+
+static struct wrap_line *get_cursor_line(struct frame *fr, size_t pos,
+					 double *yposd)
 {
-	int line, box;
-	signed int i;
-	struct wrap_line *l;
-	struct wrap_box *b;
-	int p;
+	int line = 0;
+	int i;
 	int found = 0;
 
-	*xposd = 0;
 	*yposd = 0;
 
-	if ( fr->n_lines == 0 ) return;
-
-	line = 0;
 	for ( i=0; i<fr->n_lines; i++ ) {
 		if ( fr->lines[i].sc_offset > pos ) {
 			line = i-1;
@@ -110,26 +104,46 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	}
 	if ( line < 0 ) {
 		printf("Couldn't find cursor.\n");
-		return;
+		return NULL;
 	}
 	for ( i=0; i<line; i++ ) {
 		*yposd += fr->lines[i].height;
 	}
 
-	*line_height = pango_units_to_double(fr->lines[line].height);
 	*yposd /= PANGO_SCALE;
 	*yposd += fr->lop.pad_t;
 
-	l = &fr->lines[line];
-	box = 0;
-	for ( i=0; i<l->n_boxes-1; i++ ) {
-		box = i;
-		if ( l->boxes[i+1].type == WRAP_BOX_SENTINEL ) break;
-		if ( l->boxes[i+1].sc_offset > pos ) break;
-		*xposd += l->boxes[i].width;
-		if ( i < l->n_boxes-2 ) {
-			*xposd += l->boxes[i].sp;
-		}
+	return &fr->lines[line];
+}
+
+
+void get_cursor_pos(struct frame *fr, size_t pos,
+                    double *xposd, double *yposd, double *line_height)
+{
+	signed int i;
+	struct wrap_line *l;
+	struct wrap_box *b;
+	int p;
+	int box;
+
+	if ( fr->n_lines == 0 ) return;
+
+	l = get_cursor_line(fr, pos, yposd);
+	if ( l == NULL ) return;
+
+	*line_height = pango_units_to_double(l->height);
+
+	for ( box=1; box<l->n_boxes; box++ ) {
+		/* Was the cursor in the previous box? */
+		if ( l->boxes[box].type == WRAP_BOX_SENTINEL ) break;
+		if ( l->boxes[box].sc_offset > pos ) break;
+	}
+	box--;
+
+	*xposd = fr->lop.pad_l;
+	for ( i=0; i<box; i++ ) {
+		*xposd += pango_units_to_double(l->boxes[i].width);
+		*xposd += pango_units_to_double(l->boxes[i].sp);
 	}
 
 	b = &l->boxes[box];
@@ -142,15 +156,13 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 		//printf("offset %i in '%s' -> %i\n",
 		//       (int)pos-(int)b->sc_offset, b->text, p);
 
-		*xposd += p;
-		*xposd /= PANGO_SCALE;
+		*xposd += pango_units_to_double(p);
 		//printf("%i  ->  line %i, box %i  -> %f, %f\n",
 		//       (int)pos, line, box, *xposd, *yposd);
 
 	} else {
+		/* FIXME ! */
 	}
-
-	*xposd += fr->lop.pad_l;
 }
 
 

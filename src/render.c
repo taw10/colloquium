@@ -140,11 +140,12 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 		box = &line->boxes[j];
 		cairo_translate(cr, x_pos, 0.0);
 
+		draw_outline(cr, box);
+
 		switch ( line->boxes[j].type ) {
 
 			case WRAP_BOX_PANGO :
 			render_glyph_box(cr, box);
-			//draw_outline(cr, box);
 			break;
 
 			case WRAP_BOX_IMAGE :
@@ -152,7 +153,6 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 			break;
 
 			case WRAP_BOX_NOTHING :
-			//draw_outline(cr, box);
 			break;
 
 			case WRAP_BOX_SENTINEL :

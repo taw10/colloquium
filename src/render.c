@@ -110,6 +110,11 @@ static void draw_outline(cairo_t *cr, struct wrap_box *box)
 	cairo_set_line_width(cr, 0.1);
 	cairo_stroke(cr);
 
+	cairo_rectangle(cr, pango_units_to_double(box->width), -asc,
+			pango_units_to_double(box->sp), asc + desc);
+	cairo_set_source_rgb(cr, 0.7, 0.4, 0.7);
+	cairo_fill(cr);
+
 	snprintf(tmp, 31, "%lli", (long long int)box->sc_offset);
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_ITALIC,
 	                                   CAIRO_FONT_WEIGHT_NORMAL);

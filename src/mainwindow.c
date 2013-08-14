@@ -972,6 +972,27 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 }
 
 
+static void do_backspace(struct frame *fr, struct presentation *p)
+{
+	size_t tlen, olen;
+
+	/* If this is, say, the top level frame, do nothing */
+	if ( fr->sc == NULL ) return;
+
+	if ( fr->pos == 0 ) return;
+
+	olen = strlen(fr->sc);
+	tlen = 1;  /* FIXME: Length of character before cursor */
+
+	memmove(fr->sc+fr->pos-tlen, fr->sc+fr->pos, olen);
+
+	rerender_slide(p);
+	fr->pos -= tlen;
+	p->cursor_pos = fr->pos;
+	redraw_editor(p);
+	fr->empty = 0;
+}
+
 
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               struct presentation *p)
@@ -1452,6 +1473,11 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Return :
 		im_commit_sig(NULL, "\n", p);
+		claim = 1;
+		break;
+
+		case GDK_KEY_BackSpace :
+		do_backspace(p->selection[0], p);
 		claim = 1;
 		break;
 

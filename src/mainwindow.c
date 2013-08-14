@@ -1146,7 +1146,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 	clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
 
-	if ( clicked == NULL ) {
+	if ( (clicked == NULL) || (clicked == p->cur_edit_slide->top) ) {
 
 		/* Clicked no object. Deselect old object and set up for
 		 * (maybe) creating a new one. */

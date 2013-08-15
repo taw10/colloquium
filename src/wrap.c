@@ -166,72 +166,78 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 }
 
 
-#if 0
+static struct wrap_line *find_cursor_line(struct frame *fr, double yposd,
+					  int *end)
+{
+	int i;
+	double y = fr->lop.pad_t;
+
+	*end = 0;
+
+	for ( i=0; i<fr->n_lines; i++ ) {
+		double height = pango_units_to_double(fr->lines[i].height);
+		if ( yposd < y + height ) {
+			return &fr->lines[i];
+		}
+		y += height;
+	}
+
+	*end = 1;
+	return &fr->lines[fr->n_lines-1];
+}
+
+
+static struct wrap_box *find_cursor_box(struct frame *fr, struct wrap_line *l,
+					double xposd, double *x_pos, int *end)
+{
+	int i;
+	double x = fr->lop.pad_l;
+
+	*end = 0;
+
+	for ( i=0; i<l->n_boxes; i++ ) {
+		double width = pango_units_to_double(l->boxes[i].width);
+		width += pango_units_to_double(l->boxes[i].sp);
+		if ( xposd < x + width ) {
+			*x_pos = xposd - x;
+			return &l->boxes[i];
+		}
+		x += width;
+	}
+
+	*end = 1;
+	*x_pos = xposd - x;
+	return &l->boxes[i];
+}
+
+
 size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 {
-	int line, box;
-	signed int i;
 	struct wrap_line *l;
 	struct wrap_box *b;
-	int p;
-	int found = 0;
+	int end;
+	double x_pos;
 
-	*xposd = 0;
-	*yposd = 0;
+	l = find_cursor_line(fr, yposd, &end);
 
-	line = 0;
-	for ( i=0; i<fr->n_lines; i++ ) {
-		if ( fr->lines[i].sc_offset > pos ) {
-			line = i-1;
-			found = 1;
-			break;
-		}
-	}
-	if ( !found ) {
-		/* Cursor is on the last line */
-		line = fr->n_lines-1;
-	}
-	assert(line >= 0);
-	for ( i=0; i<line; i++ ) {
-		*yposd += fr->lines[i].height;
-	}
-
-	*line_height = pango_units_to_double(fr->lines[line].height);
-	*yposd /= PANGO_SCALE;
-	*yposd += fr->lop.pad_t;
-
-	l = &fr->lines[line];
-	box = 0;
-	for ( i=0; i<l->n_boxes-1; i++ ) {
-		box = i;
-		if ( l->boxes[i+1].type == WRAP_BOX_SENTINEL ) break;
-		if ( l->boxes[i+1].sc_offset > pos ) break;
-		*xposd += l->boxes[i].width;
-		if ( i < l->n_boxes-2 ) {
-			*xposd += l->boxes[i].sp;
-		}
-	}
-
-	b = &l->boxes[box];
-	if ( b->type == WRAP_BOX_PANGO ) {
-		pango_glyph_string_index_to_x(b->glyphs, b->text,
-		                              strlen(b->text),
-			                      &b->item->analysis,
-			                      pos - b->sc_offset,
-			                      FALSE, &p);
-		//printf("offset %i in '%s' -> %i\n",
-		//       (int)pos-(int)b->sc_offset, b->text, p);
-
-		*xposd += p;
-		*xposd /= PANGO_SCALE;
-		*xposd += fr->lop.pad_l;
-		//printf("%i  ->  line %i, box %i  -> %f, %f\n",
-		//       (int)pos, line, box, *xposd, *yposd);
-
+	if ( end ) {
+		b = &l->boxes[l->n_boxes - 1];
 	} else {
+		b = find_cursor_box(fr, l, xposd, &x_pos, &end);
 	}
+
+	if ( b->type == WRAP_BOX_PANGO ) {
+		int idx, trail;
+		int x_pos_i = pango_units_from_double(x_pos);
+		pango_glyph_string_x_to_index(b->glyphs, b->text,
+					      strlen(b->text),
+					      &b->item->analysis,
+				              x_pos_i, &idx, &trail);
+		return b->sc_offset + idx + trail;  /* FIXME: Assumes 1 byte char */
+	}
+
+	return b->sc_offset;
 }
-#endif
 
 
 static void shape_and_measure(gpointer data, gpointer user_data)

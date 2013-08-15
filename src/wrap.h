@@ -102,6 +102,7 @@ extern int wrap_contents(struct frame *fr, PangoContext *pc);
 extern void get_cursor_pos(struct frame *fr, size_t pos,
                            double *xposd, double *yposd, double *line_height);
 
+extern size_t find_cursor_pos(struct frame *fr, double xposd, double yposd);
 
 extern void wrap_line_free(struct wrap_line *l);
 extern void show_boxes(struct wrap_line *boxes);

@@ -189,7 +189,11 @@ static void parse_options(struct frame *fr, const char *opth, StyleSheet *ss)
 	int i;
 	size_t len;
 	size_t start;
-	char *opt = strdup(opth);
+	char *opt;
+
+	if ( opth == NULL ) return;
+
+	opt = strdup(opth);
 
 	len = strlen(opt);
 	start = 0;

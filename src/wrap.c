@@ -411,8 +411,8 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 				return 1;
 			}
 
-			if ( add_wrap_box(boxes, word, start, type, pc,
-			                  font) ) {
+			if ( add_wrap_box(boxes, word, start+sc_offset, type,
+			                  pc, font) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = i;
@@ -435,15 +435,15 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			/* There is a newline at the end of the SC */
 			char *word2;
 			word2 = strndup(word, i-start-1);
-			add_wrap_box(boxes, word2, start, WRAP_SPACE_EOP, pc,
-		                     font);
-			add_wrap_box(boxes, strdup(""), i, WRAP_SPACE_NONE, pc,
-		                     font);
+			add_wrap_box(boxes, word2, start+sc_offset,
+			             WRAP_SPACE_EOP, pc, font);
+			add_wrap_box(boxes, strdup(""), i+sc_offset,
+			             WRAP_SPACE_NONE, pc, font);
 
 		} else {
 
-			add_wrap_box(boxes, word, start, WRAP_SPACE_NONE, pc,
-				     font);
+			add_wrap_box(boxes, word, start+sc_offset,
+			             WRAP_SPACE_NONE, pc, font);
 
 		}
 
@@ -547,7 +547,7 @@ invalid:
 
 static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
                    int *max_fonts, PangoContext *pc, struct wrap_line *boxes,
-                   PangoLanguage *lang)
+                   PangoLanguage *lang, size_t g_offset)
 {
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
@@ -564,9 +564,10 @@ static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
 	      b != NULL;
 	      b = sc_block_list_next(bl, iter) )
 	{
+		size_t offset = b->offset + g_offset;
 
 		if ( b->name == NULL ) {
-			split_words(boxes, pc, b->contents, b->offset,
+			split_words(boxes, pc, b->contents, offset,
 			            lang, &fonts[(*n_fonts)-1]);
 
 		} else if ( (strcmp(b->name, "font")==0)
@@ -577,14 +578,14 @@ static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
 		         && (b->contents != NULL) ) {
 			push_font(fonts, b->options, n_fonts, max_fonts, pc);
 			run_sc(b->contents, fonts, n_fonts, max_fonts, pc,
-			       boxes, lang);
+			       boxes, lang, offset);
 			pop_font(fonts, n_fonts, max_fonts);
+
 		} else if ( (strcmp(b->name, "image")==0)
 		         && (b->contents != NULL) && (b->options != NULL) ) {
 			int w, h;
 			if ( get_size(b->options, &w, &h) == 0 ) {
-				add_image_box(boxes, b->contents, b->offset,
-				              w, h);
+				add_image_box(boxes, b->contents, offset, w, h);
 			}
 		}
 
@@ -620,9 +621,9 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
 	fonts = push_font(fonts, "Sans 12", &n_fonts, &max_fonts, pc);
 
 	if ( prefix != NULL ) {
-		run_sc(prefix, fonts, &n_fonts, &max_fonts, pc, boxes, lang);
+		run_sc(prefix, fonts, &n_fonts, &max_fonts, pc, boxes, lang, 0);
 	}
-	run_sc(sc, fonts, &n_fonts, &max_fonts, pc, boxes, lang);
+	run_sc(sc, fonts, &n_fonts, &max_fonts, pc, boxes, lang, 0);
 
 	for ( i=0; i<n_fonts; i++ ) {
 		pango_font_description_free(fonts[i].fontdesc);

@@ -271,7 +271,7 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 		return NULL;
 	}
 
-	i = 0;  j = 0;
+	i = 0;  j = 0;  start = 0;
 	do {
 
 		if ( sc[i] == '\\' ) {

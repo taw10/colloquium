@@ -126,6 +126,10 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	int p;
 	int box;
 
+	*xposd = 0.0;
+	*yposd = 0.0;
+	*line_height = 20.0;
+
 	if ( fr->n_lines == 0 ) return;
 
 	l = get_cursor_line(fr, pos, yposd);
@@ -147,21 +151,20 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	}
 
 	b = &l->boxes[box];
-	if ( b->type == WRAP_BOX_PANGO ) {
+	switch ( b->type ) {
+
+		case WRAP_BOX_PANGO :
 		pango_glyph_string_index_to_x(b->glyphs, b->text,
 		                              strlen(b->text),
 			                      &b->item->analysis,
 			                      pos - b->sc_offset,
 			                      FALSE, &p);
-		//printf("offset %i in '%s' -> %i\n",
-		//       (int)pos-(int)b->sc_offset, b->text, p);
-
 		*xposd += pango_units_to_double(p);
-		//printf("%i  ->  line %i, box %i  -> %f, %f\n",
-		//       (int)pos, line, box, *xposd, *yposd);
+		break;
 
-	} else {
-		/* FIXME ! */
+		case WRAP_BOX_IMAGE :
+		break;
+
 	}
 }
 
@@ -207,7 +210,7 @@ static struct wrap_box *find_cursor_box(struct frame *fr, struct wrap_line *l,
 
 	*end = 1;
 	*x_pos = xposd - x;
-	return &l->boxes[i];
+	return &l->boxes[l->n_boxes-1];
 }
 
 
@@ -216,7 +219,9 @@ size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 	struct wrap_line *l;
 	struct wrap_box *b;
 	int end;
-	double x_pos;
+	double x_pos = 0.0;
+	int idx, trail;
+	int x_pos_i;
 
 	l = find_cursor_line(fr, yposd, &end);
 
@@ -226,14 +231,24 @@ size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 		b = find_cursor_box(fr, l, xposd, &x_pos, &end);
 	}
 
-	if ( b->type == WRAP_BOX_PANGO ) {
-		int idx, trail;
-		int x_pos_i = pango_units_from_double(x_pos);
+	switch ( b->type ) {
+
+		case WRAP_BOX_NOTHING :
+		fprintf(stderr, "Clicked a nothing box!\n");
+		abort();
+
+		case WRAP_BOX_PANGO :
+		x_pos_i = pango_units_from_double(x_pos);
 		pango_glyph_string_x_to_index(b->glyphs, b->text,
-					      strlen(b->text),
-					      &b->item->analysis,
-				              x_pos_i, &idx, &trail);
-		return b->sc_offset + idx + trail;  /* FIXME: Assumes 1 byte char */
+		                              strlen(b->text),
+		                              &b->item->analysis,
+		                              x_pos_i, &idx, &trail);
+		/* FIXME: Assumes 1 byte char */
+		return b->sc_offset + idx + trail;
+
+		case WRAP_BOX_SENTINEL :
+		return l->boxes[l->n_boxes-2].sc_offset;
+
 	}
 
 	return b->sc_offset;

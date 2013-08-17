@@ -1398,6 +1398,7 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
 	ssize_t pos = p->cursor_pos;
 
+	/* FIXME: Advance past images etc */
 	pos += x;
 
 	if ( pos < 0 ) pos = 0;

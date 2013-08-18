@@ -329,7 +329,12 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 
 	} while ( i<len );
 
-	if ( (blockname == NULL) && (j > 1) ) {
+	/* Add final block, if it exists */
+	if ( (blockname == NULL) && (j > 0) ) {
+
+		/* Leftover buffer is empty? */
+		if ( (j==1) && (tbuf[0]=='\0') ) return bl;
+
 		tbuf[j] = '\0';
 		if ( sc_block_list_add(bl, start, NULL, NULL, tbuf) )
 		{

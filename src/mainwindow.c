@@ -981,7 +981,7 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 
 	if ( fr->pos == 0 ) return;
 
-	olen = strlen(fr->sc);
+	olen = strlen(fr->sc) - fr->pos + 1;
 	tlen = 1;  /* FIXME: Length of character before cursor */
 
 	memmove(fr->sc+fr->pos-tlen, fr->sc+fr->pos, olen);

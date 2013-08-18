@@ -95,7 +95,7 @@ struct frame
 
 	struct layout_parameters  lop;
 	struct style             *style;
-	int                       lop_from_style;/* Trye if lop came from SS */
+	int                       lop_from_style; /* True if lop came from SS */
 
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;

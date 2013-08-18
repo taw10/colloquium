@@ -61,6 +61,7 @@ extern StyleSheet *new_stylesheet();
 extern StyleSheet *load_stylesheet(const char *filename);
 extern void free_stylesheet(StyleSheet *ss);
 extern StyleSheet *default_stylesheet(void);
+extern int replace_stylesheet(struct presentation *p, const char *filename);
 
 extern struct style *new_style(StyleSheet *ss, const char *name);
 extern struct style *default_style(StyleSheet *ss);

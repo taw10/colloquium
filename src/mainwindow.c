@@ -229,6 +229,151 @@ static gint open_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static void do_slide_update(struct presentation *p, PangoContext *pc)
+{
+	rerender_slide(p);
+	redraw_editor(p);
+	if ( (p->slideshow != NULL)
+	  && (p->cur_edit_slide == p->cur_proj_slide) )
+	{
+		redraw_slideshow(p);
+	}
+}
+
+
+static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
+{
+	struct frame *fr;
+	struct style *sty = pl->sty;
+	struct presentation *p = pl->p;
+
+	fr = add_subframe(p->cur_edit_slide->top);
+	fr->style = sty;
+	fr->lop_from_style = 1;
+	set_edit(p, p->cur_edit_slide);
+	fr->sc = strdup("");
+	fr->sc_len = 6;
+	set_selection(p, fr);
+	fr->pos = 0;
+	p->cursor_pos = 0;
+
+	do_slide_update(p, p->pc);
+
+	return 0;
+}
+
+
+static void update_style_menus(struct presentation *p)
+{
+	GtkWidget *menu;
+	GtkWidget *item;
+	struct slide_template *t;
+	TemplateIterator *iter;
+	int i, j, k, n_j, n_k;
+
+	for ( i=0; i<p->n_menu_rebuild; i++ ) {
+		gtk_widget_destroy(p->menu_rebuild_list[i]);
+	}
+	free(p->menu_rebuild_list);
+	free(p->menu_path_list);
+
+	/* Add the styles to the "Insert" menu */
+	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
+	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
+
+	n_k = 0;  n_j = 0;
+	for ( t = template_first(p->ss, &iter);
+	      t != NULL;
+	      t = template_next(p->ss, iter) )
+	{
+		n_k += t->n_styles;
+		n_j++;
+	}
+
+	p->menu_rebuild_list = calloc(n_j, sizeof(GtkWidget *));
+	if ( p->menu_rebuild_list == NULL ) return;
+
+	p->menu_path_list = calloc(n_k, sizeof(struct menu_pl));
+	if ( p->menu_path_list == NULL ) return;
+
+	j = 0;
+	k = 0;
+	for ( t = template_first(p->ss, &iter);
+	      t != NULL;
+	      t = template_next(p->ss, iter) )
+	{
+		GtkWidget *submenu;
+
+		submenu = gtk_menu_new();
+		item = gtk_menu_item_new_with_label(t->name);
+		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+		gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), submenu);
+		p->menu_rebuild_list[j++] = item;
+
+		for ( i=0; i<t->n_styles; i++ ) {
+
+			struct style *s = t->styles[i];
+
+			p->menu_path_list[k].p = p;
+			p->menu_path_list[k].sty = s;
+
+			item = gtk_menu_item_new_with_label(s->name);
+			gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+			g_signal_connect(G_OBJECT(item), "activate",
+			                 G_CALLBACK(add_furniture),
+			                 &p->menu_path_list[k]);
+			k++;
+
+		}
+	}
+
+	gtk_widget_show_all(menu);
+
+	p->n_menu_rebuild = j;
+}
+
+
+static gint loadstyle_response_sig(GtkWidget *d, gint response,
+			      struct presentation *p)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+		replace_stylesheet(p, filename);
+		g_free(filename);
+		update_style_menus(p);
+		rerender_slide(p);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static gint loadstyle_sig(GtkWidget *widget, struct presentation *p)
+{
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new("Load Stylesheet",
+	                                GTK_WINDOW(p->window),
+	                                GTK_FILE_CHOOSER_ACTION_OPEN,
+	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	g_signal_connect(G_OBJECT(d), "response",
+			 G_CALLBACK(loadstyle_response_sig), p);
+
+	gtk_widget_show_all(d);
+
+	return 0;
+}
+
+
 static gint new_sig(GtkWidget *widget, struct presentation *pnn)
 {
 	struct presentation *p;
@@ -533,115 +678,12 @@ static gint open_notes_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
-static void do_slide_update(struct presentation *p, PangoContext *pc)
-{
-	rerender_slide(p);
-	redraw_editor(p);
-	if ( (p->slideshow != NULL)
-	  && (p->cur_edit_slide == p->cur_proj_slide) )
-	{
-		redraw_slideshow(p);
-	}
-}
-
-
-
-static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
-{
-	struct frame *fr;
-	struct style *sty = pl->sty;
-	struct presentation *p = pl->p;
-
-	fr = add_subframe(p->cur_edit_slide->top);
-	fr->style = sty;
-	fr->lop_from_style = 1;
-	set_edit(p, p->cur_edit_slide);
-	fr->sc = strdup("");
-	fr->sc_len = 6;
-	set_selection(p, fr);
-	fr->pos = 0;
-	p->cursor_pos = 0;
-
-	do_slide_update(p, p->pc);
-
-	return 0;
-}
-
-
-static void update_style_menus(struct presentation *p)
-{
-	GtkWidget *menu;
-	GtkWidget *item;
-	struct slide_template *t;
-	TemplateIterator *iter;
-	int i, j, n;
-
-	for ( i=0; i<p->n_menu_rebuild; i++ ) {
-		gtk_widget_destroy(p->menu_rebuild_list[i]);
-	}
-	free(p->menu_rebuild_list);
-	free(p->menu_path_list);
-
-	/* Add the styles to the "Insert" menu */
-	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
-	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
-	item = gtk_separator_menu_item_new();
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-
-	n = 0;
-	for ( t = template_first(p->ss, &iter);
-	      t != NULL;
-	      t = template_next(p->ss, iter) )
-	{
-		n += t->n_styles;
-		n += 1;  /* The top level */
-	}
-
-	p->menu_rebuild_list = calloc(n, sizeof(GtkWidget *));
-	if ( p->menu_rebuild_list == NULL ) return;
-
-	p->menu_path_list = calloc(n, sizeof(struct menu_pl));
-	if ( p->menu_path_list == NULL ) return;
-
-	j = 0;
-	for ( t = template_first(p->ss, &iter);
-	      t != NULL;
-	      t = template_next(p->ss, iter) )
-	{
-		GtkWidget *submenu;
-
-		submenu = gtk_menu_new();
-		item = gtk_menu_item_new_with_label(t->name);
-		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-			gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), submenu);
-		p->menu_rebuild_list[j++] = item;
-
-		for ( i=0; i<t->n_styles; i++ ) {
-
-			struct style *s = t->styles[i];
-
-			p->menu_path_list[j].p = p;
-			p->menu_path_list[j].sty = s;
-
-			item = gtk_menu_item_new_with_label(s->name);
-			gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
-			p->menu_rebuild_list[j] = item;
-			g_signal_connect(G_OBJECT(item), "activate",
-			                 G_CALLBACK(add_furniture),
-			                 &p->menu_path_list[j]);
-			j++;
-
-		}
-	}
-
-	p->n_menu_rebuild = j;
-}
-
-
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
 	GtkWidget *toolbar;
+	GtkWidget *menu;
+	GtkWidget *item;
 
 	GtkActionEntry entries[] = {
 
@@ -650,13 +692,15 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, G_CALLBACK(new_sig) },
 		{ "OpenAction", GTK_STOCK_OPEN, "_Open...",
 			NULL, NULL, G_CALLBACK(open_sig) },
+		{ "LoadStyleAction", NULL, "_Load Stylesheet...",
+			NULL, NULL, G_CALLBACK(loadstyle_sig) },
 		{ "SaveAction", GTK_STOCK_SAVE, "_Save",
 			NULL, NULL, G_CALLBACK(save_sig) },
 		{ "SaveAsAction", GTK_STOCK_SAVE_AS, "Save _As...",
 			NULL, NULL, G_CALLBACK(saveas_sig) },
-		{ "SaveStyleAction", GTK_STOCK_SAVE_AS, "Save St_ylesheet",
+		{ "SaveStyleAction", NULL, "Save St_ylesheet",
 			NULL, NULL, G_CALLBACK(save_ss_sig) },
-		{ "ExportPDFAction", GTK_STOCK_SAVE_AS, "Export PDF",
+		{ "ExportPDFAction", NULL, "Export PDF",
 			NULL, NULL, G_CALLBACK(export_pdf_sig) },
 		{ "QuitAction", GTK_STOCK_QUIT, "_Quit",
 			NULL, NULL, G_CALLBACK(quit_sig) },
@@ -729,6 +773,11 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 	toolbar = gtk_ui_manager_get_widget(p->ui, "/displaywindowtoolbar");
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar),
 	                   gtk_separator_tool_item_new(), -1);
+
+	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
+	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
+	item = gtk_separator_menu_item_new();
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
 	update_style_menus(p);
 	update_toolbar(p);

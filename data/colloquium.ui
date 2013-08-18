@@ -4,9 +4,10 @@
 		<menu name="file" action="FileAction">
 			<menuitem name="new" action="NewAction" />
 			<menuitem name="open" action="OpenAction" />
-			<separator />
 			<menuitem name="save" action="SaveAction" />
 			<menuitem name="saveas" action="SaveAsAction" />
+			<separator />
+			<menuitem name="loadstyle" action="LoadStyleAction" />
 			<menuitem name="savestyle" action="SaveStyleAction" />
 			<menuitem name="exportpdf" action="ExportPDFAction" />
 			<separator />
@@ -27,7 +28,6 @@
 
 		<menu name="insert" action="InsertAction">
 			<menuitem name="newslide" action="NewSlideAction" />
-			<separator />
 		</menu>
 
 		<menu name="tools" action="ToolsAction">

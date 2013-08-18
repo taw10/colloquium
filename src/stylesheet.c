@@ -303,6 +303,109 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 }
 
 
+static int fixup_styles(struct frame *fr, StyleSheet *ss)
+{
+	int i;
+	char *t;
+	int n = 0;
+
+	if ( fr->style != NULL ) {
+
+		/* FIXME: Horrible to do this using names and string comparisons
+		 *  - what if the stylesheets are in different languages?
+		 * Better would be to have "roles" for common types of style
+		 * and match using those. */
+
+		t = fr->style->name;
+
+		for ( i=0; i<ss->n_styles; i++ ) {
+			if ( strcmp(t, ss->styles[i]->name) == 0 ) {
+				fr->style = ss->styles[i];
+				n = 1;
+				break;
+			}
+		}
+	}
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		n += fixup_styles(fr->children[i], ss);
+	}
+
+	return n;
+}
+
+
+static void fixup_templates(struct slide *s, StyleSheet *ss)
+{
+	int i;
+	char *t;
+
+	if ( s->st != NULL ) {
+
+		/* FIXME: Horrible to do this using names and string comparisons
+		 *  - what if the stylesheets are in different languages?
+		 * Better would be to have "roles" for common types of template
+		 * and match using those. */
+
+		t = s->st->name;
+
+		for ( i=0; i<ss->n_templates; i++ ) {
+			if ( strcmp(t, ss->templates[i]->name) == 0 ) {
+				s->st = ss->templates[i];
+				break;
+			}
+		}
+	}
+}
+
+
+int replace_stylesheet(struct presentation *p, const char *filename)
+{
+	FILE *fh;
+	struct ds_node *root;
+	struct ds_node *node;
+	StyleSheet *ss;
+	int i;
+
+	fh = fopen(filename, "r");
+	if ( fh == NULL ) return 1;
+
+	root = new_ds_node("root");
+	if ( root == NULL ) return 1;
+
+	if ( deserialize_file(fh, root) ) {
+		fclose(fh);
+		return 1;
+	}
+
+	fclose(fh);
+
+	node = find_node(root, "stylesheet", 0);
+	if ( node == NULL ) {
+		free_ds_tree(root);
+		return 1;
+	}
+	ss = tree_to_stylesheet(node);
+	if ( ss == NULL ) {
+		fprintf(stderr, "Invalid style sheet\n");
+		return 1;
+	}
+	free_ds_tree(root);
+
+	for ( i=0; i<p->num_slides; i++ ) {
+		int n;
+		n = fixup_styles(p->slides[i]->top, ss);
+		printf("Fixed up %i styles\n", n);
+		fixup_templates(p->slides[i], ss);
+	}
+
+	free_stylesheet(p->ss);
+	p->ss = ss;
+
+	return 0;
+}
+
+
 StyleSheet *new_stylesheet()
 {
 	StyleSheet *ss;

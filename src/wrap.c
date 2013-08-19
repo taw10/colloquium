@@ -515,6 +515,15 @@ static void set_colour(struct sc_font_stack *stack, const char *colour)
 	GdkRGBA col;
 	struct sc_font *scf = &stack->stack[stack->n_fonts-1];
 
+	if ( colour == NULL ) {
+		printf("Invalid colour\n");
+		scf->col[0] = 0.0;
+		scf->col[1] = 0.0;
+		scf->col[2] = 0.0;
+		scf->col[3] = 1.0;
+		return;
+	}
+
 	gdk_rgba_parse(&col, colour);
 
 	scf->col[0] = col.red;

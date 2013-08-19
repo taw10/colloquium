@@ -32,6 +32,7 @@
 #include <string.h>
 #include <pango/pangocairo.h>
 #include <math.h>
+#include <gdk/gdk.h>
 
 #include "storycode.h"
 #include "wrap.h"
@@ -306,6 +307,7 @@ struct sc_font
 	double col[4];
 	int ascent;
 	int height;
+	int free_font_on_pop;
 };
 
 
@@ -469,10 +471,21 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 }
 
 
-static void set_font(struct sc_font *scf, const char *font_name,
+struct sc_font_stack
+{
+	struct sc_font *stack;
+	int n_fonts;
+	int max_fonts;
+};
+
+
+static void set_font(struct sc_font_stack *stack, const char *font_name,
                      PangoContext *pc)
 {
 	PangoFontMetrics *metrics;
+	struct sc_font *scf;
+
+	scf = &stack->stack[stack->n_fonts-1];
 
 	scf->fontdesc = pango_font_description_from_string(font_name);
 	if ( scf->fontdesc == NULL ) {
@@ -486,49 +499,84 @@ static void set_font(struct sc_font *scf, const char *font_name,
 		return;
 	}
 
-	scf->col[0] = 0.0;  scf->col[1] = 0.0;  scf->col[2] = 0.0;
-	scf->col[3] = 1.0;
-
 	/* FIXME: Language for box */
 	metrics = pango_font_get_metrics(scf->font, NULL);
 	scf->ascent = pango_font_metrics_get_ascent(metrics);
 	scf->height = scf->ascent + pango_font_metrics_get_descent(metrics);
 	pango_font_metrics_unref(metrics);
+
+	scf->free_font_on_pop = 1;
 }
 
 
-
-static struct sc_font *push_font(struct sc_font *stack, const char *font_name,
-                                 int *n_fonts, int *max_fonts,
-                                 PangoContext *pc)
+/* This sets the colour for the font at the top of the stack */
+static void set_colour(struct sc_font_stack *stack, const char *colour)
 {
-	if ( *n_fonts == *max_fonts ) {
+	GdkRGBA col;
+	struct sc_font *scf = &stack->stack[stack->n_fonts-1];
+
+	gdk_rgba_parse(&col, colour);
+
+	scf->col[0] = col.red;
+	scf->col[1] = col.green;
+	scf->col[2] = col.blue;
+	scf->col[3] = col.alpha;
+}
+
+
+static void copy_top_font(struct sc_font_stack *stack)
+{
+	if ( stack->n_fonts == stack->max_fonts ) {
 
 		struct sc_font *stack_new;
 
-		stack_new = realloc(stack,
-		                    sizeof(struct sc_font)*((*max_fonts)+8));
+		stack_new = realloc(stack->stack, sizeof(struct sc_font)
+		                     * ((stack->max_fonts)+8));
 		if ( stack_new == NULL ) {
-			fprintf(stderr, "Failed to push font.\n");
-			return stack;
+			fprintf(stderr, "Failed to push font or colour.\n");
+			return;
 		}
 
-		stack = stack_new;
-		*max_fonts += 8;
+		stack->stack = stack_new;
+		stack->max_fonts += 8;
 
 	}
 
-	set_font(&stack[*n_fonts], font_name, pc);
-	(*n_fonts)++;
+	/* When n_fonts=0, we leave the first font uninitialised.  This allows
+	 * the stack to be "bootstrapped", but requires the first caller to do
+	 * set_font and set_colour straight away. */
+	if ( stack->n_fonts > 0 ) {
+		stack->stack[stack->n_fonts] = stack->stack[stack->n_fonts-1];
+	}
 
-	return stack;
+	stack->n_fonts++;
 }
 
 
-static void pop_font(struct sc_font *stack, int *n_fonts, int *max_fonts)
+static void push_font(struct sc_font_stack *stack, const char *font_name,
+                      PangoContext *pc)
 {
-	pango_font_description_free(stack[(*n_fonts)-1].fontdesc);
-	(*n_fonts)--;
+	copy_top_font(stack);
+	set_font(stack, font_name, pc);
+}
+
+
+static void push_colour(struct sc_font_stack *stack, const char *colour)
+{
+	copy_top_font(stack);
+	set_colour(stack, colour);
+}
+
+
+static void pop_font_or_colour(struct sc_font_stack *stack)
+{
+	struct sc_font *scf = &stack->stack[stack->n_fonts-1];
+
+	if ( scf->free_font_on_pop ) {
+		pango_font_description_free(scf->fontdesc);
+	}
+
+	stack->n_fonts--;
 }
 
 
@@ -560,8 +608,8 @@ invalid:
 }
 
 
-static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
-                   int *max_fonts, PangoContext *pc, struct wrap_line *boxes,
+static void run_sc(const char *sc, struct sc_font_stack *fonts,
+                   PangoContext *pc, struct wrap_line *boxes,
                    PangoLanguage *lang, size_t g_offset)
 {
 	SCBlockList *bl;
@@ -583,18 +631,27 @@ static void run_sc(const char *sc, struct sc_font *fonts, int *n_fonts,
 
 		if ( b->name == NULL ) {
 			split_words(boxes, pc, b->contents, offset,
-			            lang, &fonts[(*n_fonts)-1]);
+			            lang, &fonts->stack[fonts->n_fonts-1]);
 
 		} else if ( (strcmp(b->name, "font")==0)
 		         && (b->contents == NULL) ) {
-			set_font(&fonts[(*n_fonts)-1], b->options, pc);
+			set_font(fonts, b->options, pc);
 
 		} else if ( (strcmp(b->name, "font")==0)
 		         && (b->contents != NULL) ) {
-			push_font(fonts, b->options, n_fonts, max_fonts, pc);
-			run_sc(b->contents, fonts, n_fonts, max_fonts, pc,
-			       boxes, lang, offset);
-			pop_font(fonts, n_fonts, max_fonts);
+			push_font(fonts, b->options, pc);
+			run_sc(b->contents, fonts, pc, boxes, lang, offset);
+			pop_font_or_colour(fonts);
+
+		} else if ( (strcmp(b->name, "fgcol")==0)
+		         && (b->contents == NULL) ) {
+			set_colour(fonts, b->options);
+
+		} else if ( (strcmp(b->name, "fgcol")==0)
+		         && (b->contents != NULL) ) {
+			push_colour(fonts, b->options);
+			run_sc(b->contents, fonts, pc, boxes, lang, offset);
+			pop_font_or_colour(fonts);
 
 		} else if ( (strcmp(b->name, "image")==0)
 		         && (b->contents != NULL) && (b->options != NULL) ) {
@@ -614,9 +671,7 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
 {
 	struct wrap_line *boxes;
 	PangoLanguage *lang;
-	struct sc_font *fonts;
-	int n_fonts, max_fonts;
-	int i;
+	struct sc_font_stack fonts;
 
 	boxes = malloc(sizeof(struct wrap_line));
 	if ( boxes == NULL ) {
@@ -625,23 +680,25 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
 	}
 	initialise_line(boxes);
 
-	fonts = NULL;
-	n_fonts = 0;
-	max_fonts = 0;
+	fonts.stack = NULL;
+	fonts.n_fonts = 0;
+	fonts.max_fonts = 0;
 
 	/* FIXME: Determine proper language (somehow...) */
 	lang = pango_language_from_string("en_GB");
 
 	/* The "ultimate" default font */
-	fonts = push_font(fonts, "Sans 12", &n_fonts, &max_fonts, pc);
+	push_font(&fonts, "Sans 12", pc);
+	set_colour(&fonts, "#000000");
 
 	if ( prefix != NULL ) {
-		run_sc(prefix, fonts, &n_fonts, &max_fonts, pc, boxes, lang, 0);
+		run_sc(prefix, &fonts, pc, boxes, lang, 0);
 	}
-	run_sc(sc, fonts, &n_fonts, &max_fonts, pc, boxes, lang, 0);
+	run_sc(sc, &fonts, pc, boxes, lang, 0);
 
-	for ( i=0; i<n_fonts; i++ ) {
-		pango_font_description_free(fonts[i].fontdesc);
+	/* Empty the stack */
+	while ( fonts.n_fonts > 0 ) {
+		pop_font_or_colour(&fonts);
 	}
 
 	return boxes;

@@ -558,6 +558,9 @@ static void copy_top_font(struct sc_font_stack *stack)
 		stack->stack[stack->n_fonts] = stack->stack[stack->n_fonts-1];
 	}
 
+	/* This is a copy, so don't free it later */
+	stack->stack[stack->n_fonts].free_font_on_pop = 0;
+
 	stack->n_fonts++;
 }
 

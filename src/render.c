@@ -251,12 +251,12 @@ static void run_render_sc(cairo_t *cr, struct frame *fr, const char *sc)
 	      b != NULL;
 	      b = sc_block_list_next(bl, iter) )
 	{
-		GdkColor col;
+		GdkRGBA col;
 
 		if ( b->contents == NULL ) continue;
-		gdk_color_parse(b->contents, &col);
+		gdk_rgba_parse(&col, b->contents);
 		cairo_rectangle(cr, 0, 0, fr->w, fr->h);
-		gdk_cairo_set_source_color(cr, &col);
+		gdk_cairo_set_source_rgba(cr, &col);
 		cairo_fill(cr);
 
 	}

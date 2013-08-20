@@ -989,12 +989,12 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 	if ( tlen + olen + 1 > fr->sc_len ) {
 
 		char *try;
+		size_t new_len = fr->sc_len + tlen + 64;
 
-		try = realloc(fr->sc, fr->sc_len + tlen + 64);
+		try = realloc(fr->sc, new_len);
 		if ( try == NULL ) return;  /* Failed to insert */
 		fr->sc = try;
-		fr->sc_len += 64;
-		fr->sc_len += tlen;
+		fr->sc_len = new_len;
 
 	}
 

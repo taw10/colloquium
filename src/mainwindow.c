@@ -251,8 +251,9 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 	fr->style = sty;
 	fr->lop_from_style = 1;
 	set_edit(p, p->cur_edit_slide);
-	fr->sc = strdup("");
-	fr->sc_len = 6;
+	fr->sc = malloc(1);
+	fr->sc[0] = '\0';
+	fr->sc_len = 1;
 	set_selection(p, fr);
 	fr->pos = 0;
 	p->cursor_pos = 0;

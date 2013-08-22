@@ -829,6 +829,12 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int pos)
 	double cx, clow, chigh;
 	const double t = 1.8;
 
+	/* Fix up cursor position if necessary */
+	if ( fr->pos < fr->lines[0].sc_offset ) {
+		fr->pos = fr->lines[0].sc_offset;
+		pos = fr->pos;
+	}
+
 	get_cursor_pos(fr, pos, &xposd, &yposd, &line_height);
 
 	cx = fr->x + xposd;

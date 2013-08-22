@@ -59,6 +59,7 @@ struct wrap_box
 {
 	enum wrap_box_type type;
 	size_t sc_offset;  /* How far into the SC for this frame */
+	int editable;
 
 	/* Pango units */
 	int width;

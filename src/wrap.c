@@ -140,6 +140,7 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 
 	for ( box=1; box<l->n_boxes; box++ ) {
 		/* Was the cursor in the previous box? */
+		if ( !l->boxes[box].editable ) continue;
 		if ( l->boxes[box].type == WRAP_BOX_SENTINEL ) break;
 		if ( l->boxes[box].sc_offset > pos ) break;
 	}
@@ -152,6 +153,12 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	}
 
 	b = &l->boxes[box];
+
+	if ( !b->editable ) {
+		*xposd += pango_units_to_double(b->width);
+		return;
+	}
+
 	switch ( b->type ) {
 
 		case WRAP_BOX_PANGO :
@@ -230,6 +237,10 @@ size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 		b = &l->boxes[l->n_boxes - 1];
 	} else {
 		b = find_cursor_box(fr, l, xposd, &x_pos, &end);
+	}
+
+	if ( !b->editable ) {
+		return 0;
 	}
 
 	switch ( b->type ) {
@@ -314,7 +325,7 @@ struct sc_font
 /* Add "text", followed by a space of type "space", to "line" */
 static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
                         enum wrap_box_space space, PangoContext *pc,
-                        struct sc_font *font)
+                        struct sc_font *font, int editable)
 {
 	GList *pango_items;
 	struct wrap_box *box;
@@ -328,12 +339,14 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 	}
 
 	box = &line->boxes[line->n_boxes];
+	if ( !editable ) offset = 0;
 	box->sc_offset = offset;
 	box->type = WRAP_BOX_PANGO;
 	box->text = text;
 	box->space = space;
 	box->font = font->font;
 	box->width = 0;
+	box->editable = editable;
 	box->ascent = font->ascent;
 	box->height = font->height;
 	box->col[0] = font->col[0];  /* Red */
@@ -360,11 +373,12 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 
 
 static void add_image_box(struct wrap_line *line, const char *filename,
-                          size_t offset, int w, int h)
+                          size_t offset, int w, int h, int editable)
 {
 	struct wrap_box *box;
 
 	box = &line->boxes[line->n_boxes];
+	if ( !editable ) offset = 0;
 	box->sc_offset = offset;
 	box->type = WRAP_BOX_IMAGE;
 	box->text = NULL;
@@ -373,12 +387,13 @@ static void add_image_box(struct wrap_line *line, const char *filename,
 	box->ascent = pango_units_from_double(h);
 	box->height = pango_units_from_double(h);
 	box->filename = strdup(filename);
+	box->editable = editable;
 	line->n_boxes++;
 }
 
 
 static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
-                       size_t sc_offset, PangoLanguage *lang,
+                       size_t sc_offset, PangoLanguage *lang, int editable,
                        struct sc_font *font)
 {
 	PangoLogAttr *log_attrs;
@@ -429,7 +444,7 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			}
 
 			if ( add_wrap_box(boxes, word, start+sc_offset, type,
-			                  pc, font) ) {
+			                  pc, font, editable) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = i;
@@ -453,14 +468,14 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			char *word2;
 			word2 = strndup(word, i-start-1);
 			add_wrap_box(boxes, word2, start+sc_offset,
-			             WRAP_SPACE_EOP, pc, font);
+			             WRAP_SPACE_EOP, pc, font, editable);
 			add_wrap_box(boxes, strdup(""), i+sc_offset,
-			             WRAP_SPACE_NONE, pc, font);
+			             WRAP_SPACE_NONE, pc, font, editable);
 
 		} else {
 
 			add_wrap_box(boxes, word, start+sc_offset,
-			             WRAP_SPACE_NONE, pc, font);
+			             WRAP_SPACE_NONE, pc, font, editable);
 
 		}
 
@@ -622,7 +637,7 @@ invalid:
 
 static void run_sc(const char *sc, struct sc_font_stack *fonts,
                    PangoContext *pc, struct wrap_line *boxes,
-                   PangoLanguage *lang, size_t g_offset)
+                   PangoLanguage *lang, size_t g_offset, int editable)
 {
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
@@ -643,7 +658,8 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 
 		if ( b->name == NULL ) {
 			split_words(boxes, pc, b->contents, offset,
-			            lang, &fonts->stack[fonts->n_fonts-1]);
+			            lang, editable,
+			            &fonts->stack[fonts->n_fonts-1]);
 
 		} else if ( (strcmp(b->name, "font")==0)
 		         && (b->contents == NULL) ) {
@@ -652,7 +668,8 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 		} else if ( (strcmp(b->name, "font")==0)
 		         && (b->contents != NULL) ) {
 			push_font(fonts, b->options, pc);
-			run_sc(b->contents, fonts, pc, boxes, lang, offset);
+			run_sc(b->contents, fonts, pc, boxes, lang, offset,
+			       editable);
 			pop_font_or_colour(fonts);
 
 		} else if ( (strcmp(b->name, "fgcol")==0)
@@ -662,14 +679,16 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 		} else if ( (strcmp(b->name, "fgcol")==0)
 		         && (b->contents != NULL) ) {
 			push_colour(fonts, b->options);
-			run_sc(b->contents, fonts, pc, boxes, lang, offset);
+			run_sc(b->contents, fonts, pc, boxes, lang, offset,
+			       editable);
 			pop_font_or_colour(fonts);
 
 		} else if ( (strcmp(b->name, "image")==0)
 		         && (b->contents != NULL) && (b->options != NULL) ) {
 			int w, h;
 			if ( get_size(b->options, &w, &h) == 0 ) {
-				add_image_box(boxes, b->contents, offset, w, h);
+				add_image_box(boxes, b->contents, offset, w, h,
+				              editable);
 			}
 		}
 
@@ -704,9 +723,9 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
 	set_colour(&fonts, "#000000");
 
 	if ( prefix != NULL ) {
-		run_sc(prefix, &fonts, pc, boxes, lang, 0);
+		run_sc(prefix, &fonts, pc, boxes, lang, 0, 0);
 	}
-	run_sc(sc, &fonts, pc, boxes, lang, 0);
+	run_sc(sc, &fonts, pc, boxes, lang, 0, 1);
 
 	/* Empty the stack */
 	while ( fonts.n_fonts > 0 ) {

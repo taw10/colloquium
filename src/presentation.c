@@ -36,6 +36,7 @@
 #include "mainwindow.h"
 #include "frame.h"
 #include "imagestore.h"
+#include "wrap.h"
 
 
 static int num_presentations = 0;

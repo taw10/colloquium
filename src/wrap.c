@@ -725,7 +725,9 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
 	if ( prefix != NULL ) {
 		run_sc(prefix, &fonts, pc, boxes, lang, 0, 0);
 	}
-	run_sc(sc, &fonts, pc, boxes, lang, 0, 1);
+	if ( sc != NULL ) {
+		run_sc(sc, &fonts, pc, boxes, lang, 0, 1);
+	}
 
 	/* Empty the stack */
 	while ( fonts.n_fonts > 0 ) {

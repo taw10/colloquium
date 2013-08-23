@@ -258,6 +258,10 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 	fr->pos = 0;
 	p->cursor_pos = 0;
 
+	/* FIXME: What if the user mixes templates? */
+	p->cur_edit_slide->st = pl->st;
+	p->cur_edit_slide->top->style = pl->st->top_style;
+
 	do_slide_update(p, p->pc);
 
 	return 0;
@@ -317,6 +321,7 @@ static void update_style_menus(struct presentation *p)
 
 			p->menu_path_list[k].p = p;
 			p->menu_path_list[k].sty = s;
+			p->menu_path_list[k].st = t;
 
 			item = gtk_menu_item_new_with_label(s->name);
 			gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
@@ -830,7 +835,7 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int pos)
 	const double t = 1.8;
 
 	/* Fix up cursor position if necessary */
-	if ( fr->pos < fr->lines[0].sc_offset ) {
+	if ( (fr->n_lines > 0) && (fr->pos < fr->lines[0].sc_offset) ) {
 		fr->pos = fr->lines[0].sc_offset;
 		pos = fr->pos;
 	}

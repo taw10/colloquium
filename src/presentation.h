@@ -84,6 +84,7 @@ struct menu_pl
 {
 	struct presentation *p;
 	struct style *sty;
+	struct slide_template *st;
 };
 
 

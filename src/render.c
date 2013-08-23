@@ -291,8 +291,6 @@ static int render_sc(struct frame *fr, double scale, ImageStore *is,
 	fr->n_lines = 0;
 	fr->max_lines = 0;
 
-	if ( fr->sc == NULL ) return 0;
-
 	/* Create surface and Cairo stuff */
 	if ( fr->contents != NULL ) cairo_surface_destroy(fr->contents);
 	/* Rounding to get the bitmap size */
@@ -507,10 +505,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	h = (hh/ww)*w;
 	scale = w/ww;
 
-	if ( s->top->style != NULL ) {
-		memcpy(&s->top->lop, &s->top->style->lop,
-		       sizeof(struct layout_parameters));
-	}
 	s->top->lop.x = 0.0;
 	s->top->lop.y = 0.0;
 	s->top->lop.w = ww;
@@ -519,6 +513,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	s->top->h = hh;
 	s->top->pix_w = w;
 	s->top->pix_h = h;
+
 	render_frame(s->top, scale, is, isz);
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);

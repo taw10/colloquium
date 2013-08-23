@@ -175,6 +175,12 @@ static int read_template(struct slide_template *t, StyleSheet *ss,
                          struct ds_node *node)
 {
 	int i;
+	int top_style, r;
+
+	r = get_field_i(node, "top_style", &top_style);
+	if ( !r ) {
+		t->top_style = ss->styles[top_style];
+	}
 
 	for ( i=0; i<node->n_children; i++ ) {
 

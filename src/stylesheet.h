@@ -51,6 +51,8 @@ struct slide_template
 	/* References to the styles in the main list */
 	struct style        **styles;
 	int                   n_styles;
+
+	struct style         *top_style;
 };
 
 

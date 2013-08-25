@@ -364,6 +364,9 @@ static void fixup_templates(struct slide *s, StyleSheet *ss)
 				break;
 			}
 		}
+
+		s->top->style = s->st->top_style;
+
 	}
 }
 

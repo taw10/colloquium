@@ -65,8 +65,6 @@ struct style *new_style(StyleSheet *ss, const char *name, const char *pname)
 	sty->lop.w = 100.0;
 	sty->lop.h = 100.0;
 
-	if ( ss->default_style == NULL ) ss->default_style = sty;
-
 	n = ss->n_styles;
 	styles_new = realloc(ss->styles, (n+1)*sizeof(sty));
 	if ( styles_new == NULL ) {

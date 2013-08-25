@@ -552,29 +552,32 @@ int get_field_s(struct ds_node *root, const char *key, char **val)
 	}
 	if ( !hq ) {
 		fprintf(stderr, "No quotes in '%s'\n", node->value);
-		return 1;
-	}
+		v = strdup(node->value);  /* Use the whole thing */
+	} else {
 
-	for ( i=len-1; i>=0; i-- ) {
-		if ( node->value[i] == '"' ) {
-			s2 = i;
-			break;
+		for ( i=len-1; i>=0; i-- ) {
+			if ( node->value[i] == '"' ) {
+				s2 = i;
+				break;
+			}
 		}
-	}
 
-	if ( s1 == s2 ) {
-		fprintf(stderr, "Mismatched quotes in '%s'\n", node->value);
-		return 1;
-	}
+		if ( s1 == s2 ) {
+			fprintf(stderr, "Mismatched quotes in '%s'\n",
+			        node->value);
+			return 1;
+		}
 
-	v = malloc(s2-s1+1);
-	if ( v == NULL ) {
-		fprintf(stderr, "Failed to allocate space for '%s'\n", key);
-		return 1;
-	}
+		v = malloc(s2-s1+1);
+		if ( v == NULL ) {
+			fprintf(stderr, "Failed to allocate space for '%s'\n",
+			        key);
+			return 1;
+		}
 
-	strncpy(v, node->value+s1+1, s2-s1-1);
-	v[s2-s1-1] = '\0';
+		strncpy(v, node->value+s1+1, s2-s1-1);
+		v[s2-s1-1] = '\0';
+	}
 
 	*val = unescape_text(v);
 	free(v);

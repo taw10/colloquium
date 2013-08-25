@@ -982,6 +982,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	box->width = 0;
 	box->ascent = 0;
 	box->height = 0;
+	box->editable = 1;
 	boxes->n_boxes++;
 
 	line_length *= PANGO_SCALE;

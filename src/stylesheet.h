@@ -35,6 +35,7 @@
 struct style
 {
 	char *name;
+	char *pname;
 
 	struct layout_parameters lop;
 
@@ -65,9 +66,10 @@ extern void free_stylesheet(StyleSheet *ss);
 extern StyleSheet *default_stylesheet(void);
 extern int replace_stylesheet(struct presentation *p, const char *filename);
 
-extern struct style *new_style(StyleSheet *ss, const char *name);
+extern struct style *new_style(StyleSheet *ss, const char *name,
+                               const char *pname);
 extern struct style *default_style(StyleSheet *ss);
-extern struct style *lookup_style(StyleSheet *ss, int n);
+extern struct style *lookup_style(StyleSheet *ss, const char *pname);
 
 extern struct slide_template *new_template(StyleSheet *ss, const char *name);
 extern void add_to_template(struct slide_template *t, struct style *sty);
@@ -76,7 +78,6 @@ extern int save_stylesheet(StyleSheet *ss, const char *filename);
 extern StyleSheet *tree_to_stylesheet(struct ds_node *root);
 extern void write_stylesheet(StyleSheet *ss, struct serializer *ser);
 extern const char *units(LengthUnits un);
-extern int style_number(StyleSheet *ss, struct style *s);
 
 typedef struct _styleiterator StyleIterator;
 extern struct style *style_first(StyleSheet *ss, StyleIterator **piter);

@@ -273,8 +273,8 @@ static char *frame_options_string(struct frame *fr, StyleSheet *ss)
 	opt = malloc(64);
 	if ( opt == NULL ) return NULL;
 
-	snprintf(opt, 31, "style=%i%s",
-	         style_number(ss, fr->style), maybe_star(fr->lop_from_style));
+	snprintf(opt, 31, "style=%s%s",
+	         fr->style->pname, maybe_star(fr->lop_from_style));
 
 	if ( !fr->lop_from_style ) {
 		char tmp[32];

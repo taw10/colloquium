@@ -157,27 +157,24 @@ static void parse_option(struct frame *fr, const char *opt, StyleSheet *ss)
 	}
 
 	if ( strncmp(opt, "style=", 6) == 0 ) {
+
 		char *s;
-		int sn;
-		char *check;
+		char *tmp;
+
+		tmp = strdup(opt);
 
 		if ( opt[strlen(opt)-1] == '*' ) {
 			fr->lop_from_style = 1;
+			tmp[strlen(tmp)-1] = '\0';
 		} else {
 			fr->lop_from_style = 0;
 		}
 
-		s = index(opt, '=');
-		s++;
-		sn = strtol(s, &check, 10);
-		if ( check == s ) {
-			fprintf(stderr, "Invalid style number '%s'\n", opt);
-			return;
-		}
-
-		fr->style = lookup_style(ss, sn);
+		s = index(tmp, '=') + 1;
+		fr->style = lookup_style(ss, s);
+		free(tmp);
 		if ( fr->style == NULL ) {
-			fprintf(stderr, "Invalid style number '%s'\n", opt);
+			fprintf(stderr, "Invalid style '%s'\n", opt);
 			return;
 		}
 	}

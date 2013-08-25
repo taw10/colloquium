@@ -47,7 +47,7 @@ struct _stylesheet
 };
 
 
-struct style *new_style(StyleSheet *ss, const char *name)
+struct style *new_style(StyleSheet *ss, const char *name, const char *pname)
 {
 	struct style *sty;
 	int n;
@@ -57,6 +57,7 @@ struct style *new_style(StyleSheet *ss, const char *name)
 	if ( sty == NULL ) return NULL;
 
 	sty->name = strdup(name);
+	sty->pname = strdup(pname);
 
 	/* DS9K compatibility */
 	sty->lop.x = 0.0;
@@ -81,11 +82,16 @@ struct style *new_style(StyleSheet *ss, const char *name)
 }
 
 
-struct style *lookup_style(StyleSheet *ss, int n)
+struct style *lookup_style(StyleSheet *ss, const char *pname)
 {
-	if ( n < 0 ) return NULL;
-	if ( n >= ss->n_styles ) return NULL;
-	return ss->styles[n];
+	int i;
+
+	for ( i=0; i<ss->n_styles; i++ ) {
+		if ( strcmp(ss->styles[i]->pname, pname) == 0 ) {
+			return ss->styles[i];
+		}
+	}
+	return NULL;
 }
 
 
@@ -184,22 +190,20 @@ static int read_template(struct slide_template *t, StyleSheet *ss,
 
 	for ( i=0; i<node->n_children; i++ ) {
 
-		long v;
-		char *check;
 		struct style *sty;
 
 		if ( strncmp(node->children[i]->key, "sty", 3) != 0 ) {
 			continue;
 		}
 
-		v = strtol(node->children[i]->value, &check, 10);
-		if ( check == node->children[i]->value ) {
-			fprintf(stderr, "Invalid number '%s'\n",
-			        node->children[i]->value);
+		sty = lookup_style(ss, node->children[i]->value);
+		if ( sty == NULL ) {
+			fprintf(stderr, "Couldn't find style '%s'\n",
+				node->children[i]->value);
+		} else {
+			add_to_template(t, sty);
 		}
-		sty = ss->styles[v];
 
-		add_to_template(t, sty);
 	}
 
 	return 0;
@@ -231,6 +235,7 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 	StyleSheet *ss;
 	struct ds_node *node;
 	int i;
+	char *ds;
 
 	ss = new_stylesheet();
 	if ( ss == NULL ) return NULL;
@@ -254,7 +259,7 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 			continue;
 		}
 
-		ns = new_style(ss, v);
+		ns = new_style(ss, v, node->children[i]->key);
 		if ( ns == NULL ) {
 			fprintf(stderr, "Couldn't create style for '%s'\n",
 			        node->children[i]->key);
@@ -268,8 +273,8 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 
 	}
 
-	if ( get_field_i(root, "default_style", &i) == 0 ) {
-		ss->default_style = ss->styles[i];
+	if ( get_field_s(root, "default_style", &ds) == 0 ) {
+		ss->default_style = lookup_style(ss, ds);
 	}
 
 	node = find_node(root, "templates", 0);
@@ -486,33 +491,20 @@ static void serialize_f_units(struct serializer *s, const char *key, double val,
 }
 
 
-int style_number(StyleSheet *ss, struct style *s)
-{
-	int i;
-
-	for ( i=0; i<ss->n_styles; i++ ) {
-		if ( ss->styles[i] == s ) return i;
-	}
-
-	return -1;
-}
-
-
 void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 {
 	int i;
 
-	serialize_i(ser, "default_style", style_number(ss, ss->default_style));
+	if ( ss->default_style != NULL ) {
+		serialize_s(ser, "default_style", ss->default_style->pname);
+	}
 
 	serialize_start(ser, "styles");
 	for ( i=0; i<ss->n_styles; i++ ) {
 
 		struct style *s = ss->styles[i];
-		char id[32];
 
-		snprintf(id, 31, "%i", i);
-
-		serialize_start(ser, id);
+		serialize_start(ser, s->pname);
 		serialize_s(ser, "name", s->name);
 		serialize_f(ser, "margin_l", s->lop.margin_l);
 		serialize_f(ser, "margin_r", s->lop.margin_r);
@@ -543,6 +535,9 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 
 		serialize_start(ser, id);
 		serialize_s(ser, "name", t->name);
+		if (t->top_style != NULL ) {
+			serialize_s(ser, "top_style", t->top_style->pname);
+		}
 		for ( j=0; j<t->n_styles; j++ ) {
 
 			struct style *s = t->styles[j];
@@ -550,7 +545,7 @@ void write_stylesheet(StyleSheet *ss, struct serializer *ser)
 
 			snprintf(id, 31, "sty%i", j);
 
-			serialize_i(ser, id, style_number(ss, s));
+			serialize_s(ser, id, s->pname);
 
 		}
 		serialize_end(ser);

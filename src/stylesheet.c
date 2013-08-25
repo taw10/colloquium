@@ -188,18 +188,27 @@ static int read_template(struct slide_template *t, StyleSheet *ss,
 
 	for ( i=0; i<node->n_children; i++ ) {
 
-		struct style *sty;
+		char *sn;
 
 		if ( strncmp(node->children[i]->key, "sty", 3) != 0 ) {
 			continue;
 		}
 
-		sty = lookup_style(ss, node->children[i]->value);
-		if ( sty == NULL ) {
-			fprintf(stderr, "Couldn't find style '%s'\n",
-				node->children[i]->value);
-		} else {
-			add_to_template(t, sty);
+		/* This looks a bit weird, but it's done so that the contents
+		 * can go through the same validation as other fields */
+		if ( !get_field_s(node, node->children[i]->key, &sn) ) {
+
+			struct style *sty;
+
+			sty = lookup_style(ss, sn);
+			if ( sty == NULL ) {
+				fprintf(stderr, "Couldn't find style '%s'\n",
+					sn);
+			} else {
+				add_to_template(t, sty);
+			}
+
+			free(sn);
 		}
 
 	}

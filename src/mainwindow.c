@@ -167,68 +167,6 @@ static void update_toolbar(struct presentation *p)
 }
 
 
-static gint open_response_sig(GtkWidget *d, gint response,
-                              struct presentation *p)
-{
-	if ( response == GTK_RESPONSE_ACCEPT ) {
-
-		char *filename;
-
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-
-		if ( p->completely_empty ) {
-
-			if ( load_presentation(p, filename) ) {
-				show_error(p, "Failed to open presentation");
-			}
-			p->cur_edit_slide = p->slides[0];
-			rerender_slide(p);
-			update_toolbar(p);
-
-		} else {
-
-			struct presentation *p;
-
-			/* FIXME */
-			p = new_presentation();
-			if ( load_presentation(p, filename) ) {
-				show_error(p, "Failed to open presentation");
-			} else {
-				open_mainwindow(p);
-			}
-
-		}
-
-		g_free(filename);
-
-	}
-
-	gtk_widget_destroy(d);
-
-	return 0;
-}
-
-
-static gint open_sig(GtkWidget *widget, struct presentation *p)
-{
-	GtkWidget *d;
-
-	d = gtk_file_chooser_dialog_new("Open Presentation",
-	                                GTK_WINDOW(p->window),
-	                                GTK_FILE_CHOOSER_ACTION_OPEN,
-	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-	                                NULL);
-
-	g_signal_connect(G_OBJECT(d), "response",
-	                 G_CALLBACK(open_response_sig), p);
-
-	gtk_widget_show_all(d);
-
-	return 0;
-}
-
-
 static void do_slide_update(struct presentation *p, PangoContext *pc)
 {
 	rerender_slide(p);
@@ -336,6 +274,69 @@ static void update_style_menus(struct presentation *p)
 	gtk_widget_show_all(menu);
 
 	p->n_menu_rebuild = j;
+}
+
+
+static gint open_response_sig(GtkWidget *d, gint response,
+                              struct presentation *p)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+
+		if ( p->completely_empty ) {
+
+			if ( load_presentation(p, filename) ) {
+				show_error(p, "Failed to open presentation");
+			}
+			p->cur_edit_slide = p->slides[0];
+			rerender_slide(p);
+			update_toolbar(p);
+			update_style_menus(p);
+
+		} else {
+
+			struct presentation *p;
+
+			/* FIXME */
+			p = new_presentation();
+			if ( load_presentation(p, filename) ) {
+				show_error(p, "Failed to open presentation");
+			} else {
+				open_mainwindow(p);
+			}
+
+		}
+
+		g_free(filename);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static gint open_sig(GtkWidget *widget, struct presentation *p)
+{
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new("Open Presentation",
+	                                GTK_WINDOW(p->window),
+	                                GTK_FILE_CHOOSER_ACTION_OPEN,
+	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(open_response_sig), p);
+
+	gtk_widget_show_all(d);
+
+	return 0;
 }
 
 

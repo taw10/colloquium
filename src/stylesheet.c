@@ -416,7 +416,6 @@ int replace_stylesheet(struct presentation *p, const char *filename)
 	for ( i=0; i<p->num_slides; i++ ) {
 		int n;
 		n = fixup_styles(p->slides[i]->top, ss);
-		printf("Fixed up %i styles\n", n);
 		fixup_templates(p->slides[i], ss);
 	}
 

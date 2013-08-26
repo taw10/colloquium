@@ -383,6 +383,7 @@ int save_presentation(struct presentation *p, const char *filename)
 	/* Slightly fiddly because someone might
 	 * do save_presentation(p, p->filename) */
 	old_fn = p->filename;
+	imagestore_set_presentation_file(p->is, filename);
 	p->filename = strdup(filename);
 	if ( old_fn != NULL ) free(old_fn);
 	update_titlebar(p);
@@ -515,6 +516,7 @@ int load_presentation(struct presentation *p, const char *filename)
 	assert(p->filename == NULL);
 	p->filename = strdup(filename);
 	update_titlebar(p);
+	imagestore_set_presentation_file(p->is, filename);
 
 	p->cur_edit_slide = p->slides[0];
 

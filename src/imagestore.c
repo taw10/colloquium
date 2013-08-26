@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <libgen.h>
 
 #include "imagestore.h"
 
@@ -44,6 +45,7 @@ struct _imagestore
 	int n_images;
 	struct image_record *images;
 	int max_images;
+	char *dname;
 };
 
 
@@ -69,6 +71,7 @@ ImageStore *imagestore_new()
 	if ( is == NULL ) return NULL;
 
 	is->images = NULL;
+	is->dname = NULL;
 	is->n_images = 0;
 	is->max_images = 0;
 	if ( alloc_images(is, 32) ) {
@@ -77,6 +80,20 @@ ImageStore *imagestore_new()
 	}
 
 	return is;
+}
+
+
+void imagestore_set_presentation_file(ImageStore *is, const char *filename)
+{
+	const char *dname;
+	char *cpy;
+
+	/* dirname() is yukky */
+	cpy = strdup(filename);
+	dname = dirname(cpy);
+	free(is->dname);
+	is->dname = strdup(dname);
+	free(cpy);
 }
 
 
@@ -98,17 +115,41 @@ void imagestore_destroy(ImageStore *is)
 }
 
 
-static GdkPixbuf *add_pixbuf(struct image_record *im, const char *filename,
-                             int w, enum is_size isz)
+static GdkPixbuf *try_all_locations(const char *filename, int w, ImageStore *is)
 {
 	GError *error = NULL;
-	printf("Loading '%s' at width %i\n", filename, w);
-	im->pixbuf[isz] = gdk_pixbuf_new_from_file_at_size(filename, w, -1,
-	                                                   &error);
-	if ( im->pixbuf[isz] == NULL ) {
-		fprintf(stderr, "Failed to load image '%s'\n", filename);
-		return NULL;
-	}
+	GdkPixbuf *t;
+	char *tmp;
+
+	/* Try the filename as is */
+	t = gdk_pixbuf_new_from_file_at_size(filename, w, -1, &error);
+	if ( t != NULL ) return t;
+
+	if ( is->dname == NULL ) return NULL;
+
+	/* Try the file prefixed with the directory the presentation
+	 * is in */
+	error = NULL;
+	tmp = malloc(strlen(filename) + strlen(is->dname) + 2);
+	if ( tmp == NULL ) return NULL;
+	strcpy(tmp, is->dname);
+	strcat(tmp, "/");
+	strcat(tmp, filename);
+	printf("Trying '%s'\n", tmp);
+	t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
+	free(tmp);
+	if ( t != NULL ) return t;
+
+	return NULL;
+}
+
+
+static GdkPixbuf *add_pixbuf(struct image_record *im, const char *filename,
+                             int w, enum is_size isz, ImageStore *is)
+{
+	im->pixbuf[isz] = try_all_locations(filename, w, is);
+
+	if ( im->pixbuf[isz] == NULL ) return NULL;
 
 	im->w[isz] = w;
 
@@ -137,7 +178,7 @@ static GdkPixbuf *add_new_image(ImageStore *is, const char *filename, int w,
 		is->images[idx].w[j] = 0;
 	}
 
-	return add_pixbuf(&is->images[idx], filename, w, isz);
+	return add_pixbuf(&is->images[idx], filename, w, isz, is);
 }
 
 
@@ -191,6 +232,6 @@ GdkPixbuf *lookup_image(ImageStore *is, const char *filename, int w,
 	}
 
 	/* Slot is not filled in yet */
-	pb = add_pixbuf(&is->images[i], filename, w, isz);
+	pb = add_pixbuf(&is->images[i], filename, w, isz, is);
 	return pb;
 }

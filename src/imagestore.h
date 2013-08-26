@@ -43,6 +43,9 @@ extern ImageStore *imagestore_new(void);
 
 extern void imagestore_destroy(ImageStore *is);
 
+extern void imagestore_set_presentation_file(ImageStore *is,
+                                             const char *filename);
+
 extern GdkPixbuf *lookup_image(ImageStore *is, const char *filename, int w,
                                enum is_size isz);
 

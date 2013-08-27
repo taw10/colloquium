@@ -179,11 +179,9 @@ static void do_slide_update(struct presentation *p, PangoContext *pc)
 }
 
 
-static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
+static void add_furniture_real(struct presentation *p, struct style *sty)
 {
 	struct frame *fr;
-	struct style *sty = pl->sty;
-	struct presentation *p = pl->p;
 
 	fr = add_subframe(p->cur_edit_slide->top);
 	fr->style = sty;
@@ -195,6 +193,23 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 	set_selection(p, fr);
 	fr->pos = 0;
 	p->cursor_pos = 0;
+
+}
+
+
+static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
+{
+	struct style *sty = pl->sty;
+	struct presentation *p = pl->p;
+
+	if ( sty != NULL ) {
+		add_furniture_real(p, sty);
+	} else {
+		int i;
+		for ( i=0; i<pl->st->n_styles; i++ ) {
+			add_furniture_real(p, pl->st->styles[i]);
+		}
+	}
 
 	/* FIXME: What if the user mixes templates? */
 	p->cur_edit_slide->st = pl->st;
@@ -209,7 +224,6 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 static void update_style_menus(struct presentation *p)
 {
 	GtkWidget *menu;
-	GtkWidget *item;
 	struct slide_template *t;
 	TemplateIterator *iter;
 	int i, j, k, n_j, n_k;
@@ -231,6 +245,7 @@ static void update_style_menus(struct presentation *p)
 	{
 		n_k += t->n_styles;
 		n_j++;
+		n_k++;  /* For "Everything" */
 	}
 
 	p->menu_rebuild_list = calloc(n_j, sizeof(GtkWidget *));
@@ -246,12 +261,26 @@ static void update_style_menus(struct presentation *p)
 	      t = template_next(p->ss, iter) )
 	{
 		GtkWidget *submenu;
+		GtkWidget *item;
 
 		submenu = gtk_menu_new();
 		item = gtk_menu_item_new_with_label(t->name);
 		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 		gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), submenu);
 		p->menu_rebuild_list[j++] = item;
+
+		p->menu_path_list[k].p = p;
+		p->menu_path_list[k].sty = NULL;
+		p->menu_path_list[k].st = t;
+		item = gtk_menu_item_new_with_label("Everything");
+		gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+		g_signal_connect(G_OBJECT(item), "activate",
+		                 G_CALLBACK(add_furniture),
+		                 &p->menu_path_list[k]);
+		k++;
+
+		item = gtk_separator_menu_item_new();
+		gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
 		for ( i=0; i<t->n_styles; i++ ) {
 

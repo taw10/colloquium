@@ -231,6 +231,8 @@ size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 	int idx, trail;
 	int x_pos_i;
 
+	if ( fr->n_lines == 0 ) return 0;
+
 	l = find_cursor_line(fr, yposd, &end);
 
 	if ( end ) {

@@ -120,22 +120,34 @@ static GdkPixbuf *try_all_locations(const char *filename, int w, ImageStore *is)
 	GError *error = NULL;
 	GdkPixbuf *t;
 	char *tmp;
+	const char *image_folder = "/home/taw/Documents/Slides"; /* FIXME ! */
 
 	/* Try the filename as is */
 	t = gdk_pixbuf_new_from_file_at_size(filename, w, -1, &error);
 	if ( t != NULL ) return t;
 
-	if ( is->dname == NULL ) return NULL;
+	/* Try the file prefixed with the directory the presentation is in */
+	if ( is->dname != NULL ) {
 
-	/* Try the file prefixed with the directory the presentation
-	 * is in */
+		error = NULL;
+		tmp = malloc(strlen(filename) + strlen(is->dname) + 2);
+		if ( tmp == NULL ) return NULL;
+		strcpy(tmp, is->dname);
+		strcat(tmp, "/");
+		strcat(tmp, filename);
+		t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
+		free(tmp);
+		if ( t != NULL ) return t;
+
+	}
+
+	/* Try prefixed with image pathname */
 	error = NULL;
-	tmp = malloc(strlen(filename) + strlen(is->dname) + 2);
+	tmp = malloc(strlen(filename) + strlen(image_folder) + 2);
 	if ( tmp == NULL ) return NULL;
-	strcpy(tmp, is->dname);
+	strcpy(tmp, image_folder);
 	strcat(tmp, "/");
 	strcat(tmp, filename);
-	printf("Trying '%s'\n", tmp);
 	t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
 	free(tmp);
 	if ( t != NULL ) return t;

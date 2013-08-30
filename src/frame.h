@@ -111,6 +111,9 @@ struct frame
 
 	/* True if this frame should be deleted on the next mouse click */
 	int                       empty;
+
+	/* True if the aspect ratio of this frame should be maintained */
+	int                       is_image;
 };
 
 

@@ -1407,6 +1407,7 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	fr->lop.y = y;
 	fr->lop.w = w;
 	fr->lop.h = h;
+	fr->is_image = 0;
 
 	return fr;
 }
@@ -1782,6 +1783,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			                     p->start_corner_y, w, h);
 			fr->sc = sc;
 			fr->sc_len = len;
+			fr->is_image = 1;
 			show_hierarchy(p->cur_edit_slide->top, "");
 			rerender_slide(p);
 			set_selection(p, fr);

@@ -1166,6 +1166,47 @@ static void calculate_box_size(struct frame *fr, struct presentation *p,
 	ddx = x - p->start_corner_x;
 	ddy = y - p->start_corner_y;
 
+	if ( !fr->is_image ) {
+
+		switch ( p->drag_corner ) {
+
+			case CORNER_BR :
+			p->box_x = fr->x;
+			p->box_y = fr->y;
+			p->box_width = fr->w + ddx;
+			p->box_height = fr->h + ddy;
+			break;
+
+			case CORNER_BL :
+			p->box_x = fr->x + ddx;
+			p->box_y = fr->y;
+			p->box_width = fr->w - ddx;
+			p->box_height = fr->h + ddy;
+			break;
+
+			case CORNER_TL :
+			p->box_x = fr->x + ddx;
+			p->box_y = fr->y + ddy;
+			p->box_width = fr->w - ddx;
+			p->box_height = fr->h - ddy;
+			break;
+
+			case CORNER_TR :
+			p->box_x = fr->x;
+			p->box_y = fr->y + ddy;
+			p->box_width = fr->w + ddx;
+			p->box_height = fr->h - ddy;
+			break;
+
+			case CORNER_NONE :
+			break;
+
+		}
+		return;
+
+
+	}
+
 	switch ( p->drag_corner ) {
 
 		case CORNER_BR :

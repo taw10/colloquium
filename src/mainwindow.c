@@ -1440,6 +1440,16 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 		parent = p->selection[0];
 	}
 
+	if ( w < 0.0 ) {
+		x += w;
+		w = -w;
+	}
+
+	if ( h < 0.0 ) {
+		y += h;
+		h = -h;
+	}
+
 	fr = add_subframe(parent);
 	fr->sc = NULL;
 	fr->style = default_style(p->ss);

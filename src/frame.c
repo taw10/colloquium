@@ -232,6 +232,16 @@ static int recursive_unpack(struct frame *fr, const char *sc, StyleSheet *ss)
 		sfr = add_subframe(fr);
 		parse_options(sfr, b->options, ss);
 
+		if ( sfr->lop.w < 0.0 ) {
+			sfr->lop.x += sfr->lop.w;
+			sfr->lop.w = -sfr->lop.w;
+		}
+
+		if ( sfr->lop.h < 0.0 ) {
+			sfr->lop.y += sfr->lop.h;
+			sfr->lop.h = -sfr->lop.h;
+		}
+
 		sfr->sc = remove_blocks(b->contents, "f");
 		sfr->sc_len = strlen(sfr->sc)+1;
 		if ( recursive_unpack(sfr, b->contents, ss) ) {

@@ -1434,11 +1434,7 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	struct frame *parent;
 	struct frame *fr;
 
-	if ( p->n_selection != 1 ) {
-		parent = p->cur_edit_slide->top;
-	} else {
-		parent = p->selection[0];
-	}
+	parent = p->cur_edit_slide->top;
 
 	if ( w < 0.0 ) {
 		x += w;

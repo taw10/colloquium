@@ -1296,33 +1296,15 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	x = event->x - p->border_offs_x;
 	y = event->y - p->border_offs_y;
 
-
-	clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
-
-	if ( (clicked == NULL) || (clicked == p->cur_edit_slide->top) ) {
-
-		/* Clicked no object. Deselect old object and set up for
-		 * (maybe) creating a new one. */
-
-		set_selection(p, NULL);
-		p->start_corner_x = event->x - p->border_offs_x;
-		p->start_corner_y = event->y - p->border_offs_y;
-		p->drag_status = DRAG_STATUS_COULD_DRAG;
-		p->drag_reason = DRAG_REASON_CREATE;
-
+	if ( (p->n_selection > 0) && within_frame(p->selection[0], x, y) ) {
+		clicked = p->selection[0];
 	} else {
-
-		/* Select new frame */
-		p->drag_status = DRAG_STATUS_NONE;
-		p->drag_reason = DRAG_REASON_NONE;
-		set_selection(p, clicked);
-		clicked->pos = find_cursor_pos(clicked,
-		                               x-clicked->x, y-clicked->y);
-		p->cursor_pos = clicked->pos;
-
+		clicked = find_frame_at_position(p->cur_edit_slide->top, x, y);
 	}
 
-	if ( p->n_selection > 0 ) {
+	/* If the user clicked the currently selected frame, position cursor
+	 * or possibly prepare for resize */
+	if ( (p->n_selection > 0) && (clicked == p->selection[0]) ) {
 
 		struct frame *fr;
 
@@ -1345,28 +1327,36 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 			p->drag_status = DRAG_STATUS_COULD_DRAG;
 			p->drag_reason = DRAG_REASON_RESIZE;
-			printf("could drag resize\n");
-
 
 		} else {
 
-			struct frame *clicked;
+			clicked->pos = find_cursor_pos(clicked,
+						       x-fr->x, y-fr->y);
+			p->cursor_pos = clicked->pos;
 
-			clicked = find_frame_at_position(p->cur_edit_slide->top,
-							 x, y);
+			p->start_corner_x = event->x - p->border_offs_x;
+			p->start_corner_y = event->y - p->border_offs_y;
+			p->drag_status = DRAG_STATUS_COULD_DRAG;
+			p->drag_reason = DRAG_REASON_MOVE;
 
-			if ( clicked == fr ) {
-				p->drag_status = DRAG_STATUS_COULD_DRAG;
-				p->drag_reason = DRAG_REASON_MOVE;
-				p->start_corner_x = x;
-				p->start_corner_y = y;
-			} else {
-				/* Select new frame */
-				p->drag_status = DRAG_STATUS_NONE;
-				p->drag_reason = DRAG_REASON_NONE;
-				set_selection(p, clicked);
-			}
 		}
+
+	} else if ( (clicked == NULL) || (clicked == p->cur_edit_slide->top) ) {
+
+		/* Clicked no object. Deselect old object and set up for
+		 * (maybe) creating a new one. */
+		set_selection(p, NULL);
+		p->start_corner_x = event->x - p->border_offs_x;
+		p->start_corner_y = event->y - p->border_offs_y;
+		p->drag_status = DRAG_STATUS_COULD_DRAG;
+		p->drag_reason = DRAG_REASON_CREATE;
+
+	} else {
+
+		/* Select new frame, no immediate dragging */
+		p->drag_status = DRAG_STATUS_NONE;
+		p->drag_reason = DRAG_REASON_NONE;
+		set_selection(p, clicked);
 
 	}
 

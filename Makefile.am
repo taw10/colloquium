@@ -34,8 +34,10 @@ icons_DATA = data/colloquium-select.svg data/colloquium-text.svg \
 
 EXTRA_DIST += $(colloquium_DATA)
 
-noinst_PROGRAMS = tests/render_test tests/render_test_sc1
-TESTS = tests/render_test tests/render_test_sc1
+noinst_PROGRAMS = tests/storycode_test tests/render_test tests/render_test_sc1
+TESTS = tests/storycode_test tests/render_test tests/render_test_sc1
+
+tests_storycode_test_SOURCES = tests/storycode_test.c src/storycode.c
 
 tests_render_test_SOURCES = tests/render_test.c src/render.c src/frame.c \
                             src/wrap.c src/storycode.c src/imagestore.c \

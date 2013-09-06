@@ -1467,6 +1467,16 @@ static void do_resize(struct presentation *p, double x, double y,
 
 	assert(p->n_selection > 0);
 
+	if ( w < 0.0 ) {
+		w = -w;
+		x -= w;
+	}
+
+	if ( h < 0.0 ) {
+		h = -h;
+		y -= h;
+	}
+
 	fr = p->selection[0];
 	fr->lop.x = x;
 	fr->lop.y = y;

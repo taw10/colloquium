@@ -1828,7 +1828,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 				fprintf(stderr, "Failed to allocate SC\n");
 				return;
 			}
-			snprintf(sc, len, "\\image[%ix%i]{%s}", w, h, filename);
+			snprintf(sc, len, "\\image[fitxfit]{%s}", filename);
 
 			fr = create_frame(p, p->start_corner_x,
 			                     p->start_corner_y, w, h);

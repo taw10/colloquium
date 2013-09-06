@@ -609,7 +609,7 @@ static void pop_font_or_colour(struct sc_font_stack *stack)
 }
 
 
-static int get_size(const char *a, int *wp, int *hp)
+static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
 {
 	char *x;
 	char *ws;
@@ -623,8 +623,16 @@ static int get_size(const char *a, int *wp, int *hp)
 	ws = strndup(a, x-a);
 	hs = strdup(x+1);
 
-	*wp = strtoul(ws, NULL, 10);
-	*hp = strtoul(hs, NULL, 10);
+	if ( strcmp(ws, "fit") == 0 ) {
+		*wp = fr->w;
+	} else {
+		*wp = strtoul(ws, NULL, 10);
+	}
+	if ( strcmp(ws, "fit") == 0 ) {
+		*hp = fr->h;
+	} else {
+		*hp = strtoul(hs, NULL, 10);
+	}
 
 	free(ws);
 	free(hs);
@@ -639,7 +647,8 @@ invalid:
 
 static void run_sc(const char *sc, struct sc_font_stack *fonts,
                    PangoContext *pc, struct wrap_line *boxes,
-                   PangoLanguage *lang, size_t g_offset, int editable)
+                   PangoLanguage *lang, size_t g_offset, int editable,
+		   struct frame *fr)
 {
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
@@ -671,7 +680,7 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 		         && (b->contents != NULL) ) {
 			push_font(fonts, b->options, pc);
 			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable);
+			       editable, fr);
 			pop_font_or_colour(fonts);
 
 		} else if ( (strcmp(b->name, "fgcol")==0)
@@ -682,13 +691,13 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 		         && (b->contents != NULL) ) {
 			push_colour(fonts, b->options);
 			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable);
+			       editable, fr);
 			pop_font_or_colour(fonts);
 
 		} else if ( (strcmp(b->name, "image")==0)
 		         && (b->contents != NULL) && (b->options != NULL) ) {
 			int w, h;
-			if ( get_size(b->options, &w, &h) == 0 ) {
+			if ( get_size(b->options, fr, &w, &h) == 0 ) {
 				add_image_box(boxes, b->contents, offset, w, h,
 				              editable);
 			}
@@ -700,7 +709,7 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 
 
 static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
-                                          PangoContext *pc)
+                                          PangoContext *pc, struct frame *fr)
 {
 	struct wrap_line *boxes;
 	PangoLanguage *lang;
@@ -725,10 +734,10 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
 	set_colour(&fonts, "#000000");
 
 	if ( prefix != NULL ) {
-		run_sc(prefix, &fonts, pc, boxes, lang, 0, 0);
+		run_sc(prefix, &fonts, pc, boxes, lang, 0, 0, fr);
 	}
 	if ( sc != NULL ) {
-		run_sc(sc, &fonts, pc, boxes, lang, 0, 1);
+		run_sc(sc, &fonts, pc, boxes, lang, 0, 1, fr);
 	}
 
 	/* Empty the stack */
@@ -1233,7 +1242,7 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 	}
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
-	boxes = sc_to_wrap_boxes(fr->sc, prologue, pc);
+	boxes = sc_to_wrap_boxes(fr->sc, prologue, pc, fr);
 	if ( boxes == NULL ) {
 		fprintf(stderr, "Failed to create wrap boxes.\n");
 		return 1;

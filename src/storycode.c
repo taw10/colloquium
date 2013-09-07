@@ -217,12 +217,6 @@ static size_t read_block(const char *sc, char **pname, char **options,
 	} while ( !done && (i<l) );
 
 	name[j] = '\0';
-
-	if ( !done ) {
-		*err = 1;
-		printf("Couldn't find end of block beginning '%s'\n", sc);
-		return 0;
-	}
 	*pname = name;
 
 	if ( sc[i] == '[' ) {

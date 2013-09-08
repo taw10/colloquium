@@ -276,12 +276,14 @@ void show_hierarchy(struct frame *fr, const char *t)
 {
 	int i;
 	char tn[1024];
+	char *sc;
 
 	strcpy(tn, t);
 	strcat(tn, "      ");
 
-	printf("%s%p %s %p (%i x %i) / (%.2f x %.2f)\n", t, fr, fr->sc, fr->contents,
-	       fr->pix_w, fr->pix_h, fr->w, fr->h);
+	sc = escape_text(fr->sc);
+	printf("%s%p %s (%.2f x %.2f)\n", t, fr, sc, fr->w, fr->h);
+	free(sc);
 
 	for ( i=0; i<fr->num_children; i++ ) {
 		show_hierarchy(fr->children[i], tn);

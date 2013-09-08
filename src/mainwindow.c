@@ -1950,7 +1950,7 @@ int open_mainwindow(struct presentation *p)
 			 G_CALLBACK(draw_sig), p);
 
 	/* Default size */
-	gtk_window_set_default_size(GTK_WINDOW(p->window), 1024+100, 768+100);
+	gtk_window_set_default_size(GTK_WINDOW(p->window), 1024+100, 768+150);
 	gtk_window_set_resizable(GTK_WINDOW(p->window), TRUE);
 
 	assert(p->num_slides > 0);

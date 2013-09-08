@@ -61,8 +61,6 @@ struct frame *frame_new()
 
 	n->num_children = 0;
 
-	n->pl = NULL;
-	n->contents = NULL;
 	n->sc = NULL;
 
 	return n;

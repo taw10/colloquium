@@ -85,8 +85,6 @@ struct frame
 	char                     *sc;  /* Storycode */
 	size_t                    sc_len;  /* Space allocated for sc */
 
-	cairo_surface_t          *contents;
-
 	int                       n_lines;
 	int                       max_lines;
 	struct wrap_line         *lines;
@@ -102,12 +100,6 @@ struct frame
 	double                    y;
 	double                    w;
 	double                    h;
-
-	/* Size of frame in pixels */
-	int                       pix_w;
-	int                       pix_h;
-
-	PangoLayout              *pl;
 
 	/* True if this frame should be deleted on the next mouse click */
 	int                       empty;

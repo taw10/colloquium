@@ -61,7 +61,7 @@ static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 
 
 static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
-                             enum is_size isz, double scale)
+                             enum is_size isz)
 {
 	GdkPixbuf *pixbuf;
 	int w;
@@ -72,12 +72,11 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 	ascd = pango_units_to_double(box->ascent);
 
 	cairo_new_path(cr);
-	cairo_scale(cr, 1.0/scale, 1.0/scale);
-	cairo_rectangle(cr, 0.0, -scale*ascd,
-	                    scale*pango_units_to_double(box->width),
-	                    scale*pango_units_to_double(box->height));
+	cairo_rectangle(cr, 0.0, -ascd,
+	                    pango_units_to_double(box->width),
+	                    pango_units_to_double(box->height));
 
-	w = lrint(pango_units_to_double(scale*box->width));
+	w = lrint(pango_units_to_double(box->width));
 	pixbuf = lookup_image(is, box->filename, w, isz);
 	//show_imagestore(is);
 
@@ -86,7 +85,7 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 		fprintf(stderr, "Failed to load '%s' at size %i\n",
 		        box->filename, w);
 	} else {
-		gdk_cairo_set_source_pixbuf(cr, pixbuf, 0.0, -scale*ascd);
+		gdk_cairo_set_source_pixbuf(cr, pixbuf, 0.0, -ascd);
 	}
 
 	cairo_fill(cr);
@@ -126,7 +125,7 @@ static void draw_outline(cairo_t *cr, struct wrap_box *box)
 
 
 static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
-                         enum is_size isz, double scale)
+                         enum is_size isz)
 {
 	int j;
 	double x_pos = 0.0;
@@ -149,7 +148,7 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 			break;
 
 			case WRAP_BOX_IMAGE :
-			render_image_box(cr, box, is, isz, scale);
+			render_image_box(cr, box, is, isz);
 			break;
 
 			case WRAP_BOX_NOTHING :
@@ -193,7 +192,7 @@ static void draw_underfull_marker(cairo_t *cr, struct frame *fr, int i)
 
 
 static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
-                         enum is_size isz, double scale)
+                         enum is_size isz)
 {
 	int i;
 	double y_pos = 0.0;
@@ -219,7 +218,7 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 		cairo_save(cr);
 		cairo_translate(cr, 0.0,
 		                    pango_units_to_double(fr->lines[i].ascent));
-		render_boxes(&fr->lines[i], cr, is, isz, scale);
+		render_boxes(&fr->lines[i], cr, is, isz);
 		cairo_restore(cr);
 
 		if ( fr->lines[i].overfull ) {
@@ -275,11 +274,11 @@ static void do_background(cairo_t *cr, struct frame *fr)
 
 
 /* Render Level 1 Storycode (no subframes) */
-static int render_sc(struct frame *fr, double scale, ImageStore *is,
-                     enum is_size isz)
+static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
+                     enum is_size isz, struct slide_constants *scc,
+		     struct presentation_constants *pcc)
 {
 	int i;
-	cairo_t *cr;
 	PangoFontMap *fontmap;
 	PangoContext *pc;
 
@@ -290,14 +289,6 @@ static int render_sc(struct frame *fr, double scale, ImageStore *is,
 	fr->lines = NULL;
 	fr->n_lines = 0;
 	fr->max_lines = 0;
-
-	/* Create surface and Cairo stuff */
-	if ( fr->contents != NULL ) cairo_surface_destroy(fr->contents);
-	/* Rounding to get the bitmap size */
-	fr->contents = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-	                                          fr->pix_w, fr->pix_h);
-	cr = cairo_create(fr->contents);
-	cairo_scale(cr, scale, scale);
 
 	do_background(cr, fr);
 
@@ -314,26 +305,26 @@ static int render_sc(struct frame *fr, double scale, ImageStore *is,
 	pango_cairo_update_context(cr, pc);
 
 	/* Set up lines */
-	if ( wrap_contents(fr, pc) ) {
+	if ( wrap_contents(fr, pc, scc, pcc) ) {
 		fprintf(stderr, "Failed to wrap lines.\n");
 		return 1;
 	}
 
 	/* Actually render the lines */
 	cairo_translate(cr, fr->lop.pad_l, fr->lop.pad_t);
-	render_lines(fr, cr, is, isz, scale);
+	render_lines(fr, cr, is, isz);
 
 	/* Tidy up */
 	cairo_font_options_destroy(fopts);
-	cairo_destroy(cr);
 	g_object_unref(pc);
 
 	return 0;
 }
 
 
-static int render_frame(struct frame *fr, double scale, ImageStore *is,
-                        enum is_size isz)
+static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
+                        enum is_size isz, struct slide_constants *scc,
+		        struct presentation_constants *pcc)
 {
 	int i;
 
@@ -347,7 +338,6 @@ static int render_frame(struct frame *fr, double scale, ImageStore *is,
 			memcpy(&ch->lop, &ch->style->lop,
 			       sizeof(struct layout_parameters));
 		}
-
 
 		mtot = ch->lop.margin_l + ch->lop.margin_r;
 		mtot += fr->lop.pad_l + fr->lop.pad_r;
@@ -377,17 +367,16 @@ static int render_frame(struct frame *fr, double scale, ImageStore *is,
 
 		}
 
-		/* Rounding to get bitmap size */
-		ch->pix_w =  ch->w*scale;
-		ch->pix_h = ch->h*scale;
-		render_frame(ch, scale, is, isz);
-
 		ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;
 		ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
+		cairo_save(cr);
+		cairo_translate(cr, ch->x, ch->y);
+		render_frame(cr, ch, is, isz, scc, pcc);
+		cairo_restore(cr);
 
 	}
 
-	render_sc(fr, scale, is, isz);
+	render_sc(cr, fr, is, isz, scc, pcc);
 
 	return 0;
 }
@@ -399,11 +388,6 @@ void recursive_buffer_free(struct frame *fr)
 
 	for ( i=0; i<fr->num_children; i++ ) {
 		recursive_buffer_free(fr->children[i]);
-	}
-
-	if ( fr->contents != NULL ) {
-		cairo_surface_destroy(fr->contents);
-		fr->contents = NULL;
 	}
 }
 
@@ -429,59 +413,6 @@ void free_render_buffers_except_thumb(struct slide *s)
 
 	s->rendered_edit = NULL;
 	s->rendered_proj = NULL;
-}
-
-
-static void do_composite(struct frame *fr, cairo_t *cr, double scale)
-{
-	if ( fr->contents == NULL ) return;
-
-	cairo_rectangle(cr, scale*fr->x, scale*fr->y, fr->pix_w, fr->pix_h);
-	cairo_set_source_surface(cr, fr->contents, scale*fr->x, scale*fr->y);
-	cairo_fill(cr);
-
-//	cairo_rectangle(cr, scale*fr->x, scale*fr->y, fr->pix_w, fr->pix_h);
-//	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-//	cairo_stroke(cr);
-}
-
-
-static int composite_frames_at_level(struct frame *fr, cairo_t *cr,
-                                     int level, int cur_level, double scale)
-{
-	int i;
-
-	if ( level == cur_level ) {
-
-		/* This frame is at the right level, so composite it */
-		do_composite(fr, cr, scale);
-		return 1;
-
-	} else {
-
-		int n = 0;
-
-		for ( i=0; i<fr->num_children; i++ ) {
-			n += composite_frames_at_level(fr->children[i], cr,
-			                               level, cur_level+1,
-			                               scale);
-		}
-
-		return n;
-
-	}
-}
-
-
-static void composite_slide(struct slide *s, cairo_t *cr, double scale)
-{
-	int level = 0;
-	int more = 0;
-
-	do {
-		more = composite_frames_at_level(s->top, cr, level, 0, scale);
-		level++;
-	} while ( more != 0 );
 }
 
 
@@ -511,22 +442,20 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	s->top->lop.h = hh;
 	s->top->w = ww;
 	s->top->h = hh;
-	s->top->pix_w = w;
-	s->top->pix_h = h;
-
-	render_frame(s->top, scale, is, isz);
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
-
 	cr = cairo_create(surf);
+
+	cairo_scale(cr, scale, scale);
 
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
-	//show_heirarchy(s->top, "");
+	render_frame(cr, s->top, is, isz, s->constants,
+	             s->parent->constants);
 
-	composite_slide(s, cr, scale);
+	//show_heirarchy(s->top, "");
 
 	cairo_destroy(cr);
 	recursive_buffer_free(s->top);
@@ -553,17 +482,24 @@ int export_pdf(struct presentation *p, const char *filename)
 
 	for ( i=0; i<p->num_slides; i++ ) {
 
-		cairo_surface_t *sf;
 		struct slide *s;
 
 		s = p->slides[i];
-		sf = render_slide(s, 1024, p->slide_width, p->slide_height,
-		                  p->is, ISZ_SLIDESHOW);
 		cairo_rectangle(cr, 0.0, 0.0, p->slide_width, p->slide_height);
-		cairo_set_source_surface(cr, sf, 0.0, 0.0);
+		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
-		cairo_surface_show_page(surf);
-		cairo_surface_destroy(sf);
+
+		s->top->lop.x = 0.0;
+		s->top->lop.y = 0.0;
+		s->top->lop.w = p->slide_width;
+		s->top->lop.h = p->slide_height;
+		s->top->w = p->slide_width;
+		s->top->h = p->slide_height;
+
+		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, s->constants,
+		             s->parent->constants);
+
+		cairo_show_page(cr);
 
 	}
 

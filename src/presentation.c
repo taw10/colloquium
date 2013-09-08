@@ -322,7 +322,7 @@ static char *packed_sc(struct frame *fr, StyleSheet *ss)
 	if ( fr->sc != NULL ) {
 		len += strlen(fr->sc)+1;
 		sc = malloc(len);
-		memcpy(sc, fr->sc, len+1);
+		memcpy(sc, fr->sc, len);
 	} else {
 		len = 0;
 		sc = malloc(1);

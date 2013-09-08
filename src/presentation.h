@@ -33,10 +33,27 @@
 #include "stylesheet.h"
 #include "imagestore.h"
 
+
+struct slide_constants
+{
+	int slide_number;
+};
+
+
+struct presentation_constants
+{
+	char *title;
+	char *author;
+	char *date;
+};
+
+
 struct slide
 {
 	struct presentation *parent;
 	struct slide_template *st;
+
+	struct slide_constants *constants;
 
 	/* Any of these may be NULL */
 	cairo_surface_t *rendered_proj;
@@ -94,6 +111,8 @@ struct presentation
 	char             *filename;
 	int               completely_empty;
 	int              *num_presentations;
+
+	struct presentation_constants *constants;
 
 	GtkWidget        *window;
 	GtkWidget        *drawingarea;

@@ -30,6 +30,7 @@
 #endif
 
 #include "frame.h"
+#include "presentation.h"
 
 
 enum wrap_box_type
@@ -98,7 +99,9 @@ struct wrap_line
 };
 
 
-extern int wrap_contents(struct frame *fr, PangoContext *pc);
+extern int wrap_contents(struct frame *fr, PangoContext *pc,
+                         struct slide_constants *scc,
+		         struct presentation_constants *pcc);
 
 extern void get_cursor_pos(struct frame *fr, size_t pos,
                            double *xposd, double *yposd, double *line_height);

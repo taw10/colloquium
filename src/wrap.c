@@ -38,6 +38,7 @@
 #include "wrap.h"
 #include "frame.h"
 #include "stylesheet.h"
+#include "presentation.h"
 
 
 static void alloc_lines(struct frame *fr)
@@ -648,7 +649,8 @@ invalid:
 static void run_sc(const char *sc, struct sc_font_stack *fonts,
                    PangoContext *pc, struct wrap_line *boxes,
                    PangoLanguage *lang, size_t g_offset, int editable,
-		   struct frame *fr)
+		   struct frame *fr, struct slide_constants *slide_constants,
+		   struct presentation_constants *presentation_constants)
 {
 	SCBlockList *bl;
 	SCBlockListIterator *iter;
@@ -680,7 +682,8 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 		         && (b->contents != NULL) ) {
 			push_font(fonts, b->options, pc);
 			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable, fr);
+			       editable, fr, slide_constants,
+			       presentation_constants);
 			pop_font_or_colour(fonts);
 
 		} else if ( (strcmp(b->name, "fgcol")==0)
@@ -691,7 +694,8 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 		         && (b->contents != NULL) ) {
 			push_colour(fonts, b->options);
 			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable, fr);
+			       editable, fr, slide_constants,
+			       presentation_constants);
 			pop_font_or_colour(fonts);
 
 		} else if ( (strcmp(b->name, "image")==0)
@@ -701,6 +705,17 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 				add_image_box(boxes, b->contents, offset, w, h,
 				              editable);
 			}
+
+		} else if ( strcmp(b->name, "slidenumber")==0) {
+			char *tmp = malloc(64);
+			if ( tmp != NULL ) {
+				snprintf(tmp, 63, "%i",
+				         slide_constants->slide_number);
+				add_wrap_box(boxes, tmp, offset,
+					     WRAP_SPACE_NONE, pc,
+					     &fonts->stack[fonts->n_fonts-1],
+			                     0);
+			} /* else go away and sulk about it */
 		}
 
 	}
@@ -709,7 +724,9 @@ static void run_sc(const char *sc, struct sc_font_stack *fonts,
 
 
 static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
-                                          PangoContext *pc, struct frame *fr)
+                                          PangoContext *pc, struct frame *fr,
+                                           struct slide_constants *s_constants,
+				    struct presentation_constants *p_constants)
 {
 	struct wrap_line *boxes;
 	PangoLanguage *lang;
@@ -734,10 +751,12 @@ static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
 	set_colour(&fonts, "#000000");
 
 	if ( prefix != NULL ) {
-		run_sc(prefix, &fonts, pc, boxes, lang, 0, 0, fr);
+		run_sc(prefix, &fonts, pc, boxes, lang, 0, 0, fr,
+		       s_constants, p_constants);
 	}
 	if ( sc != NULL ) {
-		run_sc(sc, &fonts, pc, boxes, lang, 0, 1, fr);
+		run_sc(sc, &fonts, pc, boxes, lang, 0, 1, fr,
+		       s_constants, p_constants);
 	}
 
 	/* Empty the stack */
@@ -1226,7 +1245,9 @@ void show_boxes(struct wrap_line *boxes)
 
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
-int wrap_contents(struct frame *fr, PangoContext *pc)
+int wrap_contents(struct frame *fr, PangoContext *pc,
+                  struct slide_constants *scc,
+		  struct presentation_constants *pcc)
 {
 	struct wrap_line *boxes;
 	struct wrap_line *para;
@@ -1242,7 +1263,7 @@ int wrap_contents(struct frame *fr, PangoContext *pc)
 	}
 
 	/* Turn the StoryCode into wrap boxes, all on one line */
-	boxes = sc_to_wrap_boxes(fr->sc, prologue, pc, fr);
+	boxes = sc_to_wrap_boxes(fr->sc, prologue, pc, fr, scc, pcc);
 	if ( boxes == NULL ) {
 		fprintf(stderr, "Failed to create wrap boxes.\n");
 		return 1;

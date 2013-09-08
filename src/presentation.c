@@ -65,6 +65,15 @@ void free_presentation(struct presentation *p)
 }
 
 
+static void renumber_slides(struct presentation *p)
+{
+	int i;
+	for ( i=0; i<p->num_slides; i++ ) {
+		p->slides[i]->constants->slide_number = i+1;
+	}
+}
+
+
 int insert_slide(struct presentation *p, struct slide *new, int pos)
 {
 	struct slide **try;
@@ -99,6 +108,8 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	new->parent = p;
 	p->num_slides++;
 
+	renumber_slides(p);
+
 	return 0;
 }
 
@@ -113,6 +124,12 @@ struct slide *new_slide()
 	new->rendered_edit = NULL;
 	new->rendered_proj = NULL;
 	new->rendered_thumb = NULL;
+
+	new->constants = calloc(1, sizeof(struct slide_constants));
+	if ( new->constants == NULL ) {
+		free(new);
+		return NULL;
+	}
 
 	new->top = frame_new();
 	/* FIXME: Set zero margins etc on top level frame */
@@ -215,6 +232,13 @@ struct presentation *new_presentation()
 	struct presentation *new;
 
 	new = calloc(1, sizeof(struct presentation));
+	if ( new == NULL ) return NULL;
+
+	new->constants = calloc(1, sizeof(struct presentation_constants));
+	if ( new->constants == NULL ) {
+		free(new);
+		return NULL;
+	}
 
 	num_presentations++;
 	new->num_presentations = &num_presentations;

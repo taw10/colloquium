@@ -337,6 +337,17 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 		if ( (ch->style != NULL) && ch->lop_from_style ) {
 			memcpy(&ch->lop, &ch->style->lop,
 			       sizeof(struct layout_parameters));
+		} else {
+			double x, y, w, h;
+			LengthUnits wu, hu;
+			x = ch->lop.x;  y = ch->lop.y;
+			w = ch->lop.w;  h = ch->lop.h;
+			wu = ch->lop.w_units;  hu = ch->lop.h_units;
+			memcpy(&ch->lop, &ch->style->lop,
+			       sizeof(struct layout_parameters));
+			ch->lop.x = x;  ch->lop.y = y;
+			ch->lop.w = w;  ch->lop.h = h;
+			ch->lop.w_units = wu;  ch->lop.h_units = hu;
 		}
 
 		mtot = ch->lop.margin_l + ch->lop.margin_r;

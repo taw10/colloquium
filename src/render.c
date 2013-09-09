@@ -64,28 +64,43 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
                              enum is_size isz)
 {
 	GdkPixbuf *pixbuf;
-	int w;
+	double w, h;
+	int wi;
 	double ascd;
+	double x, y;
 
 	cairo_save(cr);
 
 	ascd = pango_units_to_double(box->ascent);
+
+	x = 0.0;
+	y = -ascd;
+	cairo_user_to_device(cr, &x, &y);
 
 	cairo_new_path(cr);
 	cairo_rectangle(cr, 0.0, -ascd,
 	                    pango_units_to_double(box->width),
 	                    pango_units_to_double(box->height));
 
-	w = lrint(pango_units_to_double(box->width));
-	pixbuf = lookup_image(is, box->filename, w, isz);
+	/* This is how wide the image should be in Cairo units */
+	w = pango_units_to_double(box->width);
+
+	h = 0.0;  /* Dummy */
+	cairo_user_to_device_distance(cr, &w, &h);
+	/* w is now how wide the image should be in pixels */
+
+	wi = lrint(w);
+
+	pixbuf = lookup_image(is, box->filename, wi, isz);
 	//show_imagestore(is);
 
 	if ( pixbuf == NULL ) {
 		cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);
 		fprintf(stderr, "Failed to load '%s' at size %i\n",
-		        box->filename, w);
+		        box->filename, wi);
 	} else {
-		gdk_cairo_set_source_pixbuf(cr, pixbuf, 0.0, -ascd);
+		cairo_identity_matrix(cr);
+		gdk_cairo_set_source_pixbuf(cr, pixbuf, x, y);
 	}
 
 	cairo_fill(cr);

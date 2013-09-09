@@ -407,6 +407,8 @@ char *escape_text(const char *a)
 	char *b;
 	size_t l1, l, i;
 
+	if ( a == NULL ) return NULL;
+
 	l1 = strlen(a);
 
 	b = malloc(2*l1 + 1);
@@ -441,6 +443,8 @@ char *unescape_text(const char *a)
 	char *b;
 	size_t l1, l, i;
 	int escape;
+
+	if ( a == NULL ) return NULL;
 
 	l1 = strlen(a);
 

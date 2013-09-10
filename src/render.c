@@ -493,11 +493,15 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 int export_pdf(struct presentation *p, const char *filename)
 {
 	int i;
+	double r;
+	double w = 2048.0;
 	cairo_surface_t *surf;
 	cairo_t *cr;
+	double scale;
 
-	surf = cairo_pdf_surface_create(filename, p->slide_width,
-	                                          p->slide_height);
+	r = p->slide_height / p->slide_width;
+
+	surf = cairo_pdf_surface_create(filename, w, w*r);
 
 	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
 		fprintf(stderr, "Couldn't create Cairo surface\n");
@@ -505,6 +509,9 @@ int export_pdf(struct presentation *p, const char *filename)
 	}
 
 	cr = cairo_create(surf);
+
+	scale = w / p->slide_width;
+	cairo_scale(cr, scale, scale);
 
 	for ( i=0; i<p->num_slides; i++ ) {
 
@@ -517,10 +524,10 @@ int export_pdf(struct presentation *p, const char *filename)
 
 		s->top->lop.x = 0.0;
 		s->top->lop.y = 0.0;
-		s->top->lop.w = p->slide_width;
-		s->top->lop.h = p->slide_height;
-		s->top->w = p->slide_width;
-		s->top->h = p->slide_height;
+		s->top->lop.w = w;
+		s->top->lop.h = w*r;
+		s->top->w = w;
+		s->top->h = w*r;
 
 		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, s->constants,
 		             s->parent->constants);

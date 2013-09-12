@@ -179,11 +179,13 @@ static int read_template(struct slide_template *t, StyleSheet *ss,
                          struct ds_node *node)
 {
 	int i;
-	int top_style, r;
+	char *top_style;
 
-	r = get_field_i(node, "top_style", &top_style);
-	if ( !r ) {
-		t->top_style = ss->styles[top_style];
+	if ( !get_field_s(node, "top_style", &top_style) ) {
+		t->top_style = lookup_style(ss, top_style);
+		free(top_style);
+	} else {
+		t->top_style = NULL;
 	}
 
 	for ( i=0; i<node->n_children; i++ ) {
@@ -282,6 +284,12 @@ StyleSheet *tree_to_stylesheet(struct ds_node *root)
 
 	if ( get_field_s(root, "default_style", &ds) == 0 ) {
 		ss->default_style = lookup_style(ss, ds);
+		if ( ss->default_style == NULL ) {
+			fprintf(stderr, "Failed to find default style '%s'\n",
+			        ds);
+		}
+	} else {
+		ss->default_style = NULL;
 	}
 
 	node = find_node(root, "templates", 0);
@@ -414,8 +422,7 @@ int replace_stylesheet(struct presentation *p, const char *filename)
 	free_ds_tree(root);
 
 	for ( i=0; i<p->num_slides; i++ ) {
-		int n;
-		n = fixup_styles(p->slides[i]->top, ss);
+		fixup_styles(p->slides[i]->top, ss);
 		fixup_templates(p->slides[i], ss);
 	}
 

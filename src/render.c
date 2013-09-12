@@ -291,11 +291,9 @@ static void do_background(cairo_t *cr, struct frame *fr)
 /* Render Level 1 Storycode (no subframes) */
 static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
                      enum is_size isz, struct slide_constants *scc,
-		     struct presentation_constants *pcc)
+		     struct presentation_constants *pcc, PangoContext *pc)
 {
 	int i;
-	PangoFontMap *fontmap;
-	PangoContext *pc;
 
 	for ( i=0; i<fr->n_lines; i++ ) {
 		wrap_line_free(&fr->lines[i]);
@@ -304,20 +302,6 @@ static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
 	fr->lines = NULL;
 	fr->n_lines = 0;
 	fr->max_lines = 0;
-
-	do_background(cr, fr);
-
-	cairo_font_options_t *fopts;
-	fopts = cairo_font_options_create();
-	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_NONE);
-	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_DEFAULT);
-	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_GRAY);
-	cairo_set_font_options(cr, fopts);
-
-	/* Find and load font */
-	fontmap = pango_cairo_font_map_get_default();
-	pc = pango_font_map_create_context(fontmap);
-	pango_cairo_update_context(cr, pc);
 
 	/* Set up lines */
 	if ( wrap_contents(fr, pc, scc, pcc) ) {
@@ -329,17 +313,14 @@ static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
 	cairo_translate(cr, fr->lop.pad_l, fr->lop.pad_t);
 	render_lines(fr, cr, is, isz);
 
-	/* Tidy up */
-	cairo_font_options_destroy(fopts);
-	g_object_unref(pc);
-
 	return 0;
 }
 
 
 static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                         enum is_size isz, struct slide_constants *scc,
-		        struct presentation_constants *pcc)
+		        struct presentation_constants *pcc,
+			PangoContext *pc)
 {
 	int i;
 
@@ -397,12 +378,12 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 		ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
 		cairo_save(cr);
 		cairo_translate(cr, ch->x, ch->y);
-		render_frame(cr, ch, is, isz, scc, pcc);
+		render_frame(cr, ch, is, isz, scc, pcc, pc);
 		cairo_restore(cr);
 
 	}
 
-	render_sc(cr, fr, is, isz, scc, pcc);
+	render_sc(cr, fr, is, isz, scc, pcc, pc);
 
 	return 0;
 }
@@ -458,6 +439,8 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	cairo_t *cr;
 	int h;
 	double scale;
+	PangoFontMap *fontmap;
+	PangoContext *pc;
 
 	h = (hh/ww)*w;
 	scale = w/ww;
@@ -478,11 +461,25 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
+	cairo_font_options_t *fopts;
+	fopts = cairo_font_options_create();
+	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_FULL);
+	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_DEFAULT);
+	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_GRAY);
+	cairo_set_font_options(cr, fopts);
+
+	/* Find and load font */
+	fontmap = pango_cairo_font_map_get_default();
+	pc = pango_font_map_create_context(fontmap);
+	pango_cairo_update_context(cr, pc);
+
 	render_frame(cr, s->top, is, isz, s->constants,
-	             s->parent->constants);
+	             s->parent->constants, pc);
 
 	//show_heirarchy(s->top, "");
 
+	cairo_font_options_destroy(fopts);
+	g_object_unref(pc);
 	cairo_destroy(cr);
 	recursive_buffer_free(s->top);
 
@@ -498,6 +495,8 @@ int export_pdf(struct presentation *p, const char *filename)
 	cairo_surface_t *surf;
 	cairo_t *cr;
 	double scale;
+	PangoFontMap *fontmap;
+	PangoContext *pc;
 
 	r = p->slide_height / p->slide_width;
 
@@ -512,6 +511,18 @@ int export_pdf(struct presentation *p, const char *filename)
 
 	scale = w / p->slide_width;
 	cairo_scale(cr, scale, scale);
+
+	cairo_font_options_t *fopts;
+	fopts = cairo_font_options_create();
+	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_FULL);
+	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_DEFAULT);
+	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_GRAY);
+	cairo_set_font_options(cr, fopts);
+
+	/* Find and load font */
+	fontmap = pango_cairo_font_map_get_default();
+	pc = pango_font_map_create_context(fontmap);
+	pango_cairo_update_context(cr, pc);
 
 	for ( i=0; i<p->num_slides; i++ ) {
 
@@ -530,13 +541,15 @@ int export_pdf(struct presentation *p, const char *filename)
 		s->top->h = w*r;
 
 		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, s->constants,
-		             s->parent->constants);
+		             s->parent->constants, pc);
 
 		cairo_show_page(cr);
 
 	}
 
 	cairo_surface_finish(surf);
+	cairo_font_options_destroy(fopts);
+	g_object_unref(pc);
 	cairo_destroy(cr);
 
 	return 0;

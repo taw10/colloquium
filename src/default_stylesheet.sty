@@ -1,9 +1,9 @@
 # Colloquium default style sheet
 
 [stylesheet]
-default_style = "3"
+default_style = "content"
 
-[stylesheet/styles/0]
+[stylesheet/styles/presentation_title]
 name = "Presentation title"
 margin_l = 20.00
 margin_r = 20.00
@@ -19,7 +19,7 @@ x = 0.0
 y = 200.0
 prologue = "\font[Sans 50]"
 
-[stylesheet/styles/1]
+[stylesheet/styles/slide_title]
 name = "Slide title"
 margin_l = 0.00
 margin_r = 0.00
@@ -35,7 +35,7 @@ x = 0.0
 y = 0.0
 prologue = "\bgcol{#eeeeee}\fgcol[#000000]\font[Sans 40]"
 
-[stylesheet/styles/2]
+[stylesheet/styles/acknowledgement_title]
 name = "Slide title"
 margin_l = 0.00
 margin_r = 0.00
@@ -51,7 +51,7 @@ x = 0.0
 y = 0.0
 prologue = "\bgcol{#eeeeee}\fgcol[#000000]\font[Sans 40]Acknowledgements"
 
-[stylesheet/styles/3]
+[stylesheet/styles/acknowledgement_content]
 name = "Content"
 margin_l = 10.00
 margin_r = 10.00
@@ -67,7 +67,23 @@ x = 0.0
 y = 0.0
 prologue = "\bgcol{#ffffff}\fgcol[#000000]\font[Sans 24]"
 
-[stylesheet/styles/4]
+[stylesheet/styles/content]
+name = "Content"
+margin_l = 0.00
+margin_r = 0.00
+margin_t = 0.00
+margin_b = 0.00
+pad_l = 10.00
+pad_r = 10.00
+pad_t = 10.00
+pad_b = 10.00
+w = "1.00 f"
+h = "1.00 f"
+x = 0.0
+y = 0.0
+prologue = "\bgcol{#ffffff}\fgcol[#000000]\font[Sans 24]"
+
+[stylesheet/styles/presentation_author]
 name = "Presentation author"
 margin_l = 20.00
 margin_r = 20.00
@@ -83,7 +99,7 @@ x = 300.0
 y = 350.0
 prologue = "\font[Sans 30]"
 
-[stylesheet/styles/5]
+[stylesheet/styles/presentation_date]
 name = "Presentation date"
 margin_l = 20.00
 margin_r = 20.00
@@ -101,18 +117,16 @@ prologue = "\font[Sans 20]"
 
 [stylesheet/templates/0]
 name = "Title page"
-top_style = 3
-sty0 = 0
-sty1 = 4
-sty2 = 5
+sty0 = "presentation_title"
+sty1 = "presentation_date"
+sty2 = "presentation_author"
 
 [stylesheet/templates/1]
 name = "Slide"
-top_style = 3
-sty0 = 1
+default_style = "content"
+sty0 = "slide_title"
 
 [stylesheet/templates/2]
 name = "Acknowledgements"
-top_style = 3
-sty0 = 2
-sty1 = 3
+sty0 = "acknowledgement_title"
+sty1 = "acknowledgement_content"

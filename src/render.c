@@ -324,6 +324,8 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 {
 	int i;
 
+	do_background(cr, fr);
+
 	/* Render all subframes */
 	for ( i=0; i<fr->num_children; i++ ) {
 

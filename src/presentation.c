@@ -37,6 +37,7 @@
 #include "frame.h"
 #include "imagestore.h"
 #include "wrap.h"
+#include "notes.h"
 
 
 static int num_presentations = 0;
@@ -361,7 +362,7 @@ int save_presentation(struct presentation *p, const char *filename)
 	struct serializer ser;
 	char *old_fn;
 
-	//grab_current_notes(p);
+	grab_current_notes(p);
 
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
@@ -399,6 +400,8 @@ int save_presentation(struct presentation *p, const char *filename)
 		serialize_s(&ser, "sc", sc);
 		free(sc);
 
+		write_notes(s, &ser);
+
 		serialize_end(&ser);
 
 	}
@@ -424,6 +427,8 @@ static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
 
 	s = new_slide();
 	s->parent = p;
+
+	load_notes(root, s);
 
 	get_field_s(root, "sc", &sc);
 	s->top = sc_unpack(sc, p->ss);

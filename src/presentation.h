@@ -125,6 +125,8 @@ struct presentation
 	PangoContext     *pc;
 	ImageStore       *is;
 
+	struct notes     *notes;
+
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;
 	struct slide     *cur_proj_slide;

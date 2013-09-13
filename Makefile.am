@@ -27,12 +27,15 @@ src/default_stylesheet.o: src/default_stylesheet.sty
 
 colloquiumdir = $(datadir)/colloquium
 colloquium_DATA = data/colloquium.ui
+EXTRA_DIST += $(colloquium_DATA)
 
 iconsdir = $(datadir)/icons/hicolor/scalable/apps
-icons_DATA = data/colloquium-select.svg data/colloquium-text.svg \
-             data/colloquium-image.svg
+icons_DATA = data/colloquium.svg
+EXTRA_DIST += $(icons_DATA)
 
-EXTRA_DIST += $(colloquium_DATA)
+desktopdir = $(datadir)/applications
+desktop_DATA = colloquium.desktop
+EXTRA_DIST += $(desktop_DATA)
 
 noinst_PROGRAMS = tests/storycode_test tests/render_test tests/render_test_sc1
 TESTS = tests/storycode_test tests/render_test tests/render_test_sc1

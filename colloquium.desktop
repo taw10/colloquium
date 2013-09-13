@@ -1,0 +1,9 @@
+[Desktop Entry]
+GenericName=Presentation
+Name=Colloquium
+Comment=Presentation tool
+Exec=colloquium
+Icon=colloquium
+Terminal=false
+Type=Application
+Categories=GTK;Office;Presentation

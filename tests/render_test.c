@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 	struct style *sty1;
 	struct style *sty2;
 	struct slide s;
+	struct presentation p;
 
 	gtk_init(&argc, &argv);
 
@@ -137,6 +138,10 @@ int main(int argc, char *argv[])
 	s.rendered_edit = NULL;
 	s.rendered_proj = NULL;
 	s.rendered_thumb = NULL;
+	s.constants = NULL;
+	s.parent = &p;
+
+	p.constants = NULL;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 

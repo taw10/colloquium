@@ -34,7 +34,7 @@
 
 static void show_help(const char *s)
 {
-	printf("Syntax: %s [options]\n\n", s);
+	printf("Syntax: %s [options] [<file.clq>]\n\n", s);
 	printf(
 "A tiny presentation program.\n"
 "\n"
@@ -46,7 +46,6 @@ static void show_help(const char *s)
 int main(int argc, char *argv[])
 {
 	int c;
-	struct presentation *p;
 
 	/* Long options */
 	const struct option longopts[] = {
@@ -74,12 +73,33 @@ int main(int argc, char *argv[])
 
 	}
 
-	p = new_presentation();
-	p->cur_edit_slide = add_slide(p, 0);
-	p->completely_empty = 1;
-	if ( open_mainwindow(p) ) {
-		fprintf(stderr, "Couldn't open main window.\n");
-		return 1;
+	if ( optind == argc ) {
+
+		struct presentation *p;
+
+		p = new_presentation();
+		p->cur_edit_slide = add_slide(p, 0);
+		p->completely_empty = 1;
+		if ( open_mainwindow(p) ) {
+			fprintf(stderr, "Couldn't open main window.\n");
+			return 1;
+		}
+	}
+
+	while ( optind < argc ) {
+
+		char *filename;
+		struct presentation *p;
+
+		filename = argv[optind++];
+
+		p = new_presentation();
+		if ( load_presentation(p, filename) ) {
+			fprintf(stderr, "Failed to open presentation");
+		} else {
+			open_mainwindow(p);
+		}
+
 	}
 
 	gtk_main();

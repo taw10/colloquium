@@ -229,6 +229,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
 {
 	int width, height;
 	double s;
+	double ff;
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
@@ -252,6 +253,14 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
 		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 		cairo_fill(cr);
 	}
+
+	ff = (double)n->cur_slide / (n->last_slide-1);
+	if ( n->last_slide == 1 ) ff = 0.0;
+	cairo_move_to(cr, 10.0+ff*s, 0.0);
+	cairo_line_to(cr, 10.0+ff*s, height);
+	cairo_set_line_width(cr, 2.0);
+	cairo_set_source_rgb(cr, 1.0, 0.0, 1.0);
+	cairo_stroke(cr);
 
 	return FALSE;
 }
@@ -293,6 +302,18 @@ static gboolean reset_sig(GtkWidget *w, gpointer data)
 }
 
 
+static gboolean setpos_sig(GtkWidget *w, gpointer data)
+{
+	struct pr_clock *n = data;
+
+	n->slide_reached = n->cur_slide;
+
+	update_clock(n);
+
+	return FALSE;
+}
+
+
 static gboolean start_sig(GtkWidget *w, gpointer data)
 {
 	struct pr_clock *n = data;
@@ -322,6 +343,7 @@ void open_clock(struct presentation *p)
 	GtkWidget *vbox;
 	GtkWidget *hbox;
 	GtkWidget *resetbutton;
+	GtkWidget *setposbutton;
 	GtkWidget *grid;
 	GtkWidget *label;
 
@@ -357,6 +379,9 @@ void open_clock(struct presentation *p)
 	resetbutton = gtk_button_new_with_label("Reset");
 	gtk_box_pack_start(GTK_BOX(hbox), resetbutton, TRUE, TRUE, 10);
 
+	setposbutton = gtk_button_new_with_label("Set position");
+	gtk_box_pack_start(GTK_BOX(hbox), setposbutton, TRUE, TRUE, 10);
+
 	n->da = gtk_drawing_area_new();
 	gtk_box_pack_start(GTK_BOX(vbox), n->da, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(draw_sig), n);
@@ -386,6 +411,8 @@ void open_clock(struct presentation *p)
 	                 G_CALLBACK(start_sig), n);
 	g_signal_connect(G_OBJECT(resetbutton), "clicked",
 	                 G_CALLBACK(reset_sig), n);
+	g_signal_connect(G_OBJECT(setposbutton), "clicked",
+	                 G_CALLBACK(setpos_sig), n);
 	g_signal_connect(G_OBJECT(n->entry), "changed",
 	                 G_CALLBACK(set_sig), n);
 

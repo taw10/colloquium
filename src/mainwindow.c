@@ -40,6 +40,7 @@
 #include "slideshow.h"
 #include "wrap.h"
 #include "notes.h"
+#include "pr_clock.h"
 
 
 /* Update a slide, once it's been edited in some way. */
@@ -325,6 +326,7 @@ static gint open_response_sig(GtkWidget *d, gint response,
 			rerender_slide(p);
 			update_toolbar(p);
 			update_style_menus(p);
+			if ( p->slideshow != NULL ) end_slideshow(p);
 
 		} else {
 
@@ -714,6 +716,13 @@ static gint open_notes_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint open_clock_sig(GtkWidget *widget, struct presentation *p)
+{
+	open_clock(p);
+	return FALSE;
+}
+
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
@@ -766,6 +775,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			"F5", NULL, G_CALLBACK(start_slideshow_sig) },
 		{ "NotesAction", NULL, "_Open slide notes",
 			"F8", NULL, G_CALLBACK(open_notes_sig) },
+		{ "ClockAction", NULL, "_Open presentation clock",
+			"F9", NULL, G_CALLBACK(open_clock_sig) },
 		{ "PrefsAction", GTK_STOCK_PREFERENCES, "_Preferences",
 		        NULL, NULL, NULL },
 

@@ -14,13 +14,13 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/mainwindow.c src/presentation.c \
                          src/stylesheet.c src/loadsave.c src/frame.c \
                          src/slideshow.c src/wrap.c src/storycode.c \
-                         src/imagestore.c src/notes.c
+                         src/imagestore.c src/notes.c src/pr_clock.c
 
 INCLUDES = -Iharfatum/src
 
 EXTRA_DIST += src/presentation.h src/render.h src/wrap.h \
               src/stylesheet.h src/loadsave.h src/slideshow.h src/storycode.h \
-              src/imagestore.h src/notes.h
+              src/imagestore.h src/notes.h src/pr_clock.h
 
 src/default_stylesheet.o: src/default_stylesheet.sty
 	ld -r -b binary -o src/default_stylesheet.o src/default_stylesheet.sty

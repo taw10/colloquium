@@ -33,6 +33,7 @@
 		<menu name="tools" action="ToolsAction">
 			<menuitem name="slideshow" action="TSlideshowAction" />
 			<menuitem name="notes" action="NotesAction" />
+			<menuitem name="clock" action="ClockAction" />
 			<menuitem name="preferences" action="PrefsAction" />
 		</menu>
 

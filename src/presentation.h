@@ -126,6 +126,7 @@ struct presentation
 	ImageStore       *is;
 
 	struct notes     *notes;
+	struct pr_clock  *clock;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;

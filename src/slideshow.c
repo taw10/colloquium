@@ -34,6 +34,7 @@
 #include "presentation.h"
 #include "mainwindow.h"
 #include "render.h"
+#include "pr_clock.h"
 
 
 /* Force a redraw of the slideshow */
@@ -102,6 +103,8 @@ void change_proj_slide(struct presentation *p, struct slide *np)
 	}
 
 	p->cur_proj_slide = np;
+
+	notify_clock_slide_changed(p, np);
 
 	/* The slide is already rendered, because the editor always gets there
 	 * first, so we only need to do this: */
@@ -266,4 +269,6 @@ void try_start_slideshow(struct presentation *p)
 	//if ( p->prefs->open_notes ) open_notes(p);  FIXME!
 
 	p->cur_proj_slide = p->cur_edit_slide;
+
+	notify_clock_slide_changed(p, p->cur_proj_slide);
 }

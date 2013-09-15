@@ -400,37 +400,44 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
                        struct sc_font *font)
 {
 	PangoLogAttr *log_attrs;
-	size_t len;
-	size_t i, start;
+	glong len_chars, i;
+	size_t len_bytes, start;
 
 	/* Empty block? */
 	if ( sc == NULL ) return 1;
 
-	len = strlen(sc);
-	if ( len == 0 ) return 1;
+	len_chars = g_utf8_strlen(sc, -1);
+	if ( len_chars == 0 ) return 1;
 
-	log_attrs = malloc((len+1)*sizeof(PangoLogAttr));
+	len_bytes = strlen(sc);
+
+	log_attrs = malloc((len_chars+1)*sizeof(PangoLogAttr));
 	if ( log_attrs == NULL ) return 1;
 
 	/* Create glyph string */
-	pango_get_log_attrs(sc, len, -1, lang, log_attrs, len+1);
+	pango_get_log_attrs(sc, len_bytes, -1, lang, log_attrs, len_chars+1);
 
 	start = 0;
-	for ( i=0; i<len; i++ ) {
+	for ( i=0; i<len_chars; i++ ) {
 
 		if ( log_attrs[i].is_line_break ) {
 
 			char *word;
 			enum wrap_box_space type;
 			size_t len;
+			char *ptr;
+			size_t offs;
+
+			ptr = g_utf8_offset_to_pointer(sc, i);
+			offs = ptr - sc;
 
 			/* Stuff up to (but not including) sc[i] forms a
 			 * wrap box */
-			len = i-start;
+			len = offs - start;
 			if ( log_attrs[i].is_mandatory_break ) {
 				type = WRAP_SPACE_EOP;
-				if ( (i>0) && (sc[i-1] == '\n') ) len--;
-				if ( (i>0) && (sc[i-1] == '\r') ) len--;
+				if ( (offs>0) && (sc[offs-1] == '\n') ) len--;
+				if ( (offs>0) && (sc[offs-1] == '\r') ) len--;
 			} else if ( (i>0)
 			         && log_attrs[i-1].is_expandable_space ) {
 				type = WRAP_SPACE_INTERWORD;
@@ -450,7 +457,7 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 			                  pc, font, editable) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
-			start = i;
+			start = offs;
 
 		}
 
@@ -458,21 +465,25 @@ static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
 	if ( i > start ) {
 
 		char *word;
-		word = strndup(sc+start, i-start);
+		size_t l;
+
+		word = strdup(sc+start);  /* to the end */
 		if ( word == NULL ) {
 			fprintf(stderr, "strndup() failed.\n");
 			free(log_attrs);
 			return 1;
 		}
+		l = strlen(word);
 
-		if ( (word[i-start-1] == '\n')  ) {
+		if ( (word[l-1] == '\n')  ) {
 
 			/* There is a newline at the end of the SC */
 			char *word2;
-			word2 = strndup(word, i-start-1);
+
+			word2 = strndup(word, l-1);
 			add_wrap_box(boxes, word2, start+sc_offset,
 			             WRAP_SPACE_EOP, pc, font, editable);
-			add_wrap_box(boxes, strdup(""), i+sc_offset,
+			add_wrap_box(boxes, strdup(""), len_bytes+sc_offset,
 			             WRAP_SPACE_NONE, pc, font, editable);
 
 		} else {

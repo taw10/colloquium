@@ -102,7 +102,7 @@ static char *format_span_nice(int n)
 	mins = ((n-sec) % (60*60))/60;
 	hours = (n-sec-mins) / (60*60);
 
-	if ( n < 60 ) {
+	if ( n <= 60 ) {
 		snprintf(tmp, 63, "%i seconds %s", n, s);
 		return strdup(tmp);
 	}

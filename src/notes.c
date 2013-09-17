@@ -37,6 +37,8 @@ struct notes
 {
 	GtkWidget *window;
 	GtkWidget *v;
+
+	struct slide *slide;
 };
 
 
@@ -57,11 +59,12 @@ static void update_notes(struct presentation *p)
 }
 
 
-static void grab_notes(struct notes *n, struct slide *s)
+void grab_current_notes(struct presentation *p)
 {
 	gchar *text;
 	GtkTextBuffer *tb;
 	GtkTextIter i1, i2;
+	struct notes *n = p->notes;
 
 	if ( n == NULL ) return;
 
@@ -70,28 +73,22 @@ static void grab_notes(struct notes *n, struct slide *s)
 	gtk_text_buffer_get_end_iter(tb, &i2);
 	text = gtk_text_buffer_get_text(tb, &i1, &i2, TRUE);
 
-	free(s->notes);
-	s->notes = text;
-}
-
-
-void grab_current_notes(struct presentation *p)
-{
-	grab_notes(p->notes, p->cur_notes_slide);
+	free(n->slide->notes);
+	n->slide->notes = text;
 }
 
 
 void notify_notes_slide_changed(struct presentation *p, struct slide *np)
 {
-	grab_notes(p->notes, p->cur_notes_slide);
-	p->cur_notes_slide = np;
+	grab_current_notes(p);
+	p->notes->slide = np;
 	update_notes(p);
 }
 
 
 static gint close_notes_sig(GtkWidget *w, struct presentation *p)
 {
-	grab_notes(p->notes, p->cur_notes_slide);
+	grab_current_notes(p);
 	p->notes = NULL;
 	return FALSE;
 }
@@ -125,7 +122,7 @@ void open_notes(struct presentation *p)
 	if ( n == NULL ) return;
 	p->notes = n;
 
-	p->cur_notes_slide = p->cur_edit_slide;
+	p->notes->slide = p->cur_edit_slide;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(n->window), 800, 256);

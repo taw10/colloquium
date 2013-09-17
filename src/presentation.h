@@ -131,7 +131,6 @@ struct presentation
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;
 	struct slide     *cur_proj_slide;
-	struct slide     *cur_notes_slide;
 	int               slideshow_linked;
 
 	/* Pointers to the frame currently being edited */

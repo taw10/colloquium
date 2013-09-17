@@ -192,6 +192,7 @@ static void add_furniture_real(struct presentation *p, struct style *sty)
 	fr->sc = malloc(1);
 	fr->sc[0] = '\0';
 	fr->sc_len = 1;
+	fr->empty = 0;
 	set_selection(p, fr);
 	fr->pos = 0;
 	p->cursor_pos = 0;
@@ -1456,6 +1457,7 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	fr->lop.w = w;
 	fr->lop.h = h;
 	fr->is_image = 0;
+	fr->empty = 1;
 
 	return fr;
 }
@@ -1842,6 +1844,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			fr->sc = sc;
 			fr->sc_len = len;
 			fr->is_image = 1;
+			fr->empty = 0;
 			show_hierarchy(p->cur_edit_slide->top, "");
 			rerender_slide(p);
 			set_selection(p, fr);

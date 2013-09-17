@@ -553,6 +553,60 @@ int load_presentation(struct presentation *p, const char *filename)
 }
 
 
+static struct frame *find_parent(struct frame *fr, struct frame *search)
+{
+	int i;
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		if ( fr->children[i] == search ) {
+			return fr;
+		}
+	}
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		struct frame *tt;
+		tt = find_parent(fr->children[i], search);
+		if ( tt != NULL ) return tt;
+	}
+
+	return NULL;
+}
+
+
+static void delete_subframe(struct slide *s, struct frame *fr)
+{
+	struct frame *parent;
+	int i, idx, found;
+
+	parent = find_parent(s->top, fr);
+	if ( parent == NULL ) {
+		fprintf(stderr, "Couldn't find parent when deleting frame.\n");
+		return;
+	}
+
+
+	found = 0;
+	for ( i=0; i<parent->num_children; i++ ) {
+		if ( parent->children[i] == fr ) {
+			idx = i;
+			found = 1;
+			break;
+		}
+	}
+
+	if ( !found ) {
+		fprintf(stderr, "Couldn't find child when deleting frame.\n");
+		return;
+	}
+
+	for ( i=idx; i<parent->num_children-1; i++ ) {
+		parent->children[i] = parent->children[i+1];
+	}
+
+	parent->num_children--;
+}
+
+
 void set_edit(struct presentation *p, struct slide *s)
 {
 	p->cur_edit_slide = s;
@@ -561,6 +615,16 @@ void set_edit(struct presentation *p, struct slide *s)
 
 void set_selection(struct presentation *p, struct frame *fr)
 {
+	if ( p->n_selection != 0 ) {
+		int i;
+		for ( i=0; i<p->n_selection; i++ ) {
+			if ( p->selection[i]->empty ) {
+				delete_subframe(p->cur_edit_slide,
+				                p->selection[i]);
+			}
+		}
+	}
+
 	p->selection[0] = fr;
 	p->n_selection = 1;
 

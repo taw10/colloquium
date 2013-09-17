@@ -35,6 +35,7 @@
 #include "mainwindow.h"
 #include "render.h"
 #include "pr_clock.h"
+#include "inhibit_screensaver.h"
 
 
 /* Force a redraw of the slideshow */
@@ -134,6 +135,7 @@ static gint next_slide_sig(GtkWidget *widget, struct presentation *p)
 
 void end_slideshow(struct presentation *p)
 {
+	if ( p->inhibit != NULL ) do_inhibit(p->inhibit, 0);
 	gtk_widget_destroy(p->ss_drawingarea);
 	gtk_widget_destroy(p->slideshow);
 	p->slideshow = NULL;
@@ -223,6 +225,10 @@ void try_start_slideshow(struct presentation *p)
 
 	p->ss_blank = 0;
 
+	if ( p->inhibit == NULL ) {
+		p->inhibit = inhibit_prepare();
+	}
+
 	n = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 	p->ss_drawingarea = gtk_drawing_area_new();
@@ -265,6 +271,8 @@ void try_start_slideshow(struct presentation *p)
 	p->slideshow_linked = 1;
 	gtk_window_fullscreen(GTK_WINDOW(n));
 	gtk_widget_show_all(GTK_WIDGET(n));
+
+	if ( p->inhibit != NULL ) do_inhibit(p->inhibit, 1);
 
 	//if ( p->prefs->open_notes ) open_notes(p);  FIXME!
 

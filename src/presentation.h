@@ -186,6 +186,8 @@ struct presentation
 	StyleSheet       *ss;
 	unsigned int      num_slides;
 	struct slide    **slides;
+
+	struct inhibit_sys *inhibit;
 };
 
 

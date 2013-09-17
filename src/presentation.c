@@ -38,6 +38,7 @@
 #include "imagestore.h"
 #include "wrap.h"
 #include "notes.h"
+#include "inhibit_screensaver.h"
 
 
 static int num_presentations = 0;
@@ -54,6 +55,8 @@ void free_presentation(struct presentation *p)
 
 	(*p->num_presentations)--;
 	if ( *p->num_presentations == 0 ) final = 1;
+
+	if ( p->inhibit != NULL ) inhibit_cleanup(p->inhibit);
 
 	/* FIXME: Loads of stuff leaks here */
 	free(p->filename);

@@ -127,6 +127,7 @@ struct presentation
 
 	struct notes     *notes;
 	struct pr_clock  *clock;
+	struct slide_sorter *slide_sorter;
 
 	/* Pointers to the current "editing" and "projection" slides */
 	struct slide     *cur_edit_slide;

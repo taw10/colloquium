@@ -23,7 +23,8 @@
 			<menuitem name="paste" action="PasteAction" />
 			<menuitem name="delete" action="DeleteAction" />
 			<separator />
-			<menuitem name="Stylesheet..." action="EditStyleAction" />
+			<menuitem name="slidesorter" action="SorterAction" />
+			<menuitem name="stylesheet" action="EditStyleAction" />
 		</menu>
 
 		<menu name="insert" action="InsertAction">

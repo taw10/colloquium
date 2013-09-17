@@ -41,6 +41,7 @@
 #include "wrap.h"
 #include "notes.h"
 #include "pr_clock.h"
+#include "slide_sorter.h"
 
 
 /* Update a slide, once it's been edited in some way. */
@@ -724,6 +725,12 @@ static gint open_clock_sig(GtkWidget *widget, struct presentation *p)
 }
 
 
+static gint open_slidesorter_sig(GtkWidget *widget, struct presentation *p)
+{
+	open_slidesorter(p);
+	return FALSE;
+}
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
@@ -752,6 +759,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, G_CALLBACK(quit_sig) },
 
 		{ "EditAction", NULL, "_Edit", NULL, NULL, NULL },
+		{ "SorterAction", NULL, "_Open Slide Sorter...",
+			NULL, NULL, G_CALLBACK(open_slidesorter_sig) },
 		{ "UndoAction", GTK_STOCK_UNDO, "_Undo",
 			NULL, NULL, NULL },
 		{ "RedoAction", GTK_STOCK_REDO, "_Redo",

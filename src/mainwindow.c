@@ -781,7 +781,7 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, G_CALLBACK(add_slide_sig) },
 
 		{ "ToolsAction", NULL, "_Tools", NULL, NULL, NULL },
-		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start slideshow",
+		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start Slideshow",
 			"F5", NULL, G_CALLBACK(start_slideshow_sig) },
 		{ "NotesAction", NULL, "_Open slide notes",
 			"F8", NULL, G_CALLBACK(open_notes_sig) },

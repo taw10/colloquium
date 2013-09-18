@@ -268,8 +268,6 @@ struct frame *sc_unpack(const char *sc, StyleSheet *ss)
 		return NULL;
 	}
 
-	show_hierarchy(fr, "");
-
 	return fr;
 }
 

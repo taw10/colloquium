@@ -480,8 +480,6 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	render_frame(cr, s->top, is, isz, s->constants,
 	             s->parent->constants, pc);
 
-	//show_heirarchy(s->top, "");
-
 	cairo_font_options_destroy(fopts);
 	g_object_unref(pc);
 	cairo_destroy(cr);

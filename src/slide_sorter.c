@@ -68,6 +68,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 	tw = n->p->thumb_slide_width;
 	th = (n->p->slide_height/n->p->slide_width) * n->p->thumb_slide_width;
 
+	cairo_translate(cr, bw, bw);  /* Border */
+
 	for ( i=0; i<n->p->num_slides; i++ ) {
 
 		int x = i % n->width;
@@ -105,7 +107,7 @@ static void size_sig(GtkWidget *da, GdkRectangle *size, struct slide_sorter *n)
 	th = (n->p->slide_height/n->p->slide_width) * n->p->thumb_slide_width;
 
 	w = size->width;
-	n->width = w / (tw+2*bw);
+	n->width = (w-2*bw) / (tw+2*bw);
 
 	h = (n->p->num_slides / n->width) * (th+2*bw);
 

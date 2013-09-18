@@ -636,12 +636,12 @@ static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
 	hs = strdup(x+1);
 
 	if ( strcmp(ws, "fit") == 0 ) {
-		*wp = fr->w;
+		*wp = fr->w - (fr->lop.pad_l+fr->lop.pad_r);
 	} else {
 		*wp = strtoul(ws, NULL, 10);
 	}
 	if ( strcmp(ws, "fit") == 0 ) {
-		*hp = fr->h;
+		*hp = fr->h - (fr->lop.pad_t+fr->lop.pad_b);
 	} else {
 		*hp = strtoul(hs, NULL, 10);
 	}

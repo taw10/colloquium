@@ -39,6 +39,7 @@
 #include "wrap.h"
 #include "notes.h"
 #include "inhibit_screensaver.h"
+#include "render.h"
 
 
 static int num_presentations = 0;
@@ -258,6 +259,10 @@ struct presentation *new_presentation()
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;
+
+	new->edit_slide_width = 1024;
+	new->proj_slide_width = 2048;
+	new->thumb_slide_width = 180;
 
 	/* Add one blank slide and view it */
 	new->num_slides = 0;
@@ -518,7 +523,7 @@ int load_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
 	struct ds_node *root;
-	int r;
+	int r, i;
 
 	assert(p->completely_empty);
 
@@ -551,6 +556,14 @@ int load_presentation(struct presentation *p, const char *filename)
 	imagestore_set_presentation_file(p->is, filename);
 
 	p->cur_edit_slide = p->slides[0];
+
+	for ( i=0; i<p->num_slides; i++ ) {
+		struct slide *s = p->slides[i];
+		s->rendered_thumb = render_slide(s, p->thumb_slide_width,
+	                                         p->slide_width,
+		                                 p->slide_height,
+		                                 p->is,  ISZ_THUMBNAIL);
+	}
 
 	return 0;
 }

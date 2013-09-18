@@ -1922,10 +1922,6 @@ int open_mainwindow(struct presentation *p)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
-	p->edit_slide_width = 1024;
-	p->proj_slide_width = 2048;
-	p->thumb_slide_width = 320;  /* FIXME: Completely made up */
-
 	p->drawingarea = gtk_drawing_area_new();
 	sw = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw),

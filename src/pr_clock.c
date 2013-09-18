@@ -320,6 +320,7 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
 
 	if ( n->running ) {
 		n->running = 0;
+		n->time_elapsed_at_start = n->time_elapsed;
 		gtk_label_set_text(GTK_LABEL(gtk_bin_get_child(GTK_BIN(w))),
 		                   "Start");
 	} else {

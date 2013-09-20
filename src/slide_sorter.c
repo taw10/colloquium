@@ -74,14 +74,19 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 
 		int x = i % n->width;
 		int y = i / n->width;
+		struct slide *s = n->p->slides[i];
 
 		cairo_save(cr);
 
 		cairo_translate(cr, x*(tw+2*bw), y*(th+2*bw));
 		cairo_translate(cr, bw, bw);  /* Border */
 		cairo_rectangle(cr, 0.0, 0.0, tw, th);
-		cairo_set_source_surface(cr, n->p->slides[i]->rendered_thumb,
-		                         0.0, 0.0);
+		if ( s->rendered_thumb != NULL ) {
+			cairo_set_source_surface(cr, s->rendered_thumb,
+			                         0.0, 0.0);
+		} else {
+			cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+		}
 		cairo_fill(cr);
 
 		cairo_rectangle(cr, 0.5, 0.5, tw, th);
@@ -97,7 +102,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 }
 
 
-static void size_sig(GtkWidget *da, GdkRectangle *size, struct slide_sorter *n)
+static void size_sig(GtkWidget *widget, GdkRectangle *size,
+                     struct slide_sorter *n)
 {
 	int w, h;
 	int tw, th;
@@ -106,12 +112,13 @@ static void size_sig(GtkWidget *da, GdkRectangle *size, struct slide_sorter *n)
 	tw = n->p->thumb_slide_width;
 	th = (n->p->slide_height/n->p->slide_width) * n->p->thumb_slide_width;
 
-	w = size->width;
+	w = gtk_widget_get_allocated_width(n->da);
 	n->width = (w-2*bw) / (tw+2*bw);
+	if ( n->width < 1 ) n->width = 1;
 
-	h = (n->p->num_slides / n->width) * (th+2*bw);
+	h = ((n->p->num_slides / n->width)+1) * (th+2*bw) + 2*bw;
 
-	gtk_widget_set_size_request(da, w, h);  /* FIXME: Doesn't work */
+	gtk_widget_set_size_request(n->da, tw+2*bw, h);
 }
 
 
@@ -144,7 +151,7 @@ void open_slidesorter(struct presentation *p)
 	gtk_window_set_title(GTK_WINDOW(n->window), "Slide sorter");
 
 	g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(draw_sig), n);
-	g_signal_connect(G_OBJECT(n->da), "size-allocate", G_CALLBACK(size_sig),
+	g_signal_connect(G_OBJECT(n->window), "size-allocate", G_CALLBACK(size_sig),
 	                 n);
 	g_signal_connect(G_OBJECT(n->window), "destroy",
 	                 G_CALLBACK(close_slidesorter_sig), p);

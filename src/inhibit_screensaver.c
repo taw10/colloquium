@@ -136,7 +136,7 @@ void do_inhibit(struct inhibit_sys *sys, int flags)
 			}
 			dbus_message_unref(reply);
 		}
-		fprintf(stderr, "got cookie %i", (int)sys->cookie);
+		fprintf(stderr, "got cookie %i\n", (int)sys->cookie);
 
 	}
 
@@ -230,7 +230,7 @@ struct inhibit_sys *inhibit_prepare()
 
 	sys->conn = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
 	if ( sys->conn == NULL ) {
-		fprintf(stderr, "cannot connect to session bus: %s",
+		fprintf(stderr, "cannot connect to session bus: %s\n",
 		        err.message);
 		dbus_error_free(&err);
 		free(sys);
@@ -243,12 +243,12 @@ struct inhibit_sys *inhibit_prepare()
 	for ( i=0; i<MAX_API; i++ ) {
 		if ( dbus_bus_name_has_owner(sys->conn, dbus_service[i], NULL) )
 		{
-			fprintf(stderr, "found service %s", dbus_service[i]);
+			fprintf(stderr, "found service %s\n", dbus_service[i]);
 			sys->api = i;
 			return sys;
 		}
 
-		fprintf(stderr, "cannot find service %s", dbus_service[i]);
+		fprintf(stderr, "cannot find service %s\n", dbus_service[i]);
 	}
 
 	inhibit_cleanup(sys);

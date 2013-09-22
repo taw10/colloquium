@@ -322,7 +322,7 @@ static char *frame_options_string(struct frame *fr, StyleSheet *ss)
 }
 
 
-static char *packed_sc(struct frame *fr, StyleSheet *ss)
+char *packed_sc(struct frame *fr, StyleSheet *ss)
 {
 	char *sc;
 	int i;

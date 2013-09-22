@@ -202,6 +202,8 @@ extern void free_slide(struct slide *s);
 
 extern void get_titlebar_string(struct presentation *p);
 
+extern char *packed_sc(struct frame *fr, StyleSheet *ss);
+
 extern int slide_number(struct presentation *p, struct slide *s);
 
 extern int load_presentation(struct presentation *p, const char *filename);

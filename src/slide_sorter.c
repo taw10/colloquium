@@ -265,15 +265,23 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 	if ( n->drag_preview_pending ) {
 
+		/* In theory: do something with the data to generate a
+		 * proper preview. */
+
 		n->have_drag_data = 1;
 		n->drag_preview_pending = 0;
-		printf("Got preview data.\n");
+		gdk_drag_status(drag_context, GDK_ACTION_MOVE, time);
 
 	} else {
 
-		printf("Drop! Got data\n");
+		const guchar *sc;
+
+		sc = gtk_selection_data_get_data(seldata);
+
 		n->dragging = 0;
 		gtk_drag_finish(drag_context, TRUE, TRUE, time);
+
+		printf("Got SC: '%s'\n", sc);
 
 	}
 
@@ -284,9 +292,19 @@ static void dnd_get(GtkWidget *widget, GdkDragContext *drag_context,
                     GtkSelectionData *seldata, guint info, guint time,
                     struct slide_sorter *n)
 {
-	printf("Get data!\n");
+	GdkAtom target;
 
-	gtk_selection_data_set_text(seldata, "Hello!", -1);
+	target = gtk_drag_dest_find_target(widget, drag_context, NULL);
+
+	if ( target != GDK_NONE ) {
+
+		char *sc;
+		sc = packed_sc(n->p->slides[n->selection]->top, n->p->ss);
+		printf("Sending SC: '%s'\n", sc);
+		gtk_selection_data_set(seldata, target, 8, (guchar *)sc,
+		                       strlen(sc));
+
+	}
 }
 
 

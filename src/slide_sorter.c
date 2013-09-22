@@ -172,8 +172,9 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		if ( n->selection >= n->p->num_slides ) {
 			n->selection = n->p->num_slides - 1;
-			n->selected_slide = n->p->slides[n->selection];
 		}
+
+		n->selected_slide = n->p->slides[n->selection];
 
 		redraw_slidesorter(n);
 	}
@@ -316,14 +317,14 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		n->dragging = 0;
 		gtk_drag_finish(drag_context, TRUE, TRUE, time);
 
-		//printf("Got SC: '%s'\n", sc);
 		printf("Inserting at %i\n", n->drop_here);
 
 		s = add_slide(n->p, n->drop_here);
 
 		if ( s != NULL ) {
 
-			s->top = sc_unpack(sc, n->p->ss);
+		/* FIXME: sc_unpack_with_notes() */
+		s->top = sc_unpack(sc, n->p->ss);
 
 			s->rendered_thumb = render_slide(s,
 			                                 n->p->thumb_slide_width,
@@ -359,8 +360,8 @@ static void dnd_get(GtkWidget *widget, GdkDragContext *drag_context,
 	if ( target != GDK_NONE ) {
 
 		char *sc;
+		/* FIXME: packed_sc_with_notes() */
 		sc = packed_sc(n->p->slides[n->selection]->top, n->p->ss);
-		//printf("Sending SC: '%s'\n", sc);
 		gtk_selection_data_set(seldata, target, 8, (guchar *)sc,
 		                       strlen(sc));
 
@@ -387,8 +388,13 @@ static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
                        struct slide_sorter *n)
 {
-	printf("Deleting.\n");
+	if ( slide_number(n->p, n->selected_slide) < n->drop_here ) {
+		n->drop_here--;
+	}
+
 	delete_slide(n->p, n->selected_slide);
+
+	/* FIXME:What if this slide is cur_edit_slide or cur_proj_slide? */
 }
 
 
@@ -446,7 +452,7 @@ void open_slidesorter(struct presentation *p)
 	targets[0].flags = 0;
 	targets[0].info = 1;
 	gtk_drag_dest_set(n->da, 0, targets, 1,
-	                  GDK_ACTION_MOVE);
+	                  GDK_ACTION_MOVE | GDK_ACTION_COPY);
 	g_signal_connect(n->da, "drag-data-received",
 	                 G_CALLBACK(dnd_receive), n);
 	g_signal_connect(n->da, "drag-data-delete", G_CALLBACK(dnd_delete), n);

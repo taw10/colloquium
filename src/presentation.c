@@ -111,6 +111,34 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 }
 
 
+static void delete_slide_index(struct presentation *p, int pos)
+{
+	int i;
+
+	for ( i=pos; i<p->num_slides-1; i++ ) {
+		p->slides[i] = p->slides[i+1];
+	}
+
+	p->num_slides--;
+
+	/* Don't bother to resize the array */
+
+	renumber_slides(p);
+}
+
+
+void delete_slide(struct presentation *p, struct slide *s)
+{
+	int idx;
+
+	idx = slide_number(p, s);
+	delete_slide_index(p, idx);
+
+	free_slide(s);
+}
+
+
+
 struct slide *new_slide()
 {
 	struct slide *new;

@@ -31,6 +31,7 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
+#include "render.h"
 
 
 struct slide_sorter
@@ -47,6 +48,7 @@ struct slide_sorter
 	int bw;
 
 	int selection;
+	struct slide *selected_slide;
 
 	int drop_here;
 	int dragging;
@@ -170,6 +172,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		if ( n->selection >= n->p->num_slides ) {
 			n->selection = n->p->num_slides - 1;
+			n->selected_slide = n->p->slides[n->selection];
 		}
 
 		redraw_slidesorter(n);
@@ -315,6 +318,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 		//printf("Got SC: '%s'\n", sc);
 		printf("Inserting at %i\n", n->drop_here);
+
 		s = add_slide(n->p, n->drop_here);
 
 		if ( s != NULL ) {
@@ -380,6 +384,14 @@ static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
 }
 
 
+static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
+                       struct slide_sorter *n)
+{
+	printf("Deleting.\n");
+	delete_slide(n->p, n->selected_slide);
+}
+
+
 void open_slidesorter(struct presentation *p)
 {
 	struct slide_sorter *n;
@@ -437,6 +449,7 @@ void open_slidesorter(struct presentation *p)
 	                  GDK_ACTION_MOVE);
 	g_signal_connect(n->da, "drag-data-received",
 	                 G_CALLBACK(dnd_receive), n);
+	g_signal_connect(n->da, "drag-data-delete", G_CALLBACK(dnd_delete), n);
 	g_signal_connect(n->da, "drag-data-get", G_CALLBACK(dnd_get), n);
 	g_signal_connect(n->da, "drag-motion", G_CALLBACK(dnd_motion), n);
 	g_signal_connect(n->da, "drag-drop", G_CALLBACK(dnd_drop), n);

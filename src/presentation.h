@@ -199,6 +199,7 @@ extern struct slide *new_slide(void);
 extern struct slide *add_slide(struct presentation *p, int pos);
 extern int insert_slide(struct presentation *p, struct slide *s, int pos);
 extern void free_slide(struct slide *s);
+extern void delete_slide(struct presentation *p, struct slide *s);
 
 extern void get_titlebar_string(struct presentation *p);
 

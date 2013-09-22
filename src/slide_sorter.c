@@ -47,6 +47,8 @@ struct slide_sorter
 	int bw;
 
 	int selection;
+
+	int drop_here;
 	int dragging;
 	int drag_preview_pending;
 	int have_drag_data;
@@ -121,6 +123,12 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
 
+		if ( n->dragging && (i == n->drop_here) ) {
+			cairo_rectangle(cr, -1.5*n->bw, 0.0, n->bw, n->th);
+			cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+			cairo_fill(cr);
+		}
+
 		cairo_restore(cr);
 
 	}
@@ -156,15 +164,16 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	x = (event->x - n->bw) / (n->tw + 2*n->bw);
 	y = (event->y - n->bw) / (n->th + 2*n->bw);
 
-	if ( x >= n->width ) x = n->width-1;
-	if ( y >= n->height ) y = n->height-1;
+	if ( (x < n->width) && (y < n->height) ) {
 
-	n->selection = y*n->width + x;
-	if ( n->selection >= n->p->num_slides ) {
-		n->selection = n->p->num_slides - 1;
+		n->selection = y*n->width + x;
+
+		if ( n->selection >= n->p->num_slides ) {
+			n->selection = n->p->num_slides - 1;
+		}
+
+		redraw_slidesorter(n);
 	}
-
-	redraw_slidesorter(n);
 
 	return FALSE;
 }
@@ -205,7 +214,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 
 static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
-                           gint x, gint y, guint time, struct slide_sorter *n)
+                           gint xc, gint yc, guint time, struct slide_sorter *n)
 {
 	GdkAtom target;
 
@@ -232,9 +241,30 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 
 	if ( n->have_drag_data ) {
 
+		int x, y;
+		int sw, sh;
+
 		gdk_drag_status(drag_context, GDK_ACTION_MOVE, time);
 		/* Draw drag box */
 		n->have_drag_data = 1;
+
+		sw = n->tw + 2*n->bw;
+		sh = n->th + 2*n->bw;
+
+		x = (xc - n->bw + sw/2) / sw;
+		y = (yc - n->bw) / sh;;
+
+		if ( x >= n->width ) x = n->width-1;
+		if ( y >= n->height ) y = n->height-1;
+
+		n->drop_here = y*n->width + x;
+		if ( n->drop_here > n->p->num_slides ) {
+			n->drop_here = n->p->num_slides;
+		}
+
+		n->dragging = 1;  /* Because this might be the first signal */
+
+		redraw_slidesorter(n);
 
 	}
 
@@ -275,14 +305,39 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 	} else {
 
-		const guchar *sc;
+		const char *sc;
+		struct slide *s;
 
-		sc = gtk_selection_data_get_data(seldata);
+		sc = (const char *)gtk_selection_data_get_data(seldata);
 
 		n->dragging = 0;
 		gtk_drag_finish(drag_context, TRUE, TRUE, time);
 
-		printf("Got SC: '%s'\n", sc);
+		//printf("Got SC: '%s'\n", sc);
+		printf("Inserting at %i\n", n->drop_here);
+		s = add_slide(n->p, n->drop_here);
+
+		if ( s != NULL ) {
+
+			s->top = sc_unpack(sc, n->p->ss);
+
+			s->rendered_thumb = render_slide(s,
+			                                 n->p->thumb_slide_width,
+		                                         n->p->slide_width,
+			                                 n->p->slide_height,
+			                                 n->p->is,
+			                                 ISZ_THUMBNAIL);
+
+			/* FIXME: Transfer the notes as well */
+
+			redraw_slidesorter(n);
+
+		} else {
+
+			fprintf(stderr, "Failed to add slide\n");
+
+		}
+
 
 	}
 
@@ -301,7 +356,7 @@ static void dnd_get(GtkWidget *widget, GdkDragContext *drag_context,
 
 		char *sc;
 		sc = packed_sc(n->p->slides[n->selection]->top, n->p->ss);
-		printf("Sending SC: '%s'\n", sc);
+		//printf("Sending SC: '%s'\n", sc);
 		gtk_selection_data_set(seldata, target, 8, (guchar *)sc,
 		                       strlen(sc));
 

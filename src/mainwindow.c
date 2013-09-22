@@ -652,7 +652,7 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 
-	new = add_slide(p, cur_slide_number);
+	new = add_slide(p, cur_slide_number+1);
 	change_edit_slide(p, new);
 
 	return FALSE;

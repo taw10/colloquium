@@ -74,14 +74,20 @@ static void renumber_slides(struct presentation *p)
 {
 	int i;
 	for ( i=0; i<p->num_slides; i++ ) {
-		p->slides[i]->constants->slide_number = i+1;
+		if ( p->slides[i]->constants != NULL ) {
+			p->slides[i]->constants->slide_number = i+1;
+		} else {
+			fprintf(stderr, "Slide %i has no constants.\n", i);
+		}
 	}
 }
 
 
+/* "pos" is the index that the caller would like this slide to have */
 int insert_slide(struct presentation *p, struct slide *new, int pos)
 {
 	struct slide **try;
+	int i;
 
 	try = realloc(p->slides, (1+p->num_slides)*sizeof(struct slide *));
 	if ( try == NULL ) {
@@ -90,28 +96,14 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	}
 	p->slides = try;
 	p->completely_empty = 0;
+	p->num_slides++;
 
-	/* Insert into list.  Yuk yuk yuk etc. */
-	if ( (p->num_slides>1) && (pos<p->num_slides-1) ) {
-
-		int i;
-
-		for ( i=p->num_slides; i>pos+1; i-- ) {
-			p->slides[i] = p->slides[i-1];
-		}
-		p->slides[pos+1] = new;
-
-	} else if ( pos == p->num_slides-1 ) {
-
-		p->slides[pos+1] = new;
-
-	} else {
-		assert(pos == 0);
-		p->slides[pos] = new;
+	for ( i=p->num_slides-1; i>=pos; i-- ) {
+		p->slides[i] = p->slides[i-1];
 	}
+	p->slides[pos] = new;
 
 	new->parent = p;
-	p->num_slides++;
 
 	renumber_slides(p);
 
@@ -456,7 +448,7 @@ static int tree_to_slides(struct ds_node *root, struct presentation *p)
 
 		s = tree_to_slide(p, root->children[i]);
 		if ( s != NULL ) {
-			insert_slide(p, s, p->num_slides-1);
+			insert_slide(p, s, p->num_slides);
 		}
 
 	}

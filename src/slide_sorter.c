@@ -166,8 +166,6 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		GtkTargetList *list;
 		GtkTargetEntry targets[1];
 
-		printf("Starting drag\n");
-
 		targets[0].target = "application/vnd.colloquium-slide";
 		targets[0].flags = 0;
 		targets[0].info = 1;
@@ -199,8 +197,6 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 {
 	GdkAtom target;
 
-	printf("DND motion\n");
-
 	/* If we haven't already requested the data, do so now */
 	if ( !n->drag_preview_pending && !n->have_drag_data ) {
 
@@ -208,7 +204,6 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 
 		if ( target != GDK_NONE ) {
 
-			printf("Requesting data\n");
 			n->drag_preview_pending = 1;
 			/* Note: the dnd_get and dnd_receive signals occur
 			 * before this call returns */
@@ -216,7 +211,6 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 
 		} else {
 
-			printf("No match\n");
 			n->drag_preview_pending = 0;
 			gdk_drag_status(drag_context, 0, time);
 
@@ -242,12 +236,9 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
 {
 	GdkAtom target;
 
-	printf("Drop.\n");
-
 	target = gtk_drag_dest_find_target(widget, drag_context, NULL);
 
 	if ( target == GDK_NONE ) {
-		printf("No match.\n");
 		gtk_drag_finish(drag_context, FALSE, FALSE, time);
 	} else {
 		gtk_drag_get_data(widget, drag_context, target, time);
@@ -261,8 +252,6 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
                         gint x, gint y, GtkSelectionData *seldata,
                         guint info, guint time, struct slide_sorter *n)
 {
-	printf("Receive %i\n", n->drag_preview_pending);
-
 	if ( n->drag_preview_pending ) {
 
 		/* In theory: do something with the data to generate a
@@ -311,8 +300,6 @@ static void dnd_get(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
                       guint time, struct slide_sorter *n)
 {
-	printf("Leave.\n");
-
 	n->have_drag_data = 0;
 }
 
@@ -320,7 +307,6 @@ static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
                     struct slide_sorter *n)
 {
-	printf("End.\n");
 	n->dragging = 0;
 	n->have_drag_data = 0;
 	n->drag_preview_pending = 0;

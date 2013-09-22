@@ -40,6 +40,16 @@ struct slide_sorter
 
 	int width;  /* Number of slides across */
 	struct presentation *p;
+
+	int tw;
+	int th;
+	int bw;
+
+	int selection;
+	int dragging;
+	int drag_preview_pending;
+	int have_drag_data;
+	int drag_highlight;
 };
 
 
@@ -50,12 +60,19 @@ static gint close_slidesorter_sig(GtkWidget *w, struct presentation *p)
 }
 
 
+static void redraw_slidesorter(struct slide_sorter *n)
+{
+	gint w, h;
+	w = gtk_widget_get_allocated_width(GTK_WIDGET(n->da));
+	h = gtk_widget_get_allocated_height(GTK_WIDGET(n->da));
+	gtk_widget_queue_draw_area(n->da, 0, 0, w, h);
+}
+
+
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 {
 	int width, height;
-	int tw, th;
 	int i;
-	const int bw = 5.0;
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
@@ -65,10 +82,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
-	tw = n->p->thumb_slide_width;
-	th = (n->p->slide_height/n->p->slide_width) * n->p->thumb_slide_width;
-
-	cairo_translate(cr, bw, bw);  /* Border */
+	cairo_translate(cr, n->bw, n->bw);  /* Border */
 
 	for ( i=0; i<n->p->num_slides; i++ ) {
 
@@ -78,18 +92,30 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 
 		cairo_save(cr);
 
-		cairo_translate(cr, x*(tw+2*bw), y*(th+2*bw));
-		cairo_translate(cr, bw, bw);  /* Border */
-		cairo_rectangle(cr, 0.0, 0.0, tw, th);
+		cairo_translate(cr, x*(n->tw+2*n->bw), y*(n->th+2*n->bw));
+
+		if ( i == n->selection ) {
+
+			cairo_save(cr);
+			cairo_rectangle(cr, 0.0,  0.0, n->tw+2*n->bw,
+			                               n->th+2*n->bw);
+			cairo_set_source_rgb(cr, 0.0, 0.0, 0.4);
+			cairo_fill(cr);
+			cairo_restore(cr);
+
+		}
+
+		cairo_translate(cr, n->bw, n->bw);  /* Border */
+		cairo_rectangle(cr, 0.0, 0.0, n->tw, n->th);
+		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+		cairo_fill_preserve(cr);
 		if ( s->rendered_thumb != NULL ) {
 			cairo_set_source_surface(cr, s->rendered_thumb,
 			                         0.0, 0.0);
-		} else {
-			cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		}
 		cairo_fill(cr);
 
-		cairo_rectangle(cr, 0.5, 0.5, tw, th);
+		cairo_rectangle(cr, 0.5, 0.5, n->tw, n->th);
 		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
@@ -106,19 +132,180 @@ static void size_sig(GtkWidget *widget, GdkRectangle *size,
                      struct slide_sorter *n)
 {
 	int w, h;
-	int tw, th;
-	const int bw = 5.0;
-
-	tw = n->p->thumb_slide_width;
-	th = (n->p->slide_height/n->p->slide_width) * n->p->thumb_slide_width;
 
 	w = gtk_widget_get_allocated_width(n->da);
-	n->width = (w-2*bw) / (tw+2*bw);
+	n->width = (w-2*n->bw) / (n->tw+2*n->bw);
 	if ( n->width < 1 ) n->width = 1;
 
-	h = ((n->p->num_slides / n->width)+1) * (th+2*bw) + 2*bw;
+	h = ((n->p->num_slides / n->width)+1) * (n->th+2*n->bw) + 2*n->bw;
 
-	gtk_widget_set_size_request(n->da, tw+2*bw, h);
+	gtk_widget_set_size_request(n->da, n->tw+2*n->bw, h);
+}
+
+
+static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
+                                 struct slide_sorter *n)
+{
+	int x, y;
+
+	x = (event->x - n->bw) / (n->tw + 2*n->bw);
+	y = (event->y - n->bw) / (n->th + 2*n->bw);
+	n->selection = y*n->width + x;
+
+	redraw_slidesorter(n);
+
+	return FALSE;
+}
+
+
+static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
+                           struct slide_sorter *n)
+{
+	if ( !n->dragging ) {
+
+		GtkTargetList *list;
+		GtkTargetEntry targets[1];
+
+		printf("Starting drag\n");
+
+		targets[0].target = "application/vnd.colloquium-slide";
+		targets[0].flags = 0;
+		targets[0].info = 1;
+
+		list = gtk_target_list_new(targets, 1);
+		gtk_drag_begin(da, list, GDK_ACTION_COPY | GDK_ACTION_MOVE,
+		               1, (GdkEvent *)event);
+		//gtk_target_list_unref(list);
+
+		n->dragging = 1;
+
+	}
+
+	gdk_event_request_motions(event);
+
+	return FALSE;
+}
+
+
+static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
+                                   struct slide_sorter *n)
+{
+	return FALSE;
+}
+
+
+static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
+                           gint x, gint y, guint time, struct slide_sorter *n)
+{
+	GdkAtom target;
+
+	printf("DND motion\n");
+
+	/* If we haven't already requested the data, do so now */
+	if ( !n->drag_preview_pending && !n->have_drag_data ) {
+
+		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
+
+		if ( target != GDK_NONE ) {
+
+			printf("Requesting data\n");
+			n->drag_preview_pending = 1;
+			/* Note: the dnd_get and dnd_receive signals occur
+			 * before this call returns */
+			gtk_drag_get_data(widget, drag_context, target, time);
+
+		} else {
+
+			printf("No match\n");
+			n->drag_preview_pending = 0;
+			gdk_drag_status(drag_context, 0, time);
+
+		}
+
+	}
+
+	if ( n->have_drag_data ) {
+
+		gdk_drag_status(drag_context, GDK_ACTION_MOVE, time);
+		/* Draw drag box */
+		n->have_drag_data = 1;
+
+	}
+
+	return TRUE;
+}
+
+
+
+static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
+                     gint x, gint y, guint time, struct slide_sorter *n)
+{
+	GdkAtom target;
+
+	printf("Drop.\n");
+
+	target = gtk_drag_dest_find_target(widget, drag_context, NULL);
+
+	if ( target == GDK_NONE ) {
+		printf("No match.\n");
+		gtk_drag_finish(drag_context, FALSE, FALSE, time);
+	} else {
+		gtk_drag_get_data(widget, drag_context, target, time);
+	}
+
+	return TRUE;
+}
+
+
+static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
+                        gint x, gint y, GtkSelectionData *seldata,
+                        guint info, guint time, struct slide_sorter *n)
+{
+	printf("Receive %i\n", n->drag_preview_pending);
+
+	if ( n->drag_preview_pending ) {
+
+		n->have_drag_data = 1;
+		n->drag_preview_pending = 0;
+		printf("Got preview data.\n");
+
+	} else {
+
+		printf("Drop! Got data\n");
+		n->dragging = 0;
+		gtk_drag_finish(drag_context, TRUE, TRUE, time);
+
+	}
+
+}
+
+
+static void dnd_get(GtkWidget *widget, GdkDragContext *drag_context,
+                    GtkSelectionData *seldata, guint info, guint time,
+                    struct slide_sorter *n)
+{
+	printf("Get data!\n");
+
+	gtk_selection_data_set_text(seldata, "Hello!", -1);
+}
+
+
+static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
+                      guint time, struct slide_sorter *n)
+{
+	printf("Leave.\n");
+
+	n->have_drag_data = 0;
+}
+
+
+static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
+                    struct slide_sorter *n)
+{
+	printf("End.\n");
+	n->dragging = 0;
+	n->have_drag_data = 0;
+	n->drag_preview_pending = 0;
 }
 
 
@@ -126,6 +313,7 @@ void open_slidesorter(struct presentation *p)
 {
 	struct slide_sorter *n;
 	GtkWidget *sw;
+	GtkTargetEntry targets[1];
 
 	if ( p->slide_sorter != NULL ) return;  /* Already open */
 
@@ -133,8 +321,15 @@ void open_slidesorter(struct presentation *p)
 	if ( n == NULL ) return;
 	p->slide_sorter = n;
 
-	n->width = 6;
 	n->p = p;
+	n->width = 6;
+	n->bw = 5;
+	n->selection = 0;
+	n->tw = p->thumb_slide_width;
+	n->th = (p->slide_height/p->slide_width) * p->thumb_slide_width;
+	n->drag_preview_pending = 0;
+	n->have_drag_data = 0;
+	n->dragging = 0;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(n->window), 500, 500);
@@ -151,10 +346,38 @@ void open_slidesorter(struct presentation *p)
 	gtk_window_set_title(GTK_WINDOW(n->window), "Slide sorter");
 
 	g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(draw_sig), n);
-	g_signal_connect(G_OBJECT(n->window), "size-allocate", G_CALLBACK(size_sig),
-	                 n);
+	g_signal_connect(G_OBJECT(n->window),
+	                 "size-allocate", G_CALLBACK(size_sig), n);
 	g_signal_connect(G_OBJECT(n->window), "destroy",
 	                 G_CALLBACK(close_slidesorter_sig), p);
+
+	g_signal_connect(G_OBJECT(n->da), "button-press-event",
+	                 G_CALLBACK(button_press_sig), n);
+	g_signal_connect(G_OBJECT(n->da), "motion-notify-event",
+	                 G_CALLBACK(motion_sig), n);
+	g_signal_connect(G_OBJECT(n->da), "button-release-event",
+	                 G_CALLBACK(button_release_sig), n);
+
+	/* Drag and drop */
+	targets[0].target = "application/vnd.colloquium-slide";
+	targets[0].flags = 0;
+	targets[0].info = 1;
+	gtk_drag_dest_set(n->da, 0, targets, 1,
+	                  GDK_ACTION_MOVE);
+	g_signal_connect(n->da, "drag-data-received",
+	                 G_CALLBACK(dnd_receive), n);
+	g_signal_connect(n->da, "drag-data-get", G_CALLBACK(dnd_get), n);
+	g_signal_connect(n->da, "drag-motion", G_CALLBACK(dnd_motion), n);
+	g_signal_connect(n->da, "drag-drop", G_CALLBACK(dnd_drop), n);
+	g_signal_connect(n->da, "drag-leave", G_CALLBACK(dnd_leave), n);
+	g_signal_connect(n->da, "drag-end", G_CALLBACK(dnd_end), n);
+
+	gtk_widget_set_can_focus(GTK_WIDGET(n->da), TRUE);
+	gtk_widget_add_events(GTK_WIDGET(n->da),
+	                      GDK_POINTER_MOTION_HINT_MASK
+	                       | GDK_BUTTON1_MOTION_MASK
+	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
+	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
 
 	gtk_widget_show_all(n->window);
 }

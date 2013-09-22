@@ -185,7 +185,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		list = gtk_target_list_new(targets, 1);
 		gtk_drag_begin(da, list, GDK_ACTION_COPY | GDK_ACTION_MOVE,
 		               1, (GdkEvent *)event);
-		//gtk_target_list_unref(list);
+		gtk_target_list_unref(list);
 
 		n->dragging = 1;
 

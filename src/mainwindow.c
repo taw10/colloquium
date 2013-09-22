@@ -1673,10 +1673,17 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 
 	/* If we haven't already requested the data, do so now */
 	if ( !p->drag_preview_pending && !p->have_drag_data ) {
+
 		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
-		gtk_drag_get_data(widget, drag_context, target, time);
-		printf("requesting data %p %p %p\n", widget, drag_context, target);
-		p->drag_preview_pending = 1;
+
+		if ( target != GDK_NONE ) {
+			gtk_drag_get_data(widget, drag_context, target, time);
+			p->drag_preview_pending = 1;
+		} else {
+			p->import_acceptable = 0;
+			gdk_drag_status(drag_context, 0, time);
+		}
+
 	}
 
 	if ( p->have_drag_data && p->import_acceptable ) {
@@ -1696,12 +1703,17 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 
 
 static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
-                           gint x, gint y, guint time, struct presentation *p)
+                         gint x, gint y, guint time, struct presentation *p)
 {
 	GdkAtom target;
 
 	target = gtk_drag_dest_find_target(widget, drag_context, NULL);
-	gtk_drag_get_data(widget, drag_context, target, time);
+
+	if ( target == GDK_NONE ) {
+		gtk_drag_finish(drag_context, FALSE, FALSE, time);
+	} else {
+		gtk_drag_get_data(widget, drag_context, target, time);
+	}
 
 	return TRUE;
 }
@@ -1859,6 +1871,11 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			set_selection(p, fr);
 			redraw_editor(p);
 			free(filename);
+
+		} else {
+
+			gtk_drag_finish(drag_context, FALSE, FALSE, time);
+
 		}
 
 	}
@@ -1938,11 +1955,11 @@ int open_mainwindow(struct presentation *p)
 	g_signal_connect(G_OBJECT(p->drawingarea), "realize",
 	                 G_CALLBACK(realise_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "button-press-event",
-			 G_CALLBACK(button_press_sig), p);
+	                 G_CALLBACK(button_press_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "button-release-event",
-			 G_CALLBACK(button_release_sig), p);
+	                 G_CALLBACK(button_release_sig), p);
 	g_signal_connect(G_OBJECT(p->drawingarea), "motion-notify-event",
-			 G_CALLBACK(motion_sig), p);
+	                 G_CALLBACK(motion_sig), p);
 
 	/* Drag and drop */
 	targets[0].target = "text/uri-list";

@@ -38,7 +38,8 @@ struct slide_sorter
 	GtkWidget *window;
 	GtkWidget *da;
 
-	int width;  /* Number of slides across */
+	int width;   /* Number of slides across */
+	int height;  /* Number of slides vertically */
 	struct presentation *p;
 
 	int tw;
@@ -137,7 +138,11 @@ static void size_sig(GtkWidget *widget, GdkRectangle *size,
 	n->width = (w-2*n->bw) / (n->tw+2*n->bw);
 	if ( n->width < 1 ) n->width = 1;
 
-	h = ((n->p->num_slides / n->width)+1) * (n->th+2*n->bw) + 2*n->bw;
+	n->height = n->p->num_slides / n->width;
+
+	if ( n->p->num_slides % n->width != 0 ) n->height++;
+
+	h = n->height * (n->th+2*n->bw) + 2*n->bw;
 
 	gtk_widget_set_size_request(n->da, n->tw+2*n->bw, h);
 }
@@ -150,7 +155,14 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 	x = (event->x - n->bw) / (n->tw + 2*n->bw);
 	y = (event->y - n->bw) / (n->th + 2*n->bw);
+
+	if ( x >= n->width ) x = n->width-1;
+	if ( y >= n->height ) y = n->height-1;
+
 	n->selection = y*n->width + x;
+	if ( n->selection >= n->p->num_slides ) {
+		n->selection = n->p->num_slides - 1;
+	}
 
 	redraw_slidesorter(n);
 

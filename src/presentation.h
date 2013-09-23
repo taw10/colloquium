@@ -201,6 +201,8 @@ extern int insert_slide(struct presentation *p, struct slide *s, int pos);
 extern void free_slide(struct slide *s);
 extern void delete_slide(struct presentation *p, struct slide *s);
 
+extern void delete_subframe(struct slide *s, struct frame *fr);
+
 extern void get_titlebar_string(struct presentation *p);
 
 extern char *packed_sc(struct frame *fr, StyleSheet *ss);

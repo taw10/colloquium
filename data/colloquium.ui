@@ -21,7 +21,8 @@
 			<menuitem name="cut" action="CutAction" />
 			<menuitem name="copy" action="CopyAction" />
 			<menuitem name="paste" action="PasteAction" />
-			<menuitem name="delete" action="DeleteAction" />
+			<separator />
+			<menuitem name="deleteframe" action="DeleteFrameAction" />
 			<separator />
 			<menuitem name="slidesorter" action="SorterAction" />
 			<menuitem name="stylesheet" action="EditStyleAction" />

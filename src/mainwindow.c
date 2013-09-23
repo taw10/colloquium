@@ -731,6 +731,22 @@ static gint open_slidesorter_sig(GtkWidget *widget, struct presentation *p)
 	return FALSE;
 }
 
+static gint delete_frame_sig(GtkWidget *widget, struct presentation *p)
+{
+	int i;
+
+	for ( i=0; i<p->n_selection; i++ ) {
+		delete_subframe(p->cur_edit_slide, p->selection[i]);
+	}
+	p->n_selection = 0;
+
+	rerender_slide(p);
+	redraw_editor(p);
+
+	return FALSE;
+}
+
+
 static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 {
 	GError *error = NULL;
@@ -771,8 +787,8 @@ static void add_menu_bar(struct presentation *p, GtkWidget *vbox)
 			NULL, NULL, NULL },
 		{ "PasteAction", GTK_STOCK_PASTE, "Paste",
 			NULL, NULL, NULL },
-		{ "DeleteAction", GTK_STOCK_DELETE, "Delete",
-			NULL, NULL, NULL },
+		{ "DeleteFrameAction", GTK_STOCK_DELETE, "Delete Frame",
+			NULL, NULL, G_CALLBACK(delete_frame_sig) },
 		{ "EditStyleAction", NULL, "Stylesheet...",
 			NULL, NULL, G_CALLBACK(open_stylesheet_sig) },
 

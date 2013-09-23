@@ -609,7 +609,7 @@ static struct frame *find_parent(struct frame *fr, struct frame *search)
 }
 
 
-static void delete_subframe(struct slide *s, struct frame *fr)
+void delete_subframe(struct slide *s, struct frame *fr)
 {
 	struct frame *parent;
 	int i, idx, found;

@@ -129,7 +129,7 @@ static void show_error(struct presentation *p, const char *message)
 }
 
 
-static void update_toolbar(struct presentation *p)
+void update_toolbar(struct presentation *p)
 {
 	GtkWidget *d;
 	int cur_slide_number;

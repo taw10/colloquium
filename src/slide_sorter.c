@@ -313,6 +313,18 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
 }
 
 
+/* Normally, we don't need to explicitly render proj because the editor always
+ * gets there first.  When re-arranging slides, this might not happen */
+static void fixup_proj(struct presentation *p, struct slide *s)
+{
+	if ( s->rendered_proj != NULL ) return;
+
+	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
+	                                p->slide_width, p->slide_height,
+	                                p->is, ISZ_SLIDESHOW);
+}
+
+
 static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
                         gint x, gint y, GtkSelectionData *seldata,
                         guint info, guint time, struct slide_sorter *n)
@@ -356,9 +368,14 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 			if ( n->dragging_cur_edit_slide ) {
 				change_edit_slide(n->p, s);
+			} else {
+				/* Slide order has changed, so slide change
+				 * buttons might need to be greyed out */
+				update_toolbar(n->p);
 			}
 
 			if ( n->dragging_cur_proj_slide ) {
+				fixup_proj(n->p, s);
 				change_proj_slide(n->p, s);
 			}
 
@@ -443,6 +460,7 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 			}
 
 			change_edit_slide(n->p, n->p->slides[ct]);
+			update_toolbar(n->p);
 
 		}
 

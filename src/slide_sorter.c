@@ -32,6 +32,8 @@
 
 #include "presentation.h"
 #include "render.h"
+#include "mainwindow.h"
+#include "slideshow.h"
 
 
 struct slide_sorter
@@ -46,6 +48,9 @@ struct slide_sorter
 	int tw;
 	int th;
 	int bw;
+
+	int dragging_cur_edit_slide;
+	int dragging_cur_proj_slide;
 
 	int selection;
 	struct slide *selected_slide;
@@ -195,6 +200,20 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		targets[0].flags = 0;
 		targets[0].info = 1;
 
+		/* If we are dragging the current editor or projector slide,
+		 * we'd better remember to update when we're finished. */
+		if ( n->p->cur_edit_slide == n->selected_slide ) {
+			n->dragging_cur_edit_slide = 1;
+		} else {
+			n->dragging_cur_edit_slide = 0;
+		}
+
+		if ( n->p->cur_proj_slide == n->selected_slide ) {
+			n->dragging_cur_proj_slide = 1;
+		} else {
+			n->dragging_cur_proj_slide = 0;
+		}
+
 		list = gtk_target_list_new(targets, 1);
 		gtk_drag_begin(da, list, GDK_ACTION_COPY | GDK_ACTION_MOVE,
 		               1, (GdkEvent *)event);
@@ -335,6 +354,14 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 			/* FIXME: Transfer the notes as well */
 
+			if ( n->dragging_cur_edit_slide ) {
+				change_edit_slide(n->p, s);
+			}
+
+			if ( n->dragging_cur_proj_slide ) {
+				change_proj_slide(n->p, s);
+			}
+
 			redraw_slidesorter(n);
 
 		} else {
@@ -388,13 +415,63 @@ static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
                        struct slide_sorter *n)
 {
-	if ( slide_number(n->p, n->selected_slide) < n->drop_here ) {
-		n->drop_here--;
+	int same;
+	int sn;
+
+	sn = slide_number(n->p, n->selected_slide);
+
+	same = (gdk_drag_context_get_source_window(drag_context)
+	       ==  gdk_drag_context_get_dest_window(drag_context));
+
+	if ( sn < n->drop_here ) n->drop_here--;
+
+	if ( n->p->cur_edit_slide == n->selected_slide ) {
+
+		if ( same ) {
+
+			/* Do nothing - will switch in dnd_receive()  */
+
+		} else {
+
+			/* Switch to previous slide */
+			int ct;
+
+			if ( sn == 0 ) {
+				ct = 1;
+			} else {
+				ct = sn - 1;
+			}
+
+			change_edit_slide(n->p, n->p->slides[ct]);
+
+		}
+
+	}
+
+	if ( n->p->cur_proj_slide == n->selected_slide ) {
+
+		if ( same ) {
+
+			/* Do nothing - will switch in dnd_receive()  */
+
+		} else {
+
+			/* Switch to previous slide */
+			int ct;
+
+			if ( sn == 0 ) {
+				ct = 1;
+			} else {
+				ct = sn - 1;
+			}
+
+			change_proj_slide(n->p, n->p->slides[ct]);
+
+		}
+
 	}
 
 	delete_slide(n->p, n->selected_slide);
-
-	/* FIXME:What if this slide is cur_edit_slide or cur_proj_slide? */
 }
 
 

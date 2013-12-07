@@ -96,7 +96,6 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	}
 	p->slides = try;
 	p->completely_empty = 0;
-	p->num_slides++;
 
 	if ( p->num_slides > 0 ) {
 		for ( i=p->num_slides-1; i>=pos; i-- ) {
@@ -105,6 +104,7 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	}
 
 	p->slides[pos] = new;
+	p->num_slides++;
 
 	new->parent = p;
 

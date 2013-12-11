@@ -98,7 +98,9 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	p->completely_empty = 0;
 
 	if ( p->num_slides > 0 ) {
-		for ( i=p->num_slides-1; i>=pos; i-- ) {
+		int j = pos;
+		if ( j == 0 ) j = 1;
+		for ( i=p->num_slides; i>=j; i-- ) {
 			p->slides[i] = p->slides[i-1];
 		}
 	}

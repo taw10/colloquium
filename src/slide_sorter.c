@@ -57,6 +57,7 @@ struct slide_sorter
 
 	int drop_here;
 	int dragging;
+	int dragging_in;
 	int drag_preview_pending;
 	int have_drag_data;
 	int drag_highlight;
@@ -119,9 +120,16 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 		cairo_rectangle(cr, 0.0, 0.0, n->tw, n->th);
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill_preserve(cr);
-		if ( s->rendered_thumb != NULL ) {
+		if ( (s != NULL) && (s->rendered_thumb != NULL) ) {
 			cairo_set_source_surface(cr, s->rendered_thumb,
 			                         0.0, 0.0);
+		} else {
+			printf("Slide %i: %p", i, s);
+			if ( s != NULL ) {
+				printf(" %p\n", s->rendered_thumb);
+			} else {
+				printf("\n");
+			}
 		}
 		cairo_fill(cr);
 
@@ -130,7 +138,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
 
-		if ( n->dragging && (i == n->drop_here) ) {
+		if ( n->dragging_in && (i == n->drop_here) ) {
 			cairo_rectangle(cr, -1.5*n->bw, 0.0, n->bw, n->th);
 			cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 			cairo_fill(cr);
@@ -220,6 +228,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		gtk_target_list_unref(list);
 
 		n->dragging = 1;
+		n->dragging_in = 0;
 
 	}
 
@@ -286,6 +295,9 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 		}
 
 		n->dragging = 1;  /* Because this might be the first signal */
+		n->dragging_in = 1;
+		n->dragging_cur_edit_slide = 0;
+		n->dragging_cur_proj_slide = 0;
 
 		redraw_slidesorter(n);
 
@@ -341,7 +353,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 	} else {
 
 		const char *sc;
-		struct slide *s;
+		struct slide *s = NULL;
 
 		sc = (const char *)gtk_selection_data_get_data(seldata);
 
@@ -354,8 +366,8 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 		if ( s != NULL ) {
 
-		/* FIXME: sc_unpack_with_notes() */
-		s->top = sc_unpack(sc, n->p->ss);
+			/* FIXME: sc_unpack_with_notes() */
+			s->top = sc_unpack(sc, n->p->ss);
 
 			s->rendered_thumb = render_slide(s,
 			                                 n->p->thumb_slide_width,
@@ -417,6 +429,7 @@ static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
                       guint time, struct slide_sorter *n)
 {
 	n->have_drag_data = 0;
+	n->dragging_in = 0;
 }
 
 
@@ -424,6 +437,7 @@ static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
                     struct slide_sorter *n)
 {
 	n->dragging = 0;
+	n->dragging_in = 0;
 	n->have_drag_data = 0;
 	n->drag_preview_pending = 0;
 }
@@ -514,6 +528,7 @@ void open_slidesorter(struct presentation *p)
 	n->drag_preview_pending = 0;
 	n->have_drag_data = 0;
 	n->dragging = 0;
+	n->dragging_in = 0;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(n->window), 500, 500);

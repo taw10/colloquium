@@ -1033,6 +1033,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 		if ( boxes->boxes[j].width > line_length ) {
 			fprintf(stderr, "ERROR: Box %i too long (%i %f)\n", j,
 			                boxes->boxes[j].width, line_length);
+			fr->trouble = 1;
 			reject = 1;
 		}
 	}
@@ -1284,6 +1285,7 @@ int wrap_contents(struct frame *fr, PangoContext *pc,
 	fr->n_lines = 0;
 	fr->max_lines = 32;
 	fr->lines = NULL;
+	fr->trouble = 0;
 	alloc_lines(fr);
 
 	/* Split text into paragraphs */

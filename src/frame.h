@@ -106,6 +106,9 @@ struct frame
 
 	/* True if the aspect ratio of this frame should be maintained */
 	int                       is_image;
+
+	/* True if wrapping failed for this box */
+	int                       trouble;
 };
 
 

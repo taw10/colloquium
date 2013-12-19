@@ -1104,6 +1104,8 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 {
 	size_t tlen, olen;
 
+	if ( fr == NULL ) return;
+
 	/* If this is, say, the top level frame, do nothing */
 	if ( fr->sc == NULL ) return;
 
@@ -1658,8 +1660,10 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_BackSpace :
-		do_backspace(p->selection[0], p);
-		claim = 1;
+		if ( p->n_selection == 1 ) {
+			do_backspace(p->selection[0], p);
+			claim = 1;
+		}
 		break;
 
 		case GDK_KEY_B :

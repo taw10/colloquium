@@ -34,6 +34,7 @@ extern int open_mainwindow(struct presentation *p);
 extern void change_edit_slide(struct presentation *p, struct slide *np);
 extern void redraw_editor(struct presentation *p);
 extern void update_titlebar(struct presentation *p);
+extern void update_toolbar(struct presentation *p);
 
 
 #endif	/* MAINWINDOW_H */

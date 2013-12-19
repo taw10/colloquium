@@ -32,6 +32,8 @@
 
 #include "presentation.h"
 #include "render.h"
+#include "mainwindow.h"
+#include "slideshow.h"
 
 
 struct slide_sorter
@@ -47,11 +49,15 @@ struct slide_sorter
 	int th;
 	int bw;
 
+	int dragging_cur_edit_slide;
+	int dragging_cur_proj_slide;
+
 	int selection;
 	struct slide *selected_slide;
 
 	int drop_here;
 	int dragging;
+	int dragging_in;
 	int drag_preview_pending;
 	int have_drag_data;
 	int drag_highlight;
@@ -114,9 +120,16 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 		cairo_rectangle(cr, 0.0, 0.0, n->tw, n->th);
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill_preserve(cr);
-		if ( s->rendered_thumb != NULL ) {
+		if ( (s != NULL) && (s->rendered_thumb != NULL) ) {
 			cairo_set_source_surface(cr, s->rendered_thumb,
 			                         0.0, 0.0);
+		} else {
+			printf("Slide %i: %p", i, s);
+			if ( s != NULL ) {
+				printf(" %p\n", s->rendered_thumb);
+			} else {
+				printf("\n");
+			}
 		}
 		cairo_fill(cr);
 
@@ -125,7 +138,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
 
-		if ( n->dragging && (i == n->drop_here) ) {
+		if ( n->dragging_in && (i == n->drop_here) ) {
 			cairo_rectangle(cr, -1.5*n->bw, 0.0, n->bw, n->th);
 			cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 			cairo_fill(cr);
@@ -195,12 +208,27 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		targets[0].flags = 0;
 		targets[0].info = 1;
 
+		/* If we are dragging the current editor or projector slide,
+		 * we'd better remember to update when we're finished. */
+		if ( n->p->cur_edit_slide == n->selected_slide ) {
+			n->dragging_cur_edit_slide = 1;
+		} else {
+			n->dragging_cur_edit_slide = 0;
+		}
+
+		if ( n->p->cur_proj_slide == n->selected_slide ) {
+			n->dragging_cur_proj_slide = 1;
+		} else {
+			n->dragging_cur_proj_slide = 0;
+		}
+
 		list = gtk_target_list_new(targets, 1);
 		gtk_drag_begin(da, list, GDK_ACTION_COPY | GDK_ACTION_MOVE,
 		               1, (GdkEvent *)event);
 		gtk_target_list_unref(list);
 
 		n->dragging = 1;
+		n->dragging_in = 0;
 
 	}
 
@@ -267,6 +295,9 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 		}
 
 		n->dragging = 1;  /* Because this might be the first signal */
+		n->dragging_in = 1;
+		n->dragging_cur_edit_slide = 0;
+		n->dragging_cur_proj_slide = 0;
 
 		redraw_slidesorter(n);
 
@@ -294,6 +325,18 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
 }
 
 
+/* Normally, we don't need to explicitly render proj because the editor always
+ * gets there first.  When re-arranging slides, this might not happen */
+static void fixup_proj(struct presentation *p, struct slide *s)
+{
+	if ( s->rendered_proj != NULL ) return;
+
+	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
+	                                p->slide_width, p->slide_height,
+	                                p->is, ISZ_SLIDESHOW);
+}
+
+
 static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
                         gint x, gint y, GtkSelectionData *seldata,
                         guint info, guint time, struct slide_sorter *n)
@@ -310,7 +353,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 	} else {
 
 		const char *sc;
-		struct slide *s;
+		struct slide *s = NULL;
 
 		sc = (const char *)gtk_selection_data_get_data(seldata);
 
@@ -323,8 +366,8 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 		if ( s != NULL ) {
 
-		/* FIXME: sc_unpack_with_notes() */
-		s->top = sc_unpack(sc, n->p->ss);
+			/* FIXME: sc_unpack_with_notes() */
+			s->top = sc_unpack(sc, n->p->ss);
 
 			s->rendered_thumb = render_slide(s,
 			                                 n->p->thumb_slide_width,
@@ -334,6 +377,19 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			                                 ISZ_THUMBNAIL);
 
 			/* FIXME: Transfer the notes as well */
+
+			if ( n->dragging_cur_edit_slide ) {
+				change_edit_slide(n->p, s);
+			} else {
+				/* Slide order has changed, so slide change
+				 * buttons might need to be greyed out */
+				update_toolbar(n->p);
+			}
+
+			if ( n->dragging_cur_proj_slide ) {
+				fixup_proj(n->p, s);
+				change_proj_slide(n->p, s);
+			}
 
 			redraw_slidesorter(n);
 
@@ -373,6 +429,7 @@ static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
                       guint time, struct slide_sorter *n)
 {
 	n->have_drag_data = 0;
+	n->dragging_in = 0;
 }
 
 
@@ -380,6 +437,7 @@ static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
                     struct slide_sorter *n)
 {
 	n->dragging = 0;
+	n->dragging_in = 0;
 	n->have_drag_data = 0;
 	n->drag_preview_pending = 0;
 }
@@ -388,13 +446,64 @@ static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
                        struct slide_sorter *n)
 {
-	if ( slide_number(n->p, n->selected_slide) < n->drop_here ) {
-		n->drop_here--;
+	int same;
+	int sn;
+
+	sn = slide_number(n->p, n->selected_slide);
+
+	same = (gdk_drag_context_get_source_window(drag_context)
+	       ==  gdk_drag_context_get_dest_window(drag_context));
+
+	if ( sn < n->drop_here ) n->drop_here--;
+
+	if ( n->p->cur_edit_slide == n->selected_slide ) {
+
+		if ( same ) {
+
+			/* Do nothing - will switch in dnd_receive()  */
+
+		} else {
+
+			/* Switch to previous slide */
+			int ct;
+
+			if ( sn == 0 ) {
+				ct = 1;
+			} else {
+				ct = sn - 1;
+			}
+
+			change_edit_slide(n->p, n->p->slides[ct]);
+			update_toolbar(n->p);
+
+		}
+
+	}
+
+	if ( n->p->cur_proj_slide == n->selected_slide ) {
+
+		if ( same ) {
+
+			/* Do nothing - will switch in dnd_receive()  */
+
+		} else {
+
+			/* Switch to previous slide */
+			int ct;
+
+			if ( sn == 0 ) {
+				ct = 1;
+			} else {
+				ct = sn - 1;
+			}
+
+			change_proj_slide(n->p, n->p->slides[ct]);
+
+		}
+
 	}
 
 	delete_slide(n->p, n->selected_slide);
-
-	/* FIXME:What if this slide is cur_edit_slide or cur_proj_slide? */
 }
 
 
@@ -419,6 +528,7 @@ void open_slidesorter(struct presentation *p)
 	n->drag_preview_pending = 0;
 	n->have_drag_data = 0;
 	n->dragging = 0;
+	n->dragging_in = 0;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(n->window), 500, 500);

@@ -309,6 +309,15 @@ static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
 		return 1;
 	}
 
+	if ( fr->trouble ) {
+		cairo_new_path(cr);
+		cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
+		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+		cairo_set_line_width(cr, 2.0);
+		cairo_stroke(cr);
+		printf("SC: '%s'\n", fr->sc);
+	}
+
 	/* Actually render the lines */
 	cairo_translate(cr, fr->lop.pad_l, fr->lop.pad_t);
 	render_lines(fr, cr, is, isz);

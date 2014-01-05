@@ -37,7 +37,6 @@
 #include "storycode.h"
 #include "wrap.h"
 #include "frame.h"
-#include "stylesheet.h"
 #include "presentation.h"
 
 

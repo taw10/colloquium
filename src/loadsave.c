@@ -32,7 +32,6 @@
 #include <assert.h>
 
 #include "presentation.h"
-#include "stylesheet.h"
 
 
 static int alloc_children(struct ds_node *node)

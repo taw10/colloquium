@@ -31,7 +31,6 @@
 
 #include "storycode.h"
 #include "frame.h"
-#include "stylesheet.h"
 
 
 static int alloc_ro(struct frame *fr)

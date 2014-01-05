@@ -12,7 +12,7 @@ LDADD = $(top_builddir)/lib/libgnu.la @IGNORE_UNUSED_LIBRARIES_CFLAGS@ \
 
 src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/mainwindow.c src/presentation.c \
-                         src/stylesheet.c src/loadsave.c src/frame.c \
+                         src/loadsave.c src/frame.c \
                          src/slideshow.c src/wrap.c src/storycode.c \
                          src/imagestore.c src/notes.c src/pr_clock.c \
                          src/inhibit_screensaver.c src/slide_sorter.c
@@ -20,7 +20,7 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
 INCLUDES = -Iharfatum/src
 
 EXTRA_DIST += src/presentation.h src/render.h src/wrap.h \
-              src/stylesheet.h src/loadsave.h src/slideshow.h src/storycode.h \
+              src/loadsave.h src/slideshow.h src/storycode.h \
               src/imagestore.h src/notes.h src/pr_clock.h \
               src/inhibit_screensaver.h src/slide_sorter.h
 
@@ -46,9 +46,9 @@ tests_storycode_test_SOURCES = tests/storycode_test.c src/storycode.c
 
 tests_render_test_SOURCES = tests/render_test.c src/render.c src/frame.c \
                             src/wrap.c src/storycode.c src/imagestore.c \
-                            src/stylesheet.c src/loadsave.c
+                            src/loadsave.c
 
 tests_render_test_sc1_SOURCES = tests/render_test_sc1.c src/storycode.c \
                                 src/render.c src/frame.c src/wrap.c \
-                                src/imagestore.c src/stylesheet.c \
+                                src/imagestore.c \
                                 src/loadsave.c

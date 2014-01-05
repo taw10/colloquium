@@ -30,7 +30,6 @@
 #include <cairo.h>
 #include <gtk/gtk.h>
 
-#include "stylesheet.h"
 #include "imagestore.h"
 
 

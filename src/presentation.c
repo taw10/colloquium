@@ -31,7 +31,6 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
-#include "stylesheet.h"
 #include "loadsave.h"
 #include "mainwindow.h"
 #include "frame.h"

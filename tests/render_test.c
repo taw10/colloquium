@@ -32,7 +32,7 @@
 #include <gtk/gtk.h>
 #include <string.h>
 
-#include "../src/storycode.h"
+#include "../src/sc_parse.h"
 #include "../src/render.h"
 #include "../src/stylesheet.h"
 #include "../src/frame.h"

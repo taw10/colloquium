@@ -34,7 +34,7 @@
 #include <math.h>
 #include <gdk/gdk.h>
 
-#include "storycode.h"
+#include "sc_parse.h"
 #include "wrap.h"
 #include "frame.h"
 #include "presentation.h"

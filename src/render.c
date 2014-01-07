@@ -35,7 +35,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <gdk/gdk.h>
 
-#include "storycode.h"
+#include "sc_parse.h"
 #include "presentation.h"
 #include "frame.h"
 #include "render.h"
@@ -277,16 +277,6 @@ static void run_render_sc(cairo_t *cr, struct frame *fr, const char *sc)
 }
 
 
-
-static void do_background(cairo_t *cr, struct frame *fr)
-{
-	if ( fr->style != NULL ) {
-		run_render_sc(cr, fr, fr->style->sc_prologue);
-	}
-	run_render_sc(cr, fr, fr->sc);
-}
-
-
 /* Render Level 1 Storycode (no subframes) */
 static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
                      enum is_size isz, struct slide_constants *scc,
@@ -332,12 +322,13 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 {
 	int i;
 
-	do_background(cr, fr);
-
 	/* Render all subframes */
 	for ( i=0; i<fr->num_children; i++ ) {
 
 		struct frame *ch = fr->children[i];
+#if 0
+/* Frame geometry calculation */
+
 		double mtot;
 
 		if ( ch->style != NULL ) {
@@ -385,7 +376,7 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 			break;
 
 		}
-
+#endif
 		ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;
 		ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
 		cairo_save(cr);

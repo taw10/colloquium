@@ -61,7 +61,7 @@ struct slide
 	/* This should always be present (and up to date). */
 	cairo_surface_t *rendered_thumb;
 
-	struct frame    *top;
+	struct frame *top;
 
 	char *notes;
 };
@@ -183,9 +183,11 @@ struct presentation
 	int               ss_blank;
 	char              ss_geom[256];
 
-	StyleSheet       *ss;
 	unsigned int      num_slides;
 	struct slide    **slides;
+	
+	char             *ss;
+	char             *sc;
 
 	struct inhibit_sys *inhibit;
 };
@@ -204,7 +206,7 @@ extern void delete_subframe(struct slide *s, struct frame *fr);
 
 extern void get_titlebar_string(struct presentation *p);
 
-extern char *packed_sc(struct frame *fr, StyleSheet *ss);
+extern char *packed_sc(struct frame *fr);
 
 extern int slide_number(struct presentation *p, struct slide *s);
 

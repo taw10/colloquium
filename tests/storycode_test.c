@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 
-#include "../src/storycode.h"
+#include "../src/sc_parse.h"
 
 
 static int test_sc(const char *tt)

@@ -1,7 +1,7 @@
 /*
- * notes.h
- * 
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * sc_interp.h
+ *
+ * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,23 +20,21 @@
  *
  */
 
-#ifndef NOTES_H
-#define NOTES_H
+#ifndef SC_INTERP_H
+#define SC_INTERP_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-struct notes;
+typedef struct _scinterp SCInterpreter;
 
-extern void open_notes(struct presentation *p);
+extern SCInterpreter *sc_interp_new(void);
+extern void sc_interp_destroy(SCInterpreter *scin);
 
-extern void notify_notes_slide_changed(struct presentation *p,
-                                       struct slide *np);
+extern void sc_interp_save(SCInterpreter *scin);
+extern void sc_interp_restore(SCInterpreter *scin);
 
-extern void write_notes(struct slide *s, struct serializer *ser);
-extern void load_notes(struct ds_node *node, struct slide *s);
+extern void sc_interp_run(SCInterpreter *scin, const char *sc);
 
-extern void grab_current_notes(struct presentation *p);
-
-#endif	/* NOTES_H */
+#endif	/* SC_INTERP_H */

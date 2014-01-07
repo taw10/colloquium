@@ -1,7 +1,7 @@
 /*
- * storycode.c
+ * sc_parse.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "storycode.h"
+#include "sc_parse.h"
 
 
 struct _scblocklist

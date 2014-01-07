@@ -182,6 +182,7 @@ static void do_slide_update(struct presentation *p, PangoContext *pc)
 }
 
 
+#if 0
 static void add_furniture_real(struct presentation *p, struct style *sty)
 {
 	struct frame *fr;
@@ -199,10 +200,14 @@ static void add_furniture_real(struct presentation *p, struct style *sty)
 	p->cursor_pos = 0;
 
 }
+#endif
 
 
 static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 {
+#if 0
+/* FIXME: Add furniture */
+
 	struct style *sty = pl->sty;
 	struct presentation *p = pl->p;
 
@@ -220,6 +225,7 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 	p->cur_edit_slide->top->style = pl->st->top_style;
 
 	do_slide_update(p, p->pc);
+#endif
 
 	return 0;
 }
@@ -227,6 +233,8 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 
 static void update_style_menus(struct presentation *p)
 {
+#if 0
+/* FIXME: Menus */
 	GtkWidget *menu;
 	struct slide_template *t;
 	TemplateIterator *iter;
@@ -305,8 +313,8 @@ static void update_style_menus(struct presentation *p)
 	}
 
 	gtk_widget_show_all(menu);
-
 	p->n_menu_rebuild = j;
+#endif
 }
 
 
@@ -382,7 +390,8 @@ static gint loadstyle_response_sig(GtkWidget *d, gint response,
 		char *filename;
 
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-		replace_stylesheet(p, filename);
+		/* FIXME: Implement this (now easy) */
+		//replace_stylesheet(p, filename);
 		g_free(filename);
 		update_style_menus(p);
 		rerender_slide(p);
@@ -496,9 +505,10 @@ static gint save_ss_response_sig(GtkWidget *d, gint response,
 
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
 
-		if ( save_stylesheet(p->ss, filename) ) {
-			show_error(p, "Failed to save style sheet");
-		}
+		/* FIXME: Implement this */
+//		if ( save_stylesheet(p->ss, filename) ) {
+//			show_error(p, "Failed to save style sheet");
+//		}
 
 		g_free(filename);
 
@@ -1477,8 +1487,6 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 
 	fr = add_subframe(parent);
 	fr->sc = NULL;
-	fr->style = default_style(p->ss);
-	fr->lop_from_style = 0;
 	fr->lop.x = x;
 	fr->lop.y = y;
 	fr->lop.w = w;

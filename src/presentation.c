@@ -1,7 +1,7 @@
 /*
  * presentation.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -31,7 +31,6 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
-#include "loadsave.h"
 #include "mainwindow.h"
 #include "frame.h"
 #include "imagestore.h"
@@ -296,7 +295,7 @@ struct presentation *new_presentation()
 
 	new->completely_empty = 1;
 
-	new->ss = default_stylesheet();
+	new->ss = strdup("");
 
 	new->n_menu_rebuild = 0;
 	new->menu_rebuild_list = NULL;
@@ -323,70 +322,6 @@ static char *maybe_star(int i)
 }
 
 
-static char *frame_options_string(struct frame *fr, StyleSheet *ss)
-{
-	char *opt;
-
-	opt = malloc(64);
-	if ( opt == NULL ) return NULL;
-
-	snprintf(opt, 31, "style=%s%s",
-	         fr->style->pname, maybe_star(fr->lop_from_style));
-
-	if ( !fr->lop_from_style ) {
-		char tmp[32];
-		snprintf(tmp, 31, ",%.1f%sx%.1f%s+%.1f+%.1f",
-			         fr->lop.w, units(fr->lop.w_units),
-				 fr->lop.h, units(fr->lop.h_units),
-				 fr->lop.x, fr->lop.y);
-		strcat(opt, tmp);
-	}
-
-	return opt;
-}
-
-
-char *packed_sc(struct frame *fr, StyleSheet *ss)
-{
-	char *sc;
-	int i;
-	size_t len = 0;
-
-	if ( fr->sc != NULL ) {
-		len += strlen(fr->sc)+1;
-		sc = malloc(len);
-		memcpy(sc, fr->sc, len);
-	} else {
-		len = 0;
-		sc = malloc(1);
-		sc[0] = '\0';
-	}
-
-	for ( i=0; i<fr->num_children; i++ ) {
-
-		char *ch_sc;
-		char *scn;
-		size_t ch_len;
-		char *frame_opts;
-
-		ch_sc = packed_sc(fr->children[i], ss);
-		ch_len = strlen(ch_sc);
-
-		frame_opts = frame_options_string(fr->children[i], ss);
-
-		len += ch_len + 64;
-		scn = malloc(len + ch_len);
-		snprintf(scn, len, "%s\\f[%s]{%s}", sc, frame_opts, ch_sc);
-		free(ch_sc);
-		free(sc);
-		sc = scn;
-
-	}
-
-	return sc;
-}
-
-
 int save_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
@@ -399,45 +334,8 @@ int save_presentation(struct presentation *p, const char *filename)
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
 
-	/* Set up the serializer */
-	ser.fh = fh;
-	ser.stack_depth = 0;
-	ser.prefix = NULL;
-
-	fprintf(fh, "# Colloquium presentation file\n");
-	serialize_f(&ser, "version", 0.1);
-
-	serialize_start(&ser, "slide-properties");
-	serialize_f(&ser, "width", p->slide_width);
-	serialize_f(&ser, "height", p->slide_height);
-	serialize_end(&ser);
-
-	serialize_start(&ser, "stylesheet");
-	write_stylesheet(p->ss, &ser);
-	serialize_end(&ser);
-
-	serialize_start(&ser, "slides");
-	for ( i=0; i<p->num_slides; i++ ) {
-
-		struct slide *s;
-		char s_id[32];
-		char *sc;
-
-		s = p->slides[i];
-
-		snprintf(s_id, 31, "%i", i);
-		serialize_start(&ser, s_id);
-
-		sc = packed_sc(s->top, p->ss);
-		serialize_s(&ser, "sc", sc);
-		free(sc);
-
-		write_notes(s, &ser);
-
-		serialize_end(&ser);
-
-	}
-	serialize_end(&ser);
+	fprintf(fh, "%s", p->ss);
+	fprintf(fh, "%s", p->sc);
 
 	/* Slightly fiddly because someone might
 	 * do save_presentation(p, p->filename) */

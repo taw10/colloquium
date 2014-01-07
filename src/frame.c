@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "storycode.h"
+#include "sc_parse.h"
 #include "frame.h"
 
 

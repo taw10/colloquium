@@ -1,6 +1,6 @@
 /*
- * notes.h
- * 
+ * sc_parse.h
+ *
  * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
@@ -20,23 +20,32 @@
  *
  */
 
-#ifndef NOTES_H
-#define NOTES_H
+#ifndef SC_PARSE_H
+#define SC_PARSE_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-struct notes;
+typedef struct _scblocklist SCBlockList;
+typedef struct _scblocklistiterator SCBlockListIterator;
 
-extern void open_notes(struct presentation *p);
+struct scblock
+{
+	char *name;
+	char *options;
+	char *contents;
 
-extern void notify_notes_slide_changed(struct presentation *p,
-                                       struct slide *np);
+	size_t offset;
+};
 
-extern void write_notes(struct slide *s, struct serializer *ser);
-extern void load_notes(struct ds_node *node, struct slide *s);
+struct scblock *sc_block_list_first(SCBlockList *bl,
+                                    SCBlockListIterator **piter);
+struct scblock *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter);
 
-extern void grab_current_notes(struct presentation *p);
+extern SCBlockList *sc_find_blocks(const char *sc, const char *blockname);
+extern void sc_block_list_free(SCBlockList *bl);
 
-#endif	/* NOTES_H */
+extern char *remove_blocks(const char *in, const char *blockname);
+
+#endif	/* SC_PARSE_H */

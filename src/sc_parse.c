@@ -33,113 +33,54 @@
 
 #include "sc_parse.h"
 
-
-struct _scblocklist
+struct scblock
 {
-	int n_blocks;
-	int max_blocks;
+	char *name;
+	char *options;
+	char *contents;
 
-	struct scblock *blocks;
+	SCBlock *next;
+	SCBlock *prev;
+	SCBlock *child;
+
+	size_t offset;
 };
 
 
-struct _scblocklistiterator
+SCBlock *sc_block_new()
 {
-	int pos;
-};
+	SCBlock *bl;
 
-
-static int allocate_blocks(SCBlockList *bl)
-{
-	struct scblock *blocks_new;
-
-	blocks_new = realloc(bl->blocks, bl->max_blocks*sizeof(struct scblock));
-	if ( blocks_new == NULL ) {
-		return 1;
-	}
-	bl->blocks = blocks_new;
-
-	return 0;
-}
-
-
-SCBlockList *sc_block_list_new()
-{
-	SCBlockList *bl;
-
-	bl = calloc(1, sizeof(SCBlockList));
+	bl = calloc(1, sizeof(SCBlock));
 	if ( bl == NULL ) return NULL;
-
-	bl->n_blocks = 0;
-	bl->max_blocks = 64;
-	bl->blocks = NULL;
-	if ( allocate_blocks(bl) ) {
-		free(bl);
-		return NULL;
-	}
 
 	return bl;
 }
 
 
-void sc_block_list_free(SCBlockList *bl)
+/* Insert a new block after "bl" */
+SCBlock *sc_block_insert(SCBlock *bl)
 {
-	int i;
+	SCBlock *bl = sc_block_new();
 
-	for ( i=0; i<bl->n_blocks; i++ ) {
-		free(bl->blocks[i].name);
-		free(bl->blocks[i].options);
-		free(bl->blocks[i].contents);
+	/* FIXME: Implementation */
+
+	return bl;
+}
+
+
+/* Frees "bl" and all its children, and links it out of its chain */
+void sc_block_free(SCBlock *bl)
+{
+	if ( bl->child != NULL ) {
+		SCBlock *ch = bl->child;
+		while ( ch != NULL ) {
+			sc_block_free(ch);
+			ch = ch->next;
+		}
 	}
-	free(bl->blocks);
+
 	free(bl);
-}
-
-
-struct scblock *sc_block_list_first(SCBlockList *bl,
-                                    SCBlockListIterator **piter)
-{
-	SCBlockListIterator *iter;
-
-	if ( bl->n_blocks == 0 ) return NULL;
-
-	iter = calloc(1, sizeof(SCBlockListIterator));
-	if ( iter == NULL ) return NULL;
-
-	iter->pos = 0;
-	*piter = iter;
-
-	return &bl->blocks[0];
-}
-
-
-struct scblock *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter)
-{
-	iter->pos++;
-	if ( iter->pos == bl->n_blocks ) {
-		free(iter);
-		return NULL;
-	}
-
-	return &bl->blocks[iter->pos];
-}
-
-
-static int sc_block_list_add(SCBlockList *bl, size_t offset,
-                             char *name, char *options, char *contents)
-{
-	if ( bl->n_blocks == bl->max_blocks ) {
-		bl->max_blocks += 64;
-		if ( allocate_blocks(bl) ) return 1;
-	}
-
-	bl->blocks[bl->n_blocks].name = name;
-	bl->blocks[bl->n_blocks].options = options;
-	bl->blocks[bl->n_blocks].contents = contents;
-	bl->blocks[bl->n_blocks].offset = offset;
-	bl->n_blocks++;
-
-	return 0;
 }
 
 
@@ -247,21 +188,21 @@ static size_t read_block(const char *sc, char **pname, char **options,
 }
 
 
-SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
+SCBlock *sc_parse(const char *sc)
 {
-	SCBlockList *bl;
+	SCBlock *bl;
 	char *tbuf;
 	size_t len, i, j, start;
 
 	if ( sc == NULL ) return NULL;
 
-	bl = sc_block_list_new();
+	bl = sc_block_new();
 	if ( bl == NULL ) return NULL;
 
 	len = strlen(sc);
 	tbuf = malloc(len+1);
 	if ( tbuf == NULL ) {
-		sc_block_list_free(bl);
+		sc_block_free(bl);
 		return NULL;
 	}
 
@@ -343,58 +284,3 @@ SCBlockList *sc_find_blocks(const char *sc, const char *blockname)
 
 	return bl;
 }
-
-
-char *remove_blocks(const char *in, const char *blockname)
-{
-	SCBlockList *bl;
-	SCBlockListIterator *iter;
-	char *out;
-	struct scblock *b;
-
-	bl = sc_find_blocks(in, NULL);
-	if ( bl == NULL ) {
-		printf("Failed to find blocks.\n");
-		return NULL;
-	}
-
-	out = malloc(strlen(in)+1);
-	if ( out == NULL ) return NULL;
-	out[0] = '\0';
-
-	for ( b = sc_block_list_first(bl, &iter);
-	      b != NULL;
-	      b = sc_block_list_next(bl, iter) )
-	{
-		if ( b->name == NULL ) {
-			strcat(out, b->contents);
-		} else {
-
-			if ( strcmp(blockname, b->name) != 0 ) {
-				strcat(out, "\\");
-				strcat(out, b->name);
-				if ( b->options != NULL ) {
-					strcat(out, "[");
-					strcat(out, b->options);
-					strcat(out, "]");
-				}
-				if ( b->contents != NULL ) {
-					strcat(out, "{");
-					strcat(out, b->contents);
-					strcat(out, "}");
-				}
-
-				if ( (b->options == NULL)
-				  && (b->contents == NULL) ) {
-					strcat(out, " ");
-				}
-
-			}
-
-		}
-	}
-	sc_block_list_free(bl);
-
-	return out;
-}
-

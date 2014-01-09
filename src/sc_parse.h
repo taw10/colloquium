@@ -27,21 +27,11 @@
 #include <config.h>
 #endif
 
-typedef struct _scblocklist SCBlockList;
-typedef struct _scblocklistiterator SCBlockListIterator;
-
-struct scblock
-{
-	char *name;
-	char *options;
-	char *contents;
-
-	size_t offset;
-};
+typedef struct _scblock SCBlock;
 
 struct scblock *sc_block_list_first(SCBlockList *bl,
                                     SCBlockListIterator **piter);
-struct scblock *sc_block_list_next(SCBlockList *bl, SCBlockListIterator *iter);
+struct scblock *sc_block_next(SCBlockList *bl, SCBlockListIterator *iter);
 
 extern SCBlockList *sc_find_blocks(const char *sc, const char *blockname);
 extern void sc_block_list_free(SCBlockList *bl);

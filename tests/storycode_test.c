@@ -32,41 +32,19 @@
 
 static int test_sc(const char *tt)
 {
-	SCBlockList *bl;
-	SCBlockListIterator *iter;
-	struct scblock *b;
+	SCBlock *bl;
 
 	printf("'%s' ->\n", tt);
-	bl = sc_find_blocks(tt, "bg");
+	bl = sc_parse(tt);
 
 	if ( bl == NULL ) {
-		printf("Failed to find blocks.\n");
+		printf("Failed to parse SC\n");
 		return 1;
 	}
 
-	for ( b = sc_block_list_first(bl, &iter);
-	      b != NULL;
-	      b = sc_block_list_next(bl, iter) )
-	{
-		printf("   \\%s [%s] {%s}\n", b->name, b->options, b->contents);
-	}
-	sc_block_list_free(bl);
+	show_sc_blocks(bl);
 
-	printf("->\n");
-	bl = sc_find_blocks(tt, NULL);
-
-	if ( bl == NULL ) {
-		printf("Failed to find blocks.\n");
-		return 1;
-	}
-
-	for ( b = sc_block_list_first(bl, &iter);
-	      b != NULL;
-	      b = sc_block_list_next(bl, iter) )
-	{
-		printf("   \\%s [%s] {%s}\n", b->name, b->options, b->contents);
-	}
-	sc_block_list_free(bl);
+	sc_block_free(bl);
 
 	return 0;
 }

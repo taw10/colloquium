@@ -33,7 +33,7 @@
 
 #include "sc_parse.h"
 
-struct scblock
+struct _scblock
 {
 	char *name;
 	char *options;
@@ -42,8 +42,6 @@ struct scblock
 	SCBlock *next;
 	SCBlock *prev;
 	SCBlock *child;
-
-	size_t offset;
 };
 
 
@@ -58,14 +56,34 @@ SCBlock *sc_block_new()
 }
 
 
-/* Insert a new block after "bl" */
-SCBlock *sc_block_insert(SCBlock *bl)
+/* Insert a new block after "bl".  "name", "options" and "contents"
+ * will not be copied.  Returns the block just created, or NULL on error.
+ * If *blfp points to NULL, it will updated to point at the new block.  */
+SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
+                         SCBlock **blfp)
 {
-	SCBlock *bl = sc_block_new();
+	SCBlock *bln = sc_block_new();
 
-	/* FIXME: Implementation */
+	if ( bln == NULL ) return NULL;
 
-	return bl;
+	bln->name = name;
+	bln->options = opt;
+	bln->contents = contents;
+	bln->child = NULL;
+	bln->next = NULL;
+
+	if ( bl == NULL ) {
+		bln->prev = NULL;
+	} else {
+		bl->next = bln;
+		bln->prev = bl;
+	}
+
+	if ( (blfp != NULL) && (*blfp == NULL) ) {
+		*blfp = bln;
+	}
+
+	return bln;
 }
 
 
@@ -81,6 +99,35 @@ void sc_block_free(SCBlock *bl)
 	}
 
 	free(bl);
+}
+
+
+static void recursive_show_sc_blocks(const char *prefix, SCBlock *bl)
+{
+	while ( bl != NULL ) {
+
+		printf("%s", prefix);
+		if ( bl->name != NULL ) printf("\\%s ", bl->name);
+		if ( bl->options != NULL ) printf("[%s] ", bl->options);
+		if ( bl->contents != NULL ) printf("{%s}", bl->contents);
+		printf("\n");
+
+		if ( bl->child != NULL ) {
+			char new_prefix[strlen(prefix)+3];
+			strcpy(new_prefix, "  ");
+			strcat(new_prefix, prefix);
+			recursive_show_sc_blocks(new_prefix, bl->child);
+		}
+
+		bl = bl->next;
+
+	}
+}
+
+
+void show_sc_blocks(SCBlock *bl)
+{
+	recursive_show_sc_blocks("", bl);
 }
 
 
@@ -191,13 +238,13 @@ static size_t read_block(const char *sc, char **pname, char **options,
 SCBlock *sc_parse(const char *sc)
 {
 	SCBlock *bl;
+	SCBlock *blf = NULL;
 	char *tbuf;
-	size_t len, i, j, start;
+	size_t len, i, j;
 
 	if ( sc == NULL ) return NULL;
 
-	bl = sc_block_new();
-	if ( bl == NULL ) return NULL;
+	bl = NULL;
 
 	len = strlen(sc);
 	tbuf = malloc(len+1);
@@ -206,56 +253,47 @@ SCBlock *sc_parse(const char *sc)
 		return NULL;
 	}
 
-	i = 0;  j = 0;  start = 0;
+	i = 0;  j = 0;
 	do {
 
 		if ( sc[i] == '\\' ) {
 
 			int err;
 			char *name = NULL;
-			char *options = NULL;
+			char *opt = NULL;
 			char *contents = NULL;
 
-			if ( (blockname == NULL) && (j != 0) ) {
+			if ( j != 0 ) {
 				tbuf[j] = '\0';
-				if ( sc_block_list_add(bl, i, NULL, NULL,
-				                       strdup(tbuf)) )
-				{
-					fprintf(stderr,
-					        "Failed to add block.\n");
-					sc_block_list_free(bl);
+				bl = sc_block_append(bl, NULL, NULL,
+				                     strdup(tbuf), &blf);
+				if ( bl == NULL ) {
+					fprintf(stderr, "Block add failed.\n");
+					sc_block_free(blf);
 					free(tbuf);
 					return NULL;
 				}
 				j = 0;
 			}
 
-			i += read_block(sc+i+1, &name, &options, &contents,
-			                &err);
+			i += read_block(sc+i+1, &name, &opt, &contents, &err);
 			if ( err ) {
 				printf("Parse error\n");
-				sc_block_list_free(bl);
+				sc_block_free(blf);
 				free(tbuf);
 				return NULL;
 			}
 
-			if ( (blockname == NULL)
-			  || ((blockname != NULL) && !strcmp(blockname, name)) )
-			{
-				if ( sc_block_list_add(bl, i, name, options,
-				                       contents) )
-				{
-					fprintf(stderr,
-					        "Failed to add block.\n");
-					sc_block_list_free(bl);
-					free(tbuf);
-					return NULL;
-				}
+			bl = sc_block_append(bl, name, opt, contents, &blf);
+			if ( bl == NULL ) {
+				fprintf(stderr, "Block add failed.\n");
+				sc_block_free(blf);
+				free(tbuf);
+				return NULL;
 			}
-
-			/* Start of the next block */
-			start = i;
-
+			bl->child = sc_parse(contents);
+			free(bl->contents);
+			bl->contents = NULL;
 
 		} else {
 
@@ -265,22 +303,21 @@ SCBlock *sc_parse(const char *sc)
 	} while ( i<len );
 
 	/* Add final block, if it exists */
-	if ( (blockname == NULL) && (j > 0) ) {
+	if ( j > 0 ) {
 
 		/* Leftover buffer is empty? */
 		if ( (j==1) && (tbuf[0]=='\0') ) return bl;
 
 		tbuf[j] = '\0';
-		if ( sc_block_list_add(bl, start, NULL, NULL, tbuf) )
-		{
-			fprintf(stderr,
-			        "Failed to add block.\n");
-			sc_block_list_free(bl);
+		bl = sc_block_append(bl, NULL, NULL, tbuf, &blf);
+		if ( bl == NULL ) {
+			fprintf(stderr, "Block add failed.\n");
+			sc_block_free(blf);
 			free(tbuf);
 			return NULL;
 		}
 		j = 0;
 	}
 
-	return bl;
+	return blf;
 }

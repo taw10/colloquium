@@ -29,13 +29,9 @@
 
 typedef struct _scblock SCBlock;
 
-struct scblock *sc_block_list_first(SCBlockList *bl,
-                                    SCBlockListIterator **piter);
-struct scblock *sc_block_next(SCBlockList *bl, SCBlockListIterator *iter);
+extern SCBlock *sc_parse(const char *sc);
+extern void sc_block_free(SCBlock *bl);
 
-extern SCBlockList *sc_find_blocks(const char *sc, const char *blockname);
-extern void sc_block_list_free(SCBlockList *bl);
-
-extern char *remove_blocks(const char *in, const char *blockname);
+extern void show_sc_blocks(SCBlock *bl);
 
 #endif	/* SC_PARSE_H */

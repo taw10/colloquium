@@ -56,6 +56,30 @@ SCBlock *sc_block_new()
 }
 
 
+SCBlock *sc_block_next(const SCBlock *bl)
+{
+	return bl->next;
+}
+
+
+const char *sc_block_name(const SCBlock *bl)
+{
+	return bl->name;
+}
+
+
+const char *sc_block_options(const SCBlock *bl)
+{
+	return bl->options;
+}
+
+
+const char *sc_block_contents(const SCBlock *bl)
+{
+	return bl->contents;
+}
+
+
 /* Insert a new block after "bl".  "name", "options" and "contents"
  * will not be copied.  Returns the block just created, or NULL on error.
  * If *blfp points to NULL, it will updated to point at the new block.  */
@@ -102,7 +126,7 @@ void sc_block_free(SCBlock *bl)
 }
 
 
-static void recursive_show_sc_blocks(const char *prefix, SCBlock *bl)
+static void recursive_show_sc_blocks(const char *prefix, const SCBlock *bl)
 {
 	while ( bl != NULL ) {
 
@@ -125,7 +149,7 @@ static void recursive_show_sc_blocks(const char *prefix, SCBlock *bl)
 }
 
 
-void show_sc_blocks(SCBlock *bl)
+void show_sc_blocks(const SCBlock *bl)
 {
 	recursive_show_sc_blocks("", bl);
 }
@@ -263,6 +287,14 @@ SCBlock *sc_parse(const char *sc)
 			char *opt = NULL;
 			char *contents = NULL;
 
+			/* Is this an escaped backslash? */
+			if ( sc[i+1] == '\\' ) {
+				tbuf[j++] = '\\';
+				i += 2;  /* Skip both backslashes */
+				continue;
+			}
+
+			/* No, it's a real block. Dispatch the previous block */
 			if ( j != 0 ) {
 				tbuf[j] = '\0';
 				bl = sc_block_append(bl, NULL, NULL,

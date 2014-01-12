@@ -1,7 +1,7 @@
 /*
  * frame.h
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -30,21 +30,7 @@
 #include <pango/pango.h>
 #include <cairo.h>
 
-typedef struct _stylesheet StyleSheet;
-
-
-typedef enum
-{
-	DIR_NONE,
-	DIR_UL,
-	DIR_U,
-	DIR_UR,
-	DIR_R,
-	DIR_DR,
-	DIR_D,
-	DIR_DL,
-	DIR_L
-} Direction;
+#include "sc_parse.h"
 
 
 typedef enum
@@ -54,36 +40,13 @@ typedef enum
 } LengthUnits;
 
 
-struct layout_parameters
-{
-	double margin_l;
-	double margin_r;
-	double margin_t;
-	double margin_b;
-
-	double pad_l;
-	double pad_r;
-	double pad_t;
-	double pad_b;
-
-	double x;
-	double y;
-
-	double w;
-	LengthUnits w_units;
-	double h;
-	LengthUnits h_units;
-};
-
-
 struct frame
 {
 	struct frame            **children;
 	int                       num_children;
 	int                       max_children;
 
-	char                     *sc;  /* Storycode */
-	size_t                    sc_len;  /* Space allocated for sc */
+	SCBlock                  *scblocks;
 
 	int                       n_lines;
 	int                       max_lines;
@@ -91,13 +54,16 @@ struct frame
 
 	size_t                    pos;
 
-	struct layout_parameters  lop;
-
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;
 	double                    y;
 	double                    w;
 	double                    h;
+
+	double                    pad_t;
+	double                    pad_b;
+	double                    pad_l;
+	double                    pad_r;
 
 	/* True if this frame should be deleted on the next mouse click */
 	int                       empty;
@@ -105,14 +71,14 @@ struct frame
 	/* True if the aspect ratio of this frame should be maintained */
 	int                       is_image;
 
-	/* True if wrapping failed for this box */
+	/* True if wrapping failed for this frame */
 	int                       trouble;
 };
 
 
 extern struct frame *frame_new(void);
 extern struct frame *add_subframe(struct frame *fr);
-extern struct frame *sc_unpack(const char *sc, StyleSheet *ss);
+
 extern void show_hierarchy(struct frame *fr, const char *t);
 
 #endif	/* FRAME_H */

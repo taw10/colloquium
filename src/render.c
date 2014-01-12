@@ -36,6 +36,7 @@
 #include <gdk/gdk.h>
 
 #include "sc_parse.h"
+#include "sc_interp.h"
 #include "presentation.h"
 #include "frame.h"
 #include "render.h"
@@ -185,23 +186,27 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 
 static void draw_overfull_marker(cairo_t *cr, struct frame *fr, int i)
 {
+#if 0
 	cairo_move_to(cr, fr->w - fr->lop.pad_l- fr->lop.pad_r, 0.0);
 	cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
 	                  pango_units_to_double(fr->lines[i].height));
 	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 4.0);
 	cairo_stroke(cr);
+#endif
 }
 
 
 static void draw_underfull_marker(cairo_t *cr, struct frame *fr, int i)
 {
+#if 0
 	cairo_move_to(cr, fr->w - fr->lop.pad_l- fr->lop.pad_r, 0.0);
 	cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
 	                  pango_units_to_double(fr->lines[i].height));
 	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
 	cairo_set_line_width(cr, 4.0);
 	cairo_stroke(cr);
+#endif
 }
 
 
@@ -250,47 +255,22 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 	}
 }
 
+#if 0
+	GdkRGBA col;
 
-static void run_render_sc(cairo_t *cr, struct frame *fr, const char *sc)
-{
-	SCBlockList *bl;
-	SCBlockListIterator *iter;
-	struct scblock *b;
+	if ( b->contents == NULL ) continue;
+	gdk_rgba_parse(&col, b->contents);
+	cairo_rectangle(cr, 0, 0, fr->w, fr->h);
+	gdk_cairo_set_source_rgba(cr, &col);
+	cairo_fill(cr);
+#endif
 
-	bl = sc_find_blocks(sc, "bgcol");
-	if ( bl == NULL ) return;
-
-	for ( b = sc_block_list_first(bl, &iter);
-	      b != NULL;
-	      b = sc_block_list_next(bl, iter) )
-	{
-		GdkRGBA col;
-
-		if ( b->contents == NULL ) continue;
-		gdk_rgba_parse(&col, b->contents);
-		cairo_rectangle(cr, 0, 0, fr->w, fr->h);
-		gdk_cairo_set_source_rgba(cr, &col);
-		cairo_fill(cr);
-
-	}
-	sc_block_list_free(bl);
-}
-
-
+#if 0
 /* Render Level 1 Storycode (no subframes) */
 static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
                      enum is_size isz, struct slide_constants *scc,
 		     struct presentation_constants *pcc, PangoContext *pc)
 {
-	int i;
-
-	for ( i=0; i<fr->n_lines; i++ ) {
-		wrap_line_free(&fr->lines[i]);
-	}
-	free(fr->lines);
-	fr->lines = NULL;
-	fr->n_lines = 0;
-	fr->max_lines = 0;
 
 	/* Set up lines */
 	if ( wrap_contents(fr, pc, scc, pcc) ) {
@@ -313,6 +293,7 @@ static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
 
 	return 0;
 }
+#endif
 
 
 static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
@@ -320,73 +301,29 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 		        struct presentation_constants *pcc,
 			PangoContext *pc)
 {
+	SCInterpreter *scin;
 	int i;
+	SCBlock *bl = fr->scblocks;
 
-	/* Render all subframes */
-	for ( i=0; i<fr->num_children; i++ ) {
-
-		struct frame *ch = fr->children[i];
-#if 0
-/* Frame geometry calculation */
-
-		double mtot;
-
-		if ( ch->style != NULL ) {
-			if ( ch->lop_from_style ) {
-				memcpy(&ch->lop, &ch->style->lop,
-				       sizeof(struct layout_parameters));
-			} else {
-				double x, y, w, h;
-				LengthUnits wu, hu;
-				x = ch->lop.x;  y = ch->lop.y;
-				w = ch->lop.w;  h = ch->lop.h;
-				wu = ch->lop.w_units;  hu = ch->lop.h_units;
-				memcpy(&ch->lop, &ch->style->lop,
-				       sizeof(struct layout_parameters));
-				ch->lop.x = x;  ch->lop.y = y;
-				ch->lop.w = w;  ch->lop.h = h;
-				ch->lop.w_units = wu;  ch->lop.h_units = hu;
-			}
-		}
-
-		mtot = ch->lop.margin_l + ch->lop.margin_r;
-		mtot += fr->lop.pad_l + fr->lop.pad_r;
-		switch ( ch->lop.w_units ) {
-
-			case UNITS_SLIDE :
-			ch->w = ch->lop.w;
-			break;
-
-			case UNITS_FRAC :
-			ch->w = fr->w * ch->lop.w - mtot;
-			break;
-
-		}
-
-		mtot = ch->lop.margin_t + ch->lop.margin_b;
-		mtot += fr->lop.pad_t + fr->lop.pad_b;
-		switch ( ch->lop.h_units ) {
-
-			case UNITS_SLIDE :
-			ch->h = ch->lop.h;
-			break;
-
-			case UNITS_FRAC :
-			ch->h = fr->h * ch->lop.h - mtot;
-			break;
-
-		}
-#endif
-		ch->x = ch->lop.x + fr->lop.pad_l + ch->lop.margin_l;
-		ch->y = ch->lop.y + fr->lop.pad_t + ch->lop.margin_t;
-		cairo_save(cr);
-		cairo_translate(cr, ch->x, ch->y);
-		render_frame(cr, ch, is, isz, scc, pcc, pc);
-		cairo_restore(cr);
-
+	scin = sc_interp_new();
+	if ( scin == NULL ) {
+		fprintf(stderr, "Failed to set up interpreter.\n");
+		return 1;
 	}
 
-	render_sc(cr, fr, is, isz, scc, pcc, pc);
+	for ( i=0; i<fr->n_lines; i++ ) {
+		wrap_line_free(&fr->lines[i]);
+	}
+	free(fr->lines);
+	fr->lines = NULL;
+	fr->n_lines = 0;
+	fr->max_lines = 0;
+
+	while ( bl != NULL ) {
+		bl = sc_block_next(bl);
+	}
+
+	sc_interp_destroy(scin);
 
 	return 0;
 }
@@ -448,10 +385,8 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	h = (hh/ww)*w;
 	scale = w/ww;
 
-	s->top->lop.x = 0.0;
-	s->top->lop.y = 0.0;
-	s->top->lop.w = ww;
-	s->top->lop.h = hh;
+	s->top->x = 0.0;
+	s->top->y = 0.0;
 	s->top->w = ww;
 	s->top->h = hh;
 
@@ -534,10 +469,8 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
 
-		s->top->lop.x = 0.0;
-		s->top->lop.y = 0.0;
-		s->top->lop.w = w;
-		s->top->lop.h = w*r;
+		s->top->x = 0.0;
+		s->top->y = 0.0;
 		s->top->w = w;
 		s->top->h = w*r;
 

@@ -60,7 +60,7 @@ struct frame *frame_new()
 
 	n->num_children = 0;
 
-	n->sc = NULL;
+	n->scblocks = NULL;
 
 	return n;
 }
@@ -84,6 +84,7 @@ struct frame *add_subframe(struct frame *fr)
 }
 
 
+#if 0
 static LengthUnits get_units(const char *t)
 {
 	size_t len = strlen(t);
@@ -96,7 +97,7 @@ static LengthUnits get_units(const char *t)
 }
 
 
-static void parse_option(struct frame *fr, const char *opt, StyleSheet *ss)
+static void parse_option(struct frame *fr, const char *opt)
 {
 	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
 	  && (index(opt, '+') != rindex(opt, '+')) )
@@ -151,29 +152,6 @@ static void parse_option(struct frame *fr, const char *opt, StyleSheet *ss)
 			return;
 		}
 
-	}
-
-	if ( strncmp(opt, "style=", 6) == 0 ) {
-
-		char *s;
-		char *tmp;
-
-		tmp = strdup(opt);
-
-		if ( opt[strlen(opt)-1] == '*' ) {
-			fr->lop_from_style = 1;
-			tmp[strlen(tmp)-1] = '\0';
-		} else {
-			fr->lop_from_style = 0;
-		}
-
-		s = index(tmp, '=') + 1;
-		fr->style = lookup_style(ss, s);
-		free(tmp);
-		if ( fr->style == NULL ) {
-			fprintf(stderr, "Invalid style '%s'\n", opt);
-			return;
-		}
 	}
 }
 
@@ -289,3 +267,4 @@ void show_hierarchy(struct frame *fr, const char *t)
 	}
 
 }
+#endif

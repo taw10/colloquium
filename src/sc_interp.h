@@ -27,6 +27,17 @@
 #include <config.h>
 #endif
 
+
+struct sc_font
+{
+	PangoFontDescription *fontdesc;
+	PangoFont *font;
+	double col[4];
+	int ascent;
+	int height;
+	int free_font_on_pop;
+};
+
 typedef struct _scinterp SCInterpreter;
 
 extern SCInterpreter *sc_interp_new(void);
@@ -35,6 +46,6 @@ extern void sc_interp_destroy(SCInterpreter *scin);
 extern void sc_interp_save(SCInterpreter *scin);
 extern void sc_interp_restore(SCInterpreter *scin);
 
-extern void sc_interp_run(SCInterpreter *scin, const char *sc);
+extern int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl);
 
 #endif	/* SC_INTERP_H */

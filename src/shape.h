@@ -1,7 +1,7 @@
 /*
- * sc_parse.h
+ * shape.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,24 +20,19 @@
  *
  */
 
-#ifndef SC_PARSE_H
-#define SC_PARSE_H
+#ifndef SHAPE_H
+#define SHAPE_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-typedef struct _scblock SCBlock;
+#include <pango/pangocairo.h>
 
-extern SCBlock *sc_parse(const char *sc);
+#include "wrap.h"
 
-extern void sc_block_free(SCBlock *bl);
+extern int split_words(struct wrap_line *boxes, PangoContext *pc,
+                       const char *text, PangoLanguage *lang, int editable,
+                       struct sc_font *font);
 
-extern SCBlock *sc_block_next(const SCBlock *bl);
-extern const char *sc_block_name(const SCBlock *bl);
-extern const char *sc_block_options(const SCBlock *bl);
-extern const char *sc_block_contents(const SCBlock *bl);
-
-extern void show_sc_blocks(const SCBlock *bl);
-
-#endif	/* SC_PARSE_H */
+#endif	/* SHAPE_H */

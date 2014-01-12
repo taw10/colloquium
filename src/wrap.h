@@ -99,14 +99,15 @@ struct wrap_line
 };
 
 
-extern int wrap_contents(struct frame *fr, PangoContext *pc,
-                         struct slide_constants *scc,
-		         struct presentation_constants *pcc);
+extern int wrap_contents(struct frame *fr, struct wrap_line *boxes);
 
 extern void get_cursor_pos(struct frame *fr, size_t pos,
                            double *xposd, double *yposd, double *line_height);
 
 extern size_t find_cursor_pos(struct frame *fr, double xposd, double yposd);
+
+extern void alloc_boxes(struct wrap_line *l);
+extern void initialise_line(struct wrap_line *l);
 
 extern void wrap_line_free(struct wrap_line *l);
 extern void show_boxes(struct wrap_line *boxes);

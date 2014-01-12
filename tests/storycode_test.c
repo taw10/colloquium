@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	            "\\wibble{}\\f{wibble \\bg[muhu]{wobble}}\\frib[\\f] f");
 	if ( r ) v = 1;
 
-	r = test_sc("A B C \\wibble");
+	r = test_sc("A B C \\wibble\\\\w");
 	if ( r ) v = 1;
 
 	return v;

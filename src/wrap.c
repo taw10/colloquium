@@ -3,7 +3,7 @@
  *
  * Text wrapping, hyphenation, justification and shaping
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -35,6 +35,7 @@
 #include <gdk/gdk.h>
 
 #include "sc_parse.h"
+#include "sc_interp.h"
 #include "wrap.h"
 #include "frame.h"
 #include "presentation.h"
@@ -54,7 +55,7 @@ static void alloc_lines(struct frame *fr)
 }
 
 
-static void alloc_boxes(struct wrap_line *l)
+void alloc_boxes(struct wrap_line *l)
 {
 	struct wrap_box *boxes_new;
 
@@ -68,7 +69,7 @@ static void alloc_boxes(struct wrap_line *l)
 }
 
 
-static void initialise_line(struct wrap_line *l)
+void initialise_line(struct wrap_line *l)
 {
 	l->n_boxes = 0;
 	l->max_boxes = 32;
@@ -112,7 +113,7 @@ static struct wrap_line *get_cursor_line(struct frame *fr, size_t pos,
 	}
 
 	*yposd /= PANGO_SCALE;
-	*yposd += fr->lop.pad_t;
+	*yposd += fr->pad_t;
 
 	return &fr->lines[line];
 }
@@ -146,7 +147,7 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 	}
 	box--;
 
-	*xposd = fr->lop.pad_l;
+	*xposd = fr->pad_l;
 	for ( i=0; i<box; i++ ) {
 		*xposd += pango_units_to_double(l->boxes[i].width);
 		*xposd += pango_units_to_double(l->boxes[i].sp);
@@ -181,7 +182,7 @@ static struct wrap_line *find_cursor_line(struct frame *fr, double yposd,
 					  int *end)
 {
 	int i;
-	double y = fr->lop.pad_t;
+	double y = fr->pad_t;
 
 	*end = 0;
 
@@ -202,7 +203,7 @@ static struct wrap_box *find_cursor_box(struct frame *fr, struct wrap_line *l,
 					double xposd, double *x_pos, int *end)
 {
 	int i;
-	double x = fr->lop.pad_l;
+	double x = fr->pad_l;
 
 	*end = 0;
 
@@ -269,31 +270,6 @@ size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 }
 
 
-static void shape_and_measure(gpointer data, gpointer user_data)
-{
-	struct wrap_box *box = user_data;
-	PangoItem *item = data;
-	PangoRectangle rect;
-
-	/* FIXME: Don't assume only one run per wrap box */
-	box->glyphs = pango_glyph_string_new();
-	box->item = item;
-
-	pango_shape(box->text+item->offset, item->length, &item->analysis,
-	            box->glyphs);
-
-	pango_glyph_string_extents(box->glyphs, box->font, NULL, &rect);
-
-	box->width += rect.width;
-	if ( rect.height > box->height ) {
-		box->height = rect.height;
-	}
-	if ( PANGO_ASCENT(rect) > box->ascent ) {
-		box->ascent = PANGO_ASCENT(rect);
-	}
-}
-
-
 static void calc_line_geometry(struct wrap_line *line)
 {
 	int i;
@@ -313,313 +289,6 @@ static void calc_line_geometry(struct wrap_line *line)
 }
 
 
-struct sc_font
-{
-	PangoFontDescription *fontdesc;
-	PangoFont *font;
-	double col[4];
-	int ascent;
-	int height;
-	int free_font_on_pop;
-};
-
-
-/* Add "text", followed by a space of type "space", to "line" */
-static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
-                        enum wrap_box_space space, PangoContext *pc,
-                        struct sc_font *font, int editable)
-{
-	GList *pango_items;
-	struct wrap_box *box;
-	PangoAttrList *attrs;
-	PangoAttribute *attr;
-
-	if ( line->n_boxes == line->max_boxes ) {
-		line->max_boxes += 32;
-		alloc_boxes(line);
-		if ( line->n_boxes == line->max_boxes ) return 1;
-	}
-
-	box = &line->boxes[line->n_boxes];
-	if ( !editable ) offset = 0;
-	box->sc_offset = offset;
-	box->type = WRAP_BOX_PANGO;
-	box->text = text;
-	box->space = space;
-	box->font = font->font;
-	box->width = 0;
-	box->editable = editable;
-	box->ascent = font->ascent;
-	box->height = font->height;
-	box->col[0] = font->col[0];  /* Red */
-	box->col[1] = font->col[1];  /* Green */
-	box->col[2] = font->col[2];  /* Blue */
-	box->col[3] = font->col[3];  /* Alpha */
-	line->n_boxes++;
-
-	if ( strlen(text) == 0 ) {
-		box->type = WRAP_BOX_NOTHING;
-		return 0;
-	}
-
-	attrs = pango_attr_list_new();
-	attr = pango_attr_font_desc_new(font->fontdesc);
-	pango_attr_list_insert_before(attrs, attr);
-	pango_items = pango_itemize(pc, text, 0, strlen(text), attrs, NULL);
-	g_list_foreach(pango_items, shape_and_measure, box);
-	g_list_free(pango_items);
-	pango_attr_list_unref(attrs);
-
-	return 0;
-}
-
-
-static void add_image_box(struct wrap_line *line, const char *filename,
-                          size_t offset, int w, int h, int editable)
-{
-	struct wrap_box *box;
-
-	box = &line->boxes[line->n_boxes];
-	if ( !editable ) offset = 0;
-	box->sc_offset = offset;
-	box->type = WRAP_BOX_IMAGE;
-	box->text = NULL;
-	box->space = WRAP_SPACE_NONE;
-	box->width = pango_units_from_double(w);
-	box->ascent = pango_units_from_double(h);
-	box->height = pango_units_from_double(h);
-	box->filename = strdup(filename);
-	box->editable = editable;
-	line->n_boxes++;
-}
-
-
-static int split_words(struct wrap_line *boxes, PangoContext *pc, char *sc,
-                       size_t sc_offset, PangoLanguage *lang, int editable,
-                       struct sc_font *font)
-{
-	PangoLogAttr *log_attrs;
-	glong len_chars, i;
-	size_t len_bytes, start;
-
-	/* Empty block? */
-	if ( sc == NULL ) return 1;
-
-	len_chars = g_utf8_strlen(sc, -1);
-	if ( len_chars == 0 ) return 1;
-
-	len_bytes = strlen(sc);
-
-	log_attrs = malloc((len_chars+1)*sizeof(PangoLogAttr));
-	if ( log_attrs == NULL ) return 1;
-
-	/* Create glyph string */
-	pango_get_log_attrs(sc, len_bytes, -1, lang, log_attrs, len_chars+1);
-
-	start = 0;
-	for ( i=0; i<len_chars; i++ ) {
-
-		if ( log_attrs[i].is_line_break ) {
-
-			char *word;
-			enum wrap_box_space type;
-			size_t len;
-			char *ptr;
-			size_t offs;
-
-			ptr = g_utf8_offset_to_pointer(sc, i);
-			offs = ptr - sc;
-
-			/* Stuff up to (but not including) sc[i] forms a
-			 * wrap box */
-			len = offs - start;
-			if ( log_attrs[i].is_mandatory_break ) {
-				type = WRAP_SPACE_EOP;
-				if ( (offs>0) && (sc[offs-1] == '\n') ) len--;
-				if ( (offs>0) && (sc[offs-1] == '\r') ) len--;
-			} else if ( (i>0)
-			         && log_attrs[i-1].is_expandable_space ) {
-				type = WRAP_SPACE_INTERWORD;
-				len--;  /* Not interested in spaces */
-			} else {
-				type = WRAP_SPACE_NONE;
-			}
-
-			word = strndup(sc+start, len);
-			if ( word == NULL ) {
-				fprintf(stderr, "strndup() failed.\n");
-				free(log_attrs);
-				return 1;
-			}
-
-			if ( add_wrap_box(boxes, word, start+sc_offset, type,
-			                  pc, font, editable) ) {
-				fprintf(stderr, "Failed to add wrap box.\n");
-			}
-			start = offs;
-
-		}
-
-	}
-	if ( i > start ) {
-
-		char *word;
-		size_t l;
-
-		word = strdup(sc+start);  /* to the end */
-		if ( word == NULL ) {
-			fprintf(stderr, "strndup() failed.\n");
-			free(log_attrs);
-			return 1;
-		}
-		l = strlen(word);
-
-		if ( (word[l-1] == '\n')  ) {
-
-			/* There is a newline at the end of the SC */
-			char *word2;
-
-			word2 = strndup(word, l-1);
-			add_wrap_box(boxes, word2, start+sc_offset,
-			             WRAP_SPACE_EOP, pc, font, editable);
-			add_wrap_box(boxes, strdup(""), len_bytes+sc_offset,
-			             WRAP_SPACE_NONE, pc, font, editable);
-
-		} else {
-
-			add_wrap_box(boxes, word, start+sc_offset,
-			             WRAP_SPACE_NONE, pc, font, editable);
-
-		}
-
-	}
-
-	free(log_attrs);
-	return 0;
-}
-
-
-struct sc_font_stack
-{
-	struct sc_font *stack;
-	int n_fonts;
-	int max_fonts;
-};
-
-
-static void set_font(struct sc_font_stack *stack, const char *font_name,
-                     PangoContext *pc)
-{
-	PangoFontMetrics *metrics;
-	struct sc_font *scf;
-
-	scf = &stack->stack[stack->n_fonts-1];
-
-	scf->fontdesc = pango_font_description_from_string(font_name);
-	if ( scf->fontdesc == NULL ) {
-		fprintf(stderr, "Couldn't describe font.\n");
-		return;
-	}
-	scf->font = pango_font_map_load_font(pango_context_get_font_map(pc),
-	                                     pc, scf->fontdesc);
-	if ( scf->font == NULL ) {
-		fprintf(stderr, "Couldn't load font.\n");
-		return;
-	}
-
-	/* FIXME: Language for box */
-	metrics = pango_font_get_metrics(scf->font, NULL);
-	scf->ascent = pango_font_metrics_get_ascent(metrics);
-	scf->height = scf->ascent + pango_font_metrics_get_descent(metrics);
-	pango_font_metrics_unref(metrics);
-
-	scf->free_font_on_pop = 1;
-}
-
-
-/* This sets the colour for the font at the top of the stack */
-static void set_colour(struct sc_font_stack *stack, const char *colour)
-{
-	GdkRGBA col;
-	struct sc_font *scf = &stack->stack[stack->n_fonts-1];
-
-	if ( colour == NULL ) {
-		printf("Invalid colour\n");
-		scf->col[0] = 0.0;
-		scf->col[1] = 0.0;
-		scf->col[2] = 0.0;
-		scf->col[3] = 1.0;
-		return;
-	}
-
-	gdk_rgba_parse(&col, colour);
-
-	scf->col[0] = col.red;
-	scf->col[1] = col.green;
-	scf->col[2] = col.blue;
-	scf->col[3] = col.alpha;
-}
-
-
-static void copy_top_font(struct sc_font_stack *stack)
-{
-	if ( stack->n_fonts == stack->max_fonts ) {
-
-		struct sc_font *stack_new;
-
-		stack_new = realloc(stack->stack, sizeof(struct sc_font)
-		                     * ((stack->max_fonts)+8));
-		if ( stack_new == NULL ) {
-			fprintf(stderr, "Failed to push font or colour.\n");
-			return;
-		}
-
-		stack->stack = stack_new;
-		stack->max_fonts += 8;
-
-	}
-
-	/* When n_fonts=0, we leave the first font uninitialised.  This allows
-	 * the stack to be "bootstrapped", but requires the first caller to do
-	 * set_font and set_colour straight away. */
-	if ( stack->n_fonts > 0 ) {
-		stack->stack[stack->n_fonts] = stack->stack[stack->n_fonts-1];
-	}
-
-	/* This is a copy, so don't free it later */
-	stack->stack[stack->n_fonts].free_font_on_pop = 0;
-
-	stack->n_fonts++;
-}
-
-
-static void push_font(struct sc_font_stack *stack, const char *font_name,
-                      PangoContext *pc)
-{
-	copy_top_font(stack);
-	set_font(stack, font_name, pc);
-}
-
-
-static void push_colour(struct sc_font_stack *stack, const char *colour)
-{
-	copy_top_font(stack);
-	set_colour(stack, colour);
-}
-
-
-static void pop_font_or_colour(struct sc_font_stack *stack)
-{
-	struct sc_font *scf = &stack->stack[stack->n_fonts-1];
-
-	if ( scf->free_font_on_pop ) {
-		pango_font_description_free(scf->fontdesc);
-	}
-
-	stack->n_fonts--;
-}
-
-
 static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
 {
 	char *x;
@@ -635,12 +304,12 @@ static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
 	hs = strdup(x+1);
 
 	if ( strcmp(ws, "fit") == 0 ) {
-		*wp = fr->w - (fr->lop.pad_l+fr->lop.pad_r);
+		*wp = fr->w - (fr->pad_l+fr->pad_r);
 	} else {
 		*wp = strtoul(ws, NULL, 10);
 	}
 	if ( strcmp(ws, "fit") == 0 ) {
-		*hp = fr->h - (fr->lop.pad_t+fr->lop.pad_b);
+		*hp = fr->h - (fr->pad_t+fr->pad_b);
 	} else {
 		*hp = strtoul(hs, NULL, 10);
 	}
@@ -653,128 +322,6 @@ static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
 invalid:
 	fprintf(stderr, "Invalid dimensions '%s'\n", a);
 	return 1;
-}
-
-
-static void run_sc(const char *sc, struct sc_font_stack *fonts,
-                   PangoContext *pc, struct wrap_line *boxes,
-                   PangoLanguage *lang, size_t g_offset, int editable,
-		   struct frame *fr, struct slide_constants *slide_constants,
-		   struct presentation_constants *presentation_constants)
-{
-	SCBlockList *bl;
-	SCBlockListIterator *iter;
-	struct scblock *b;
-
-	bl = sc_find_blocks(sc, NULL);
-
-	if ( bl == NULL ) {
-		printf("Failed to find blocks.\n");
-		return;
-	}
-
-	for ( b = sc_block_list_first(bl, &iter);
-	      b != NULL;
-	      b = sc_block_list_next(bl, iter) )
-	{
-		size_t offset = b->offset + g_offset;
-
-		if ( b->name == NULL ) {
-			split_words(boxes, pc, b->contents, offset,
-			            lang, editable,
-			            &fonts->stack[fonts->n_fonts-1]);
-
-		} else if ( (strcmp(b->name, "font")==0)
-		         && (b->contents == NULL) ) {
-			set_font(fonts, b->options, pc);
-
-		} else if ( (strcmp(b->name, "font")==0)
-		         && (b->contents != NULL) ) {
-			push_font(fonts, b->options, pc);
-			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable, fr, slide_constants,
-			       presentation_constants);
-			pop_font_or_colour(fonts);
-
-		} else if ( (strcmp(b->name, "fgcol")==0)
-		         && (b->contents == NULL) ) {
-			set_colour(fonts, b->options);
-
-		} else if ( (strcmp(b->name, "fgcol")==0)
-		         && (b->contents != NULL) ) {
-			push_colour(fonts, b->options);
-			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable, fr, slide_constants,
-			       presentation_constants);
-			pop_font_or_colour(fonts);
-
-		} else if ( (strcmp(b->name, "image")==0)
-		         && (b->contents != NULL) && (b->options != NULL) ) {
-			int w, h;
-			if ( get_size(b->options, fr, &w, &h) == 0 ) {
-				add_image_box(boxes, b->contents, offset, w, h,
-				              editable);
-			}
-
-		} else if ( strcmp(b->name, "slidenumber")==0) {
-			char *tmp = malloc(64);
-			if ( tmp != NULL ) {
-				snprintf(tmp, 63, "%i",
-				         slide_constants->slide_number);
-				add_wrap_box(boxes, tmp, offset,
-					     WRAP_SPACE_NONE, pc,
-					     &fonts->stack[fonts->n_fonts-1],
-			                     0);
-			} /* else go away and sulk about it */
-		}
-
-	}
-	sc_block_list_free(bl);
-}
-
-
-static struct wrap_line *sc_to_wrap_boxes(const char *sc, const char *prefix,
-                                          PangoContext *pc, struct frame *fr,
-                                           struct slide_constants *s_constants,
-				    struct presentation_constants *p_constants)
-{
-	struct wrap_line *boxes;
-	PangoLanguage *lang;
-	struct sc_font_stack fonts;
-
-	boxes = malloc(sizeof(struct wrap_line));
-	if ( boxes == NULL ) {
-		fprintf(stderr, "Failed to allocate boxes.\n");
-		return NULL;
-	}
-	initialise_line(boxes);
-
-	fonts.stack = NULL;
-	fonts.n_fonts = 0;
-	fonts.max_fonts = 0;
-
-	/* FIXME: Determine proper language (somehow...) */
-	lang = pango_language_from_string("en_GB");
-
-	/* The "ultimate" default font */
-	push_font(&fonts, "Sans 12", pc);
-	set_colour(&fonts, "#000000");
-
-	if ( prefix != NULL ) {
-		run_sc(prefix, &fonts, pc, boxes, lang, 0, 0, fr,
-		       s_constants, p_constants);
-	}
-	if ( sc != NULL ) {
-		run_sc(sc, &fonts, pc, boxes, lang, 0, 1, fr,
-		       s_constants, p_constants);
-	}
-
-	/* Empty the stack */
-	while ( fonts.n_fonts > 0 ) {
-		pop_font_or_colour(&fonts);
-	}
-
-	return boxes;
 }
 
 
@@ -1256,29 +803,12 @@ void show_boxes(struct wrap_line *boxes)
 
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
-int wrap_contents(struct frame *fr, PangoContext *pc,
-                  struct slide_constants *scc,
-		  struct presentation_constants *pcc)
+int wrap_contents(struct frame *fr, struct wrap_line *boxes)
 {
-	struct wrap_line *boxes;
 	struct wrap_line *para;
 	int i;
 	const double rho = 2.0;
-	const double wrap_w = fr->w - fr->lop.pad_l - fr->lop.pad_r;
-	char *prologue;
-
-	if ( fr->style != NULL ) {
-		prologue = fr->style->sc_prologue;
-	} else {
-		prologue = NULL;
-	}
-
-	/* Turn the StoryCode into wrap boxes, all on one line */
-	boxes = sc_to_wrap_boxes(fr->sc, prologue, pc, fr, scc, pcc);
-	if ( boxes == NULL ) {
-		fprintf(stderr, "Failed to create wrap boxes.\n");
-		return 1;
-	}
+	const double wrap_w = fr->w - fr->pad_l - fr->pad_r;
 
 	/* Clear lines */
 	fr->n_lines = 0;

@@ -135,22 +135,25 @@ void sc_block_free(SCBlock *bl)
 static void recursive_show_sc_blocks(const char *prefix, const SCBlock *bl)
 {
 	while ( bl != NULL ) {
-
-		printf("%s", prefix);
-		if ( bl->name != NULL ) printf("\\%s ", bl->name);
-		if ( bl->options != NULL ) printf("[%s] ", bl->options);
-		if ( bl->contents != NULL ) printf("{%s}", bl->contents);
-		printf("\n");
-
-		if ( bl->child != NULL ) {
-			char new_prefix[strlen(prefix)+3];
-			strcpy(new_prefix, "  ");
-			strcat(new_prefix, prefix);
-			recursive_show_sc_blocks(new_prefix, bl->child);
-		}
-
+		show_sc_block(bl, prefix);
 		bl = bl->next;
+	}
+}
 
+
+void show_sc_block(const SCBlock *bl, const char *prefix)
+{
+	printf("%s", prefix);
+	if ( bl->name != NULL ) printf("\\%s ", bl->name);
+	if ( bl->options != NULL ) printf("[%s] ", bl->options);
+	if ( bl->contents != NULL ) printf("{%s}", bl->contents);
+	printf("\n");
+
+	if ( bl->child != NULL ) {
+		char new_prefix[strlen(prefix)+3];
+		strcpy(new_prefix, "  ");
+		strcat(new_prefix, prefix);
+		recursive_show_sc_blocks(new_prefix, bl->child);
 	}
 }
 

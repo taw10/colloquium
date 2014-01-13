@@ -258,6 +258,11 @@ int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl)
 			} /* else go away and sulk about it */
 #endif
 
+		} else {
+
+			fprintf(stderr, "Don't know what to do with this:\n");
+			show_sc_block(bl, "");
+
 		}
 
 		bl = sc_block_next(bl);

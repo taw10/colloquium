@@ -40,5 +40,6 @@ extern const char *sc_block_options(const SCBlock *bl);
 extern const char *sc_block_contents(const SCBlock *bl);
 
 extern void show_sc_blocks(const SCBlock *bl);
+extern void show_sc_block(const SCBlock *bl, const char *prefix);
 
 #endif	/* SC_PARSE_H */

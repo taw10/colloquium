@@ -265,35 +265,23 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 	cairo_fill(cr);
 #endif
 
-#if 0
-/* Render Level 1 Storycode (no subframes) */
-static int render_sc(cairo_t *cr, struct frame *fr, ImageStore *is,
-                     enum is_size isz, struct slide_constants *scc,
-		     struct presentation_constants *pcc, PangoContext *pc)
+static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
+                     enum is_size isz)
 {
-
-	/* Set up lines */
-	if ( wrap_contents(fr, pc, scc, pcc) ) {
-		fprintf(stderr, "Failed to wrap lines.\n");
-		return 1;
-	}
-
 	if ( fr->trouble ) {
 		cairo_new_path(cr);
 		cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
 		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 		cairo_set_line_width(cr, 2.0);
 		cairo_stroke(cr);
-		printf("SC: '%s'\n", fr->sc);
 	}
 
 	/* Actually render the lines */
-	cairo_translate(cr, fr->lop.pad_l, fr->lop.pad_t);
+	cairo_translate(cr, fr->pad_l, fr->pad_t);
 	render_lines(fr, cr, is, isz);
 
 	return 0;
 }
-#endif
 
 
 static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
@@ -305,7 +293,7 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	int i;
 	SCBlock *bl = fr->scblocks;
 
-	scin = sc_interp_new();
+	scin = sc_interp_new(pc);
 	if ( scin == NULL ) {
 		fprintf(stderr, "Failed to set up interpreter.\n");
 		return 1;
@@ -319,9 +307,14 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	fr->n_lines = 0;
 	fr->max_lines = 0;
 
-	while ( bl != NULL ) {
-		bl = sc_block_next(bl);
-	}
+	/* SCBlocks -> frames and wrap boxes (preferably re-using frames) */
+	sc_interp_add_blocks(scin, bl);
+
+	/* Wrap boxes -> wrap lines */
+	wrap_contents(fr, sc_interp_get_boxes(scin));
+
+	/* Actually draw the lines */
+	draw_frame(cr, fr, is, isz);
 
 	sc_interp_destroy(scin);
 

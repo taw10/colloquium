@@ -62,6 +62,12 @@ SCBlock *sc_block_next(const SCBlock *bl)
 }
 
 
+SCBlock *sc_block_child(const SCBlock *bl)
+{
+	return bl->child;
+}
+
+
 const char *sc_block_name(const SCBlock *bl)
 {
 	return bl->name;

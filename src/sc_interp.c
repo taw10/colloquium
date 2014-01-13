@@ -47,6 +47,8 @@ struct _scinterp
 	struct sc_font *fontstack;
 	int n_fonts;
 	int max_fonts;
+
+	struct wrap_line *boxes;
 };
 
 
@@ -161,7 +163,7 @@ static void pop_font_or_colour(SCInterpreter *scin)
 }
 
 
-SCInterpreter *sc_interp_new()
+SCInterpreter *sc_interp_new(PangoContext *pc)
 {
 	SCInterpreter *scin;
 
@@ -172,12 +174,19 @@ SCInterpreter *sc_interp_new()
 	scin->n_fonts = 0;
 	scin->max_fonts = 0;
 
-	scin->pc = NULL;
+	scin->pc = pc;
 	scin->s_constants = NULL;
 	scin->p_constants = NULL;
 
 	/* FIXME: Determine proper language (somehow...) */
 	scin->lang = pango_language_from_string("en_GB");
+
+	scin->boxes = malloc(sizeof(struct wrap_line));
+	if ( scin->boxes == NULL ) {
+		fprintf(stderr, "Failed to allocate boxes.\n");
+		return NULL;
+	}
+	initialise_line(scin->boxes);
 
 	/* The "ultimate" default font */
 	push_font(scin, "Sans 12");
@@ -200,49 +209,35 @@ void sc_interp_destroy(SCInterpreter *scin)
 
 int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl)
 {
-	struct wrap_line *boxes;
-
-	boxes = malloc(sizeof(struct wrap_line));
-	if ( boxes == NULL ) {
-		fprintf(stderr, "Failed to allocate boxes.\n");
-		return 1;
-	}
-	initialise_line(boxes);
-
 	while ( bl != NULL ) {
 
 		const char *name = sc_block_name(bl);
+		const char *options = sc_block_options(bl);
 		const char *contents = sc_block_contents(bl);
+		SCBlock *child = sc_block_child(bl);
 
 		if ( name == NULL ) {
-			split_words(boxes, scin->pc, contents,
+			split_words(scin->boxes, scin->pc, contents,
 			            scin->lang, 1,
 			            &scin->fontstack[scin->n_fonts-1]);
 
+		} else if ( (strcmp(name, "font")==0) && (child == NULL) ) {
+			set_font(scin, options);
+
+		} else if ( (strcmp(name, "font")==0) && (child != NULL) ) {
+			push_font(scin, options);
+			sc_interp_add_blocks(scin, child);
+			pop_font_or_colour(scin);
+
+		} else if ( (strcmp(name, "fgcol")==0) && (child == NULL) ) {
+			set_colour(scin, options);
+
+		} else if ( (strcmp(name, "fgcol")==0) && (child != NULL) ) {
+			push_colour(scin, options);
+			sc_interp_add_blocks(scin, child);
+			pop_font_or_colour(scin);
+
 #if 0
-		/* FIXME ... ! */
-
-		} else if ( (strcmp(name, "font")==0) && (contents == NULL) ) {
-			set_font(fonts, b->options, pc);
-
-		} else if ( (strcmp(name, "font")==0) && (contents != NULL) ) {
-			push_font(fonts, b->options, pc);
-			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable, fr, slide_constants,
-			       presentation_constants);
-			pop_font_or_colour(fonts);
-
-		} else if ( (strcmp(name, "fgcol")==0)
-		         && (contents == NULL) ) {
-			set_colour(fonts, b->options);
-
-		} else if ( (strcmp(name, "fgcol")==0) && (contents != NULL) ) {
-			push_colour(fonts, b->options);
-			run_sc(b->contents, fonts, pc, boxes, lang, offset,
-			       editable, fr, slide_constants,
-			       presentation_constants);
-			pop_font_or_colour(fonts);
-
 		} else if ( (strcmp(name, "image")==0)
 		         && (contents != NULL) && (b->options != NULL) ) {
 			int w, h;
@@ -270,4 +265,10 @@ int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl)
 	}
 
 	return 0;
+}
+
+
+struct wrap_line *sc_interp_get_boxes(SCInterpreter *scin)
+{
+	return scin->boxes;
 }

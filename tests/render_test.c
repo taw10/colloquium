@@ -89,6 +89,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	fr->pad_l = 20.0;
+	fr->pad_r = 20.0;
+	fr->pad_t = 20.0;
+	fr->pad_b = 20.0;
+
 	s.top = fr;
 	s.rendered_edit = NULL;
 	s.rendered_proj = NULL;

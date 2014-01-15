@@ -293,7 +293,7 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	int i;
 	SCBlock *bl = fr->scblocks;
 
-	scin = sc_interp_new(pc);
+	scin = sc_interp_new(pc, fr);
 	if ( scin == NULL ) {
 		fprintf(stderr, "Failed to set up interpreter.\n");
 		return 1;
@@ -315,6 +315,12 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 
 	/* Actually draw the lines */
 	draw_frame(cr, fr, is, isz);
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
+		render_frame(cr, fr->children[i], is, isz, scc, pcc, pc);
+		cairo_restore(cr);
+	}
 
 	sc_interp_destroy(scin);
 

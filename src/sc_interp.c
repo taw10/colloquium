@@ -36,6 +36,19 @@
 #include "shape.h"
 #include "wrap.h"
 
+
+struct sc_state
+{
+	PangoFontDescription *fontdesc;
+	PangoFont *font;
+	double col[4];
+	int ascent;
+	int height;
+
+	struct frame *fr;  /* The current frame */
+};
+
+
 struct _scinterp
 {
 	PangoContext *pc;
@@ -44,40 +57,71 @@ struct _scinterp
 	struct slide_constants *s_constants;
 	struct presentation_constants *p_constants;
 
-	struct sc_font *fontstack;
-	int n_fonts;
-	int max_fonts;
+	struct sc_state *state;
+	int j;  /* Index of the current state */
+	int max_state;
 
 	struct wrap_line *boxes;
 };
 
 
+PangoFont *sc_interp_get_font(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->font;
+}
+
+
+PangoFontDescription *sc_interp_get_fontdesc(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->fontdesc;
+}
+
+
+double *sc_interp_get_fgcol(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->col;
+}
+
+
+int sc_interp_get_ascent(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->ascent;
+}
+
+
+int sc_interp_get_height(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->height;
+}
+
+
 static void set_font(SCInterpreter *scin, const char *font_name)
 {
 	PangoFontMetrics *metrics;
-	struct sc_font *scf;
+	struct sc_state *st = &scin->state[scin->j];
 
-	scf = &scin->fontstack[scin->n_fonts-1];
-
-	scf->fontdesc = pango_font_description_from_string(font_name);
-	if ( scf->fontdesc == NULL ) {
+	st->fontdesc = pango_font_description_from_string(font_name);
+	if ( st->fontdesc == NULL ) {
 		fprintf(stderr, "Couldn't describe font.\n");
 		return;
 	}
-	scf->font = pango_font_map_load_font(pango_context_get_font_map(scin->pc),
-	                                     scin->pc, scf->fontdesc);
-	if ( scf->font == NULL ) {
+	st->font = pango_font_map_load_font(pango_context_get_font_map(scin->pc),
+	                                    scin->pc, st->fontdesc);
+	if ( st->font == NULL ) {
 		fprintf(stderr, "Couldn't load font.\n");
 		return;
 	}
 
 	/* FIXME: Language for box */
-	metrics = pango_font_get_metrics(scf->font, NULL);
-	scf->ascent = pango_font_metrics_get_ascent(metrics);
-	scf->height = scf->ascent + pango_font_metrics_get_descent(metrics);
+	metrics = pango_font_get_metrics(st->font, NULL);
+	st->ascent = pango_font_metrics_get_ascent(metrics);
+	st->height = st->ascent + pango_font_metrics_get_descent(metrics);
 	pango_font_metrics_unref(metrics);
-
-	scf->free_font_on_pop = 1;
 }
 
 
@@ -85,94 +129,96 @@ static void set_font(SCInterpreter *scin, const char *font_name)
 static void set_colour(SCInterpreter *scin, const char *colour)
 {
 	GdkRGBA col;
-	struct sc_font *scf = &scin->fontstack[scin->n_fonts-1];
+	struct sc_state *st = &scin->state[scin->j];
 
 	if ( colour == NULL ) {
 		printf("Invalid colour\n");
-		scf->col[0] = 0.0;
-		scf->col[1] = 0.0;
-		scf->col[2] = 0.0;
-		scf->col[3] = 1.0;
+		st->col[0] = 0.0;
+		st->col[1] = 0.0;
+		st->col[2] = 0.0;
+		st->col[3] = 1.0;
 		return;
 	}
 
 	gdk_rgba_parse(&col, colour);
 
-	scf->col[0] = col.red;
-	scf->col[1] = col.green;
-	scf->col[2] = col.blue;
-	scf->col[3] = col.alpha;
+	st->col[0] = col.red;
+	st->col[1] = col.green;
+	st->col[2] = col.blue;
+	st->col[3] = col.alpha;
 }
 
 
-static void copy_top_font(SCInterpreter *scin)
+void sc_interp_save(SCInterpreter *scin)
 {
-	if ( scin->n_fonts == scin->max_fonts ) {
+	if ( scin->j+1 == scin->max_state ) {
 
-		struct sc_font *stack_new;
+		struct sc_state *stack_new;
 
-		stack_new = realloc(scin->fontstack, sizeof(struct sc_font)
-		                     * ((scin->max_fonts)+8));
+		stack_new = realloc(scin->state, sizeof(struct sc_state)
+		                     * (scin->max_state+8));
 		if ( stack_new == NULL ) {
-			fprintf(stderr, "Failed to push font or colour.\n");
+			fprintf(stderr, "Failed to add to stack.\n");
 			return;
 		}
 
-		scin->fontstack = stack_new;
-		scin->max_fonts += 8;
+		scin->state = stack_new;
+		scin->max_state += 8;
 
 	}
 
 	/* When n_fonts=0, we leave the first font uninitialised.  This allows
 	 * the stack to be "bootstrapped", but requires the first caller to do
 	 * set_font and set_colour straight away. */
-	if ( scin->n_fonts > 0 ) {
-		scin->fontstack[scin->n_fonts] = scin->fontstack[scin->n_fonts-1];
+	scin->state[scin->j+1] = scin->state[scin->j];
+	scin->j++;
+}
+
+
+void sc_interp_restore(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+
+	if ( scin->j > 0 ) {
+		if ( st->fontdesc != scin->state[scin->j-1].fontdesc )
+		{
+			pango_font_description_free(st->fontdesc);
+		} /* else the font is the same as the previous one, and we
+		   * don't need to free it just yet */
 	}
 
-	/* This is a copy, so don't free it later */
-	scin->fontstack[scin->n_fonts].free_font_on_pop = 0;
-
-	scin->n_fonts++;
+	scin->j--;
 }
 
 
-static void push_font(SCInterpreter *scin, const char *font_name)
+struct frame *sc_interp_get_frame(SCInterpreter *scin)
 {
-	copy_top_font(scin);
-	set_font(scin, font_name);
+	struct sc_state *st = &scin->state[scin->j];
+	return st->fr;
 }
 
 
-static void push_colour(SCInterpreter *scin, const char *colour)
+static void set_frame(SCInterpreter *scin, struct frame *fr)
 {
-	copy_top_font(scin);
-	set_colour(scin, colour);
+	struct sc_state *st = &scin->state[scin->j];
+	st->fr = fr;
 }
 
 
-static void pop_font_or_colour(SCInterpreter *scin)
-{
-	struct sc_font *scf = &scin->fontstack[scin->n_fonts-1];
-
-	if ( scf->free_font_on_pop ) {
-		pango_font_description_free(scf->fontdesc);
-	}
-
-	scin->n_fonts--;
-}
-
-
-SCInterpreter *sc_interp_new(PangoContext *pc)
+SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 {
 	SCInterpreter *scin;
 
 	scin = malloc(sizeof(SCInterpreter));
 	if ( scin == NULL ) return NULL;
 
-	scin->fontstack = NULL;
-	scin->n_fonts = 0;
-	scin->max_fonts = 0;
+	scin->state = malloc(8*sizeof(struct sc_state));
+	if ( scin->state == NULL ) {
+		free(scin);
+		return NULL;
+	}
+	scin->j = 0;
+	scin->max_state = 8;
 
 	scin->pc = pc;
 	scin->s_constants = NULL;
@@ -189,8 +235,9 @@ SCInterpreter *sc_interp_new(PangoContext *pc)
 	initialise_line(scin->boxes);
 
 	/* The "ultimate" default font */
-	push_font(scin, "Sans 12");
+	set_font(scin, "Sans 12");
 	set_colour(scin, "#000000");
+	set_frame(scin, top);
 
 	return scin;
 }
@@ -199,15 +246,123 @@ SCInterpreter *sc_interp_new(PangoContext *pc)
 void sc_interp_destroy(SCInterpreter *scin)
 {
 	/* Empty the stack */
-	while ( scin->n_fonts > 0 ) {
-		pop_font_or_colour(scin);
+	while ( scin->j > 0 ) {
+		sc_interp_restore(scin);
 	}
+
+	pango_font_description_free(scin->state[0].fontdesc);
 
 	free(scin);
 }
 
 
-int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl)
+static LengthUnits get_units(const char *t)
+{
+	size_t len = strlen(t);
+
+	if ( t[len-1] == 'f' ) return UNITS_FRAC;
+	if ( t[len-1] == 'u' ) return UNITS_SLIDE;
+
+	fprintf(stderr, "Invalid units in '%s'\n", t);
+	return UNITS_SLIDE;
+}
+
+
+static void parse_frame_option(struct frame *fr, const char *opt)
+{
+	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
+	  && (index(opt, '+') != rindex(opt, '+')) )
+	{
+		char *w;
+		char *h;
+		char *x;
+		char *y;
+		char *check;
+		LengthUnits h_units, w_units;
+
+		/* Looks like a dimension/position thing */
+		w = strdup(opt);
+		h = index(w, 'x');
+		h[0] = '\0';  h++;
+
+		x = index(h, '+');
+		if ( x == NULL ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		x[0] = '\0';  x++;
+
+		y = index(x, '+');
+		if ( x == NULL ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		y[0] = '\0';  y++;
+
+		fr->w = strtod(w, &check);
+		if ( check == w ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		w_units = get_units(w);
+
+		fr->h = strtod(h, &check);
+		if ( check == h ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		h_units = get_units(h);
+		/* FIXME: Handle units */
+
+		fr->x = strtod(x, &check);
+		if ( check == x ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+		fr->y = strtod(y, &check);
+		if ( check == y ) {
+			fprintf(stderr, "Invalid option '%s'\n", opt);
+			return;
+		}
+
+	}
+}
+
+
+static void parse_frame_options(struct frame *fr, const char *opth)
+{
+	int i;
+	size_t len;
+	size_t start;
+	char *opt;
+
+	if ( opth == NULL ) return;
+
+	opt = strdup(opth);
+
+	len = strlen(opt);
+	start = 0;
+
+	for ( i=0; i<len; i++ ) {
+
+		/* FIXME: comma might be escaped or quoted */
+		if ( opt[i] == ',' ) {
+			opt[i] = '\0';
+			parse_frame_option(fr, opt+start);
+			start = i+1;
+		}
+
+	}
+
+	if ( start != len ) {
+		parse_frame_option(fr, opt+start);
+	}
+
+	free(opt);
+}
+
+
+int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 {
 	while ( bl != NULL ) {
 
@@ -216,32 +371,24 @@ int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl)
 		const char *contents = sc_block_contents(bl);
 		SCBlock *child = sc_block_child(bl);
 
+		if ( child != NULL ) {
+			sc_interp_save(scin);
+		}
+
 		if ( name == NULL ) {
 			split_words(scin->boxes, scin->pc, contents,
-			            scin->lang, 1,
-			            &scin->fontstack[scin->n_fonts-1]);
+			            scin->lang, 1, scin);
 
-		} else if ( (strcmp(name, "font")==0) && (child == NULL) ) {
+		} else if ( strcmp(name, "font") == 0 ) {
 			set_font(scin, options);
 
-		} else if ( (strcmp(name, "font")==0) && (child != NULL) ) {
-			push_font(scin, options);
-			sc_interp_add_blocks(scin, child);
-			pop_font_or_colour(scin);
-
-		} else if ( (strcmp(name, "fgcol")==0) && (child == NULL) ) {
+		} else if ( strcmp(name, "fgcol") == 0 ) {
 			set_colour(scin, options);
 
-		} else if ( (strcmp(name, "fgcol")==0) && (child != NULL) ) {
-			push_colour(scin, options);
-			sc_interp_add_blocks(scin, child);
-			pop_font_or_colour(scin);
-
 #if 0
-		} else if ( (strcmp(name, "image")==0)
-		         && (contents != NULL) && (b->options != NULL) ) {
+		} else if ( strcmp(name, "image")==0 ) {
 			int w, h;
-			if ( get_size(b->options, fr, &w, &h) == 0 ) {
+			if ( get_size(options, fr, &w, &h) == 0 ) {
 				add_image_box(boxes, b->contents, offset, w, h,
 				              editable);
 			}
@@ -258,6 +405,20 @@ int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl)
 			} /* else go away and sulk about it */
 #endif
 
+		} else if ( strcmp(name, "f")==0 ) {
+			struct frame *fr = sc_block_frame(bl);
+			if ( fr == NULL ) {
+				fr = add_subframe(sc_interp_get_frame(scin));
+				sc_block_set_frame(bl, fr);
+				fr->scblocks = child;
+			}
+			if ( fr == NULL ) {
+				fprintf(stderr, "Failed to add frame.\n");
+				goto next;
+			}
+			parse_frame_options(fr, options);
+			set_frame(scin, fr);
+
 		} else {
 
 			fprintf(stderr, "Don't know what to do with this:\n");
@@ -265,6 +426,11 @@ int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl)
 
 		}
 
+next:
+		if ( child != NULL ) {
+			sc_interp_add_blocks(scin, child);
+			sc_interp_restore(scin);
+		}
 		bl = sc_block_next(bl);
 
 	}

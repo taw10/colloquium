@@ -42,6 +42,8 @@ struct _scblock
 	SCBlock *next;
 	SCBlock *prev;
 	SCBlock *child;
+
+	struct frame *fr;
 };
 
 
@@ -83,6 +85,18 @@ const char *sc_block_options(const SCBlock *bl)
 const char *sc_block_contents(const SCBlock *bl)
 {
 	return bl->contents;
+}
+
+
+struct frame *sc_block_frame(const SCBlock *bl)
+{
+	return bl->fr;
+}
+
+
+void sc_block_set_frame(SCBlock *bl, struct frame *fr)
+{
+	bl->fr = fr;
 }
 
 

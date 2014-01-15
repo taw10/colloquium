@@ -33,6 +33,6 @@
 
 extern int split_words(struct wrap_line *boxes, PangoContext *pc,
                        const char *text, PangoLanguage *lang, int editable,
-                       struct sc_font *font);
+                       SCInterpreter *scin);
 
 #endif	/* SHAPE_H */

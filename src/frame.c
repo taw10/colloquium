@@ -84,187 +84,18 @@ struct frame *add_subframe(struct frame *fr)
 }
 
 
-#if 0
-static LengthUnits get_units(const char *t)
-{
-	size_t len = strlen(t);
-
-	if ( t[len-1] == 'f' ) return UNITS_FRAC;
-	if ( t[len-1] == 'u' ) return UNITS_SLIDE;
-
-	fprintf(stderr, "Invalid units in '%s'\n", t);
-	return UNITS_SLIDE;
-}
-
-
-static void parse_option(struct frame *fr, const char *opt)
-{
-	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
-	  && (index(opt, '+') != rindex(opt, '+')) )
-	{
-		char *w;
-		char *h;
-		char *x;
-		char *y;
-		char *check;
-
-		/* Looks like a dimension/position thing */
-		w = strdup(opt);
-		h = index(w, 'x');
-		h[0] = '\0';  h++;
-
-		x = index(h, '+');
-		if ( x == NULL ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		x[0] = '\0';  x++;
-
-		y = index(x, '+');
-		if ( x == NULL ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		y[0] = '\0';  y++;
-
-		fr->lop.w = strtod(w, &check);
-		if ( check == w ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		fr->lop.w_units = get_units(w);
-
-		fr->lop.h = strtod(h, &check);
-		if ( check == h ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		fr->lop.h_units = get_units(h);
-
-		fr->lop.x = strtod(x, &check);
-		if ( check == x ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		fr->lop.y = strtod(y, &check);
-		if ( check == y ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-
-	}
-}
-
-
-static void parse_options(struct frame *fr, const char *opth, StyleSheet *ss)
-{
-	int i;
-	size_t len;
-	size_t start;
-	char *opt;
-
-	if ( opth == NULL ) return;
-
-	opt = strdup(opth);
-
-	len = strlen(opt);
-	start = 0;
-
-	for ( i=0; i<len; i++ ) {
-
-		/* FIXME: comma might be escaped or quoted */
-		if ( opt[i] == ',' ) {
-			opt[i] = '\0';
-			parse_option(fr, opt+start, ss);
-			start = i+1;
-		}
-
-	}
-
-	if ( start != len ) {
-		parse_option(fr, opt+start, ss);
-	}
-
-	free(opt);
-}
-
-
-static int recursive_unpack(struct frame *fr, const char *sc, StyleSheet *ss)
-{
-	SCBlockList *bl;
-	SCBlockListIterator *iter;
-	struct scblock *b;
-
-	bl = sc_find_blocks(sc, "f");
-	if ( bl == NULL ) return 1;
-
-	for ( b = sc_block_list_first(bl, &iter);
-	      b != NULL;
-	      b = sc_block_list_next(bl, iter) )
-	{
-		struct frame *sfr;
-
-		sfr = add_subframe(fr);
-		sfr->empty = 0;
-		parse_options(sfr, b->options, ss);
-
-		if ( sfr->lop.w < 0.0 ) {
-			sfr->lop.x += sfr->lop.w;
-			sfr->lop.w = -sfr->lop.w;
-		}
-
-		if ( sfr->lop.h < 0.0 ) {
-			sfr->lop.y += sfr->lop.h;
-			sfr->lop.h = -sfr->lop.h;
-		}
-
-		sfr->sc = remove_blocks(b->contents, "f");
-		sfr->sc_len = strlen(sfr->sc)+1;
-		if ( recursive_unpack(sfr, b->contents, ss) ) {
-			sc_block_list_free(bl);
-			return 1;
-		}
-	}
-	sc_block_list_free(bl);
-
-	return 0;
-}
-
-
-/* Unpack level 2 StoryCode (content + subframes) into frames */
-struct frame *sc_unpack(const char *sc, StyleSheet *ss)
-{
-	struct frame *fr;
-
-	fr = frame_new();
-	if ( fr == NULL ) return NULL;
-
-	fr->empty = 0;
-	fr->sc = remove_blocks(sc, "f");
-	if ( recursive_unpack(fr, sc, ss) ) {
-		return NULL;
-	}
-
-	return fr;
-}
-
-
 void show_hierarchy(struct frame *fr, const char *t)
 {
 	int i;
 	char tn[1024];
-	char *sc;
 
 	strcpy(tn, t);
 	strcat(tn, "      ");
 
-	sc = escape_text(fr->sc);
-	printf("%s%p %s (%.2f x %.2f)\n", t, fr, sc, fr->w, fr->h);
-	free(sc);
+	printf("%s%p (%.2f x %.2f)\n", t, fr, fr->w, fr->h);
 
 	for ( i=0; i<fr->num_children; i++ ) {
 		show_hierarchy(fr->children[i], tn);
 	}
 
 }
-#endif

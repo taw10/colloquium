@@ -29,26 +29,24 @@
 
 #include <pango/pangocairo.h>
 
-
-struct sc_font
-{
-	PangoFontDescription *fontdesc;
-	PangoFont *font;
-	double col[4];
-	int ascent;
-	int height;
-	int free_font_on_pop;
-};
-
 typedef struct _scinterp SCInterpreter;
 
-extern SCInterpreter *sc_interp_new(PangoContext *pc);
+extern SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top);
 extern void sc_interp_destroy(SCInterpreter *scin);
 
 extern void sc_interp_save(SCInterpreter *scin);
 extern void sc_interp_restore(SCInterpreter *scin);
 
-extern int sc_interp_add_blocks(SCInterpreter *scin, const SCBlock *bl);
+extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
+
 extern struct wrap_line *sc_interp_get_boxes(SCInterpreter *scin);
+
+/* Get the current state of the interpreter */
+extern struct frame *sc_interp_get_frame(SCInterpreter *scin);
+extern PangoFont *sc_interp_get_font(SCInterpreter *scin);
+extern PangoFontDescription *sc_interp_get_fontdesc(SCInterpreter *scin);
+extern double *sc_interp_get_fgcol(SCInterpreter *scin);
+extern int sc_interp_get_ascent(SCInterpreter *scin);
+extern int sc_interp_get_height(SCInterpreter *scin);
 
 #endif	/* SC_INTERP_H */

@@ -149,6 +149,28 @@ static void set_colour(SCInterpreter *scin, const char *colour)
 }
 
 
+static void set_frame_bgcolour(struct frame *fr, const char *colour)
+{
+	GdkRGBA col;
+
+	if ( colour == NULL ) {
+		printf("Invalid colour\n");
+		fr->bgcol[0] = 0.0;
+		fr->bgcol[1] = 0.0;
+		fr->bgcol[2] = 0.0;
+		fr->bgcol[3] = 1.0;
+		return;
+	}
+
+	gdk_rgba_parse(&col, colour);
+
+	fr->bgcol[0] = col.red;
+	fr->bgcol[1] = col.green;
+	fr->bgcol[2] = col.blue;
+	fr->bgcol[3] = col.alpha;
+}
+
+
 void sc_interp_save(SCInterpreter *scin)
 {
 	if ( scin->j+1 == scin->max_state ) {
@@ -307,7 +329,10 @@ static void parse_frame_option(struct frame *fr, struct frame *parent,
 		}
 		w_units = get_units(w);
 		if ( w_units == UNITS_FRAC ) {
-			fr->w = parent->w * fr->w;
+			double pw = parent->w;
+			pw -= parent->pad_l;
+			pw -= parent->pad_r;
+			fr->w = pw * fr->w;
 		}
 
 		fr->h = strtod(h, &check);
@@ -317,7 +342,10 @@ static void parse_frame_option(struct frame *fr, struct frame *parent,
 		}
 		h_units = get_units(h);
 		if ( h_units == UNITS_FRAC ) {
-			fr->h = parent->h * fr->h;
+			double ph = parent->h;
+			ph -= parent->pad_t;
+			ph -= parent->pad_b;
+			fr->h = ph * fr->h;
 		}
 
 		fr->x = strtod(x, &check);
@@ -391,6 +419,9 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {
 			set_colour(scin, options);
+
+		} else if ( strcmp(name, "bgcol") == 0 ) {
+			set_frame_bgcolour(sc_interp_get_frame(scin), options);
 
 #if 0
 		} else if ( strcmp(name, "image")==0 ) {

@@ -65,6 +65,9 @@ struct frame
 	double                    pad_l;
 	double                    pad_r;
 
+	/* Background properties for this frame */
+	double                    bgcol[4];
+
 	/* True if this frame should be deleted on the next mouse click */
 	int                       empty;
 

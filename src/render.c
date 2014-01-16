@@ -255,19 +255,16 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 	}
 }
 
-#if 0
-	GdkRGBA col;
-
-	if ( b->contents == NULL ) continue;
-	gdk_rgba_parse(&col, b->contents);
-	cairo_rectangle(cr, 0, 0, fr->w, fr->h);
-	gdk_cairo_set_source_rgba(cr, &col);
-	cairo_fill(cr);
-#endif
 
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                      enum is_size isz)
 {
+	cairo_new_path(cr);
+	cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
+	cairo_set_source_rgba(cr, fr->bgcol[0], fr->bgcol[1], fr->bgcol[2],
+	                          fr->bgcol[3]);
+	cairo_fill(cr);
+
 	if ( fr->trouble ) {
 		cairo_new_path(cr);
 		cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);

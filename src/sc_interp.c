@@ -268,7 +268,8 @@ static LengthUnits get_units(const char *t)
 }
 
 
-static void parse_frame_option(struct frame *fr, const char *opt)
+static void parse_frame_option(struct frame *fr, struct frame *parent,
+                               const char *opt)
 {
 	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
 	  && (index(opt, '+') != rindex(opt, '+')) )
@@ -305,6 +306,9 @@ static void parse_frame_option(struct frame *fr, const char *opt)
 			return;
 		}
 		w_units = get_units(w);
+		if ( w_units == UNITS_FRAC ) {
+			fr->w = parent->w * fr->w;
+		}
 
 		fr->h = strtod(h, &check);
 		if ( check == h ) {
@@ -312,7 +316,9 @@ static void parse_frame_option(struct frame *fr, const char *opt)
 			return;
 		}
 		h_units = get_units(h);
-		/* FIXME: Handle units */
+		if ( h_units == UNITS_FRAC ) {
+			fr->h = parent->h * fr->h;
+		}
 
 		fr->x = strtod(x, &check);
 		if ( check == x ) {
@@ -329,7 +335,8 @@ static void parse_frame_option(struct frame *fr, const char *opt)
 }
 
 
-static void parse_frame_options(struct frame *fr, const char *opth)
+static void parse_frame_options(struct frame *fr, struct frame *parent,
+                                const char *opth)
 {
 	int i;
 	size_t len;
@@ -348,14 +355,14 @@ static void parse_frame_options(struct frame *fr, const char *opth)
 		/* FIXME: comma might be escaped or quoted */
 		if ( opt[i] == ',' ) {
 			opt[i] = '\0';
-			parse_frame_option(fr, opt+start);
+			parse_frame_option(fr, parent, opt+start);
 			start = i+1;
 		}
 
 	}
 
 	if ( start != len ) {
-		parse_frame_option(fr, opt+start);
+		parse_frame_option(fr, parent, opt+start);
 	}
 
 	free(opt);
@@ -416,7 +423,8 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 				fprintf(stderr, "Failed to add frame.\n");
 				goto next;
 			}
-			parse_frame_options(fr, options);
+			parse_frame_options(fr, sc_interp_get_frame(scin),
+			                    options);
 			set_frame(scin, fr);
 
 		} else {

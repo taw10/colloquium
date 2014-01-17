@@ -297,18 +297,25 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	}
 
 	for ( i=0; i<fr->n_lines; i++ ) {
-		wrap_line_free(&fr->lines[i]);
+	//	wrap_line_free(&fr->lines[i]);
 	}
 	free(fr->lines);
 	fr->lines = NULL;
 	fr->n_lines = 0;
 	fr->max_lines = 0;
 
+	if ( fr->boxes != NULL ) {
+		free(fr->boxes->boxes);
+		free(fr->boxes);
+	}
+	fr->boxes = malloc(sizeof(struct wrap_line));
+	initialise_line(fr->boxes);
+
 	/* SCBlocks -> frames and wrap boxes (preferably re-using frames) */
 	sc_interp_add_blocks(scin, bl);
 
 	/* Wrap boxes -> wrap lines */
-	wrap_contents(fr, sc_interp_get_boxes(scin));
+	wrap_contents(fr);
 
 	/* Actually draw the lines */
 	draw_frame(cr, fr, is, isz);

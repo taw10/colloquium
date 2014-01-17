@@ -99,7 +99,7 @@ struct wrap_line
 };
 
 
-extern int wrap_contents(struct frame *fr, struct wrap_line *boxes);
+extern int wrap_contents(struct frame *fr);
 
 extern void get_cursor_pos(struct frame *fr, size_t pos,
                            double *xposd, double *yposd, double *line_height);

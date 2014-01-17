@@ -39,8 +39,6 @@ extern void sc_interp_restore(SCInterpreter *scin);
 
 extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
 
-extern struct wrap_line *sc_interp_get_boxes(SCInterpreter *scin);
-
 /* Get the current state of the interpreter */
 extern struct frame *sc_interp_get_frame(SCInterpreter *scin);
 extern PangoFont *sc_interp_get_font(SCInterpreter *scin);

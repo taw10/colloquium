@@ -803,7 +803,7 @@ void show_boxes(struct wrap_line *boxes)
 
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
-int wrap_contents(struct frame *fr, struct wrap_line *boxes)
+int wrap_contents(struct frame *fr)
 {
 	struct wrap_line *para;
 	int i;
@@ -821,7 +821,7 @@ int wrap_contents(struct frame *fr, struct wrap_line *boxes)
 	i = 0;
 	do {
 
-		para = split_paragraph(boxes, &i);
+		para = split_paragraph(fr->boxes, &i);
 
 		/* Split paragraphs into lines */
 		if ( para != NULL ) {
@@ -834,9 +834,6 @@ int wrap_contents(struct frame *fr, struct wrap_line *boxes)
 		}
 
 	} while ( para != NULL );
-
-	free(boxes->boxes);
-	free(boxes);
 
 	for ( i=0; i<fr->n_lines; i++ ) {
 		distribute_spaces(&fr->lines[i], wrap_w, rho);

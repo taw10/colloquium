@@ -31,6 +31,7 @@
 
 #include "sc_parse.h"
 #include "frame.h"
+#include "wrap.h"
 
 
 static int alloc_ro(struct frame *fr)
@@ -56,11 +57,22 @@ struct frame *frame_new()
 
 	n->children = NULL;
 	n->max_children = 32;
-	alloc_ro(n);
-
+	if ( alloc_ro(n) ) {
+		fprintf(stderr, "Couldn't allocate children\n");
+		free(n);
+		return NULL;
+	}
 	n->num_children = 0;
 
 	n->scblocks = NULL;
+
+	n->boxes = malloc(sizeof(struct wrap_line));
+	if ( n->boxes == NULL ) {
+		fprintf(stderr, "Failed to allocate boxes.\n");
+		free(n);
+		return NULL;
+	}
+	initialise_line(n->boxes);
 
 	return n;
 }

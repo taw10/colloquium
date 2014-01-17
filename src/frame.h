@@ -47,6 +47,7 @@ struct frame
 	int                       max_children;
 
 	SCBlock                  *scblocks;
+	struct wrap_line         *boxes;  /* The unwrapped boxes */
 
 	int                       n_lines;
 	int                       max_lines;

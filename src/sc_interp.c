@@ -60,8 +60,6 @@ struct _scinterp
 	struct sc_state *state;
 	int j;  /* Index of the current state */
 	int max_state;
-
-	struct wrap_line *boxes;
 };
 
 
@@ -249,13 +247,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 	/* FIXME: Determine proper language (somehow...) */
 	scin->lang = pango_language_from_string("en_GB");
 
-	scin->boxes = malloc(sizeof(struct wrap_line));
-	if ( scin->boxes == NULL ) {
-		fprintf(stderr, "Failed to allocate boxes.\n");
-		return NULL;
-	}
-	initialise_line(scin->boxes);
-
 	/* The "ultimate" default font */
 	set_font(scin, "Sans 12");
 	set_colour(scin, "#000000");
@@ -411,8 +402,8 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		}
 
 		if ( name == NULL ) {
-			split_words(scin->boxes, scin->pc, contents,
-			            scin->lang, 1, scin);
+			split_words(sc_interp_get_frame(scin)->boxes, scin->pc,
+			            contents, scin->lang, 1, scin);
 
 		} else if ( strcmp(name, "font") == 0 ) {
 			set_font(scin, options);
@@ -444,7 +435,16 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 #endif
 
 		} else if ( strcmp(name, "f")==0 ) {
+
 			struct frame *fr = sc_block_frame(bl);
+
+			if ( fr != NULL ) {
+				free(fr->boxes->boxes);
+				free(fr->boxes);
+				fr->boxes = malloc(sizeof(struct wrap_line));
+				initialise_line(fr->boxes);
+			}
+
 			if ( fr == NULL ) {
 				fr = add_subframe(sc_interp_get_frame(scin));
 				sc_block_set_frame(bl, fr);
@@ -454,6 +454,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 				fprintf(stderr, "Failed to add frame.\n");
 				goto next;
 			}
+
 			parse_frame_options(fr, sc_interp_get_frame(scin),
 			                    options);
 			set_frame(scin, fr);
@@ -477,8 +478,3 @@ next:
 	return 0;
 }
 
-
-struct wrap_line *sc_interp_get_boxes(SCInterpreter *scin)
-{
-	return scin->boxes;
-}

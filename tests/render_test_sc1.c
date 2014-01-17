@@ -77,10 +77,8 @@ int main(int argc, char *argv[])
 
 	gtk_init(&argc, &argv);
 
-	fr = calloc(1, sizeof(struct frame));
+	fr = frame_new();
 	if ( fr == NULL ) return 1;
-	fr->children = NULL;
-	fr->num_children = 0;
 	fr->scblocks = sc_parse(sc);
 	if ( fr->scblocks == NULL ) {
 		fprintf(stderr, "SC parse failed.\n");

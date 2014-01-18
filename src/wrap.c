@@ -289,42 +289,6 @@ static void calc_line_geometry(struct wrap_line *line)
 }
 
 
-static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
-{
-	char *x;
-	char *ws;
-	char *hs;
-
-	x = index(a, 'x');
-	if ( x == NULL ) goto invalid;
-
-	if ( rindex(a, 'x') != x ) goto invalid;
-
-	ws = strndup(a, x-a);
-	hs = strdup(x+1);
-
-	if ( strcmp(ws, "fit") == 0 ) {
-		*wp = fr->w - (fr->pad_l+fr->pad_r);
-	} else {
-		*wp = strtoul(ws, NULL, 10);
-	}
-	if ( strcmp(ws, "fit") == 0 ) {
-		*hp = fr->h - (fr->pad_t+fr->pad_b);
-	} else {
-		*hp = strtoul(hs, NULL, 10);
-	}
-
-	free(ws);
-	free(hs);
-
-	return 0;
-
-invalid:
-	fprintf(stderr, "Invalid dimensions '%s'\n", a);
-	return 1;
-}
-
-
 /* Normal width of space */
 static double sp_x(enum wrap_box_space s)
 {

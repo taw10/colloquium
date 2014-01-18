@@ -112,14 +112,12 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 }
 
 
-static void add_image_box(struct wrap_line *line, const char *filename,
-                          size_t offset, int w, int h, int editable)
+void add_image_box(struct wrap_line *line, const char *filename,
+                   int w, int h, int editable)
 {
 	struct wrap_box *box;
 
 	box = &line->boxes[line->n_boxes];
-	if ( !editable ) offset = 0;
-	box->sc_offset = offset;
 	box->type = WRAP_BOX_IMAGE;
 	box->text = NULL;
 	box->space = WRAP_SPACE_NONE;

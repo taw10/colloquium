@@ -35,4 +35,7 @@ extern int split_words(struct wrap_line *boxes, PangoContext *pc,
                        const char *text, PangoLanguage *lang, int editable,
                        SCInterpreter *scin);
 
+extern void add_image_box(struct wrap_line *line, const char *filename,
+                          int w, int h, int editable);
+
 #endif	/* SHAPE_H */

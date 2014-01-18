@@ -388,6 +388,44 @@ static void parse_frame_options(struct frame *fr, struct frame *parent,
 }
 
 
+static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
+{
+	char *x;
+	char *ws;
+	char *hs;
+
+	if ( a == NULL ) goto invalid;
+
+	x = index(a, 'x');
+	if ( x == NULL ) goto invalid;
+
+	if ( rindex(a, 'x') != x ) goto invalid;
+
+	ws = strndup(a, x-a);
+	hs = strdup(x+1);
+
+	if ( strcmp(ws, "fit") == 0 ) {
+		*wp = fr->w - (fr->pad_l+fr->pad_r);
+	} else {
+		*wp = strtoul(ws, NULL, 10);
+	}
+	if ( strcmp(ws, "fit") == 0 ) {
+		*hp = fr->h - (fr->pad_t+fr->pad_b);
+	} else {
+		*hp = strtoul(hs, NULL, 10);
+	}
+
+	free(ws);
+	free(hs);
+
+	return 0;
+
+invalid:
+	fprintf(stderr, "Invalid dimensions '%s'\n", a);
+	return 1;
+}
+
+
 int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 {
 	while ( bl != NULL ) {
@@ -414,25 +452,25 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "bgcol") == 0 ) {
 			set_frame_bgcolour(sc_interp_get_frame(scin), options);
 
-#if 0
 		} else if ( strcmp(name, "image")==0 ) {
 			int w, h;
-			if ( get_size(options, fr, &w, &h) == 0 ) {
-				add_image_box(boxes, b->contents, offset, w, h,
-				              editable);
+			if ( get_size(options, sc_interp_get_frame(scin),
+			              &w, &h) == 0 )
+			{
+				add_image_box(sc_interp_get_frame(scin)->boxes,
+				              sc_block_contents(child),
+				              w, h, 1);
+				child = NULL;  /* Don't recurse */
 			}
 
 		} else if ( strcmp(name, "slidenumber")==0) {
 			char *tmp = malloc(64);
 			if ( tmp != NULL ) {
 				snprintf(tmp, 63, "%i",
-				         slide_constants->slide_number);
-				add_wrap_box(boxes, tmp, offset,
-					     WRAP_SPACE_NONE, pc,
-					     &fonts->stack[fonts->n_fonts-1],
-			                     0);
-			} /* else go away and sulk about it */
-#endif
+				         scin->s_constants->slide_number);
+				split_words(sc_interp_get_frame(scin)->boxes,
+				            scin->pc, tmp, scin->lang, 0, scin);
+			}
 
 		} else if ( strcmp(name, "f")==0 ) {
 

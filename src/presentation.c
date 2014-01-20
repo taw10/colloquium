@@ -312,21 +312,9 @@ struct presentation *new_presentation()
 }
 
 
-static char *maybe_star(int i)
-{
-	if ( i ) {
-		return "*";
-	} else {
-		return "";
-	}
-}
-
-
 int save_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
-	int i;
-	struct serializer ser;
 	char *old_fn;
 
 	grab_current_notes(p);
@@ -334,8 +322,7 @@ int save_presentation(struct presentation *p, const char *filename)
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
 
-	fprintf(fh, "%s", p->ss);
-	fprintf(fh, "%s", p->sc);
+	/* FIXME: Save based on SCBlocks */
 
 	/* Slightly fiddly because someone might
 	 * do save_presentation(p, p->filename) */
@@ -350,118 +337,18 @@ int save_presentation(struct presentation *p, const char *filename)
 }
 
 
-static struct slide *tree_to_slide(struct presentation *p, struct ds_node *root)
-{
-	struct slide *s;
-	char *sc;
-
-	s = new_slide();
-	s->parent = p;
-
-	load_notes(root, s);
-
-	get_field_s(root, "sc", &sc);
-	s->top = sc_unpack(sc, p->ss);
-	free(sc);
-
-	return s;
-}
-
-
-static int tree_to_slides(struct ds_node *root, struct presentation *p)
-{
-	int i;
-
-	for ( i=0; i<root->n_children; i++ ) {
-
-		struct slide *s;
-
-		s = tree_to_slide(p, root->children[i]);
-		if ( s != NULL ) {
-			insert_slide(p, s, p->num_slides);
-		}
-
-	}
-
-	return 0;
-}
-
-
-int tree_to_presentation(struct ds_node *root, struct presentation *p)
-{
-	struct ds_node *node;
-	char *check;
-	int i;
-
-	p->cur_edit_slide = NULL;
-	p->cur_proj_slide = NULL;
-
-	node = find_node(root, "slide-properties/width", 0);
-	if ( node == NULL ) return 1;
-	p->slide_width = strtod(node->value, &check);
-	if ( check == node->value ) {
-		fprintf(stderr, "Invalid slide width\n");
-		return 1;
-	}
-
-	node = find_node(root, "slide-properties/height", 0);
-	if ( node == NULL ) return 1;
-	p->slide_height = strtod(node->value, &check);
-	if ( check == node->value ) {
-		fprintf(stderr, "Invalid slide height\n");
-		return 1;
-	}
-
-	node = find_node(root, "stylesheet", 0);
-	if ( node != NULL ) {
-		free_stylesheet(p->ss);
-		p->ss = tree_to_stylesheet(node);
-		if ( p->ss == NULL ) {
-			fprintf(stderr, "Invalid style sheet\n");
-			return 1;
-		}
-	}
-
-	for ( i=0; i<p->num_slides; i++ ) {
-		free_slide(p->slides[i]);
-		p->num_slides = 0;
-	}
-
-	node = find_node(root, "slides", 0);
-	if ( node != NULL ) {
-		tree_to_slides(node, p);
-		if ( p->num_slides == 0 ) {
-			fprintf(stderr, "Failed to load any slides\n");
-			p->cur_edit_slide = add_slide(p, 0);
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-
 int load_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
-	struct ds_node *root;
-	int r, i;
+	int r = 0;
+	int i;
 
 	assert(p->completely_empty);
 
 	fh = fopen(filename, "r");
 	if ( fh == NULL ) return 1;
 
-	root = new_ds_node("root");
-	if ( root == NULL ) return 1;
-
-	if ( deserialize_file(fh, root) ) {
-		fclose(fh);
-		return 1;
-	}
-
-	r = tree_to_presentation(root, p);
-	free_ds_tree(root);
+	/* FIXME: Load presentation */
 
 	fclose(fh);
 

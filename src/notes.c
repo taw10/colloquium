@@ -94,22 +94,6 @@ static gint close_notes_sig(GtkWidget *w, struct presentation *p)
 }
 
 
-void write_notes(struct slide *s, struct serializer *ser)
-{
-	serialize_s(ser, "notes", s->notes);
-}
-
-
-void load_notes(struct ds_node *node, struct slide *s)
-{
-	char *v;
-
-	if ( get_field_s(node, "notes", &v) ) return;
-
-	s->notes = v;
-}
-
-
 void open_notes(struct presentation *p)
 {
 	struct notes *n;

@@ -1,6 +1,6 @@
 /*
  * notes.h
- * 
+ *
  * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
@@ -33,9 +33,6 @@ extern void open_notes(struct presentation *p);
 
 extern void notify_notes_slide_changed(struct presentation *p,
                                        struct slide *np);
-
-extern void write_notes(struct slide *s, struct serializer *ser);
-extern void load_notes(struct ds_node *node, struct slide *s);
 
 extern void grab_current_notes(struct presentation *p);
 

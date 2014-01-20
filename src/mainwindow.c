@@ -1,7 +1,7 @@
 /*
  * mainwindow.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -892,9 +892,9 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 	cairo_stroke(cr);
 
 	cairo_new_path(cr);
-	ptot_w = fr->lop.pad_l + fr->lop.pad_r;
-	ptot_h = fr->lop.pad_t + fr->lop.pad_b;
-	cairo_rectangle(cr, xmin+fr->lop.pad_l, ymin+fr->lop.pad_t,
+	ptot_w = fr->pad_l + fr->pad_r;
+	ptot_h = fr->pad_t + fr->pad_b;
+	cairo_rectangle(cr, xmin+fr->pad_l, ymin+fr->pad_t,
 	                    width-ptot_w, height-ptot_h);
 	cairo_set_dash(cr, dash, 2, 0.0);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -961,10 +961,10 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 
 		draw_editing_box(cr, p->selection[i]);
 
-		x = p->selection[i]->lop.x;
-		y = p->selection[i]->lop.y;
-		w = p->selection[i]->lop.w;
-		h = p->selection[i]->lop.h;
+		x = p->selection[i]->x;
+		y = p->selection[i]->y;
+		w = p->selection[i]->w;
+		h = p->selection[i]->h;
 
 		/* Draw resize handles */
 		/* FIXME: Not if this frame can't be resized */
@@ -1064,12 +1064,11 @@ void update_titlebar(struct presentation *p)
 
 static void insert_text(struct frame *fr, char *t, struct presentation *p)
 {
+#warning Re-implement insert_text() and do_backspace() please
+#if 0
 	char *tmp;
 	size_t tlen, olen;
 	int i;
-
-	/* If this is, say, the top level frame, do nothing */
-	if ( fr->sc == NULL ) return;
 
 	tlen = strlen(t);
 	olen = strlen(fr->sc);
@@ -1107,11 +1106,13 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 	p->cursor_pos = fr->pos;
 	redraw_editor(p);
 	fr->empty = 0;
+#endif
 }
 
 
 static void do_backspace(struct frame *fr, struct presentation *p)
 {
+#if 0
 	size_t tlen, olen;
 
 	if ( fr == NULL ) return;
@@ -1131,6 +1132,7 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 	p->cursor_pos = fr->pos;
 	redraw_editor(p);
 	fr->empty = 0;
+#endif
 }
 
 
@@ -1486,11 +1488,11 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	}
 
 	fr = add_subframe(parent);
-	fr->sc = NULL;
-	fr->lop.x = x;
-	fr->lop.y = y;
-	fr->lop.w = w;
-	fr->lop.h = h;
+	fr->scblocks = NULL;
+	fr->x = x;
+	fr->y = y;
+	fr->w = w;
+	fr->h = h;
 	fr->is_image = 0;
 	fr->empty = 1;
 
@@ -1516,10 +1518,10 @@ static void do_resize(struct presentation *p, double x, double y,
 	}
 
 	fr = p->selection[0];
-	fr->lop.x = x;
-	fr->lop.y = y;
-	fr->lop.w = w;
-	fr->lop.h = h;
+	fr->x = x;
+	fr->y = y;
+	fr->w = w;
+	fr->h = h;
 
 	rerender_slide(p);
 	redraw_editor(p);
@@ -1553,8 +1555,6 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(p, p->start_corner_x, p->start_corner_y,
 		                     p->drag_corner_x - p->start_corner_x,
 		                     p->drag_corner_y - p->start_corner_y);
-		fr->sc = strdup("");
-		fr->sc_len = 1;
 		rerender_slide(p);
 		set_selection(p, fr);
 		break;
@@ -1583,6 +1583,8 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
+#warning Re-implement move_cursor() please
+#if 0
 	ssize_t pos = p->cursor_pos;
 
 	/* FIXME: Advance past images etc */
@@ -1596,6 +1598,7 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 
 	p->selection[0]->pos = pos;
 	p->cursor_pos = pos;
+#endif
 }
 
 
@@ -1890,8 +1893,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 			fr = create_frame(p, p->start_corner_x,
 			                     p->start_corner_y, w, h);
-			fr->sc = sc;
-			fr->sc_len = len;
+			/* FIXME Add scblocks and link into structure */
 			fr->is_image = 1;
 			fr->empty = 0;
 			show_hierarchy(p->cur_edit_slide->top, "");

@@ -2,7 +2,7 @@ EXTRA_DIST = configure m4/gnulib-cache.m4
 SUBDIRS = lib harfatum
 ACLOCAL_AMFLAGS = -I m4
 
-bin_PROGRAMS = 
+bin_PROGRAMS = src/colloquium
 
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \

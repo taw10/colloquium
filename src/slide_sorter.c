@@ -1,7 +1,7 @@
 /*
  * slide_sorter.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -366,8 +366,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 		if ( s != NULL ) {
 
-			/* FIXME: sc_unpack_with_notes() */
-			s->top = sc_unpack(sc, n->p->ss);
+			/* FIXME: Do something */
 
 			s->rendered_thumb = render_slide(s,
 			                                 n->p->thumb_slide_width,
@@ -416,8 +415,8 @@ static void dnd_get(GtkWidget *widget, GdkDragContext *drag_context,
 	if ( target != GDK_NONE ) {
 
 		char *sc;
-		/* FIXME: packed_sc_with_notes() */
-		sc = packed_sc(n->p->slides[n->selection]->top, n->p->ss);
+		/* FIXME: packed sc */
+		//sc = packed_sc(n->p->slides[n->selection]->top, n->p->ss);
 		gtk_selection_data_set(seldata, target, 8, (guchar *)sc,
 		                       strlen(sc));
 

@@ -295,8 +295,6 @@ struct presentation *new_presentation()
 
 	new->completely_empty = 1;
 
-	new->ss = strdup("");
-
 	new->n_menu_rebuild = 0;
 	new->menu_rebuild_list = NULL;
 	new->menu_path_list = NULL;
@@ -337,26 +335,128 @@ int save_presentation(struct presentation *p, const char *filename)
 }
 
 
+static char *fgets_long(FILE *fh, size_t *lp)
+{
+	char *line;
+	size_t la;
+	size_t l = 0;
+
+	la = 1024;
+	line = malloc(la);
+	if ( line == NULL ) return NULL;
+
+	do {
+
+		int r;
+
+		r = fgetc(fh);
+		if ( r == EOF ) {
+			free(line);
+			*lp = 0;
+			return NULL;
+		}
+
+		line[l++] = r;
+
+		if ( r == '\n' ) {
+			line[l++] = '\0';
+			*lp = l;
+			return line;
+		}
+
+		if ( l == la ) {
+
+			char *ln;
+
+			la += 1024;
+			ln = realloc(line, la);
+			if ( ln == NULL ) {
+				free(line);
+				*lp = 0;
+				return NULL;
+			}
+
+			line = ln;
+
+		}
+
+	} while ( 1 );
+}
+
+
 int load_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
 	int r = 0;
 	int i;
+	char *everything;
+	size_t el = 1;
+	SCBlock *block;
+
+	everything = strdup("");
 
 	assert(p->completely_empty);
 
 	fh = fopen(filename, "r");
 	if ( fh == NULL ) return 1;
 
-	/* FIXME: Load presentation */
+	while ( !feof(fh) ) {
+
+		size_t len = 0;
+		char *line = fgets_long(fh, &len);
+
+		if ( line != NULL ) {
+
+			everything = realloc(everything, el+len);
+			if ( everything == NULL ) {
+				r = 1;
+				break;
+			}
+			el += len;
+
+			strcat(everything, line);
+		}
+
+	}
 
 	fclose(fh);
+
+	p->scblocks = sc_parse(everything);
+	free(everything);
+
+	if ( p->scblocks == NULL ) r = 1;
 
 	if ( r ) {
 		p->cur_edit_slide = new_slide();
 		insert_slide(p, p->cur_edit_slide, 0);
 		p->completely_empty = 1;
 		return r;  /* Error */
+	}
+
+	block = p->scblocks;
+	while ( block != NULL ) {
+
+		const char *n = sc_block_name(block);
+
+		if ( n == NULL ) goto next;
+
+		if ( strcmp(n, "slide") == 0 ) {
+
+			struct slide *s = add_slide(p, p->num_slides);
+
+			if ( s != NULL ) {
+
+				s->scblocks = sc_block_child(block);
+				s->top = frame_new();
+				s->top->scblocks = s->scblocks;
+
+			}
+
+		}
+
+next:
+		block = sc_block_next(block);
+
 	}
 
 	assert(p->filename == NULL);

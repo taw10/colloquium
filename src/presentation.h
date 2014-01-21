@@ -1,7 +1,7 @@
 /*
  * presentation.h
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -31,6 +31,7 @@
 #include <gtk/gtk.h>
 
 #include "imagestore.h"
+#include "sc_parse.h"
 
 
 struct slide_constants
@@ -63,6 +64,7 @@ struct slide
 
 	struct frame *top;
 
+	SCBlock *scblocks;
 	char *notes;
 };
 
@@ -185,9 +187,8 @@ struct presentation
 
 	unsigned int      num_slides;
 	struct slide    **slides;
-	
-	char             *ss;
-	char             *sc;
+
+	SCBlock          *scblocks;
 
 	struct inhibit_sys *inhibit;
 };

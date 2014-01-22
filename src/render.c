@@ -321,6 +321,7 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	draw_frame(cr, fr, is, isz);
 
 	for ( i=0; i<fr->num_children; i++ ) {
+		cairo_save(cr);
 		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
 		render_frame(cr, fr->children[i], is, isz, scc, pcc, pc);
 		cairo_restore(cr);

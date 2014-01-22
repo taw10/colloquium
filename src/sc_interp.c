@@ -430,6 +430,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 {
 	while ( bl != NULL ) {
 
+		int recurse = 1;
 		const char *name = sc_block_name(bl);
 		const char *options = sc_block_options(bl);
 		const char *contents = sc_block_contents(bl);
@@ -460,7 +461,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 				add_image_box(sc_interp_get_frame(scin)->boxes,
 				              sc_block_contents(child),
 				              w, h, 1);
-				child = NULL;  /* Don't recurse */
+				recurse = 0;
 			}
 
 		} else if ( strcmp(name, "slidenumber")==0) {
@@ -506,7 +507,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 next:
 		if ( child != NULL ) {
-			sc_interp_add_blocks(scin, child);
+			if ( recurse ) sc_interp_add_blocks(scin, child);
 			sc_interp_restore(scin);
 		}
 		bl = sc_block_next(bl);

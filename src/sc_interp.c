@@ -292,88 +292,85 @@ static LengthUnits get_units(const char *t)
 }
 
 
-static void parse_frame_option(struct frame *fr, struct frame *parent,
-                               const char *opt)
+static int parse_dims(const char *opt, struct frame *parent,
+                      double *wp, double *hp, double *xp, double *yp)
 {
-	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
-	  && (index(opt, '+') != rindex(opt, '+')) )
-	{
-		char *w;
-		char *h;
-		char *x;
-		char *y;
-		char *check;
-		LengthUnits h_units, w_units;
+	char *w;
+	char *h;
+	char *x;
+	char *y;
+	char *check;
+	LengthUnits h_units, w_units;
 
-		/* Looks like a dimension/position thing */
-		w = strdup(opt);
-		h = index(w, 'x');
-		h[0] = '\0';  h++;
+	/* Looks like a dimension/position thing */
+	w = strdup(opt);
+	h = index(w, 'x');
+	h[0] = '\0';  h++;
 
-		x = index(h, '+');
-		if ( x == NULL ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		x[0] = '\0';  x++;
+	x = index(h, '+');
+	if ( x == NULL ) goto invalid;
+	x[0] = '\0';  x++;
 
-		y = index(x, '+');
-		if ( x == NULL ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		y[0] = '\0';  y++;
+	y = index(x, '+');
+	if ( x == NULL ) goto invalid;
+	y[0] = '\0';  y++;
 
-		fr->w = strtod(w, &check);
-		if ( check == w ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		w_units = get_units(w);
-		if ( w_units == UNITS_FRAC ) {
-			double pw = parent->w;
-			pw -= parent->pad_l;
-			pw -= parent->pad_r;
-			fr->w = pw * fr->w;
-		}
-
-		fr->h = strtod(h, &check);
-		if ( check == h ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		h_units = get_units(h);
-		if ( h_units == UNITS_FRAC ) {
-			double ph = parent->h;
-			ph -= parent->pad_t;
-			ph -= parent->pad_b;
-			fr->h = ph * fr->h;
-		}
-
-		fr->x = strtod(x, &check);
-		if ( check == x ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-		fr->y = strtod(y, &check);
-		if ( check == y ) {
-			fprintf(stderr, "Invalid option '%s'\n", opt);
-			return;
-		}
-
+	*wp = strtod(w, &check);
+	if ( check == w ) goto invalid;
+	w_units = get_units(w);
+	if ( w_units == UNITS_FRAC ) {
+		double pw = parent->w;
+		pw -= parent->pad_l;
+		pw -= parent->pad_r;
+		*wp = pw * *wp;
 	}
+
+	*hp = strtod(h, &check);
+	if ( check == h ) goto invalid;
+	h_units = get_units(h);
+	if ( h_units == UNITS_FRAC ) {
+		double ph = parent->h;
+		ph -= parent->pad_t;
+		ph -= parent->pad_b;
+		*hp = ph * *hp;
+	}
+
+	*xp= strtod(x, &check);
+	if ( check == x ) goto invalid;
+	*yp = strtod(y, &check);
+	if ( check == y ) goto invalid;
+
+	return 0;
+
+invalid:
+	fprintf(stderr, "Invalid dimensions '%s'\n", opt);
+	return 1;
 }
 
 
-static void parse_frame_options(struct frame *fr, struct frame *parent,
-                                const char *opth)
+static int parse_frame_option(const char *opt, struct frame *fr,
+                              struct frame *parent)
+{
+	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
+	  && (index(opt, '+') != rindex(opt, '+')) ) {
+		return parse_dims(opt, parent, &fr->w, &fr->h, &fr->x, &fr->y);
+	}
+
+	fprintf(stderr, "Unrecognised frame option '%s'\n", opt);
+
+	return 1;
+}
+
+
+static int parse_frame_options(struct frame *fr, struct frame *parent,
+                               const char *opth)
 {
 	int i;
 	size_t len;
 	size_t start;
 	char *opt;
 
-	if ( opth == NULL ) return;
+	if ( opth == NULL ) return 1;
 
 	opt = strdup(opth);
 
@@ -385,59 +382,92 @@ static void parse_frame_options(struct frame *fr, struct frame *parent,
 		/* FIXME: comma might be escaped or quoted */
 		if ( opt[i] == ',' ) {
 			opt[i] = '\0';
-			parse_frame_option(fr, parent, opt+start);
+			if ( parse_frame_option(opt+start, fr, parent) ) {
+				return 1;
+			}
 			start = i+1;
 		}
 
 	}
 
 	if ( start != len ) {
-		parse_frame_option(fr, parent, opt+start);
+		if ( parse_frame_option(opt+start, fr, parent) ) return 1;
 	}
 
 	free(opt);
+
+	return 0;
 }
 
 
-static int get_size(const char *a, struct frame *fr, int *wp, int *hp)
+static int parse_image_option(const char *opt, struct frame *parent,
+                              double *wp, double *hp, char **filenamep)
 {
-	char *x;
-	char *ws;
-	char *hs;
-
-	if ( a == NULL ) goto invalid;
-
-	x = index(a, 'x');
-	if ( x == NULL ) goto invalid;
-
-	if ( rindex(a, 'x') != x ) goto invalid;
-
-	ws = strndup(a, x-a);
-	hs = strdup(x+1);
-
-	if ( strcmp(ws, "fit") == 0 ) {
-		*wp = fr->w - (fr->pad_l+fr->pad_r);
-	} else {
-		*wp = strtoul(ws, NULL, 10);
-	}
-	if ( strcmp(ws, "fit") == 0 ) {
-		*hp = fr->h - (fr->pad_t+fr->pad_b);
-	} else {
-		*hp = strtoul(hs, NULL, 10);
+	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
+	  && (index(opt, '+') != rindex(opt, '+')) ) {
+		double dum;
+		return parse_dims(opt, parent, wp, hp, &dum, &dum);
 	}
 
-	free(ws);
-	free(hs);
+	if ( strncmp(opt, "filename=\"", 10) == 0 ) {
+		char *fn;
+		fn = strdup(opt+10);
+		if ( fn[strlen(fn)-1] != '\"' ) {
+			fprintf(stderr, "Unterminated filename?\n");
+			free(fn);
+			return 1;
+		}
+		fn[strlen(fn)-1] = '\0';
+		*filenamep = fn;
+		return 0;
+	}
 
-	return 0;
+	fprintf(stderr, "Unrecognised image option '%s'\n", opt);
 
-invalid:
-	fprintf(stderr, "Invalid dimensions '%s'\n", a);
 	return 1;
 }
 
 
-static int check_outputs(SCBlock *bl, SCInterpreter *scin, int *recurse)
+
+static int parse_image_options(const char *opth, struct frame *parent,
+                               double *wp, double *hp, char **filenamep)
+{
+	int i;
+	size_t len;
+	size_t start;
+	char *opt;
+
+	if ( opth == NULL ) return 1;
+
+	opt = strdup(opth);
+
+	len = strlen(opt);
+	start = 0;
+
+	for ( i=0; i<len; i++ ) {
+
+		/* FIXME: comma might be escaped or quoted */
+		if ( opt[i] == ',' ) {
+			opt[i] = '\0';
+			if ( parse_image_option(opt+start, parent,
+			                        wp, hp, filenamep) ) return 1;
+			start = i+1;
+		}
+
+	}
+
+	if ( start != len ) {
+		if ( parse_image_option(opt+start, parent,
+		                        wp, hp, filenamep) ) return 1;
+	}
+
+	free(opt);
+
+	return 0;
+}
+
+
+static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 {
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
@@ -453,14 +483,17 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, int *recurse)
 		set_frame_bgcolour(sc_interp_get_frame(scin), options);
 
 	} else if ( strcmp(name, "image")==0 ) {
-		int w, h;
-		if ( get_size(options, sc_interp_get_frame(scin),
-		              &w, &h) == 0 )
+		double w, h;
+		char *filename;
+		if ( parse_image_options(options, sc_interp_get_frame(scin),
+		                         &w, &h, &filename) == 0 )
 		{
 			add_image_box(sc_interp_get_frame(scin)->boxes,
-			              sc_block_contents(child),
-			              w, h, 1);
-			*recurse = 0;
+			              filename, w, h, 1);
+			free(filename);
+		} else {
+			fprintf(stderr, "Invalid image options '%s'\n",
+			        options);
 		}
 
 	} else if ( strcmp(name, "slidenumber")==0) {
@@ -495,8 +528,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, int *recurse)
 
 		parse_frame_options(fr, sc_interp_get_frame(scin),
 			            options);
-		sc_interp_set_frame(scin, fr);
-		*recurse = 1;
+		set_frame(scin, fr);
 
 	} else {
 		return 0;
@@ -510,10 +542,8 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 {
 	while ( bl != NULL ) {
 
-		int recurse = 0;
 		const char *name = sc_block_name(bl);
 		const char *options = sc_block_options(bl);
-		const char *contents = sc_block_contents(bl);
 		SCBlock *child = sc_block_child(bl);
 
 		if ( child != NULL ) {
@@ -521,7 +551,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		}
 
 		if ( (sc_interp_get_frame(scin) != NULL)
-		  && check_outputs(bl, scin, &recurse) ) {
+		  && check_outputs(bl, scin) ) {
 			/* Block handled as output thing */
 
 		} else if ( name == NULL ) {
@@ -529,11 +559,9 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "font") == 0 ) {
 			set_font(scin, options);
-			recurse = 1;
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {
 			set_colour(scin, options);
-			recurse = 1;
 
 		} else {
 
@@ -543,7 +571,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		}
 
 		if ( child != NULL ) {
-			if ( recurse ) sc_interp_add_blocks(scin, child);
+			sc_interp_add_blocks(scin, child);
 			sc_interp_restore(scin);
 		}
 		bl = sc_block_next(bl);

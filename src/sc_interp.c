@@ -37,6 +37,14 @@
 #include "wrap.h"
 
 
+struct macro
+{
+	char *name;
+	char *sc;
+	struct macro *prev;  /* Previous declaration, or NULL */
+};
+
+
 struct sc_state
 {
 	PangoFontDescription *fontdesc;
@@ -46,6 +54,9 @@ struct sc_state
 	int height;
 
 	struct frame *fr;  /* The current frame */
+
+	int n_macros;
+	struct macro *macros;  /* Contents need to be copied on push */
 };
 
 

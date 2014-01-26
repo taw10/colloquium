@@ -426,11 +426,80 @@ invalid:
 }
 
 
+static int check_outputs(SCBlock *bl, SCInterpreter *scin, int *recurse)
+{
+	const char *name = sc_block_name(bl);
+	const char *options = sc_block_options(bl);
+	const char *contents = sc_block_contents(bl);
+	SCBlock *child = sc_block_child(bl);
+
+	if ( name == NULL ) {
+		split_words(sc_interp_get_frame(scin)->boxes,
+		            scin->pc, contents, scin->lang, 1,
+		            scin);
+
+	} else if ( strcmp(name, "bgcol") == 0 ) {
+		set_frame_bgcolour(sc_interp_get_frame(scin), options);
+
+	} else if ( strcmp(name, "image")==0 ) {
+		int w, h;
+		if ( get_size(options, sc_interp_get_frame(scin),
+		              &w, &h) == 0 )
+		{
+			add_image_box(sc_interp_get_frame(scin)->boxes,
+			              sc_block_contents(child),
+			              w, h, 1);
+			*recurse = 0;
+		}
+
+	} else if ( strcmp(name, "slidenumber")==0) {
+		char *tmp = malloc(64);
+		if ( tmp != NULL ) {
+			snprintf(tmp, 63, "%i",
+			         scin->s_constants->slide_number);
+			split_words(sc_interp_get_frame(scin)->boxes,
+			            scin->pc, tmp, scin->lang, 0, scin);
+		}
+
+	} else if ( strcmp(name, "f")==0 ) {
+
+		struct frame *fr = sc_block_frame(bl);
+
+		if ( fr != NULL ) {
+			free(fr->boxes->boxes);
+			free(fr->boxes);
+			fr->boxes = malloc(sizeof(struct wrap_line));
+			initialise_line(fr->boxes);
+		}
+
+		if ( fr == NULL ) {
+			fr = add_subframe(sc_interp_get_frame(scin));
+			sc_block_set_frame(bl, fr);
+			fr->scblocks = child;
+		}
+		if ( fr == NULL ) {
+			fprintf(stderr, "Failed to add frame.\n");
+			return 1;
+		}
+
+		parse_frame_options(fr, sc_interp_get_frame(scin),
+			            options);
+		sc_interp_set_frame(scin, fr);
+		*recurse = 1;
+
+	} else {
+		return 0;
+	}
+
+	return 1;  /* handled */
+}
+
+
 int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 {
 	while ( bl != NULL ) {
 
-		int recurse = 1;
+		int recurse = 0;
 		const char *name = sc_block_name(bl);
 		const char *options = sc_block_options(bl);
 		const char *contents = sc_block_contents(bl);
@@ -440,63 +509,20 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			sc_interp_save(scin);
 		}
 
-		if ( name == NULL ) {
-			split_words(sc_interp_get_frame(scin)->boxes, scin->pc,
-			            contents, scin->lang, 1, scin);
+		if ( (sc_interp_get_frame(scin) != NULL)
+		  && check_outputs(bl, scin, &recurse) ) {
+			/* Block handled as output thing */
+
+		} else if ( name == NULL ) {
+			/* Dummy to ensure name != NULL below */
 
 		} else if ( strcmp(name, "font") == 0 ) {
 			set_font(scin, options);
+			recurse = 1;
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {
 			set_colour(scin, options);
-
-		} else if ( strcmp(name, "bgcol") == 0 ) {
-			set_frame_bgcolour(sc_interp_get_frame(scin), options);
-
-		} else if ( strcmp(name, "image")==0 ) {
-			int w, h;
-			if ( get_size(options, sc_interp_get_frame(scin),
-			              &w, &h) == 0 )
-			{
-				add_image_box(sc_interp_get_frame(scin)->boxes,
-				              sc_block_contents(child),
-				              w, h, 1);
-				recurse = 0;
-			}
-
-		} else if ( strcmp(name, "slidenumber")==0) {
-			char *tmp = malloc(64);
-			if ( tmp != NULL ) {
-				snprintf(tmp, 63, "%i",
-				         scin->s_constants->slide_number);
-				split_words(sc_interp_get_frame(scin)->boxes,
-				            scin->pc, tmp, scin->lang, 0, scin);
-			}
-
-		} else if ( strcmp(name, "f")==0 ) {
-
-			struct frame *fr = sc_block_frame(bl);
-
-			if ( fr != NULL ) {
-				free(fr->boxes->boxes);
-				free(fr->boxes);
-				fr->boxes = malloc(sizeof(struct wrap_line));
-				initialise_line(fr->boxes);
-			}
-
-			if ( fr == NULL ) {
-				fr = add_subframe(sc_interp_get_frame(scin));
-				sc_block_set_frame(bl, fr);
-				fr->scblocks = child;
-			}
-			if ( fr == NULL ) {
-				fprintf(stderr, "Failed to add frame.\n");
-				goto next;
-			}
-
-			parse_frame_options(fr, sc_interp_get_frame(scin),
-			                    options);
-			set_frame(scin, fr);
+			recurse = 1;
 
 		} else {
 
@@ -505,7 +531,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		}
 
-next:
 		if ( child != NULL ) {
 			if ( recurse ) sc_interp_add_blocks(scin, child);
 			sc_interp_restore(scin);

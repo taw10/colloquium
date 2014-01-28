@@ -37,7 +37,8 @@ extern void sc_interp_destroy(SCInterpreter *scin);
 extern void sc_interp_save(SCInterpreter *scin);
 extern void sc_interp_restore(SCInterpreter *scin);
 
-extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
+extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl,
+                                SCBlock *last);
 
 /* Get the current state of the interpreter */
 extern struct frame *sc_interp_get_frame(SCInterpreter *scin);

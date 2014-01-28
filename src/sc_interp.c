@@ -71,6 +71,8 @@ struct _scinterp
 	struct sc_state *state;
 	int j;  /* Index of the current state */
 	int max_state;
+
+	int output;
 };
 
 
@@ -255,6 +257,8 @@ SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 	scin->s_constants = NULL;
 	scin->p_constants = NULL;
 
+	scin->output = 0;
+
 	/* FIXME: Determine proper language (somehow...) */
 	scin->lang = pango_language_from_string("en_GB");
 
@@ -428,7 +432,6 @@ static int parse_image_option(const char *opt, struct frame *parent,
 }
 
 
-
 static int parse_image_options(const char *opth, struct frame *parent,
                                double *wp, double *hp, char **filenamep)
 {
@@ -497,12 +500,16 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		}
 
 	} else if ( strcmp(name, "slidenumber")==0) {
-		char *tmp = malloc(64);
-		if ( tmp != NULL ) {
-			snprintf(tmp, 63, "%i",
-			         scin->s_constants->slide_number);
-			split_words(sc_interp_get_frame(scin)->boxes,
-			            scin->pc, tmp, scin->lang, 0, scin);
+		if ( scin->s_constants != NULL ) {
+			char *tmp = malloc(64);
+			if ( tmp != NULL ) {
+				snprintf(tmp, 63, "%i",
+					 scin->s_constants->slide_number);
+				split_words(sc_interp_get_frame(scin)->boxes,
+					    scin->pc, tmp, scin->lang, 0, scin);
+			}
+		} else {
+			printf("No slide constants.\n");
 		}
 
 	} else if ( strcmp(name, "f")==0 ) {
@@ -538,7 +545,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 }
 
 
-int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
+int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
 {
 	while ( bl != NULL ) {
 
@@ -546,11 +553,16 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		const char *options = sc_block_options(bl);
 		SCBlock *child = sc_block_child(bl);
 
+		if ( bl == output ) {
+			scin->output = 1;
+			show_sc_block(bl, "");
+		}
+
 		if ( child != NULL ) {
 			sc_interp_save(scin);
 		}
 
-		if ( (sc_interp_get_frame(scin) != NULL)
+		if ( scin->output && (sc_interp_get_frame(scin) != NULL)
 		  && check_outputs(bl, scin) ) {
 			/* Block handled as output thing */
 
@@ -565,15 +577,17 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else {
 
-			fprintf(stderr, "Don't know what to do with this:\n");
-			show_sc_block(bl, "");
+			//fprintf(stderr, "Don't know what to do with this:\n");
+			//show_sc_block(bl, "");
 
 		}
 
 		if ( child != NULL ) {
-			sc_interp_add_blocks(scin, child);
+			sc_interp_add_blocks(scin, child, output);
 			sc_interp_restore(scin);
 		}
+
+		if ( bl == output ) return 0;
 		bl = sc_block_next(bl);
 
 	}

@@ -1,7 +1,7 @@
 /*
  * render.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -281,14 +281,35 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 }
 
 
+static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
+                                   ImageStore *is, enum is_size isz)
+{
+	int i;
+
+	/* Wrap boxes -> wrap lines */
+	wrap_contents(fr);
+
+	/* Actually draw the lines */
+	draw_frame(cr, fr, is, isz);
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		cairo_save(cr);
+		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
+		recursive_wrap_and_draw(fr->children[i], cr, is, isz);
+		cairo_restore(cr);
+	}
+
+	return 0;
+}
+
+
 static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                         enum is_size isz, struct slide_constants *scc,
 		        struct presentation_constants *pcc,
-			PangoContext *pc)
+			PangoContext *pc, SCBlock *scblocks)
 {
 	SCInterpreter *scin;
 	int i;
-	SCBlock *bl = fr->scblocks;
 
 	scin = sc_interp_new(pc, fr);
 	if ( scin == NULL ) {
@@ -312,20 +333,9 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	initialise_line(fr->boxes);
 
 	/* SCBlocks -> frames and wrap boxes (preferably re-using frames) */
-	sc_interp_add_blocks(scin, bl);
+	sc_interp_add_blocks(scin, scblocks, fr->scblocks);
 
-	/* Wrap boxes -> wrap lines */
-	wrap_contents(fr);
-
-	/* Actually draw the lines */
-	draw_frame(cr, fr, is, isz);
-
-	for ( i=0; i<fr->num_children; i++ ) {
-		cairo_save(cr);
-		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
-		render_frame(cr, fr->children[i], is, isz, scc, pcc, pc);
-		cairo_restore(cr);
-	}
+	recursive_wrap_and_draw(fr, cr, is, isz);
 
 	sc_interp_destroy(scin);
 
@@ -416,7 +426,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	pango_cairo_update_context(cr, pc);
 
 	render_frame(cr, s->top, is, isz, s->constants,
-	             s->parent->constants, pc);
+	             s->parent->constants, pc, s->parent->scblocks);
 
 	cairo_font_options_destroy(fopts);
 	g_object_unref(pc);
@@ -479,7 +489,7 @@ int export_pdf(struct presentation *p, const char *filename)
 		s->top->h = w*r;
 
 		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, s->constants,
-		             s->parent->constants, pc);
+		             s->parent->constants, pc, s->parent->scblocks);
 
 		cairo_show_page(cr);
 

@@ -553,10 +553,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
 		const char *options = sc_block_options(bl);
 		SCBlock *child = sc_block_child(bl);
 
-		if ( bl == output ) {
-			scin->output = 1;
-			show_sc_block(bl, "");
-		}
+		if ( bl == output ) scin->output = 1;
 
 		if ( child != NULL ) {
 			sc_interp_save(scin);

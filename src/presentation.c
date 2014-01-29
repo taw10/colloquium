@@ -446,7 +446,7 @@ int load_presentation(struct presentation *p, const char *filename)
 
 			if ( s != NULL ) {
 
-				s->scblocks = sc_block_child(block);
+				s->scblocks = block;
 				s->top = frame_new();
 				s->top->scblocks = s->scblocks;
 

@@ -40,7 +40,7 @@
 struct macro
 {
 	char *name;
-	char *sc;
+	SCBlock *bl;
 	struct macro *prev;  /* Previous declaration, or NULL */
 };
 
@@ -56,6 +56,7 @@ struct sc_state
 	struct frame *fr;  /* The current frame */
 
 	int n_macros;
+	int max_macros;
 	struct macro *macros;  /* Contents need to be copied on push */
 };
 
@@ -204,6 +205,7 @@ void sc_interp_save(SCInterpreter *scin)
 	 * the stack to be "bootstrapped", but requires the first caller to do
 	 * set_font and set_colour straight away. */
 	scin->state[scin->j+1] = scin->state[scin->j];
+
 	scin->j++;
 }
 
@@ -241,6 +243,7 @@ static void set_frame(SCInterpreter *scin, struct frame *fr)
 SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 {
 	SCInterpreter *scin;
+	struct sc_state *st;
 
 	scin = malloc(sizeof(SCInterpreter));
 	if ( scin == NULL ) return NULL;
@@ -258,6 +261,16 @@ SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 	scin->p_constants = NULL;
 
 	scin->output = 0;
+
+	st = &scin->state[0];
+	st->n_macros = 0;
+	st->max_macros = 16;
+	st->macros = malloc(16*sizeof(struct macro));
+	if ( st->macros == NULL ) {
+		free(scin->state);
+		free(scin);
+		return NULL;
+	}
 
 	/* FIXME: Determine proper language (somehow...) */
 	scin->lang = pango_language_from_string("en_GB");
@@ -545,6 +558,76 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 }
 
 
+static int add_macro(struct macro *m, char *mname, SCBlock *bl)
+{
+	m->name = mname;
+	m->bl = bl;
+	m->prev = NULL;  /* FIXME: Stacking */
+
+	return 0;
+}
+
+
+static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	char *nn;
+	char *comma;
+	int i;
+
+	nn = strdup(options);
+	comma = strchr(nn, ',');
+	if ( comma != NULL ) {
+		comma[0] = '\0';
+	}
+
+	for ( i=0; i<st->n_macros; i++ ) {
+		if ( strcmp(st->macros[i].name, nn) == 0 ) {
+			return add_macro(&st->macros[i], nn, bl);
+		}
+	}
+
+	if ( st->max_macros == st->n_macros ) {
+
+		struct macro *macros_new;
+
+		macros_new = realloc(st->macros, sizeof(struct macro)
+		                     * (st->max_macros+16));
+		if ( macros_new == NULL ) {
+			fprintf(stderr, "Failed to add macro.\n");
+			return 1;
+		}
+
+		st->macros = macros_new;
+		st->max_macros += 16;
+
+	}
+
+	i = st->n_macros++;
+	return add_macro(&st->macros[i], nn, bl);
+}
+
+
+static int check_macro(const char *name, SCInterpreter *scin)
+{
+	int i;
+	struct sc_state *st = &scin->state[scin->j];
+	int save;
+
+	for ( i=0; i<st->n_macros; i++ ) {
+		if ( strcmp(st->macros[i].name, name) == 0 ) {
+			save = scin->output;
+			scin->output = 1;
+			sc_interp_add_blocks(scin, st->macros[i].bl, NULL);
+			scin->output = save;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
 int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
 {
 	while ( bl != NULL ) {
@@ -554,6 +637,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
 		SCBlock *child = sc_block_child(bl);
 
 		if ( bl == output ) scin->output = 1;
+		if ( !scin->output ) child = NULL;
 
 		if ( child != NULL ) {
 			sc_interp_save(scin);
@@ -566,16 +650,31 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
 		} else if ( name == NULL ) {
 			/* Dummy to ensure name != NULL below */
 
+		} else if ( strcmp(name, "ss") == 0 ) {
+			try_add_macro(scin, options, sc_block_child(bl));
+
 		} else if ( strcmp(name, "font") == 0 ) {
 			set_font(scin, options);
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {
 			set_colour(scin, options);
 
+		} else if ( check_macro(name, scin) ) {
+			/* Handled by macro expansion */
+
+		} else if ( strcmp(name, "notes") == 0 ) {
+			/* FIXME: Do something with notes */
+
+		} else if ( strcmp(name, "pad") == 0 ) {
+			/* FIXME: Implement padding */
+
+		} else if ( strcmp(name, "slide") == 0 ) {
+			/* Do nothing with "slide" */
+
 		} else {
 
-			//fprintf(stderr, "Don't know what to do with this:\n");
-			//show_sc_block(bl, "");
+			fprintf(stderr, "Don't know what to do with this:\n");
+			show_sc_block(bl, "");
 
 		}
 

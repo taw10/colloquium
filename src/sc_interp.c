@@ -483,6 +483,26 @@ static int parse_image_options(const char *opth, struct frame *parent,
 }
 
 
+static void maybe_recurse_before(SCInterpreter *scin, SCBlock *child)
+{
+	if ( !scin->output ) return;
+	if ( child == NULL ) return;
+
+	sc_interp_save(scin);
+}
+
+
+static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child,
+                                SCBlock *output)
+{
+	if ( !scin->output ) return;
+	if ( child == NULL ) return;
+
+	sc_interp_add_blocks(scin, child, output);
+	sc_interp_restore(scin);
+}
+
+
 static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 {
 	const char *name = sc_block_name(bl);
@@ -496,7 +516,9 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		            scin);
 
 	} else if ( strcmp(name, "bgcol") == 0 ) {
+		maybe_recurse_before(scin, child);
 		set_frame_bgcolour(sc_interp_get_frame(scin), options);
+		maybe_recurse_after(scin, child, NULL);
 
 	} else if ( strcmp(name, "image")==0 ) {
 		double w, h;
@@ -548,7 +570,10 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		parse_frame_options(fr, sc_interp_get_frame(scin),
 			            options);
+
+		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
+		maybe_recurse_after(scin, child, NULL);
 
 	} else {
 		return 0;
@@ -612,19 +637,28 @@ static int check_macro(const char *name, SCInterpreter *scin)
 {
 	int i;
 	struct sc_state *st = &scin->state[scin->j];
-	int save;
 
 	for ( i=0; i<st->n_macros; i++ ) {
 		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			save = scin->output;
-			scin->output = 1;
-			sc_interp_add_blocks(scin, st->macros[i].bl, NULL);
-			scin->output = save;
 			return 1;
 		}
 	}
 
 	return 0;
+}
+
+
+static void exec_macro(const char *name, SCInterpreter *scin)
+{
+	int i;
+	struct sc_state *st = &scin->state[scin->j];
+
+	for ( i=0; i<st->n_macros; i++ ) {
+		if ( strcmp(st->macros[i].name, name) == 0 ) {
+			sc_interp_add_blocks(scin, st->macros[i].bl, NULL);
+			return;
+		}
+	}
 }
 
 
@@ -637,11 +671,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
 		SCBlock *child = sc_block_child(bl);
 
 		if ( bl == output ) scin->output = 1;
-		if ( !scin->output ) child = NULL;
-
-		if ( child != NULL ) {
-			sc_interp_save(scin);
-		}
 
 		if ( scin->output && (sc_interp_get_frame(scin) != NULL)
 		  && check_outputs(bl, scin) ) {
@@ -654,33 +683,37 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
 			try_add_macro(scin, options, sc_block_child(bl));
 
 		} else if ( strcmp(name, "font") == 0 ) {
+			maybe_recurse_before(scin, child);
 			set_font(scin, options);
+			maybe_recurse_after(scin, child, output);
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {
+			maybe_recurse_before(scin, child);
 			set_colour(scin, options);
+			maybe_recurse_after(scin, child, output);
 
 		} else if ( check_macro(name, scin) ) {
-			/* Handled by macro expansion */
+			maybe_recurse_before(scin, child);
+			exec_macro(name, scin);
+			maybe_recurse_after(scin, child, output);
 
 		} else if ( strcmp(name, "notes") == 0 ) {
 			/* FIXME: Do something with notes */
 
 		} else if ( strcmp(name, "pad") == 0 ) {
+			maybe_recurse_before(scin, child);
 			/* FIXME: Implement padding */
+			maybe_recurse_after(scin, child, output);
 
 		} else if ( strcmp(name, "slide") == 0 ) {
-			/* Do nothing with "slide" */
+			maybe_recurse_before(scin, child);
+			maybe_recurse_after(scin, child, output);
 
 		} else {
 
 			fprintf(stderr, "Don't know what to do with this:\n");
 			show_sc_block(bl, "");
 
-		}
-
-		if ( child != NULL ) {
-			sc_interp_add_blocks(scin, child, output);
-			sc_interp_restore(scin);
 		}
 
 		if ( bl == output ) return 0;

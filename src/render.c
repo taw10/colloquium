@@ -110,7 +110,6 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 
 static void draw_outline(cairo_t *cr, struct wrap_box *box)
 {
-	char tmp[32];
 	double asc, desc;
 
 	if ( box->type == WRAP_BOX_SENTINEL ) return;
@@ -128,14 +127,6 @@ static void draw_outline(cairo_t *cr, struct wrap_box *box)
 			pango_units_to_double(box->sp), asc + desc);
 	cairo_set_source_rgb(cr, 0.7, 0.4, 0.7);
 	cairo_fill(cr);
-
-	snprintf(tmp, 31, "%lli", (long long int)box->sc_offset);
-	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_ITALIC,
-	                                   CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_set_font_size(cr, 10.0);
-	cairo_move_to(cr, 0.0, desc);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.7);
-	cairo_show_text(cr, tmp);
 }
 
 

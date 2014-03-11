@@ -59,7 +59,6 @@ enum wrap_box_space
 struct wrap_box
 {
 	enum wrap_box_type type;
-	size_t sc_offset;  /* How far into the SC for this frame */
 	int editable;
 
 	/* Pango units */
@@ -95,16 +94,16 @@ struct wrap_line
 	int overfull;
 	int underfull;
 	int last_line;
-	size_t sc_offset;
 };
 
 
 extern int wrap_contents(struct frame *fr);
 
-extern void get_cursor_pos(struct frame *fr, size_t pos,
+extern void get_cursor_pos(struct wrap_box *box, size_t pos,
                            double *xposd, double *yposd, double *line_height);
 
-extern size_t find_cursor_pos(struct frame *fr, double xposd, double yposd);
+extern void find_cursor(struct frame *fr, double xposd, double yposd,
+                        int *line, int *box, size_t *pos);
 
 extern void alloc_boxes(struct wrap_line *l);
 extern void initialise_line(struct wrap_line *l);

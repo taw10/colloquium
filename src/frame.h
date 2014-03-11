@@ -53,8 +53,6 @@ struct frame
 	int                       max_lines;
 	struct wrap_line         *lines;
 
-	size_t                    pos;
-
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;
 	double                    y;

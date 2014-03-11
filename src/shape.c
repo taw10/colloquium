@@ -79,7 +79,6 @@ static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
 
 	box = &line->boxes[line->n_boxes];
 	if ( !editable ) offset = 0;
-	box->sc_offset = offset;
 	box->type = WRAP_BOX_PANGO;
 	box->text = text;
 	box->space = space;

@@ -905,19 +905,33 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 }
 
 
-static void draw_caret(cairo_t *cr, struct frame *fr, int pos)
+static void draw_caret(cairo_t *cr, struct frame *fr,
+                       int cursor_line, int cursor_box, int cursor_pos)
 {
 	double xposd, yposd, line_height;
 	double cx, clow, chigh;
 	const double t = 1.8;
+	struct wrap_box *box;
+	int i;
 
-	/* Fix up cursor position if necessary */
-	if ( (fr->n_lines > 0) && (fr->pos < fr->lines[0].sc_offset) ) {
-		fr->pos = fr->lines[0].sc_offset;
-		pos = fr->pos;
+	if ( fr == NULL ) return;
+	if ( fr->n_lines == 0 ) return;
+	printf("Cursor at frame %p, line %i, box %i, pos %i\n",
+	       fr, cursor_line, cursor_box, cursor_pos);
+
+	/* Locate the cursor in a "logical" and "geographical" sense */
+	box = &fr->lines[cursor_line].boxes[cursor_box];
+	get_cursor_pos(box, cursor_pos, &xposd, &yposd, &line_height);
+
+	for ( i=0; i<cursor_line; i++ ) {
+		yposd += pango_units_to_double(fr->lines[i].height);
 	}
 
-	get_cursor_pos(fr, pos, &xposd, &yposd, &line_height);
+	for ( i=0; i<cursor_box; i++ ) {
+		int w = fr->lines[cursor_line].boxes[i].width;
+		w += fr->lines[cursor_line].boxes[i].sp;
+		xposd += pango_units_to_double(w);
+	}
 
 	cx = fr->x + xposd;
 	clow = fr->y + yposd;
@@ -976,7 +990,8 @@ static void draw_overlay(cairo_t *cr, struct presentation *p)
 
 	/* If only one frame is selected, draw the caret */
 	if ( p->n_selection == 1 ) {
-		draw_caret(cr, p->selection[0], p->cursor_pos);
+		draw_caret(cr, p->cursor_frame, p->cursor_line, p->cursor_box,
+		               p->cursor_pos);
 	}
 
 	if ( (p->drag_status == DRAG_STATUS_DRAGGING)
@@ -1381,9 +1396,10 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		} else {
 
-			clicked->pos = find_cursor_pos(clicked,
-						       x-fr->x, y-fr->y);
-			p->cursor_pos = clicked->pos;
+			p->cursor_frame = clicked;
+			find_cursor(clicked, x-fr->x, y-fr->y,
+			            &p->cursor_line, &p->cursor_box,
+			            &p->cursor_pos);
 
 			p->start_corner_x = event->x - p->border_offs_x;
 			p->start_corner_y = event->y - p->border_offs_y;
@@ -1583,22 +1599,20 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
-#warning Re-implement move_cursor() please
-#if 0
-	ssize_t pos = p->cursor_pos;
+	struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
+	struct wrap_box *box = &line->boxes[p->cursor_box];
 
 	/* FIXME: Advance past images etc */
-	pos += x;
 
-	if ( pos < 0 ) pos = 0;
+	p->cursor_pos += x;
 
-	if ( pos > strlen(p->selection[0]->sc) ) {
-		pos = strlen(p->selection[0]->sc);
+	if ( p->cursor_pos < 0 ) {
+		p->cursor_pos = 0;
 	}
 
-	p->selection[0]->pos = pos;
-	p->cursor_pos = pos;
-#endif
+	if ( p->cursor_pos > g_utf8_strlen(box->text, -1) ) {
+		p->cursor_pos = 0;
+	}
 }
 
 

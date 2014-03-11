@@ -139,6 +139,11 @@ struct presentation
 	struct frame    **selection;
 	int               n_selection;
 	int               max_selection;
+
+	/* Location of the cursor */
+	struct frame     *cursor_frame;
+	int               cursor_line;
+	int               cursor_box;
 	size_t            cursor_pos;
 
 	/* This is the "native" size of the slide.  It only exists to give

@@ -83,7 +83,7 @@ void initialise_line(struct wrap_line *l)
 }
 
 
-
+#if 0
 static struct wrap_line *get_cursor_line(struct frame *fr, size_t pos,
 					 double *yposd)
 {
@@ -117,56 +117,32 @@ static struct wrap_line *get_cursor_line(struct frame *fr, size_t pos,
 
 	return &fr->lines[line];
 }
+#endif
 
-
-void get_cursor_pos(struct frame *fr, size_t pos,
+void get_cursor_pos(struct wrap_box *box, size_t pos,
                     double *xposd, double *yposd, double *line_height)
 {
-	signed int i;
-	struct wrap_line *l;
-	struct wrap_box *b;
 	int p;
-	int box;
 
 	*xposd = 0.0;
 	*yposd = 0.0;
 	*line_height = 20.0;
 
-	if ( fr->n_lines == 0 ) return;
+	if ( box == NULL ) return;
 
-	l = get_cursor_line(fr, pos, yposd);
-	if ( l == NULL ) return;
+	*line_height = pango_units_to_double(box->height);
 
-	*line_height = pango_units_to_double(l->height);
-
-	for ( box=1; box<l->n_boxes; box++ ) {
-		/* Was the cursor in the previous box? */
-		if ( !l->boxes[box].editable ) continue;
-		if ( l->boxes[box].type == WRAP_BOX_SENTINEL ) break;
-		if ( l->boxes[box].sc_offset > pos ) break;
-	}
-	box--;
-
-	*xposd = fr->pad_l;
-	for ( i=0; i<box; i++ ) {
-		*xposd += pango_units_to_double(l->boxes[i].width);
-		*xposd += pango_units_to_double(l->boxes[i].sp);
-	}
-
-	b = &l->boxes[box];
-
-	if ( !b->editable ) {
-		*xposd += pango_units_to_double(b->width);
+	if ( !box->editable ) {
+		*xposd += pango_units_to_double(box->width);
 		return;
 	}
 
-	switch ( b->type ) {
+	switch ( box->type ) {
 
 		case WRAP_BOX_PANGO :
-		pango_glyph_string_index_to_x(b->glyphs, b->text,
-		                              strlen(b->text),
-			                      &b->item->analysis,
-			                      pos - b->sc_offset,
+		pango_glyph_string_index_to_x(box->glyphs, box->text,
+		                              strlen(box->text),
+			                      &box->item->analysis, pos,
 			                      FALSE, &p);
 		*xposd += pango_units_to_double(p);
 		break;
@@ -178,8 +154,7 @@ void get_cursor_pos(struct frame *fr, size_t pos,
 }
 
 
-static struct wrap_line *find_cursor_line(struct frame *fr, double yposd,
-					  int *end)
+static int find_cursor_line(struct frame *fr, double yposd, int *end)
 {
 	int i;
 	double y = fr->pad_t;
@@ -189,18 +164,18 @@ static struct wrap_line *find_cursor_line(struct frame *fr, double yposd,
 	for ( i=0; i<fr->n_lines; i++ ) {
 		double height = pango_units_to_double(fr->lines[i].height);
 		if ( yposd < y + height ) {
-			return &fr->lines[i];
+			return i;
 		}
 		y += height;
 	}
 
 	*end = 1;
-	return &fr->lines[fr->n_lines-1];
+	return fr->n_lines-1;
 }
 
 
-static struct wrap_box *find_cursor_box(struct frame *fr, struct wrap_line *l,
-					double xposd, double *x_pos, int *end)
+static int find_cursor_box(struct frame *fr, struct wrap_line *l,
+			   double xposd, double *x_pos, int *end)
 {
 	int i;
 	double x = fr->pad_l;
@@ -212,18 +187,19 @@ static struct wrap_box *find_cursor_box(struct frame *fr, struct wrap_line *l,
 		width += pango_units_to_double(l->boxes[i].sp);
 		if ( xposd < x + width ) {
 			*x_pos = xposd - x;
-			return &l->boxes[i];
+			return i;
 		}
 		x += width;
 	}
 
 	*end = 1;
 	*x_pos = xposd - x;
-	return &l->boxes[l->n_boxes-1];
+	return l->n_boxes-1;
 }
 
 
-size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
+void find_cursor(struct frame *fr, double xposd, double yposd,
+                 int *line, int *box, size_t *pos)
 {
 	struct wrap_line *l;
 	struct wrap_box *b;
@@ -231,19 +207,31 @@ size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 	double x_pos = 0.0;
 	int idx, trail;
 	int x_pos_i;
+	size_t offs;
+	int ln, bn;
 
-	if ( fr->n_lines == 0 ) return 0;
-
-	l = find_cursor_line(fr, yposd, &end);
-
-	if ( end ) {
-		b = &l->boxes[l->n_boxes - 1];
-	} else {
-		b = find_cursor_box(fr, l, xposd, &x_pos, &end);
+	if ( fr->n_lines == 0 ) {
+		*line = 0;
+		*box = 0;
+		*pos = 0;
+		return;
 	}
 
+	ln = find_cursor_line(fr, yposd, &end);
+	l = &fr->lines[ln];
+	*line = ln;
+
+	if ( end ) {
+		bn = l->n_boxes-1;
+	} else {
+		bn = find_cursor_box(fr, l, xposd, &x_pos, &end);
+	}
+	b = &l->boxes[bn];
+	*box = bn;
+
 	if ( !b->editable ) {
-		return 0;
+		*pos = 0;
+		return;
 	}
 
 	switch ( b->type ) {
@@ -259,14 +247,19 @@ size_t find_cursor_pos(struct frame *fr, double xposd, double yposd)
 		                              &b->item->analysis,
 		                              x_pos_i, &idx, &trail);
 		/* FIXME: Assumes 1 byte char */
-		return b->sc_offset + idx + trail;
+		offs = idx + trail;
 
 		case WRAP_BOX_SENTINEL :
-		return l->boxes[l->n_boxes-2].sc_offset;
+		offs = 0;
+		break;
+
+		default :
+		offs = 0;
+		break;
 
 	}
 
-	return b->sc_offset;
+	*pos = offs;
 }
 
 
@@ -458,7 +451,6 @@ static void output_line(int q, int s, struct frame *fr, struct wrap_line *boxes)
 
 	l->max_boxes = s-q;
 	alloc_boxes(l);
-	l->sc_offset = boxes->boxes[q].sc_offset;
 	for ( j=q; j<s; j++ ) {
 		l->boxes[l->n_boxes++] = boxes->boxes[j];
 	}

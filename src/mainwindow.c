@@ -1601,18 +1601,33 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
 	struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
 	struct wrap_box *box = &line->boxes[p->cursor_box];
+	signed int cp, cb, cl;
 
 	/* FIXME: Advance past images etc */
 
-	p->cursor_pos += x;
+	/* FIXME: use g_utf8_find_next_char() or .._prev_char() */
+	cp = p->cursor_pos + x;
+	cb = p->cursor_box;
+	cl = p->cursor_line;
 
-	if ( p->cursor_pos < 0 ) {
-		p->cursor_pos = 0;
+	if ( cp < 0 ) cp = 0;
+
+	printf("pos=%i, length=%i\n", cp, g_utf8_strlen(box->text, -1));
+
+	if ( cp > g_utf8_strlen(box->text, -1) ) {
+		cp = 0;
+		cb++;
+		if ( cb >= line->n_boxes ) {
+			cl++;
+			if ( cl >= p->cursor_frame->n_lines ) {
+				cl = p->cursor_frame->n_lines-1;
+			}
+		}
 	}
 
-	if ( p->cursor_pos > g_utf8_strlen(box->text, -1) ) {
-		p->cursor_pos = 0;
-	}
+	p->cursor_pos = cp;
+	p->cursor_box = cb;
+	p->cursor_line = cl;
 }
 
 

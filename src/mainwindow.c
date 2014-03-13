@@ -916,8 +916,6 @@ static void draw_caret(cairo_t *cr, struct frame *fr,
 
 	if ( fr == NULL ) return;
 	if ( fr->n_lines == 0 ) return;
-	printf("Cursor at frame %p, line %i, box %i, pos %i\n",
-	       fr, cursor_line, cursor_box, cursor_pos);
 
 	/* Locate the cursor in a "logical" and "geographical" sense */
 	box = &fr->lines[cursor_line].boxes[cursor_box];
@@ -1597,37 +1595,114 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
+
 static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
 	struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
 	struct wrap_box *box = &line->boxes[p->cursor_box];
 	signed int cp, cb, cl;
 
-	/* FIXME: Advance past images etc */
-
-	/* FIXME: use g_utf8_find_next_char() or .._prev_char() */
-	cp = p->cursor_pos + x;
+	cp = p->cursor_pos;
 	cb = p->cursor_box;
 	cl = p->cursor_line;
 
-	if ( cp < 0 ) cp = 0;
+	if ( x > 0 ) {
 
-	printf("pos=%i, length=%i\n", cp, g_utf8_strlen(box->text, -1));
+		int advance = 0;
 
-	if ( cp > g_utf8_strlen(box->text, -1) ) {
-		cp = 0;
-		cb++;
-		if ( cb >= line->n_boxes ) {
-			cl++;
-			if ( cl >= p->cursor_frame->n_lines ) {
-				cl = p->cursor_frame->n_lines-1;
+		if ( box->type == WRAP_BOX_PANGO ) {
+
+			char *np;
+			np = g_utf8_find_next_char(box->text+cp, NULL);
+			if ( np == box->text+cp ) {
+				advance = 1;
+			} else {
+				cp = np - box->text;
 			}
+
+		} else {
+			cp++;
+			if ( cp > 1 ) advance = 1;
 		}
+
+		if ( advance ) {
+
+			do {
+
+				cb++;
+				cp = 0;
+
+				if ( cb >= line->n_boxes ) {
+					cl++;
+					if ( cl >= p->cursor_frame->n_lines ) {
+						/* Give up - could not move */
+						return;
+					}
+					p->cursor_line = cl;
+					line = &p->cursor_frame->lines[cl];
+					cb = 0;
+					cp = 0;
+				}
+
+			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
+			       || (line->boxes[cb].type == WRAP_BOX_NOTHING) );
+
+			p->cursor_box = cb;
+
+		}
+		p->cursor_pos = cp;
+
+	} else {
+
+		int retreat = 0;
+
+		if ( box->type == WRAP_BOX_PANGO ) {
+
+			char *np;
+			np = g_utf8_find_prev_char(box->text, box->text+cp);
+			if ( np == NULL ) {
+				retreat = 1;
+			} else {
+				cp = np - box->text;
+			}
+
+		} else {
+			cp--;
+			if ( cp < 0 ) retreat = 1;
+		}
+
+		if ( retreat ) {
+
+			do {
+
+				cb--;
+
+				if ( cb < 0 ) {
+					cl--;
+					if ( cl < 0 ) return;
+					p->cursor_line = cl;
+					line = &p->cursor_frame->lines[cl];
+					cb = line->n_boxes - 1;
+				}
+
+			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
+			       || (line->boxes[cb].type == WRAP_BOX_NOTHING) );
+
+			p->cursor_box = cb;
+			box = &line->boxes[cb];
+			if ( box->type == WRAP_BOX_PANGO ) {
+				cp = strlen(box->text);
+			} else {
+				cp = 1;
+			}
+
+		}
+		p->cursor_pos = cp;
+
 	}
 
-	p->cursor_pos = cp;
-	p->cursor_box = cb;
-	p->cursor_line = cl;
+	printf("Cursor at frame %p, line %i, box %i, pos %li\n",
+	       p->cursor_frame, p->cursor_line, p->cursor_box, p->cursor_pos);
 }
 
 

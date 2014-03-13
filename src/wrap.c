@@ -148,6 +148,9 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
 		break;
 
 		case WRAP_BOX_IMAGE :
+		if ( pos > 0 ) {
+			*xposd += pango_units_to_double(box->width);
+		} /* else zero */
 		break;
 
 	}

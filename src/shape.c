@@ -35,17 +35,48 @@
 #include "shape.h"
 
 
-static void shape_and_measure(gpointer data, gpointer user_data)
+struct box_adding_stuff
 {
-	struct wrap_box *box = user_data;
-	PangoItem *item = data;
-	PangoRectangle rect;
+	struct wrap_line *line;
+	SCInterpreter *scin;
+	int editable;
+	char *text;
+	enum wrap_box_space space;
+};
 
-	/* FIXME: Don't assume only one run per wrap box */
+
+static void add_wrap_box(gpointer vi, gpointer vb)
+{
+	struct wrap_box *box;
+	PangoRectangle rect;
+	double *col;
+	PangoItem *item = vi;
+	struct box_adding_stuff *bas = vb;
+
+	if ( bas->line->n_boxes == bas->line->max_boxes ) {
+		bas->line->max_boxes += 32;
+		alloc_boxes(bas->line);
+		if ( bas->line->n_boxes == bas->line->max_boxes ) return;
+	}
+	box = &bas->line->boxes[bas->line->n_boxes];
+
+	box->type = WRAP_BOX_PANGO;
+	box->text = bas->text;
+	box->space = bas->space;
+	box->font = sc_interp_get_font(bas->scin);
+	box->width = 0;
+	box->editable = bas->editable;
+	box->ascent = sc_interp_get_ascent(bas->scin);
+	box->height = sc_interp_get_height(bas->scin);
+	col = sc_interp_get_fgcol(bas->scin);
+	box->col[0] = col[0];  /* Red */
+	box->col[1] = col[1];  /* Green */
+	box->col[2] = col[2];  /* Blue */
+	box->col[3] = col[3];  /* Alpha */
 	box->glyphs = pango_glyph_string_new();
 	box->item = item;
 
-	pango_shape(box->text+item->offset, item->length, &item->analysis,
+	pango_shape(bas->text+item->offset, item->length, &item->analysis,
 	            box->glyphs);
 
 	pango_glyph_string_extents(box->glyphs, box->font, NULL, &rect);
@@ -57,53 +88,33 @@ static void shape_and_measure(gpointer data, gpointer user_data)
 	if ( PANGO_ASCENT(rect) > box->ascent ) {
 		box->ascent = PANGO_ASCENT(rect);
 	}
+
+	bas->line->n_boxes++;
 }
 
 
 /* Add "text", followed by a space of type "space", to "line" */
-static int add_wrap_box(struct wrap_line *line, char *text, size_t offset,
-                        enum wrap_box_space space, PangoContext *pc,
-                        SCInterpreter *scin, int editable)
+static int add_wrap_boxes(struct wrap_line *line, char *text,
+                          enum wrap_box_space space, PangoContext *pc,
+                          SCInterpreter *scin, int editable)
 {
 	GList *pango_items;
-	struct wrap_box *box;
 	PangoAttrList *attrs;
 	PangoAttribute *attr;
-	double *col;
-
-	if ( line->n_boxes == line->max_boxes ) {
-		line->max_boxes += 32;
-		alloc_boxes(line);
-		if ( line->n_boxes == line->max_boxes ) return 1;
-	}
-
-	box = &line->boxes[line->n_boxes];
-	if ( !editable ) offset = 0;
-	box->type = WRAP_BOX_PANGO;
-	box->text = text;
-	box->space = space;
-	box->font = sc_interp_get_font(scin);
-	box->width = 0;
-	box->editable = editable;
-	box->ascent = sc_interp_get_ascent(scin);
-	box->height = sc_interp_get_height(scin);
-	col = sc_interp_get_fgcol(scin);
-	box->col[0] = col[0];  /* Red */
-	box->col[1] = col[1];  /* Green */
-	box->col[2] = col[2];  /* Blue */
-	box->col[3] = col[3];  /* Alpha */
-	line->n_boxes++;
-
-	if ( strlen(text) == 0 ) {
-		box->type = WRAP_BOX_NOTHING;
-		return 0;
-	}
+	struct box_adding_stuff bas;
 
 	attrs = pango_attr_list_new();
 	attr = pango_attr_font_desc_new(sc_interp_get_fontdesc(scin));
 	pango_attr_list_insert_before(attrs, attr);
 	pango_items = pango_itemize(pc, text, 0, strlen(text), attrs, NULL);
-	g_list_foreach(pango_items, shape_and_measure, box);
+
+	bas.line = line;
+	bas.scin = scin;
+	bas.editable = editable;
+	bas.text = text;
+	bas.space = space;
+
+	g_list_foreach(pango_items, add_wrap_box, &bas);
 	g_list_free(pango_items);
 	pango_attr_list_unref(attrs);
 
@@ -186,8 +197,8 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, const char *text,
 				return 1;
 			}
 
-			if ( add_wrap_box(boxes, word, start, type,
-			                  pc, scin, editable) ) {
+			if ( add_wrap_boxes(boxes, word, type,
+			                    pc, scin, editable) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = offs;
@@ -214,15 +225,15 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, const char *text,
 			char *word2;
 
 			word2 = strndup(word, l-1);
-			add_wrap_box(boxes, word2, start,
-			             WRAP_SPACE_EOP, pc, scin, editable);
-			add_wrap_box(boxes, strdup(""), len_bytes,
-			             WRAP_SPACE_NONE, pc, scin, editable);
+			add_wrap_boxes(boxes, word2,
+			               WRAP_SPACE_EOP, pc, scin, editable);
+			add_wrap_boxes(boxes, strdup(""),
+			               WRAP_SPACE_NONE, pc, scin, editable);
 
 		} else {
 
-			add_wrap_box(boxes, word, start,
-			             WRAP_SPACE_NONE, pc, scin, editable);
+			add_wrap_boxes(boxes, word,
+			               WRAP_SPACE_NONE, pc, scin, editable);
 
 		}
 

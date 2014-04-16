@@ -1125,27 +1125,44 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 
 static void do_backspace(struct frame *fr, struct presentation *p)
 {
-#if 0
 	size_t tlen, olen;
+	int nln, nbx;
+	size_t pos;
+	struct wrap_box *box;
 
 	if ( fr == NULL ) return;
 
 	/* If this is, say, the top level frame, do nothing */
-	if ( fr->sc == NULL ) return;
+	if ( fr->boxes == NULL ) return;
 
-	if ( fr->pos == 0 ) return;
+	nln = p->cursor_line;
+	nbx = p->cursor_box;
+	pos = p->cursor_pos;
+
+	if ( pos == 0 ) {
+		if ( nbx == 0 ) {
+			if ( nln == 0 ) return;
+			nln--;
+			nbx = fr->lines[nln]->n_boxes-1;  /* The last box */
+		} else {
+			nbx--;
+		}
+		pos = strlen(fr->lines[nln]->boxes[nbx].text)-1;
+	}
+
+	box = &fr->lines[nln].boxes[nbx];
+
+	ptr = g_utf8_pointer_to_offset(box->text, pos);
 
 	olen = strlen(fr->sc) - fr->pos + 1;
 	tlen = 1;  /* FIXME: Length of character before cursor */
 
 	memmove(fr->sc+fr->pos-tlen, fr->sc+fr->pos, olen);
 
+	reshape_box(box);
 	rerender_slide(p);
-	fr->pos -= tlen;
 	p->cursor_pos = fr->pos;
 	redraw_editor(p);
-	fr->empty = 0;
-#endif
 }
 
 
@@ -1645,7 +1662,8 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 				}
 
 			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
-			       || (line->boxes[cb].type == WRAP_BOX_NOTHING) );
+			       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
+			       || !line->boxes[cb].editable );
 
 			p->cursor_box = cb;
 
@@ -1686,7 +1704,8 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 				}
 
 			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
-			       || (line->boxes[cb].type == WRAP_BOX_NOTHING) );
+			       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
+			       || !line->boxes[cb].editable );
 
 			p->cursor_box = cb;
 			box = &line->boxes[cb];

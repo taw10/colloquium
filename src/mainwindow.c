@@ -1125,10 +1125,10 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 
 static void do_backspace(struct frame *fr, struct presentation *p)
 {
-	size_t tlen, olen;
 	int nln, nbx;
 	size_t pos;
 	struct wrap_box *box;
+	glong ptr;
 
 	if ( fr == NULL ) return;
 
@@ -1143,25 +1143,23 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 		if ( nbx == 0 ) {
 			if ( nln == 0 ) return;
 			nln--;
-			nbx = fr->lines[nln]->n_boxes-1;  /* The last box */
+			nbx = fr->lines[nln].n_boxes-1;  /* The last box */
 		} else {
 			nbx--;
 		}
-		pos = strlen(fr->lines[nln]->boxes[nbx].text)-1;
+		pos = strlen(fr->lines[nln].boxes[nbx].text)-1;
 	}
 
 	box = &fr->lines[nln].boxes[nbx];
 
-	ptr = g_utf8_pointer_to_offset(box->text, pos);
+	p->cursor_line = nln;
+	p->cursor_box = nbx;
+	p->cursor_pos = pos;
 
-	olen = strlen(fr->sc) - fr->pos + 1;
-	tlen = 1;  /* FIXME: Length of character before cursor */
+	ptr = g_utf8_pointer_to_offset(box->text, box->text+pos);
 
-	memmove(fr->sc+fr->pos-tlen, fr->sc+fr->pos, olen);
-
-	reshape_box(box);
+//	reshape_box(box);
 	rerender_slide(p);
-	p->cursor_pos = fr->pos;
 	redraw_editor(p);
 }
 

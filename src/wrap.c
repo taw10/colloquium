@@ -123,6 +123,7 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
                     double *xposd, double *yposd, double *line_height)
 {
 	int p;
+	const char *box_text;
 
 	*xposd = 0.0;
 	*yposd = 0.0;
@@ -140,8 +141,10 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
 	switch ( box->type ) {
 
 		case WRAP_BOX_PANGO :
-		pango_glyph_string_index_to_x(box->glyphs, box->text,
-		                              strlen(box->text),
+		box_text = sc_block_contents(box->scblock) + box->offs;
+		pango_glyph_string_index_to_x(box->glyphs,
+		                              box_text,
+		                              box->len_bytes,
 			                      &box->item->analysis, pos,
 			                      FALSE, &p);
 		*xposd += pango_units_to_double(p);
@@ -154,6 +157,70 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
 		break;
 
 	}
+}
+
+
+void move_cursor_back(struct presentation *p)
+{
+	int retreat = 0;
+	signed int cp, cb, cl;
+	struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
+	struct wrap_box *box = &line->boxes[p->cursor_box];
+
+	cp = p->cursor_pos;
+	cb = p->cursor_box;
+	cl = p->cursor_line;
+
+	if ( box->type == WRAP_BOX_PANGO ) {
+
+		char *np;
+		const char *box_text;
+		box_text = sc_block_contents(box->scblock) + box->offs;
+		np = g_utf8_offset_to_pointer(box_text, cp);
+		np = g_utf8_find_prev_char(box_text, np);
+		if ( np == NULL ) {
+			retreat = 1;
+		} else {
+			cp = np - box_text;
+		}
+
+	} else {
+		cp--;
+		if ( cp < 0 ) retreat = 1;
+	}
+
+	if ( retreat ) {
+
+		const char *box_text;
+
+		do {
+
+			cb--;
+
+			if ( cb < 0 ) {
+				cl--;
+				if ( cl < 0 ) return;
+				p->cursor_line = cl;
+				line = &p->cursor_frame->lines[cl];
+				cb = line->n_boxes - 1;
+			}
+
+		} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
+		       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
+		       || !line->boxes[cb].editable );
+
+		p->cursor_box = cb;
+		box = &line->boxes[cb];
+		box_text = sc_block_contents(box->scblock) + box->offs;
+		if ( box->type == WRAP_BOX_PANGO ) {
+			cp = g_utf8_pointer_to_offset(box_text,
+			                       box_text+box->len_bytes);
+		} else {
+			cp = 1;
+		}
+
+	}
+	p->cursor_pos = cp;
 }
 
 
@@ -212,6 +279,7 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 	int x_pos_i;
 	size_t offs;
 	int ln, bn;
+	const char *box_text;
 
 	if ( fr->n_lines == 0 ) {
 		*line = 0;
@@ -245,12 +313,14 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 
 		case WRAP_BOX_PANGO :
 		x_pos_i = pango_units_from_double(x_pos);
-		pango_glyph_string_x_to_index(b->glyphs, b->text,
-		                              strlen(b->text),
+		box_text = sc_block_contents(b->scblock) + b->offs;
+		pango_glyph_string_x_to_index(b->glyphs, box_text,
+		                              b->len_bytes,
 		                              &b->item->analysis,
 		                              x_pos_i, &idx, &trail);
 		/* FIXME: Assumes 1 byte char */
 		offs = idx + trail;
+		break;
 
 		case WRAP_BOX_SENTINEL :
 		offs = 0;
@@ -522,13 +592,14 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	}
 	box = &boxes->boxes[boxes->n_boxes];
 	box->type = WRAP_BOX_SENTINEL;
-	box->text = NULL;
 	box->space = WRAP_SPACE_NONE;
 	box->font = NULL;
 	box->width = 0;
 	box->ascent = 0;
 	box->height = 0;
 	box->editable = 1;
+	box->scblock = NULL;
+	box->offs = 0;
 	boxes->n_boxes++;
 
 	line_length *= PANGO_SCALE;
@@ -689,7 +760,6 @@ void wrap_line_free(struct wrap_line *l)
 			case WRAP_BOX_PANGO :
 			pango_glyph_string_free(l->boxes[i].glyphs);
 			pango_item_free(l->boxes[i].item);
-			free(l->boxes[i].text);
 			break;
 
 			case WRAP_BOX_IMAGE :
@@ -752,7 +822,6 @@ void show_boxes(struct wrap_line *boxes)
 
 	for ( i=0; i<boxes->n_boxes; i++ ) {
 		printf("%3i", i);
-		printf(" '%s'", boxes->boxes[i].text);
 		printf(" t=%i s=%i %i %5.2f\n",
 		       boxes->boxes[i].type, boxes->boxes[i].space,
 		       boxes->boxes[i].width, boxes->boxes[i].sp);

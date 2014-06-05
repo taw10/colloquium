@@ -42,6 +42,8 @@ extern const char *sc_block_contents(const SCBlock *bl);
 extern struct frame *sc_block_frame(const SCBlock *bl);
 extern void sc_block_set_frame(SCBlock *bl, struct frame *fr);
 
+extern void sc_delete_text(SCBlock *b1, int p1, SCBlock *b2, int p2);
+
 extern void show_sc_blocks(const SCBlock *bl);
 extern void show_sc_block(const SCBlock *bl, const char *prefix);
 

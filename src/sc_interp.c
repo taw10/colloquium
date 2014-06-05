@@ -512,7 +512,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 	if ( name == NULL ) {
 		split_words(sc_interp_get_frame(scin)->boxes,
-		            scin->pc, contents, scin->lang, 1,
+		            scin->pc, bl, contents, scin->lang, 1,
 		            scin);
 
 	} else if ( strcmp(name, "bgcol") == 0 ) {
@@ -541,7 +541,8 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 				snprintf(tmp, 63, "%i",
 					 scin->s_constants->slide_number);
 				split_words(sc_interp_get_frame(scin)->boxes,
-					    scin->pc, tmp, scin->lang, 0, scin);
+					    scin->pc, bl, tmp, scin->lang, 0,
+					    scin);
 			}
 		} else {
 			printf("No slide constants.\n");

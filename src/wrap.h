@@ -3,7 +3,7 @@
  *
  * Text wrapping, hyphenation, justification and shaping
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -61,6 +61,9 @@ struct wrap_box
 	enum wrap_box_type type;
 	int editable;
 
+	SCBlock *scblock;
+	size_t offs;  /* offset into contents of scblock */
+
 	/* Pango units */
 	int width;
 	int height;
@@ -73,8 +76,8 @@ struct wrap_box
 	PangoGlyphString *glyphs;
 	PangoItem *item;
 	PangoFont *font;
-	char *text;
 	double col[4];  /* rgba colour */
+	size_t len_bytes;  /* number of bytes (not characters) of text */
 
 	/* For type == WRAP_BOX_IMAGE */
 	char *filename;
@@ -101,6 +104,8 @@ extern int wrap_contents(struct frame *fr);
 
 extern void get_cursor_pos(struct wrap_box *box, size_t pos,
                            double *xposd, double *yposd, double *line_height);
+
+extern void move_cursor_back(struct presentation *p);
 
 extern void find_cursor(struct frame *fr, double xposd, double yposd,
                         int *line, int *box, size_t *pos);

@@ -376,3 +376,9 @@ SCBlock *sc_parse(const char *sc)
 
 	return blf;
 }
+
+
+void sc_delete_text(SCBlock *b1, int p1, SCBlock *b2, int p2)
+{
+	printf("Deleting from %p/%i to %p/%i\n", b1, p1, b2, p2);
+}

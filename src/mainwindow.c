@@ -1125,40 +1125,30 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 
 static void do_backspace(struct frame *fr, struct presentation *p)
 {
-	int nln, nbx;
-	size_t pos;
-	struct wrap_box *box;
-	glong ptr;
+	int sln, sbx, sps;
 
 	if ( fr == NULL ) return;
 
 	/* If this is, say, the top level frame, do nothing */
 	if ( fr->boxes == NULL ) return;
 
-	nln = p->cursor_line;
-	nbx = p->cursor_box;
-	pos = p->cursor_pos;
+	printf("Old: frame %p, line %i, box %i, pos %li\n",
+	       p->cursor_frame, p->cursor_line, p->cursor_box, p->cursor_pos);
+	sln = p->cursor_line;
+	sbx = p->cursor_box;
+	sps = p->cursor_pos;
 
-	if ( pos == 0 ) {
-		if ( nbx == 0 ) {
-			if ( nln == 0 ) return;
-			nln--;
-			nbx = fr->lines[nln].n_boxes-1;  /* The last box */
-		} else {
-			nbx--;
-		}
-		pos = strlen(fr->lines[nln].boxes[nbx].text)-1;
-	}
+	move_cursor_back(p);
 
-	box = &fr->lines[nln].boxes[nbx];
+	printf("New: frame %p, line %i, box %i, pos %li\n",
+	       p->cursor_frame, p->cursor_line, p->cursor_box, p->cursor_pos);
 
-	p->cursor_line = nln;
-	p->cursor_box = nbx;
-	p->cursor_pos = pos;
+	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
+	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
+	struct wrap_line *fline = &p->cursor_frame->lines[p->cursor_line];
+	struct wrap_box *fbox = &fline->boxes[p->cursor_box];
+	sc_delete_text(fbox->scblock, p->cursor_pos, sbox->scblock, sps);
 
-	ptr = g_utf8_pointer_to_offset(box->text, box->text+pos);
-
-//	reshape_box(box);
 	rerender_slide(p);
 	redraw_editor(p);
 }
@@ -1610,29 +1600,30 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
-
 static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
-	struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
-	struct wrap_box *box = &line->boxes[p->cursor_box];
-	signed int cp, cb, cl;
-
-	cp = p->cursor_pos;
-	cb = p->cursor_box;
-	cl = p->cursor_line;
-
 	if ( x > 0 ) {
 
 		int advance = 0;
+		signed int cp, cb, cl;
+		struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
+		struct wrap_box *box = &line->boxes[p->cursor_box];
+
+		cp = p->cursor_pos;
+		cb = p->cursor_box;
+		cl = p->cursor_line;
 
 		if ( box->type == WRAP_BOX_PANGO ) {
 
 			char *np;
-			np = g_utf8_find_next_char(box->text+cp, NULL);
-			if ( np == box->text+cp ) {
+			const char *box_text;
+			box_text = sc_block_contents(box->scblock) + box->offs;
+			np = g_utf8_offset_to_pointer(box_text, cp);
+			np = g_utf8_find_next_char(np, NULL);
+			if ( np > box_text+box->len_bytes ) {
 				advance = 1;
 			} else {
-				cp = np - box->text;
+				cp = np - box_text;
 			}
 
 		} else {
@@ -1669,57 +1660,8 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 		p->cursor_pos = cp;
 
 	} else {
-
-		int retreat = 0;
-
-		if ( box->type == WRAP_BOX_PANGO ) {
-
-			char *np;
-			np = g_utf8_find_prev_char(box->text, box->text+cp);
-			if ( np == NULL ) {
-				retreat = 1;
-			} else {
-				cp = np - box->text;
-			}
-
-		} else {
-			cp--;
-			if ( cp < 0 ) retreat = 1;
-		}
-
-		if ( retreat ) {
-
-			do {
-
-				cb--;
-
-				if ( cb < 0 ) {
-					cl--;
-					if ( cl < 0 ) return;
-					p->cursor_line = cl;
-					line = &p->cursor_frame->lines[cl];
-					cb = line->n_boxes - 1;
-				}
-
-			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
-			       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
-			       || !line->boxes[cb].editable );
-
-			p->cursor_box = cb;
-			box = &line->boxes[cb];
-			if ( box->type == WRAP_BOX_PANGO ) {
-				cp = strlen(box->text);
-			} else {
-				cp = 1;
-			}
-
-		}
-		p->cursor_pos = cp;
-
+		move_cursor_back(p);
 	}
-
-	printf("Cursor at frame %p, line %i, box %i, pos %li\n",
-	       p->cursor_frame, p->cursor_line, p->cursor_box, p->cursor_pos);
 }
 
 

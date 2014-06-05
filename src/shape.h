@@ -32,10 +32,12 @@
 #include "wrap.h"
 
 extern int split_words(struct wrap_line *boxes, PangoContext *pc,
-                       const char *text, PangoLanguage *lang, int editable,
-                       SCInterpreter *scin);
+                       SCBlock *bl, const char *text, PangoLanguage *lang,
+                       int editable, SCInterpreter *scin);
 
 extern void add_image_box(struct wrap_line *line, const char *filename,
                           int w, int h, int editable);
+
+extern void reshape_box(struct wrap_box *box);
 
 #endif	/* SHAPE_H */

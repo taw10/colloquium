@@ -42,6 +42,8 @@ struct box_adding_stuff
 	int editable;
 	char *text;
 	enum wrap_box_space space;
+	SCBlock *bl;
+	size_t offs;
 };
 
 
@@ -61,13 +63,15 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box = &bas->line->boxes[bas->line->n_boxes];
 
 	box->type = WRAP_BOX_PANGO;
-	box->text = bas->text;
 	box->space = bas->space;
 	box->font = sc_interp_get_font(bas->scin);
 	box->width = 0;
 	box->editable = bas->editable;
 	box->ascent = sc_interp_get_ascent(bas->scin);
 	box->height = sc_interp_get_height(bas->scin);
+	box->scblock = bas->bl;
+	box->offs = bas->offs + item->offset;
+	box->len_bytes = item->length;
 	col = sc_interp_get_fgcol(bas->scin);
 	box->col[0] = col[0];  /* Red */
 	box->col[1] = col[1];  /* Green */
@@ -96,7 +100,8 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 /* Add "text", followed by a space of type "space", to "line" */
 static int add_wrap_boxes(struct wrap_line *line, char *text,
                           enum wrap_box_space space, PangoContext *pc,
-                          SCInterpreter *scin, int editable)
+                          SCInterpreter *scin, SCBlock *bl, size_t offs,
+                          int editable)
 {
 	GList *pango_items;
 	PangoAttrList *attrs;
@@ -113,6 +118,8 @@ static int add_wrap_boxes(struct wrap_line *line, char *text,
 	bas.editable = editable;
 	bas.text = text;
 	bas.space = space;
+	bas.bl = bl;
+	bas.offs = offs;
 
 	g_list_foreach(pango_items, add_wrap_box, &bas);
 	g_list_free(pango_items);
@@ -129,7 +136,8 @@ void add_image_box(struct wrap_line *line, const char *filename,
 
 	box = &line->boxes[line->n_boxes];
 	box->type = WRAP_BOX_IMAGE;
-	box->text = NULL;
+	box->scblock = NULL;
+	box->offs = 0;
 	box->space = WRAP_SPACE_NONE;
 	box->width = pango_units_from_double(w);
 	box->ascent = pango_units_from_double(h);
@@ -140,8 +148,9 @@ void add_image_box(struct wrap_line *line, const char *filename,
 }
 
 
-int split_words(struct wrap_line *boxes, PangoContext *pc, const char *text,
-                PangoLanguage *lang, int editable, SCInterpreter *scin)
+int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
+                const char *text, PangoLanguage *lang, int editable,
+                SCInterpreter *scin)
 {
 	PangoLogAttr *log_attrs;
 	glong len_chars, i;
@@ -198,7 +207,7 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, const char *text,
 			}
 
 			if ( add_wrap_boxes(boxes, word, type,
-			                    pc, scin, editable) ) {
+			                    pc, scin, bl, start, editable) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = offs;
@@ -226,14 +235,17 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, const char *text,
 
 			word2 = strndup(word, l-1);
 			add_wrap_boxes(boxes, word2,
-			               WRAP_SPACE_EOP, pc, scin, editable);
+			               WRAP_SPACE_EOP, pc, scin, bl, start,
+			               editable);
 			add_wrap_boxes(boxes, strdup(""),
-			               WRAP_SPACE_NONE, pc, scin, editable);
+			               WRAP_SPACE_NONE, pc, scin, bl, start,
+			               editable);
 
 		} else {
 
 			add_wrap_boxes(boxes, word,
-			               WRAP_SPACE_NONE, pc, scin, editable);
+			               WRAP_SPACE_NONE, pc, scin, bl, start,
+			               editable);
 
 		}
 

@@ -72,7 +72,6 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box->scblock = bas->bl;
 	box->offs_char = g_utf8_pointer_to_offset(bas->text,
 		                              bas->text+item->offset+bas->offs);
-	box->len_bytes = item->length;
 	box->len_chars = g_utf8_strlen(bas->text+item->offset+bas->offs,
 	                               item->length);
 	col = sc_interp_get_fgcol(bas->scin);

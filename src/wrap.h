@@ -77,7 +77,6 @@ struct wrap_box
 	PangoItem *item;
 	PangoFont *font;
 	double col[4];  /* rgba colour */
-	size_t len_bytes;  /* number of bytes (not characters) of text */
 	int len_chars;
 
 	/* For type == WRAP_BOX_IMAGE */

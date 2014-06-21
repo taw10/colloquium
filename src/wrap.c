@@ -146,7 +146,7 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
 		box_text = g_utf8_offset_to_pointer(block_text, box->offs_char);
 		/* cast because this function is not const-clean */
 		pango_glyph_string_index_to_x(box->glyphs, (char *)box_text,
-		                              box->len_bytes,
+		                              strlen(box_text),
 			                      &box->item->analysis, pos,
 			                      FALSE, &p);
 		*xposd += pango_units_to_double(p);
@@ -311,7 +311,7 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 		box_text = g_utf8_offset_to_pointer(block_text, b->offs_char);
 		/* cast because this function is not const-clean */
 		pango_glyph_string_x_to_index(b->glyphs, (char *)box_text,
-		                              b->len_bytes,
+		                              strlen(box_text),
 		                              &b->item->analysis,
 		                              x_pos_i, &idx, &trail);
 		offs = idx + trail;

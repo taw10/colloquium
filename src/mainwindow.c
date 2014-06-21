@@ -1142,8 +1142,22 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 	struct wrap_line *fline = &p->cursor_frame->lines[p->cursor_line];
 	struct wrap_box *fbox = &fline->boxes[p->cursor_box];
+
+	SCBlock *scbl = sbox->scblock;
+	do {
+		show_sc_blocks(scbl);
+		scbl = sc_block_next(scbl);
+	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
+
 	sc_delete_text(fbox->scblock, p->cursor_pos+fbox->offs_char,
 	               sbox->scblock, sps+sbox->offs_char);
+
+	scbl = sbox->scblock;
+	do {
+		show_sc_blocks(scbl);
+		scbl = sc_block_next(scbl);
+	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
+
 
 	rerender_slide(p);
 	redraw_editor(p);

@@ -132,7 +132,7 @@ SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
 }
 
 
-/* Frees "bl" and all its children, and links it out of its chain */
+/* Frees "bl" and all its children */
 void sc_block_free(SCBlock *bl)
 {
 	if ( bl->child != NULL ) {
@@ -381,13 +381,11 @@ SCBlock *sc_parse(const char *sc)
 
 static void delete_from_block(SCBlock *b, int o1, int o2)
 {
+	if ( o1 == o2 ) return;  /* nothing to delete */
 	assert(o2 > o1);
 	char *p1 = g_utf8_offset_to_pointer(b->contents, o1);
 	char *p2 = g_utf8_offset_to_pointer(b->contents, o2);
-	printf("'%s' (%p), chars %i to %i\n", b->contents, b->contents, o1, o2);
-	printf("moving %i bytes from %p to %p\n", strlen(p2)+1, p2, p1);
 	memmove(p1, p2, strlen(p2)+1);
-	printf("new: '%s'\n", b->contents);
 }
 
 
@@ -408,23 +406,20 @@ static void delete_from_start(SCBlock *b, int offs)
 /* Character offsets */
 void sc_delete_text(SCBlock *b1, int o1, SCBlock *b2, int o2)
 {
-	printf("Before:\n");
-	show_sc_blocks(b1);
 	if ( b1 == b2 ) {
-		printf("--------> dfb\n");
 		delete_from_block(b1, o1, o2);
 	} else if ( b2 == b1->next ) {
-		printf("--------> dte+dfs\n");
 		delete_to_end(b1, o1);
 		delete_from_start(b2, o2);
 	} else {
-		printf("--------> dte+dfs+chain\n");
 		delete_to_end(b1, o1);
 		delete_from_start(b2, o2);
-		while ( b1->next != b2 ) {
-			sc_block_free(b1->next);
+		b1->next = b2;
+		SCBlock *de = b1->next;
+		while ( de != b2 ) {
+			SCBlock *denext = de->next;
+			sc_block_free(de);
+			de = denext;
 		}
 	}
-	printf("After:\n");
-	show_sc_blocks(b1);
 }

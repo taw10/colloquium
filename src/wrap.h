@@ -102,7 +102,7 @@ struct wrap_line
 
 extern int wrap_contents(struct frame *fr);
 
-extern void get_cursor_pos(struct wrap_box *box, size_t pos,
+extern void get_cursor_pos(struct wrap_box *box, int pos,
                            double *xposd, double *yposd, double *line_height);
 
 extern void move_cursor_back(struct presentation *p);

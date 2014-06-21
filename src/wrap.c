@@ -119,7 +119,7 @@ static struct wrap_line *get_cursor_line(struct frame *fr, size_t pos,
 }
 #endif
 
-void get_cursor_pos(struct wrap_box *box, size_t pos,
+void get_cursor_pos(struct wrap_box *box, int pos,
                     double *xposd, double *yposd, double *line_height)
 {
 	int p;
@@ -146,7 +146,7 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
 		box_text = g_utf8_offset_to_pointer(block_text, box->offs_char);
 		/* cast because this function is not const-clean */
 		pango_glyph_string_index_to_x(box->glyphs, (char *)box_text,
-		                              strlen(box_text),
+		                              box->item->length,
 			                      &box->item->analysis, pos,
 			                      FALSE, &p);
 		*xposd += pango_units_to_double(p);
@@ -156,6 +156,11 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
 		if ( pos > 0 ) {
 			*xposd += pango_units_to_double(box->width);
 		} /* else zero */
+		break;
+
+		case WRAP_BOX_NOTHING :
+		case WRAP_BOX_SENTINEL :
+		*xposd = 0.0;
 		break;
 
 	}

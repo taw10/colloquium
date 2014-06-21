@@ -123,6 +123,7 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
                     double *xposd, double *yposd, double *line_height)
 {
 	int p;
+	const char *block_text;
 	const char *box_text;
 
 	*xposd = 0.0;
@@ -141,9 +142,10 @@ void get_cursor_pos(struct wrap_box *box, size_t pos,
 	switch ( box->type ) {
 
 		case WRAP_BOX_PANGO :
-		box_text = sc_block_contents(box->scblock) + box->offs;
-		pango_glyph_string_index_to_x(box->glyphs,
-		                              box_text,
+		block_text = sc_block_contents(box->scblock);
+		box_text = g_utf8_offset_to_pointer(block_text, box->offs_char);
+		/* cast because this function is not const-clean */
+		pango_glyph_string_index_to_x(box->glyphs, (char *)box_text,
 		                              box->len_bytes,
 			                      &box->item->analysis, pos,
 			                      FALSE, &p);
@@ -173,15 +175,10 @@ void move_cursor_back(struct presentation *p)
 
 	if ( box->type == WRAP_BOX_PANGO ) {
 
-		char *np;
-		const char *box_text;
-		box_text = sc_block_contents(box->scblock) + box->offs;
-		np = g_utf8_offset_to_pointer(box_text, cp);
-		np = g_utf8_find_prev_char(box_text, np);
-		if ( np == NULL ) {
+		if ( cp == 0 ) {
 			retreat = 1;
 		} else {
-			cp = np - box_text;
+			cp--;
 		}
 
 	} else {
@@ -190,8 +187,6 @@ void move_cursor_back(struct presentation *p)
 	}
 
 	if ( retreat ) {
-
-		const char *box_text;
 
 		do {
 
@@ -211,10 +206,8 @@ void move_cursor_back(struct presentation *p)
 
 		p->cursor_box = cb;
 		box = &line->boxes[cb];
-		box_text = sc_block_contents(box->scblock) + box->offs;
 		if ( box->type == WRAP_BOX_PANGO ) {
-			cp = g_utf8_pointer_to_offset(box_text,
-			                       box_text+box->len_bytes);
+			cp = box->len_chars;
 		} else {
 			cp = 1;
 		}
@@ -269,7 +262,7 @@ static int find_cursor_box(struct frame *fr, struct wrap_line *l,
 
 
 void find_cursor(struct frame *fr, double xposd, double yposd,
-                 int *line, int *box, size_t *pos)
+                 int *line, int *box, int *pos)
 {
 	struct wrap_line *l;
 	struct wrap_box *b;
@@ -279,6 +272,7 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 	int x_pos_i;
 	size_t offs;
 	int ln, bn;
+	const char *block_text;
 	const char *box_text;
 
 	if ( fr->n_lines == 0 ) {
@@ -313,12 +307,13 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 
 		case WRAP_BOX_PANGO :
 		x_pos_i = pango_units_from_double(x_pos);
-		box_text = sc_block_contents(b->scblock) + b->offs;
-		pango_glyph_string_x_to_index(b->glyphs, box_text,
+		block_text = sc_block_contents(b->scblock);
+		box_text = g_utf8_offset_to_pointer(block_text, b->offs_char);
+		/* cast because this function is not const-clean */
+		pango_glyph_string_x_to_index(b->glyphs, (char *)box_text,
 		                              b->len_bytes,
 		                              &b->item->analysis,
 		                              x_pos_i, &idx, &trail);
-		/* FIXME: Assumes 1 byte char */
 		offs = idx + trail;
 		break;
 
@@ -599,7 +594,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 	box->height = 0;
 	box->editable = 1;
 	box->scblock = NULL;
-	box->offs = 0;
+	box->offs_char = 0;
 	boxes->n_boxes++;
 
 	line_length *= PANGO_SCALE;
@@ -821,10 +816,19 @@ void show_boxes(struct wrap_line *boxes)
 	}
 
 	for ( i=0; i<boxes->n_boxes; i++ ) {
+		struct wrap_box *box = &boxes->boxes[i];
+		char *box_text;
 		printf("%3i", i);
-		printf(" t=%i s=%i %i %5.2f\n",
-		       boxes->boxes[i].type, boxes->boxes[i].space,
-		       boxes->boxes[i].width, boxes->boxes[i].sp);
+		if ( box->scblock != NULL ) {
+			const char *block_text = sc_block_contents(box->scblock);
+			box_text = g_utf8_offset_to_pointer(block_text,
+			                                    box->offs_char);
+		} else {
+			box_text = NULL;
+		}
+		printf(" t=%i s=%i %10i %5i %8.2f '%s'\n",
+		       box->type, box->space, box->width, box->offs_char,
+		       box->sp, box_text);
 	}
 }
 

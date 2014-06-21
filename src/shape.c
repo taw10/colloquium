@@ -40,7 +40,7 @@ struct box_adding_stuff
 	struct wrap_line *line;
 	SCInterpreter *scin;
 	int editable;
-	char *text;
+	const char *text;
 	enum wrap_box_space space;
 	SCBlock *bl;
 	size_t offs;
@@ -70,8 +70,11 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box->ascent = sc_interp_get_ascent(bas->scin);
 	box->height = sc_interp_get_height(bas->scin);
 	box->scblock = bas->bl;
-	box->offs = bas->offs + item->offset;
+	box->offs_char = g_utf8_pointer_to_offset(bas->text,
+		                              bas->text+item->offset+bas->offs);
 	box->len_bytes = item->length;
+	box->len_chars = g_utf8_strlen(bas->text+item->offset+bas->offs,
+	                               item->length);
 	col = sc_interp_get_fgcol(bas->scin);
 	box->col[0] = col[0];  /* Red */
 	box->col[1] = col[1];  /* Green */
@@ -80,8 +83,8 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box->glyphs = pango_glyph_string_new();
 	box->item = item;
 
-	pango_shape(bas->text+item->offset, item->length, &item->analysis,
-	            box->glyphs);
+	pango_shape(bas->text+bas->offs+item->offset, item->length,
+	            &item->analysis, box->glyphs);
 
 	pango_glyph_string_extents(box->glyphs, box->font, NULL, &rect);
 
@@ -98,10 +101,10 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 
 
 /* Add "text", followed by a space of type "space", to "line" */
-static int add_wrap_boxes(struct wrap_line *line, char *text,
+static int add_wrap_boxes(struct wrap_line *line, const char *text,
                           enum wrap_box_space space, PangoContext *pc,
                           SCInterpreter *scin, SCBlock *bl, size_t offs,
-                          int editable)
+                          size_t len, int editable)
 {
 	GList *pango_items;
 	PangoAttrList *attrs;
@@ -111,7 +114,7 @@ static int add_wrap_boxes(struct wrap_line *line, char *text,
 	attrs = pango_attr_list_new();
 	attr = pango_attr_font_desc_new(sc_interp_get_fontdesc(scin));
 	pango_attr_list_insert_before(attrs, attr);
-	pango_items = pango_itemize(pc, text, 0, strlen(text), attrs, NULL);
+	pango_items = pango_itemize(pc, text+offs, 0, len, attrs, NULL);
 
 	bas.line = line;
 	bas.scin = scin;
@@ -137,7 +140,7 @@ void add_image_box(struct wrap_line *line, const char *filename,
 	box = &line->boxes[line->n_boxes];
 	box->type = WRAP_BOX_IMAGE;
 	box->scblock = NULL;
-	box->offs = 0;
+	box->offs_char = 0;
 	box->space = WRAP_SPACE_NONE;
 	box->width = pango_units_from_double(w);
 	box->ascent = pango_units_from_double(h);
@@ -175,7 +178,6 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 
 		if ( log_attrs[i].is_line_break ) {
 
-			char *word;
 			enum wrap_box_space type;
 			size_t len;
 			char *ptr;
@@ -199,15 +201,8 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 				type = WRAP_SPACE_NONE;
 			}
 
-			word = strndup(text+start, len);
-			if ( word == NULL ) {
-				fprintf(stderr, "strndup() failed.\n");
-				free(log_attrs);
-				return 1;
-			}
-
-			if ( add_wrap_boxes(boxes, word, type,
-			                    pc, scin, bl, start, editable) ) {
+			if ( add_wrap_boxes(boxes, text, type, pc, scin, bl,
+			                    start, len, editable) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = offs;
@@ -217,35 +212,23 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 	}
 	if ( i > start ) {
 
-		char *word;
-		size_t l;
+		size_t l = strlen(text+start);
 
-		word = strdup(text+start);  /* to the end */
-		if ( word == NULL ) {
-			fprintf(stderr, "strndup() failed.\n");
-			free(log_attrs);
-			return 1;
-		}
-		l = strlen(word);
-
-		if ( (word[l-1] == '\n')  ) {
+		if ( (text[start+l-1] == '\n')  ) {
 
 			/* There is a newline at the end of the SC */
-			char *word2;
-
-			word2 = strndup(word, l-1);
-			add_wrap_boxes(boxes, word2,
+			add_wrap_boxes(boxes, text,
 			               WRAP_SPACE_EOP, pc, scin, bl, start,
-			               editable);
-			add_wrap_boxes(boxes, strdup(""),
-			               WRAP_SPACE_NONE, pc, scin, bl, start,
-			               editable);
+			               l-1, editable);
+			//add_wrap_boxes(boxes, "",
+			//               WRAP_SPACE_NONE, pc, scin, bl, start+l,
+			//               1, editable);
 
 		} else {
 
-			add_wrap_boxes(boxes, word,
+			add_wrap_boxes(boxes, text,
 			               WRAP_SPACE_NONE, pc, scin, bl, start,
-			               editable);
+			               l, editable);
 
 		}
 

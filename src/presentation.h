@@ -144,7 +144,7 @@ struct presentation
 	struct frame     *cursor_frame;
 	int               cursor_line;
 	int               cursor_box;
-	size_t            cursor_pos;
+	int               cursor_pos;  /* characters into box */
 
 	/* This is the "native" size of the slide.  It only exists to give
 	 * font size some meaning in the context of a somewhat arbitrary DPI */

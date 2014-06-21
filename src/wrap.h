@@ -62,7 +62,7 @@ struct wrap_box
 	int editable;
 
 	SCBlock *scblock;
-	size_t offs;  /* offset into contents of scblock */
+	int offs_char;  /* offset (in characters, not bytes) into scblock */
 
 	/* Pango units */
 	int width;
@@ -78,6 +78,7 @@ struct wrap_box
 	PangoFont *font;
 	double col[4];  /* rgba colour */
 	size_t len_bytes;  /* number of bytes (not characters) of text */
+	int len_chars;
 
 	/* For type == WRAP_BOX_IMAGE */
 	char *filename;
@@ -108,7 +109,7 @@ extern void get_cursor_pos(struct wrap_box *box, size_t pos,
 extern void move_cursor_back(struct presentation *p);
 
 extern void find_cursor(struct frame *fr, double xposd, double yposd,
-                        int *line, int *box, size_t *pos);
+                        int *line, int *box, int *pos);
 
 extern void alloc_boxes(struct wrap_line *l);
 extern void initialise_line(struct wrap_line *l);

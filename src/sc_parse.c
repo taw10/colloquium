@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <glib.h>
 
 #include "sc_parse.h"
 
@@ -378,7 +379,52 @@ SCBlock *sc_parse(const char *sc)
 }
 
 
-void sc_delete_text(SCBlock *b1, int p1, SCBlock *b2, int p2)
+static void delete_from_block(SCBlock *b, int o1, int o2)
 {
-	printf("Deleting from %p/%i to %p/%i\n", b1, p1, b2, p2);
+	assert(o2 > o1);
+	char *p1 = g_utf8_offset_to_pointer(b->contents, o1);
+	char *p2 = g_utf8_offset_to_pointer(b->contents, o2);
+	printf("'%s' (%p), chars %i to %i\n", b->contents, b->contents, o1, o2);
+	printf("moving %i bytes from %p to %p\n", strlen(p2)+1, p2, p1);
+	memmove(p1, p2, strlen(p2)+1);
+	printf("new: '%s'\n", b->contents);
+}
+
+
+static void delete_to_end(SCBlock *b, int offs)
+{
+	char *p = g_utf8_offset_to_pointer(b->contents, offs);
+	p[0] = '\0';
+}
+
+
+static void delete_from_start(SCBlock *b, int offs)
+{
+	char *p = g_utf8_offset_to_pointer(b->contents, offs);
+	memmove(b->contents, p, strlen(p)+1);
+}
+
+
+/* Character offsets */
+void sc_delete_text(SCBlock *b1, int o1, SCBlock *b2, int o2)
+{
+	printf("Before:\n");
+	show_sc_blocks(b1);
+	if ( b1 == b2 ) {
+		printf("--------> dfb\n");
+		delete_from_block(b1, o1, o2);
+	} else if ( b2 == b1->next ) {
+		printf("--------> dte+dfs\n");
+		delete_to_end(b1, o1);
+		delete_from_start(b2, o2);
+	} else {
+		printf("--------> dte+dfs+chain\n");
+		delete_to_end(b1, o1);
+		delete_from_start(b2, o2);
+		while ( b1->next != b2 ) {
+			sc_block_free(b1->next);
+		}
+	}
+	printf("After:\n");
+	show_sc_blocks(b1);
 }

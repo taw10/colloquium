@@ -1132,22 +1132,18 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 	/* If this is, say, the top level frame, do nothing */
 	if ( fr->boxes == NULL ) return;
 
-	printf("Old: frame %p, line %i, box %i, pos %li\n",
-	       p->cursor_frame, p->cursor_line, p->cursor_box, p->cursor_pos);
 	sln = p->cursor_line;
 	sbx = p->cursor_box;
 	sps = p->cursor_pos;
 
 	move_cursor_back(p);
 
-	printf("New: frame %p, line %i, box %i, pos %li\n",
-	       p->cursor_frame, p->cursor_line, p->cursor_box, p->cursor_pos);
-
 	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
 	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 	struct wrap_line *fline = &p->cursor_frame->lines[p->cursor_line];
 	struct wrap_box *fbox = &fline->boxes[p->cursor_box];
-	sc_delete_text(fbox->scblock, p->cursor_pos, sbox->scblock, sps);
+	sc_delete_text(fbox->scblock, p->cursor_pos+fbox->offs_char,
+	               sbox->scblock, sps+sbox->offs_char);
 
 	rerender_slide(p);
 	redraw_editor(p);
@@ -1615,15 +1611,10 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 
 		if ( box->type == WRAP_BOX_PANGO ) {
 
-			char *np;
-			const char *box_text;
-			box_text = sc_block_contents(box->scblock) + box->offs;
-			np = g_utf8_offset_to_pointer(box_text, cp);
-			np = g_utf8_find_next_char(np, NULL);
-			if ( np > box_text+box->len_bytes ) {
+			if ( cp+1 > box->len_chars ) {
 				advance = 1;
 			} else {
-				cp = np - box_text;
+				cp++;
 			}
 
 		} else {

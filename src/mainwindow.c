@@ -1075,51 +1075,86 @@ void update_titlebar(struct presentation *p)
 }
 
 
+static void move_cursor(struct presentation *p, signed int x, signed int y)
+{
+	if ( x > 0 ) {
+
+		int advance = 0;
+		signed int cp, cb, cl;
+		struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
+		struct wrap_box *box = &line->boxes[p->cursor_box];
+
+		cp = p->cursor_pos;
+		cb = p->cursor_box;
+		cl = p->cursor_line;
+
+		if ( box->type == WRAP_BOX_PANGO ) {
+
+			if ( cp+1 > box->len_chars ) {
+				advance = 1;
+			} else {
+				cp++;
+			}
+
+		} else {
+			cp++;
+			if ( cp > 1 ) advance = 1;
+		}
+
+		if ( advance ) {
+
+			do {
+
+				cb++;
+				cp = 0;
+
+				if ( cb >= line->n_boxes ) {
+					cl++;
+					if ( cl >= p->cursor_frame->n_lines ) {
+						/* Give up - could not move */
+						return;
+					}
+					p->cursor_line = cl;
+					line = &p->cursor_frame->lines[cl];
+					cb = 0;
+					cp = 0;
+				}
+
+			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
+			       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
+			       || !line->boxes[cb].editable );
+
+			p->cursor_box = cb;
+
+		}
+		p->cursor_pos = cp;
+
+	} else {
+		move_cursor_back(p);
+	}
+}
+
+
 static void insert_text(struct frame *fr, char *t, struct presentation *p)
 {
-#warning Re-implement insert_text() and do_backspace() please
-#if 0
-	char *tmp;
-	size_t tlen, olen;
-	int i;
+	int sln, sbx, sps;
+	struct wrap_box *sbox;
 
-	tlen = strlen(t);
-	olen = strlen(fr->sc);
+	if ( fr == NULL ) return;
 
-	if ( tlen + olen + 1 > fr->sc_len ) {
+	/* If this is, say, the top level frame, do nothing */
+	if ( fr->boxes == NULL ) return;
 
-		char *try;
-		size_t new_len = fr->sc_len + tlen + 64;
+	sln = p->cursor_line;
+	sbx = p->cursor_box;
+	sps = p->cursor_pos;
+	sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 
-		try = realloc(fr->sc, new_len);
-		if ( try == NULL ) return;  /* Failed to insert */
-		fr->sc = try;
-		fr->sc_len = new_len;
-
-	}
-
-	tmp = malloc(fr->sc_len);
-	if ( tmp == NULL ) return;
-
-	for ( i=0; i<fr->pos; i++ ) {
-		tmp[i] = fr->sc[i];
-	}
-	for ( i=0; i<tlen; i++ ) {
-		tmp[i+fr->pos] = t[i];
-	}
-	for ( i=0; i<olen-fr->pos; i++ ) {
-		tmp[i+fr->pos+tlen] = fr->sc[i+fr->pos];
-	}
-	tmp[olen+tlen] = '\0';
-	memcpy(fr->sc, tmp, fr->sc_len);
-	free(tmp);
+	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
+	move_cursor(p, +1, 0);
 
 	rerender_slide(p);
-	fr->pos += tlen;
-	p->cursor_pos = fr->pos;
 	redraw_editor(p);
-	fr->empty = 0;
-#endif
 }
 
 
@@ -1157,7 +1192,6 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 		show_sc_blocks(scbl);
 		scbl = sc_block_next(scbl);
 	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
-
 
 	rerender_slide(p);
 	redraw_editor(p);
@@ -1607,66 +1641,6 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 	redraw_editor(p);
 	return FALSE;
-}
-
-
-static void move_cursor(struct presentation *p, signed int x, signed int y)
-{
-	if ( x > 0 ) {
-
-		int advance = 0;
-		signed int cp, cb, cl;
-		struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
-		struct wrap_box *box = &line->boxes[p->cursor_box];
-
-		cp = p->cursor_pos;
-		cb = p->cursor_box;
-		cl = p->cursor_line;
-
-		if ( box->type == WRAP_BOX_PANGO ) {
-
-			if ( cp+1 > box->len_chars ) {
-				advance = 1;
-			} else {
-				cp++;
-			}
-
-		} else {
-			cp++;
-			if ( cp > 1 ) advance = 1;
-		}
-
-		if ( advance ) {
-
-			do {
-
-				cb++;
-				cp = 0;
-
-				if ( cb >= line->n_boxes ) {
-					cl++;
-					if ( cl >= p->cursor_frame->n_lines ) {
-						/* Give up - could not move */
-						return;
-					}
-					p->cursor_line = cl;
-					line = &p->cursor_frame->lines[cl];
-					cb = 0;
-					cp = 0;
-				}
-
-			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
-			       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
-			       || !line->boxes[cb].editable );
-
-			p->cursor_box = cb;
-
-		}
-		p->cursor_pos = cp;
-
-	} else {
-		move_cursor_back(p);
-	}
 }
 
 

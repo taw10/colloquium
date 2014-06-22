@@ -379,6 +379,21 @@ SCBlock *sc_parse(const char *sc)
 }
 
 
+void sc_insert_text(SCBlock *b1, int o1, const char *t)
+{
+	size_t len = strlen(b1->contents)+1+strlen(t);
+	char *cnew = realloc(b1->contents, len);
+	char *tmp = malloc(len);
+	char *p1 = g_utf8_offset_to_pointer(cnew, o1);
+	if ( (cnew == NULL) || (tmp == NULL) ) return;
+	strcpy(tmp, p1);
+	strcpy(p1, t);
+	strcpy(p1+strlen(t), tmp);
+	free(tmp);
+	b1->contents = cnew;
+}
+
+
 static void delete_from_block(SCBlock *b, int o1, int o2)
 {
 	if ( o1 == o2 ) return;  /* nothing to delete */

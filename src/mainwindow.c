@@ -1135,10 +1135,12 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 }
 
 
-static void insert_text(struct frame *fr, char *t, struct presentation *p)
+static void insert_text(char *t, struct presentation *p)
 {
 	int sln, sbx, sps;
 	struct wrap_box *sbox;
+	struct frame *fr = p->cursor_frame;
+	SCBlock *iblock;
 
 	if ( fr == NULL ) return;
 
@@ -1150,7 +1152,18 @@ static void insert_text(struct frame *fr, char *t, struct presentation *p)
 	sps = p->cursor_pos;
 	sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 
-	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
+	printf("%i/%i/%i\n", sln, sbx, sps);
+	printf("frame has %i lines\n", fr->n_lines);
+
+	if ( sln >= fr->n_lines ) {
+		iblock = fr->scblocks;
+		printf("block %p\n", iblock);
+	} else {
+		iblock = sbox->scblock;
+		printf("line has %i boxes\n",
+		       p->cursor_frame->lines[sln].n_boxes);
+	}
+	sc_insert_text(iblock, sps+sbox->offs_char, t);
 	move_cursor(p, +1, 0);
 
 	rerender_slide(p);
@@ -1165,11 +1178,15 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 	if ( fr == NULL ) return;
 
 	/* If this is, say, the top level frame, do nothing */
-	if ( fr->boxes == NULL ) return;
+	if ( fr->n_lines == 0 ) return;
 
 	sln = p->cursor_line;
 	sbx = p->cursor_box;
 	sps = p->cursor_pos;
+
+	printf("%i/%i/%i\n", sln, sbx, sps);
+	printf("frame has %i lines\n", fr->n_lines);
+	printf("line has %i boxes\n", p->cursor_frame->lines[sln].n_boxes);
 
 	move_cursor_back(p);
 
@@ -1178,20 +1195,21 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 	struct wrap_line *fline = &p->cursor_frame->lines[p->cursor_line];
 	struct wrap_box *fbox = &fline->boxes[p->cursor_box];
 
-	SCBlock *scbl = sbox->scblock;
-	do {
-		show_sc_blocks(scbl);
-		scbl = sc_block_next(scbl);
-	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
+//	SCBlock *scbl = sbox->scblock;
+//	do {
+//		show_sc_blocks(scbl);
+//		scbl = sc_block_next(scbl);
+//	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
+	if ( (fbox->scblock == NULL) || (sbox->scblock == NULL) ) return;
 	sc_delete_text(fbox->scblock, p->cursor_pos+fbox->offs_char,
 	               sbox->scblock, sps+sbox->offs_char);
 
-	scbl = sbox->scblock;
-	do {
-		show_sc_blocks(scbl);
-		scbl = sc_block_next(scbl);
-	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
+//	scbl = sbox->scblock;
+//	do {
+//		show_sc_blocks(scbl);
+//		scbl = sc_block_next(scbl);
+//	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
 	rerender_slide(p);
 	redraw_editor(p);
@@ -1210,7 +1228,7 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 		return FALSE;
 	}
 
-	insert_text(p->selection[0], str, p);
+	insert_text(str, p);
 
 	return FALSE;
 }

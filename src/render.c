@@ -125,7 +125,7 @@ static void draw_outline(cairo_t *cr, struct wrap_box *box)
 
 	cairo_rectangle(cr, pango_units_to_double(box->width), -asc,
 			pango_units_to_double(box->sp), asc + desc);
-	cairo_set_source_rgb(cr, 0.7, 0.4, 0.7);
+	cairo_set_source_rgba(cr, 0.7, 0.4, 0.7, 0.2);
 	cairo_fill(cr);
 }
 
@@ -177,27 +177,23 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 
 static void draw_overfull_marker(cairo_t *cr, struct frame *fr, int i)
 {
-#if 0
-	cairo_move_to(cr, fr->w - fr->lop.pad_l- fr->lop.pad_r, 0.0);
-	cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
+	cairo_move_to(cr, fr->w - fr->pad_l- fr->pad_r, 0.0);
+	cairo_line_to(cr, fr->w - fr->pad_l - fr->pad_r,
 	                  pango_units_to_double(fr->lines[i].height));
 	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 4.0);
 	cairo_stroke(cr);
-#endif
 }
 
 
 static void draw_underfull_marker(cairo_t *cr, struct frame *fr, int i)
 {
-#if 0
-	cairo_move_to(cr, fr->w - fr->lop.pad_l- fr->lop.pad_r, 0.0);
-	cairo_line_to(cr, fr->w - fr->lop.pad_l - fr->lop.pad_r,
+	cairo_move_to(cr, fr->w - fr->pad_l- fr->pad_r, 0.0);
+	cairo_line_to(cr, fr->w - fr->pad_l - fr->pad_r,
 	                  pango_units_to_double(fr->lines[i].height));
 	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
 	cairo_set_line_width(cr, 4.0);
 	cairo_stroke(cr);
-#endif
 }
 
 
@@ -206,6 +202,7 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 {
 	int i;
 	double y_pos = 0.0;
+	const int debug = 1;
 
 	for ( i=0; i<fr->n_lines; i++ ) {
 
@@ -214,15 +211,24 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 		/* Move to beginning of the line */
 		cairo_translate(cr, 0.0, y_pos);
 
-		#if 0
-		cairo_move_to(cr, 0.0,
-		                0.5+pango_units_to_double(fr->lines[i].ascent));
-		cairo_line_to(cr, pango_units_to_double(fr->lines[i].width),
-		                0.5+pango_units_to_double(fr->lines[i].ascent));
-		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-		cairo_set_line_width(cr, 1.0);
-		cairo_stroke(cr);
-		#endif
+		if ( debug ) {
+			cairo_move_to(cr,
+			        0.0,
+				0.5+pango_units_to_double(fr->lines[i].ascent));
+			cairo_line_to(cr,
+			        pango_units_to_double(fr->lines[i].width),
+				0.5+pango_units_to_double(fr->lines[i].ascent));
+			cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+			cairo_set_line_width(cr, 1.0);
+			cairo_stroke(cr);
+
+			cairo_move_to(cr, 0.0, 0.0);
+			cairo_line_to(cr, 0.0,
+			            pango_units_to_double(fr->lines[i].height));
+			cairo_set_line_width(cr, 3.0);
+			cairo_set_source_rgb(cr, 0.0, 1.0, 0.0);
+			cairo_stroke(cr);
+		}
 
 		/* Render the line */
 		cairo_save(cr);
@@ -231,10 +237,10 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 		render_boxes(&fr->lines[i], cr, is, isz);
 		cairo_restore(cr);
 
-		if ( fr->lines[i].overfull ) {
+		if ( debug && fr->lines[i].overfull ) {
 			draw_overfull_marker(cr, fr, i);
 		}
-		if ( fr->lines[i].underfull ) {
+		if ( debug && fr->lines[i].underfull ) {
 			draw_underfull_marker(cr, fr, i);
 		}
 

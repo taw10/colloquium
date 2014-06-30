@@ -1075,8 +1075,30 @@ void update_titlebar(struct presentation *p)
 }
 
 
+static void cur_box_diag(struct presentation *p)
+{
+	int sln, sbx, sps;
+	struct frame *fr;
+
+	fr = p->cursor_frame;
+	sln = p->cursor_line;
+	sbx = p->cursor_box;
+	sps = p->cursor_pos;
+
+	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
+
+	printf("line/box/pos: [%i of %i]/[%i of %i]/%i\n", sln, fr->n_lines,
+	       sbx, p->cursor_frame->lines[sln].n_boxes, sps);
+	printf("box type is %i, space type is %i\n", sbox->type, sbox->space);
+	if ( sbox->type == WRAP_BOX_NOTHING ) {
+		printf("Warning: in a nothing box!\n");
+	}
+}
+
+
 static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
+	cur_box_diag(p);
 	if ( x > 0 ) {
 
 		int advance = 0;
@@ -1139,6 +1161,7 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 	} else {
 		move_cursor_back(p);
 	}
+	cur_box_diag(p);
 }
 
 

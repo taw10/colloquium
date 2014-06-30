@@ -177,11 +177,9 @@ void move_cursor_back(struct presentation *p)
 	cp = p->cursor_pos;
 	cb = p->cursor_box;
 	cl = p->cursor_line;
-	printf("moving back from %i %i %i\n", cl, cb, cp);
 
 	line = &p->cursor_frame->lines[p->cursor_line];
 	box = &line->boxes[p->cursor_box];
-	printf("box = %p\n", box);
 	if ( box->type == WRAP_BOX_PANGO ) {
 
 		if ( cp == 0 ) {

@@ -1088,17 +1088,26 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 		cb = p->cursor_box;
 		cl = p->cursor_line;
 
-		if ( box->type == WRAP_BOX_PANGO ) {
+		switch ( box->type ) {
 
+			case WRAP_BOX_PANGO:
 			if ( cp+1 > box->len_chars ) {
 				advance = 1;
 			} else {
 				cp++;
 			}
+			break;
 
-		} else {
+			case WRAP_BOX_NOTHING:
+			case WRAP_BOX_SENTINEL:
+			advance = 1;
+			break;
+
+			case WRAP_BOX_IMAGE:
 			cp++;
 			if ( cp > 1 ) advance = 1;
+			break;
+
 		}
 
 		if ( advance ) {
@@ -1114,16 +1123,14 @@ static void move_cursor(struct presentation *p, signed int x, signed int y)
 						/* Give up - could not move */
 						return;
 					}
-					p->cursor_line = cl;
 					line = &p->cursor_frame->lines[cl];
 					cb = 0;
 					cp = 0;
 				}
 
-			} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
-			       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
-			       || !line->boxes[cb].editable );
+			} while ( !line->boxes[cb].editable );
 
+			p->cursor_line = cl;
 			p->cursor_box = cb;
 
 		}
@@ -1140,7 +1147,6 @@ static void insert_text(char *t, struct presentation *p)
 	int sln, sbx, sps;
 	struct wrap_box *sbox;
 	struct frame *fr = p->cursor_frame;
-	SCBlock *iblock;
 
 	if ( fr == NULL ) return;
 
@@ -1152,18 +1158,10 @@ static void insert_text(char *t, struct presentation *p)
 	sps = p->cursor_pos;
 	sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 
-	printf("%i/%i/%i\n", sln, sbx, sps);
-	printf("frame has %i lines\n", fr->n_lines);
-
-	if ( sln >= fr->n_lines ) {
-		iblock = fr->scblocks;
-		printf("block %p\n", iblock);
-	} else {
-		iblock = sbox->scblock;
-		printf("line has %i boxes\n",
-		       p->cursor_frame->lines[sln].n_boxes);
-	}
-	sc_insert_text(iblock, sps+sbox->offs_char, t);
+	cur_box_diag(p);
+	printf("inserting block=%p, offset %i+%i, '%s'\n",
+	       sbox->scblock, sps, sbox->offs_char, t);
+	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
 	move_cursor(p, +1, 0);
 
 	rerender_slide(p);
@@ -1183,15 +1181,13 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 	sln = p->cursor_line;
 	sbx = p->cursor_box;
 	sps = p->cursor_pos;
+	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 
-	printf("%i/%i/%i\n", sln, sbx, sps);
-	printf("frame has %i lines\n", fr->n_lines);
-	printf("line has %i boxes\n", p->cursor_frame->lines[sln].n_boxes);
-
+	cur_box_diag(p);
 	move_cursor_back(p);
+	cur_box_diag(p);
 
 	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
-	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 	struct wrap_line *fline = &p->cursor_frame->lines[p->cursor_line];
 	struct wrap_box *fbox = &fline->boxes[p->cursor_box];
 

@@ -209,9 +209,7 @@ void move_cursor_back(struct presentation *p)
 				cb = line->n_boxes - 1;
 			}
 
-		} while ( (line->boxes[cb].type == WRAP_BOX_SENTINEL)
-		       || (line->boxes[cb].type == WRAP_BOX_NOTHING)
-		       || !line->boxes[cb].editable );
+		} while ( !line->boxes[cb].editable );
 
 		p->cursor_box = cb;
 		box = &line->boxes[cb];
@@ -310,11 +308,13 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 
 	switch ( b->type ) {
 
-		case WRAP_BOX_NOTHING :
-		fprintf(stderr, "Clicked a nothing box!\n");
-		abort();
+		case WRAP_BOX_NOTHING:
+		case WRAP_BOX_SENTINEL:
+		case WRAP_BOX_IMAGE:
+		offs = 0;
+		break;
 
-		case WRAP_BOX_PANGO :
+		case WRAP_BOX_PANGO:
 		x_pos_i = pango_units_from_double(x_pos);
 		block_text = sc_block_contents(b->scblock);
 		box_text = g_utf8_offset_to_pointer(block_text, b->offs_char);
@@ -324,14 +324,6 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 		                              &b->item->analysis,
 		                              x_pos_i, &idx, &trail);
 		offs = idx + trail;
-		break;
-
-		case WRAP_BOX_SENTINEL :
-		offs = 0;
-		break;
-
-		default :
-		offs = 0;
 		break;
 
 	}
@@ -781,7 +773,8 @@ void wrap_line_free(struct wrap_line *l)
 }
 
 
-static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n)
+static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n,
+                                         int *eop)
 {
 	int i;
 	int start = *n;
@@ -789,8 +782,10 @@ static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n)
 
 	if ( start >= boxes->n_boxes ) return NULL;
 
+	*eop = 0;
 	for ( i=start; i<boxes->n_boxes; i++ ) {
 		if ( boxes->boxes[i].space == WRAP_SPACE_EOP ) {
+			*eop = 1;
 			break;
 		}
 	}
@@ -847,7 +842,7 @@ void show_boxes(struct wrap_line *boxes)
 int wrap_contents(struct frame *fr)
 {
 	struct wrap_line *para;
-	int i;
+	int i, eop = 0;
 	const double rho = 2.0;
 	const double wrap_w = fr->w - fr->pad_l - fr->pad_r;
 
@@ -862,7 +857,7 @@ int wrap_contents(struct frame *fr)
 	i = 0;
 	do {
 
-		para = split_paragraph(fr->boxes, &i);
+		para = split_paragraph(fr->boxes, &i, &eop);
 
 		/* Split paragraphs into lines */
 		if ( para != NULL ) {
@@ -877,7 +872,62 @@ int wrap_contents(struct frame *fr)
 	} while ( para != NULL );
 
 	for ( i=0; i<fr->n_lines; i++ ) {
-		distribute_spaces(&fr->lines[i], wrap_w, rho);
+
+		struct wrap_line *line = &fr->lines[i];
+
+		distribute_spaces(line, wrap_w, rho);
+
+		/* Strip any sentinel boxes added by the wrapping algorithm */
+		if ( line->boxes[line->n_boxes-1].type == WRAP_BOX_SENTINEL ) {
+			line->n_boxes--;
+		}
+
+	}
+
+	/* If the last paragraph ended with an EOP, add an extra line */
+	printf("Done. eop=%i\n", eop);
+	if ( eop || (fr->n_lines == 0) ) {
+
+		struct wrap_line *l;
+		struct wrap_box *last_box;
+
+		if ( fr->n_lines > 0 ) {
+			l = &fr->lines[fr->n_lines-1];
+			last_box = &l->boxes[l->n_boxes-1];
+		} else {
+			last_box = NULL;
+		}
+
+		if ( fr->n_lines + 1 > fr->max_lines ) {
+			fr->max_lines += 32;
+			alloc_lines(fr);
+			if ( fr->n_lines == fr->max_lines ) return 1;
+		}
+
+		l = &fr->lines[fr->n_lines];
+		fr->n_lines++;
+		initialise_line(l);
+
+		l->max_boxes = 1;
+		alloc_boxes(l);
+		l->n_boxes = 1;
+		l->boxes[0].type = WRAP_BOX_NOTHING;
+		l->boxes[0].editable = 1;
+		l->boxes[0].space = WRAP_SPACE_NONE;
+
+		if ( last_box != NULL ) {
+			l->boxes[0].scblock = last_box->scblock;
+			l->boxes[0].offs_char = last_box->len_chars
+			                        + last_box->offs_char + 1;
+			l->boxes[0].ascent = last_box->ascent;
+			l->boxes[0].height = last_box->height;
+			l->boxes[0].width = 0;
+			/* FIXME: Get ascent and descent from font metrics for
+			 * whichever font will be used in this box */
+		}
+	}
+
+	for ( i=0; i<fr->n_lines; i++ ) {
 		calc_line_geometry(&fr->lines[i]);
 	}
 

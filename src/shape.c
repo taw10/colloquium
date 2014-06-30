@@ -209,6 +209,8 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 		}
 
 	}
+
+	/* Add the stuff left over at the end */
 	if ( i > start ) {
 
 		size_t l = strlen(text+start);
@@ -219,9 +221,6 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 			add_wrap_boxes(boxes, text,
 			               WRAP_SPACE_EOP, pc, scin, bl, start,
 			               l-1, editable);
-			//add_wrap_boxes(boxes, "",
-			//               WRAP_SPACE_NONE, pc, scin, bl, start+l,
-			//               1, editable);
 
 		} else {
 

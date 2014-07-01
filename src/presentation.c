@@ -320,7 +320,8 @@ int save_presentation(struct presentation *p, const char *filename)
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
 
-	/* FIXME: Save based on SCBlocks */
+	show_sc_blocks(p->scblocks);
+	save_sc_block(fh, p->scblocks);
 
 	/* Slightly fiddly because someone might
 	 * do save_presentation(p, p->filename) */

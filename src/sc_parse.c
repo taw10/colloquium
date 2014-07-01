@@ -147,6 +147,41 @@ void sc_block_free(SCBlock *bl)
 }
 
 
+void save_sc_block(FILE *fh, const SCBlock *bl)
+{
+	while ( bl != NULL ) {
+
+		if ( bl->name == NULL ) {
+			fprintf(fh, "%s", bl->contents);
+		} else {
+
+			fprintf(fh, "\\%s", bl->name);
+			if ( bl->options != NULL ) {
+				fprintf(fh, "[%s]", bl->options);
+			}
+			if ( (bl->contents != NULL) || (bl->child != NULL) ) {
+				fprintf(fh, "{");
+			}
+			if ( bl->contents != NULL ) {
+				fprintf(fh, "%s", bl->contents);
+			}
+
+		}
+
+		if ( bl->child != NULL ) {
+			save_sc_block(fh, bl->child);
+		}
+
+		if ( (bl->name != NULL) &&
+		     ((bl->contents != NULL) || (bl->child != NULL)) ) {
+			fprintf(fh, "}");
+		}
+
+		bl = bl->next;
+	}
+}
+
+
 static void recursive_show_sc_blocks(const char *prefix, const SCBlock *bl)
 {
 	while ( bl != NULL ) {

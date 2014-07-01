@@ -27,6 +27,8 @@
 #include <config.h>
 #endif
 
+#include <stdio.h>
+
 typedef struct _scblock SCBlock;
 
 extern SCBlock *sc_parse(const char *sc);
@@ -47,5 +49,7 @@ extern void sc_delete_text(SCBlock *b1, int o1, SCBlock *b2, int o2);
 
 extern void show_sc_blocks(const SCBlock *bl);
 extern void show_sc_block(const SCBlock *bl, const char *prefix);
+
+extern void save_sc_block(FILE *fh, const SCBlock *bl);
 
 #endif	/* SC_PARSE_H */

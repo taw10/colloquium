@@ -510,7 +510,6 @@ void delete_subframe(struct slide *s, struct frame *fr)
 		return;
 	}
 
-
 	found = 0;
 	for ( i=0; i<parent->num_children; i++ ) {
 		if ( parent->children[i] == fr ) {

@@ -202,7 +202,7 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 {
 	int i;
 	double y_pos = 0.0;
-	const int debug = 1;
+	const int debug = 0;
 
 	for ( i=0; i<fr->n_lines; i++ ) {
 

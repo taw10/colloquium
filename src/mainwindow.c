@@ -1588,7 +1588,11 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	}
 
 	fr = add_subframe(parent);
+
+	/* Add to SC */
+	show_sc_blocks(parent->scblocks);
 	fr->scblocks = NULL;
+
 	fr->x = x;
 	fr->y = y;
 	fr->w = w;

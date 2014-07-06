@@ -883,7 +883,6 @@ int wrap_contents(struct frame *fr)
 	}
 
 	/* If the last paragraph ended with an EOP, add an extra line */
-	printf("Done. eop=%i\n", eop);
 	if ( eop || (fr->n_lines == 0) ) {
 
 		struct wrap_line *l;

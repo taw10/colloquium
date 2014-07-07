@@ -147,8 +147,7 @@ SCBlock *sc_block_append_inside(SCBlock *parent,
 		while ( bl->next != NULL ) bl = bl->next;
 		ptr = &bl->next;
 	} else {
-		ptr = &bl->child;
-		bl = NULL;
+		ptr = &parent->child;
 	}
 
 	bln = sc_block_new();
@@ -451,6 +450,17 @@ SCBlock *sc_parse(const char *sc)
 	}
 
 	return blf;
+}
+
+
+SCBlock *find_last_child(SCBlock *bl)
+{
+	if ( bl == NULL ) return NULL;
+	if ( bl->child == NULL ) return NULL;
+
+	bl = bl->child;
+	while ( bl->next != NULL ) bl = bl->next;
+	return bl;
 }
 
 

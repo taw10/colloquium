@@ -51,6 +51,8 @@ extern SCBlock *sc_block_append_inside(SCBlock *bl,
 extern struct frame *sc_block_frame(const SCBlock *bl);
 extern void sc_block_set_frame(SCBlock *bl, struct frame *fr);
 
+extern SCBlock *find_last_child(SCBlock *bl);
+
 extern void sc_insert_text(SCBlock *b1, int o1, const char *t);
 extern void sc_delete_text(SCBlock *b1, int o1, SCBlock *b2, int o2);
 

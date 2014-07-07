@@ -1594,7 +1594,10 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	/* Add to SC */
 	snprintf(geom, 255, "%.1fux%.1fu+%.1f+%.1f", w, h, x, y);
 	fr->scblocks = sc_block_append_inside(p->cur_edit_slide->scblocks,
-	                                      "f", strdup(geom), strdup(""));
+	                                      "f", strdup(geom), NULL);
+	sc_block_set_frame(fr->scblocks, fr);
+	sc_block_append_inside(fr->scblocks, NULL, NULL, strdup(""));
+	printf("new block is %p\n", fr->scblocks);
 
 	fr->x = x;
 	fr->y = y;

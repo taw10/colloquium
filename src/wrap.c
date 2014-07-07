@@ -922,7 +922,7 @@ int wrap_contents(struct frame *fr)
 			/* FIXME: Get ascent and descent from font metrics for
 			 * whichever font will be used in this box */
 		} else {
-			l->boxes[0].scblock = fr->scblocks;
+			l->boxes[0].scblock = find_last_child(fr->scblocks);
 			l->boxes[0].offs_char = 0;
 			l->boxes[0].ascent = 10000;
 			l->boxes[0].height = 10000;

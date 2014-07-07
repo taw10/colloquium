@@ -42,6 +42,7 @@
 #include "notes.h"
 #include "pr_clock.h"
 #include "slide_sorter.h"
+#include "sc_parse.h"
 
 
 /* Update a slide, once it's been edited in some way. */
@@ -1574,6 +1575,7 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 {
 	struct frame *parent;
 	struct frame *fr;
+	char geom[256];
 
 	parent = p->cur_edit_slide->top;
 
@@ -1590,8 +1592,9 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	fr = add_subframe(parent);
 
 	/* Add to SC */
-	show_sc_blocks(parent->scblocks);
-	fr->scblocks = NULL;
+	snprintf(geom, 255, "%.1fux%.1fu+%.1f+%.1f", w, h, x, y);
+	fr->scblocks = sc_block_append_inside(p->cur_edit_slide->scblocks,
+	                                      "f", strdup(geom), strdup(""));
 
 	fr->x = x;
 	fr->y = y;

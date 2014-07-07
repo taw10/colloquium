@@ -41,6 +41,13 @@ extern const char *sc_block_name(const SCBlock *bl);
 extern const char *sc_block_options(const SCBlock *bl);
 extern const char *sc_block_contents(const SCBlock *bl);
 
+extern SCBlock *sc_block_append(SCBlock *bl,
+                                char *name, char *opt, char *contents,
+                                SCBlock **blfp);
+
+extern SCBlock *sc_block_append_inside(SCBlock *bl,
+                                       char *name, char *opt, char *contents);
+
 extern struct frame *sc_block_frame(const SCBlock *bl);
 extern void sc_block_set_frame(SCBlock *bl, struct frame *fr);
 

@@ -132,6 +132,46 @@ SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
 }
 
 
+/* Append a new block to the chain inside "bl".
+ * "name", "options" and "contents" will not be copied.  Returns the block just
+ * created, or NULL on error. */
+SCBlock *sc_block_append_inside(SCBlock *parent,
+                                char *name, char *opt, char *contents)
+{
+	SCBlock *bln;
+	SCBlock *bl;
+	SCBlock **ptr;
+
+	bl = parent->child;
+	if ( bl != NULL ) {
+		while ( bl->next != NULL ) bl = bl->next;
+		ptr = &bl->next;
+	} else {
+		ptr = &bl->child;
+		bl = NULL;
+	}
+
+	bln = sc_block_new();
+	if ( bln == NULL ) return NULL;
+
+	bln->name = name;
+	bln->options = opt;
+	bln->contents = contents;
+	bln->child = NULL;
+	bln->next = NULL;
+
+	if ( bl == NULL ) {
+		bln->prev = NULL;
+	} else {
+		bln->prev = bl;
+	}
+	*ptr = bln;
+
+	return bln;
+}
+
+
+
 /* Frees "bl" and all its children */
 void sc_block_free(SCBlock *bl)
 {

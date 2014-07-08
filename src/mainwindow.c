@@ -1188,6 +1188,8 @@ static void insert_text(char *t, struct presentation *p)
 	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
 	move_cursor(p, +1, 0);
 
+	fr->empty = 0;
+
 	rerender_slide(p);
 	redraw_editor(p);
 }

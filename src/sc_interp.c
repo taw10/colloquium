@@ -297,6 +297,17 @@ void sc_interp_destroy(SCInterpreter *scin)
 }
 
 
+void update_geom(struct frame *fr)
+{
+	char geom[256];
+	snprintf(geom, 255, "%.1fux%.1fu+%.1f+%.1f",
+	         fr->w, fr->h, fr->x, fr->y);
+
+	/* FIXME: What if there are other options? */
+	sc_block_set_options(fr->scblocks, strdup(geom));
+}
+
+
 static LengthUnits get_units(const char *t)
 {
 	size_t len = strlen(t);

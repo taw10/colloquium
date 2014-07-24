@@ -453,6 +453,13 @@ SCBlock *sc_parse(const char *sc)
 }
 
 
+void sc_block_set_options(SCBlock *bl, char *opt)
+{
+	free(bl->options);
+	bl->options = opt;
+}
+
+
 SCBlock *find_last_child(SCBlock *bl)
 {
 	if ( bl == NULL ) return NULL;

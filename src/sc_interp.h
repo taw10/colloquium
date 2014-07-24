@@ -47,5 +47,6 @@ extern PangoFontDescription *sc_interp_get_fontdesc(SCInterpreter *scin);
 extern double *sc_interp_get_fgcol(SCInterpreter *scin);
 extern int sc_interp_get_ascent(SCInterpreter *scin);
 extern int sc_interp_get_height(SCInterpreter *scin);
+extern void update_geom(struct frame *fr);
 
 #endif	/* SC_INTERP_H */

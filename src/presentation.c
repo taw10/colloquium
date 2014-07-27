@@ -106,6 +106,8 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	p->slides[pos] = new;
 	p->num_slides++;
 
+	new->scblocks = sc_block_append_inside(p->scblocks, "slide",
+	                                       NULL, NULL);
 	new->parent = p;
 
 	renumber_slides(p);

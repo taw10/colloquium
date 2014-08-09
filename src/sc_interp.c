@@ -573,7 +573,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		if ( fr == NULL ) {
 			fr = add_subframe(sc_interp_get_frame(scin));
 			sc_block_set_frame(bl, fr);
-			fr->scblocks = child;
+			fr->scblocks = bl;
 		}
 		if ( fr == NULL ) {
 			fprintf(stderr, "Failed to add frame.\n");

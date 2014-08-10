@@ -106,8 +106,6 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 	p->slides[pos] = new;
 	p->num_slides++;
 
-	new->scblocks = sc_block_append_inside(p->scblocks, "slide",
-	                                       NULL, NULL);
 	new->parent = p;
 
 	renumber_slides(p);
@@ -322,7 +320,6 @@ int save_presentation(struct presentation *p, const char *filename)
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
 
-	show_sc_blocks(p->scblocks);
 	save_sc_block(fh, p->scblocks);
 
 	/* Slightly fiddly because someone might

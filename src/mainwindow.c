@@ -432,8 +432,13 @@ static gint new_sig(GtkWidget *widget, struct presentation *pnn)
 
 	p = new_presentation();
 	if ( p != NULL ) {
-		p->cur_edit_slide = add_slide(p, 0);
+		struct slide *new;
+		new = add_slide(p, 0);
 		p->completely_empty = 1;
+		/* FIXME: position */
+		new->scblocks = sc_block_append_inside(p->scblocks, "slide",
+	                                               NULL, NULL);
+
 		open_mainwindow(p);
 	}
 
@@ -665,6 +670,10 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 
 	new = add_slide(p, cur_slide_number+1);
+	/* FIXME: position */
+	new->scblocks = sc_block_append_inside(p->scblocks, "slide",
+	                                       NULL, NULL);
+
 	change_edit_slide(p, new);
 
 	return FALSE;

@@ -1973,7 +1973,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		if ( filename != NULL ) {
 
 			struct frame *fr;
-			char *sc;
+			char *opts;
 			size_t len;
 			int w, h;
 
@@ -1984,19 +1984,20 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			h = p->drag_corner_y - p->start_corner_y;
 
 			len = strlen(filename)+64;
-			sc = malloc(len);
-			if ( sc == NULL ) {
+			opts = malloc(len);
+			if ( opts == NULL ) {
 				free(filename);
 				fprintf(stderr, "Failed to allocate SC\n");
 				return;
 			}
-			snprintf(sc, len, "\\image[fitxfit]{%s}", filename);
+			snprintf(opts, len, "1fx1f+0+0,filename=\"%s\"",
+			         filename);
 
 			fr = create_frame(p, p->start_corner_x,
 			                     p->start_corner_y, w, h);
-			/* FIXME Add scblocks and link into structure */
 			fr->is_image = 1;
 			fr->empty = 0;
+			sc_block_append_inside(fr->scblocks, "image", opts, "");
 			show_hierarchy(p->cur_edit_slide->top, "");
 			rerender_slide(p);
 			set_selection(p, fr);

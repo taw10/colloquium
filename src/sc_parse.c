@@ -132,7 +132,7 @@ SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
 }
 
 
-/* Append a new block to the chain inside "bl".
+/* Append a new block to the chain inside "parent".
  * "name", "options" and "contents" will not be copied.  Returns the block just
  * created, or NULL on error. */
 SCBlock *sc_block_append_inside(SCBlock *parent,

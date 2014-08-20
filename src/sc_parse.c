@@ -170,6 +170,27 @@ SCBlock *sc_block_append_inside(SCBlock *parent,
 }
 
 
+/* Insert a new block to the chain, just after "afterme".
+ * "name", "options" and "contents" will not be copied.  Returns the block just
+ * created, or NULL on error. */
+SCBlock *sc_block_insert_after(SCBlock *afterme,
+                               char *name, char *opt, char *contents)
+{
+	SCBlock *bl;
+
+	bl = sc_block_new();
+	if ( bl == NULL ) return NULL;
+
+	bl->name = name;
+	bl->options = opt;
+	bl->contents = contents;
+	bl->child = NULL;
+	bl->next = afterme->next;
+	afterme->next = bl;
+
+	return bl;
+}
+
 
 /* Frees "bl" and all its children */
 void sc_block_free(SCBlock *bl)

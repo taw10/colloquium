@@ -670,9 +670,8 @@ static gint add_slide_sig(GtkWidget *widget, struct presentation *p)
 	cur_slide_number = slide_number(p, p->cur_edit_slide);
 
 	new = add_slide(p, cur_slide_number+1);
-	/* FIXME: position */
-	new->scblocks = sc_block_append_inside(p->scblocks, "slide",
-	                                       NULL, NULL);
+	new->scblocks = sc_block_insert_after(p->cur_edit_slide->scblocks,
+	                                      "slide", NULL, NULL);
 
 	change_edit_slide(p, new);
 

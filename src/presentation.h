@@ -193,6 +193,7 @@ struct presentation
 	unsigned int      num_slides;
 	struct slide    **slides;
 
+	SCBlock          *stylesheet;
 	SCBlock          *scblocks;
 
 	struct inhibit_sys *inhibit;

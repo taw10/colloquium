@@ -38,6 +38,7 @@
 #include "notes.h"
 #include "inhibit_screensaver.h"
 #include "render.h"
+#include "sc_interp.h"
 
 
 static int num_presentations = 0;
@@ -295,6 +296,8 @@ struct presentation *new_presentation()
 
 	new->completely_empty = 1;
 
+	new->stylesheet = NULL;
+
 	new->n_menu_rebuild = 0;
 	new->menu_rebuild_list = NULL;
 	new->menu_path_list = NULL;
@@ -433,6 +436,8 @@ int load_presentation(struct presentation *p, const char *filename)
 		return r;  /* Error */
 	}
 
+	find_stylesheet(p);
+
 	block = p->scblocks;
 	while ( block != NULL ) {
 
@@ -446,9 +451,9 @@ int load_presentation(struct presentation *p, const char *filename)
 
 			if ( s != NULL ) {
 
-				s->scblocks = block;
+				s->scblocks = sc_block_child(block);
 				s->top = frame_new();
-				s->top->scblocks = s->scblocks;
+				s->top->scblocks = sc_block_child(block);
 
 			}
 

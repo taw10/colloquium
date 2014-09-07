@@ -72,8 +72,6 @@ struct _scinterp
 	struct sc_state *state;
 	int j;  /* Index of the current state */
 	int max_state;
-
-	int output;
 };
 
 
@@ -259,8 +257,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 	scin->pc = pc;
 	scin->s_constants = NULL;
 	scin->p_constants = NULL;
-
-	scin->output = 0;
 
 	st = &scin->state[0];
 	st->n_macros = 0;
@@ -496,20 +492,17 @@ static int parse_image_options(const char *opth, struct frame *parent,
 
 static void maybe_recurse_before(SCInterpreter *scin, SCBlock *child)
 {
-	if ( !scin->output ) return;
 	if ( child == NULL ) return;
 
 	sc_interp_save(scin);
 }
 
 
-static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child,
-                                SCBlock *output)
+static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child)
 {
-	if ( !scin->output ) return;
 	if ( child == NULL ) return;
 
-	sc_interp_add_blocks(scin, child, output);
+	sc_interp_add_blocks(scin, child);
 	sc_interp_restore(scin);
 }
 
@@ -529,7 +522,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 	} else if ( strcmp(name, "bgcol") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_frame_bgcolour(sc_interp_get_frame(scin), options);
-		maybe_recurse_after(scin, child, NULL);
+		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "image")==0 ) {
 		double w, h;
@@ -585,13 +578,100 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
-		maybe_recurse_after(scin, child, NULL);
+		maybe_recurse_after(scin, child);
 
 	} else {
 		return 0;
 	}
 
 	return 1;  /* handled */
+}
+
+
+static int check_macro(const char *name, SCInterpreter *scin)
+{
+	int i;
+	struct sc_state *st = &scin->state[scin->j];
+
+	for ( i=0; i<st->n_macros; i++ ) {
+		if ( strcmp(st->macros[i].name, name) == 0 ) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+static void exec_macro(const char *name, SCInterpreter *scin)
+{
+	int i;
+	struct sc_state *st = &scin->state[scin->j];
+
+	for ( i=0; i<st->n_macros; i++ ) {
+		if ( strcmp(st->macros[i].name, name) == 0 ) {
+			sc_interp_add_blocks(scin, st->macros[i].bl);
+			return;
+		}
+	}
+}
+
+
+int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
+{
+	printf("Running this --------->\n");
+	show_sc_blocks(bl);
+	printf("<------------\n");
+
+	while ( bl != NULL ) {
+
+		const char *name = sc_block_name(bl);
+		const char *options = sc_block_options(bl);
+		SCBlock *child = sc_block_child(bl);
+
+		if ((sc_interp_get_frame(scin) != NULL)
+		  && check_outputs(bl, scin) ) {
+			/* Block handled as output thing */
+
+		} else if ( name == NULL ) {
+			/* Dummy to ensure name != NULL below */
+
+		} else if ( strcmp(name, "font") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_font(scin, options);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "fgcol") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_colour(scin, options);
+			maybe_recurse_after(scin, child);
+
+		} else if ( check_macro(name, scin) ) {
+			maybe_recurse_before(scin, child);
+			exec_macro(name, scin);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "pad") == 0 ) {
+			maybe_recurse_before(scin, child);
+			/* FIXME: Implement padding */
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "slide") == 0 ) {
+			maybe_recurse_before(scin, child);
+			maybe_recurse_after(scin, child);
+
+		} else {
+
+			fprintf(stderr, "Don't know what to do with this:\n");
+			show_sc_block(bl, "");
+
+		}
+
+		bl = sc_block_next(bl);
+
+	}
+
+	return 0;
 }
 
 
@@ -645,94 +725,51 @@ static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
 }
 
 
-static int check_macro(const char *name, SCInterpreter *scin)
+void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 {
-	int i;
-	struct sc_state *st = &scin->state[scin->j];
-
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			return 1;
-		}
+	if ( strcmp(sc_block_name(bl), "stylesheet") != 0 ) {
+		fprintf(stderr, "Style sheet isn't a style sheet.\n");
+		return;
 	}
 
-	return 0;
-}
+	bl = sc_block_child(bl);
 
-
-static void exec_macro(const char *name, SCInterpreter *scin)
-{
-	int i;
-	struct sc_state *st = &scin->state[scin->j];
-
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			sc_interp_add_blocks(scin, st->macros[i].bl, NULL);
-			return;
-		}
-	}
-}
-
-
-int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, SCBlock *output)
-{
 	while ( bl != NULL ) {
 
 		const char *name = sc_block_name(bl);
 		const char *options = sc_block_options(bl);
-		SCBlock *child = sc_block_child(bl);
 
-		if ( bl == output ) scin->output = 1;
-
-		if ( scin->output && (sc_interp_get_frame(scin) != NULL)
-		  && check_outputs(bl, scin) ) {
-			/* Block handled as output thing */
-
-		} else if ( name == NULL ) {
-			/* Dummy to ensure name != NULL below */
-
-		} else if ( strcmp(name, "ss") == 0 ) {
+		if ( (name != NULL) && (strcmp(name, "ss") == 0) ) {
 			try_add_macro(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "font") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_font(scin, options);
-			maybe_recurse_after(scin, child, output);
-
-		} else if ( strcmp(name, "fgcol") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_colour(scin, options);
-			maybe_recurse_after(scin, child, output);
-
-		} else if ( check_macro(name, scin) ) {
-			maybe_recurse_before(scin, child);
-			exec_macro(name, scin);
-			maybe_recurse_after(scin, child, output);
-
-		} else if ( strcmp(name, "notes") == 0 ) {
-			/* FIXME: Do something with notes */
-
-		} else if ( strcmp(name, "pad") == 0 ) {
-			maybe_recurse_before(scin, child);
-			/* FIXME: Implement padding */
-			maybe_recurse_after(scin, child, output);
-
-		} else if ( strcmp(name, "slide") == 0 ) {
-			maybe_recurse_before(scin, child);
-			maybe_recurse_after(scin, child, output);
-
-		} else {
-
-			fprintf(stderr, "Don't know what to do with this:\n");
-			show_sc_block(bl, "");
-
 		}
 
-		if ( bl == output ) return 0;
+		bl = sc_block_next(bl);
+
+	}
+}
+
+
+void find_stylesheet(struct presentation *p)
+{
+	SCBlock *bl = p->scblocks;
+
+	if ( p->stylesheet != NULL ) {
+		fprintf(stderr, "Duplicate style sheet!\n");
+		return;
+	}
+
+	while ( bl != NULL ) {
+
+		const char *name = sc_block_name(bl);
+
+		if ( (name != NULL) && (strcmp(name, "stylesheet") == 0) ) {
+			p->stylesheet = bl;
+			return;
+		}
+
 		bl = sc_block_next(bl);
 
 	}
 
-	return 0;
+	fprintf(stderr, "No style sheet.\n");
 }
-

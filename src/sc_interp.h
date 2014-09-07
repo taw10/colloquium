@@ -29,6 +29,7 @@
 
 #include <pango/pangocairo.h>
 
+struct presentation;
 typedef struct _scinterp SCInterpreter;
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top);
@@ -37,8 +38,10 @@ extern void sc_interp_destroy(SCInterpreter *scin);
 extern void sc_interp_save(SCInterpreter *scin);
 extern void sc_interp_restore(SCInterpreter *scin);
 
-extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl,
-                                SCBlock *last);
+extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
+
+extern void find_stylesheet(struct presentation *p);
+extern void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl);
 
 /* Get the current state of the interpreter */
 extern struct frame *sc_interp_get_frame(SCInterpreter *scin);

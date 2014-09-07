@@ -303,7 +303,8 @@ static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
 static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                         enum is_size isz, struct slide_constants *scc,
 		        struct presentation_constants *pcc,
-			PangoContext *pc, SCBlock *scblocks)
+			PangoContext *pc, SCBlock *scblocks,
+			SCBlock *stylesheet)
 {
 	SCInterpreter *scin;
 	int i;
@@ -313,6 +314,8 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 		fprintf(stderr, "Failed to set up interpreter.\n");
 		return 1;
 	}
+
+	sc_interp_run_stylesheet(scin, stylesheet);
 
 	for ( i=0; i<fr->n_lines; i++ ) {
 	//	wrap_line_free(&fr->lines[i]);
@@ -330,7 +333,7 @@ static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	initialise_line(fr->boxes);
 
 	/* SCBlocks -> frames and wrap boxes (preferably re-using frames) */
-	sc_interp_add_blocks(scin, scblocks, fr->scblocks);
+	sc_interp_add_blocks(scin, fr->scblocks);
 
 	recursive_wrap_and_draw(fr, cr, is, isz);
 
@@ -423,7 +426,8 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	pango_cairo_update_context(cr, pc);
 
 	render_frame(cr, s->top, is, isz, s->constants,
-	             s->parent->constants, pc, s->parent->scblocks);
+	             s->parent->constants, pc, s->parent->scblocks,
+	             s->parent->stylesheet);
 
 	cairo_font_options_destroy(fopts);
 	g_object_unref(pc);
@@ -486,7 +490,8 @@ int export_pdf(struct presentation *p, const char *filename)
 		s->top->h = w*r;
 
 		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, s->constants,
-		             s->parent->constants, pc, s->parent->scblocks);
+		             s->parent->constants, pc, s->parent->scblocks,
+		             s->parent->stylesheet);
 
 		cairo_show_page(cr);
 

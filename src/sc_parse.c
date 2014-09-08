@@ -132,6 +132,36 @@ SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
 }
 
 
+/* Insert a new block at the end of the chain starting 'bl'.
+ * "name", "options" and "contents" will not be copied.  Returns the block just
+ * created, or NULL on error.  */
+SCBlock *sc_block_append_end(SCBlock *bl, char *name, char *opt, char *contents)
+{
+	SCBlock *bln = sc_block_new();
+
+	if ( bln == NULL ) return NULL;
+
+	while ( bl->next != NULL ) {
+		bl = bl->next;
+	};
+
+	bln->name = name;
+	bln->options = opt;
+	bln->contents = contents;
+	bln->child = NULL;
+	bln->next = NULL;
+
+	if ( bl == NULL ) {
+		bln->prev = NULL;
+	} else {
+		bl->next = bln;
+		bln->prev = bl;
+	}
+
+	return bln;
+}
+
+
 /* Append a new block to the chain inside "parent".
  * "name", "options" and "contents" will not be copied.  Returns the block just
  * created, or NULL on error. */

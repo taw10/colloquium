@@ -45,6 +45,9 @@ extern SCBlock *sc_block_append(SCBlock *bl,
                                 char *name, char *opt, char *contents,
                                 SCBlock **blfp);
 
+extern SCBlock *sc_block_append_end(SCBlock *bl,
+                                    char *name, char *opt, char *contents);
+
 extern SCBlock *sc_block_append_inside(SCBlock *parent,
                                        char *name, char *opt, char *contents);
 

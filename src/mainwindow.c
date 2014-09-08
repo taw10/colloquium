@@ -195,8 +195,8 @@ struct menu_pl
 
 static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 {
-	/* FIXME: Add it */
-	printf("Adding '%s'\n", pl->style_name);
+	sc_block_append_end(pl->p->cur_edit_slide->scblocks,
+	                    strdup(pl->style_name), NULL, NULL);
 
 	do_slide_update(pl->p, pl->p->pc);
 

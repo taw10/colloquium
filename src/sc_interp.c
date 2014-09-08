@@ -603,17 +603,29 @@ static int check_macro(const char *name, SCInterpreter *scin)
 }
 
 
-static void exec_macro(const char *name, SCInterpreter *scin)
+static void exec_macro(SCBlock *bl, SCInterpreter *scin)
 {
-	int i;
+	SCBlock *mchild;
 	struct sc_state *st = &scin->state[scin->j];
 
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			sc_interp_add_blocks(scin, st->macros[i].bl);
-			return;
+	mchild = sc_block_macro_child(bl);
+	if ( mchild == NULL ) {
+
+		int i;
+		const char *name;
+
+		/* Copy macro blocks into structure */
+		name = sc_block_name(bl);
+		for ( i=0; i<st->n_macros; i++ ) {
+			if ( strcmp(st->macros[i].name, name) == 0 ) {
+				mchild = sc_block_copy(st->macros[i].bl);
+				sc_block_set_macro_child(bl, mchild);
+			}
 		}
+
 	}
+
+	sc_interp_add_blocks(scin, mchild);
 }
 
 
@@ -648,7 +660,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( check_macro(name, scin) ) {
 			maybe_recurse_before(scin, child);
-			exec_macro(name, scin);
+			exec_macro(bl, scin);
 			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "pad") == 0 ) {

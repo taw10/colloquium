@@ -35,11 +35,16 @@ extern SCBlock *sc_parse(const char *sc);
 
 extern void sc_block_free(SCBlock *bl);
 
+extern SCBlock *sc_block_copy(const SCBlock *bl);
+
 extern SCBlock *sc_block_next(const SCBlock *bl);
 extern SCBlock *sc_block_child(const SCBlock *bl);
+extern SCBlock *sc_block_macro_child(const SCBlock *bl);
 extern const char *sc_block_name(const SCBlock *bl);
 extern const char *sc_block_options(const SCBlock *bl);
 extern const char *sc_block_contents(const SCBlock *bl);
+
+extern void sc_block_set_macro_child(SCBlock *bl, SCBlock *mchild);
 
 extern SCBlock *sc_block_append(SCBlock *bl,
                                 char *name, char *opt, char *contents,

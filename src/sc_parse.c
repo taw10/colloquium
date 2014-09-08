@@ -43,6 +43,7 @@ struct _scblock
 	SCBlock *next;
 	SCBlock *prev;
 	SCBlock *child;
+	SCBlock *macro_child;
 
 	struct frame *fr;
 };
@@ -54,6 +55,8 @@ SCBlock *sc_block_new()
 
 	bl = calloc(1, sizeof(SCBlock));
 	if ( bl == NULL ) return NULL;
+
+	bl->macro_child = NULL;
 
 	return bl;
 }
@@ -68,6 +71,18 @@ SCBlock *sc_block_next(const SCBlock *bl)
 SCBlock *sc_block_child(const SCBlock *bl)
 {
 	return bl->child;
+}
+
+
+SCBlock *sc_block_macro_child(const SCBlock *bl)
+{
+	return bl->macro_child;
+}
+
+
+void sc_block_set_macro_child(SCBlock *bl, SCBlock *mchild)
+{
+	bl->macro_child = mchild;
 }
 
 
@@ -145,20 +160,7 @@ SCBlock *sc_block_append_end(SCBlock *bl, char *name, char *opt, char *contents)
 		bl = bl->next;
 	};
 
-	bln->name = name;
-	bln->options = opt;
-	bln->contents = contents;
-	bln->child = NULL;
-	bln->next = NULL;
-
-	if ( bl == NULL ) {
-		bln->prev = NULL;
-	} else {
-		bl->next = bln;
-		bln->prev = bl;
-	}
-
-	return bln;
+	return sc_block_append(bl, name, opt, contents, NULL);
 }
 
 
@@ -286,7 +288,8 @@ void show_sc_block(const SCBlock *bl, const char *prefix)
 	printf("%s", prefix);
 	if ( bl->name != NULL ) printf("\\%s ", bl->name);
 	if ( bl->options != NULL ) printf("[%s] ", bl->options);
-	if ( bl->contents != NULL ) printf("{%s}", bl->contents);
+	if ( bl->contents != NULL ) printf("{%s} ", bl->contents);
+	if ( bl->fr != NULL ) printf("-> frame %p", bl->fr);
 	printf("\n");
 
 	if ( bl->child != NULL ) {
@@ -580,4 +583,35 @@ void sc_delete_text(SCBlock *b1, int o1, SCBlock *b2, int o2)
 			de = denext;
 		}
 	}
+}
+
+
+/* Create a deep copy of "bl", including all its children */
+SCBlock *sc_block_copy(const SCBlock *bl)
+{
+	SCBlock *copy;
+	SCBlock *first_copy;
+
+	first_copy = sc_block_new();
+
+	copy = first_copy;
+	do {
+
+		if ( bl->name != NULL ) copy->name = strdup(bl->name);
+		if ( bl->options != NULL ) copy->options = strdup(bl->options);
+		if ( bl->contents != NULL ) copy->contents = strdup(bl->contents);
+		if ( bl->child != NULL ) copy->child = sc_block_copy(bl->child);
+
+		bl = bl->next;
+
+		if ( bl != NULL ) {
+			SCBlock *nn;
+			nn = sc_block_new();
+			copy->next = nn;
+			copy = nn;
+		}
+
+	} while ( bl != NULL );
+
+	return first_copy;
 }

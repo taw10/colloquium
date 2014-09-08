@@ -52,4 +52,13 @@ extern int sc_interp_get_ascent(SCInterpreter *scin);
 extern int sc_interp_get_height(SCInterpreter *scin);
 extern void update_geom(struct frame *fr);
 
+
+struct style_id
+{
+	char *name;
+	char *friendlyname;
+};
+
+extern struct style_id *list_styles(SCInterpreter *scin, int *n);
+
 #endif	/* SC_INTERP_H */

@@ -235,15 +235,15 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 
 static void update_style_menus(struct presentation *p)
 {
-#if 0
-/* FIXME: Menus */
 	GtkWidget *menu;
-	struct slide_template *t;
-	TemplateIterator *iter;
-	int i, j, k, n_j, n_k;
+	SCInterpreter *scin;
+	struct style_id *styles;
+	int i, n_sty;
 
 	for ( i=0; i<p->n_menu_rebuild; i++ ) {
 		gtk_widget_destroy(p->menu_rebuild_list[i]);
+		free(p->menu_path_list[i].name);
+		free(p->menu_path_list[i].friendlyname);
 	}
 	free(p->menu_rebuild_list);
 	free(p->menu_path_list);
@@ -252,71 +252,35 @@ static void update_style_menus(struct presentation *p)
 	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
 	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
 
-	n_k = 0;  n_j = 0;
-	for ( t = template_first(p->ss, &iter);
-	      t != NULL;
-	      t = template_next(p->ss, iter) )
-	{
-		n_k += t->n_styles;
-		n_j++;
-		n_k++;  /* For "Everything" */
+	scin = sc_interp_new(NULL, NULL);
+	if ( scin == NULL ) {
+		fprintf(stderr, "Failed to set up interpreter.\n");
+		return;
 	}
+	sc_interp_run_stylesheet(scin, p->stylesheet);
 
-	p->menu_rebuild_list = calloc(n_j, sizeof(GtkWidget *));
+	styles = list_styles(scin, &n_sty);
+	if ( styles == NULL ) return;
+
+	p->menu_rebuild_list = calloc(n_sty, sizeof(GtkWidget *));
 	if ( p->menu_rebuild_list == NULL ) return;
 
-	p->menu_path_list = calloc(n_k, sizeof(struct menu_pl));
-	if ( p->menu_path_list == NULL ) return;
+	for ( i=0; i<n_sty; i++ ) {
 
-	j = 0;
-	k = 0;
-	for ( t = template_first(p->ss, &iter);
-	      t != NULL;
-	      t = template_next(p->ss, iter) )
-	{
-		GtkWidget *submenu;
 		GtkWidget *item;
 
-		submenu = gtk_menu_new();
-		item = gtk_menu_item_new_with_label(t->name);
+		item = gtk_menu_item_new_with_label(styles[i].friendlyname);
 		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-		gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), submenu);
-		p->menu_rebuild_list[j++] = item;
+		p->menu_rebuild_list[i] = item;
 
-		p->menu_path_list[k].p = p;
-		p->menu_path_list[k].sty = NULL;
-		p->menu_path_list[k].st = t;
-		item = gtk_menu_item_new_with_label("Everything");
-		gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 		g_signal_connect(G_OBJECT(item), "activate",
 		                 G_CALLBACK(add_furniture),
-		                 &p->menu_path_list[k]);
-		k++;
-
-		item = gtk_separator_menu_item_new();
-		gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
-
-		for ( i=0; i<t->n_styles; i++ ) {
-
-			struct style *s = t->styles[i];
-
-			p->menu_path_list[k].p = p;
-			p->menu_path_list[k].sty = s;
-			p->menu_path_list[k].st = t;
-
-			item = gtk_menu_item_new_with_label(s->name);
-			gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
-			g_signal_connect(G_OBJECT(item), "activate",
-			                 G_CALLBACK(add_furniture),
-			                 &p->menu_path_list[k]);
-			k++;
-
-		}
+		                 &styles[i]);
 	}
 
 	gtk_widget_show_all(menu);
-	p->n_menu_rebuild = j;
-#endif
+	p->n_menu_rebuild = n_sty;
+	p->menu_path_list = styles;
 }
 
 

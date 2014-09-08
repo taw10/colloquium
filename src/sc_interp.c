@@ -773,3 +773,21 @@ void find_stylesheet(struct presentation *p)
 
 	fprintf(stderr, "No style sheet.\n");
 }
+
+
+struct style_id *list_styles(SCInterpreter *scin, int *np)
+{
+	struct style_id *list;
+	int i;
+
+	list = malloc(sizeof(struct style_id)*scin->state->n_macros);
+	if ( list == NULL ) return NULL;
+
+	for ( i=0; i<scin->state->n_macros; i++ ) {
+		list[i].name = strdup(scin->state->macros[i].name);
+		list[i].friendlyname = strdup(scin->state->macros[i].name);
+	}
+
+	*np = scin->state->n_macros;
+	return list;
+}

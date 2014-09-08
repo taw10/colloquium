@@ -298,9 +298,8 @@ struct presentation *new_presentation()
 
 	new->stylesheet = NULL;
 
-	new->n_menu_rebuild = 0;
-	new->menu_rebuild_list = NULL;
-	new->menu_path_list = NULL;
+	new->n_style_menu = 0;
+	new->style_menu = NULL;
 
 	new->selection = NULL;
 	new->n_selection = 0;

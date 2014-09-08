@@ -184,50 +184,21 @@ static void do_slide_update(struct presentation *p, PangoContext *pc)
 }
 
 
-#if 0
-static void add_furniture_real(struct presentation *p, struct style *sty)
+/* Inelegance to make furniture selection menus work */
+struct menu_pl
 {
-	struct frame *fr;
-
-	fr = add_subframe(p->cur_edit_slide->top);
-	fr->style = sty;
-	fr->lop_from_style = 1;
-	set_edit(p, p->cur_edit_slide);
-	fr->sc = malloc(1);
-	fr->sc[0] = '\0';
-	fr->sc_len = 1;
-	fr->empty = 0;
-	set_selection(p, fr);
-	fr->pos = 0;
-	p->cursor_pos = 0;
-
-}
-#endif
+	struct presentation *p;
+	char *style_name;
+	GtkWidget *widget;
+};
 
 
 static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 {
-#if 0
-/* FIXME: Add furniture */
+	/* FIXME: Add it */
+	printf("Adding '%s'\n", pl->style_name);
 
-	struct style *sty = pl->sty;
-	struct presentation *p = pl->p;
-
-	if ( sty != NULL ) {
-		add_furniture_real(p, sty);
-	} else {
-		int i;
-		for ( i=0; i<pl->st->n_styles; i++ ) {
-			add_furniture_real(p, pl->st->styles[i]);
-		}
-	}
-
-	/* FIXME: What if the user mixes templates? */
-	p->cur_edit_slide->st = pl->st;
-	p->cur_edit_slide->top->style = pl->st->top_style;
-
-	do_slide_update(p, p->pc);
-#endif
+	do_slide_update(pl->p, pl->p->pc);
 
 	return 0;
 }
@@ -240,18 +211,14 @@ static void update_style_menus(struct presentation *p)
 	struct style_id *styles;
 	int i, n_sty;
 
-	for ( i=0; i<p->n_menu_rebuild; i++ ) {
-		gtk_widget_destroy(p->menu_rebuild_list[i]);
-		free(p->menu_path_list[i].name);
-		free(p->menu_path_list[i].friendlyname);
+	/* Free old list */
+	for ( i=0; i<p->n_style_menu; i++ ) {
+		gtk_widget_destroy(p->style_menu[i].widget);
+		free(p->style_menu[i].style_name);
 	}
-	free(p->menu_rebuild_list);
-	free(p->menu_path_list);
+	free(p->style_menu);
 
-	/* Add the styles to the "Insert" menu */
-	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
-	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
-
+	/* Get the list of styles from the style sheet */
 	scin = sc_interp_new(NULL, NULL);
 	if ( scin == NULL ) {
 		fprintf(stderr, "Failed to set up interpreter.\n");
@@ -262,8 +229,15 @@ static void update_style_menus(struct presentation *p)
 	styles = list_styles(scin, &n_sty);
 	if ( styles == NULL ) return;
 
-	p->menu_rebuild_list = calloc(n_sty, sizeof(GtkWidget *));
-	if ( p->menu_rebuild_list == NULL ) return;
+	sc_interp_destroy(scin);
+
+	/* Set up list for next time */
+	p->style_menu = calloc(n_sty, sizeof(struct menu_pl));
+	if ( p->style_menu == NULL ) return;
+
+	/* Add the styles to the "Insert" menu */
+	menu = gtk_ui_manager_get_widget(p->ui, "/displaywindow/insert");
+	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
 
 	for ( i=0; i<n_sty; i++ ) {
 
@@ -271,16 +245,20 @@ static void update_style_menus(struct presentation *p)
 
 		item = gtk_menu_item_new_with_label(styles[i].friendlyname);
 		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-		p->menu_rebuild_list[i] = item;
+
+		p->style_menu[i].p = p;
+		p->style_menu[i].widget = item;
+		p->style_menu[i].style_name = styles[i].name;
 
 		g_signal_connect(G_OBJECT(item), "activate",
 		                 G_CALLBACK(add_furniture),
-		                 &styles[i]);
+		                 &p->style_menu[i]);
+
+		free(styles[i].friendlyname);
 	}
 
 	gtk_widget_show_all(menu);
-	p->n_menu_rebuild = n_sty;
-	p->menu_path_list = styles;
+	free(styles);
 }
 
 

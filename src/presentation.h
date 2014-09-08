@@ -97,13 +97,7 @@ enum drag_status
 };
 
 
-/* Inelegance to make furniture selection menus work */
-struct menu_pl
-{
-	struct presentation *p;
-	struct style *sty;
-	struct slide_template *st;
-};
+struct menu_pl;
 
 
 struct presentation
@@ -120,9 +114,8 @@ struct presentation
 	GtkUIManager     *ui;
 	GtkActionGroup   *action_group;
 	GtkIMContext     *im_context;
-	GtkWidget       **menu_rebuild_list;
-	struct style_id  *menu_path_list;
-	int               n_menu_rebuild;
+	struct menu_pl   *style_menu;
+	int               n_style_menu;
 	PangoContext     *pc;
 	ImageStore       *is;
 

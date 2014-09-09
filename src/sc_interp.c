@@ -58,6 +58,8 @@ struct sc_state
 	int n_macros;
 	int max_macros;
 	struct macro *macros;  /* Contents need to be copied on push */
+
+	SCBlock *macro_contents;
 };
 
 
@@ -267,6 +269,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 		free(scin);
 		return NULL;
 	}
+	st->macro_contents = NULL;
 
 	/* FIXME: Determine proper language (somehow...) */
 	scin->lang = pango_language_from_string("en_GB");
@@ -603,10 +606,12 @@ static int check_macro(const char *name, SCInterpreter *scin)
 }
 
 
-static void exec_macro(SCBlock *bl, SCInterpreter *scin)
+static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
 {
 	SCBlock *mchild;
 	struct sc_state *st = &scin->state[scin->j];
+
+	st->macro_contents = child;
 
 	mchild = sc_block_macro_child(bl);
 	if ( mchild == NULL ) {
@@ -626,6 +631,16 @@ static void exec_macro(SCBlock *bl, SCInterpreter *scin)
 	}
 
 	sc_interp_add_blocks(scin, mchild);
+}
+
+
+static void run_macro_contents(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+
+	sc_interp_save(scin);
+	sc_interp_add_blocks(scin, st->macro_contents);
+	sc_interp_restore(scin);
 }
 
 
@@ -659,9 +674,12 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			maybe_recurse_after(scin, child);
 
 		} else if ( check_macro(name, scin) ) {
-			maybe_recurse_before(scin, child);
-			exec_macro(bl, scin);
-			maybe_recurse_after(scin, child);
+			sc_interp_save(scin);
+			exec_macro(bl, scin, child);
+			sc_interp_restore(scin);
+
+		} else if ( strcmp(name, "contents") == 0 ) {
+			run_macro_contents(scin);
 
 		} else if ( strcmp(name, "pad") == 0 ) {
 			maybe_recurse_before(scin, child);

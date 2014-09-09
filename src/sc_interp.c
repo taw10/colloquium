@@ -789,6 +789,14 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 
 		if ( (name != NULL) && (strcmp(name, "ss") == 0) ) {
 			try_add_macro(scin, options, sc_block_child(bl));
+
+		} else if ( name == NULL ) {
+
+		} else if ( strcmp(name, "font") == 0 ) {
+			set_font(scin, options);
+
+		} else if ( strcmp(name, "fgcol") == 0 ) {
+			set_colour(scin, options);
 		}
 
 		bl = sc_block_next(bl);

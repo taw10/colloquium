@@ -296,6 +296,24 @@ void sc_interp_destroy(SCInterpreter *scin)
 }
 
 
+static void set_padding(struct frame *fr, const char *opts)
+{
+	int nn;
+	float l, r, t, b;
+
+	nn = sscanf(opts, "%f,%f,%f,%f", &l, &r, &t, &b);
+	if ( nn != 4 ) {
+		fprintf(stderr, "Invalid padding '%s'\n", opts);
+		return;
+	}
+
+	fr->pad_l = l;
+	fr->pad_r = r;
+	fr->pad_t = t;
+	fr->pad_b = b;
+}
+
+
 void update_geom(struct frame *fr)
 {
 	char geom[256];
@@ -683,7 +701,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "pad") == 0 ) {
 			maybe_recurse_before(scin, child);
-			/* FIXME: Implement padding */
+			set_padding(sc_interp_get_frame(scin), options);
 			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "slide") == 0 ) {

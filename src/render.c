@@ -245,7 +245,7 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 		}
 
 		/* FIXME: line spacing */
-		y_pos += pango_units_to_double(fr->lines[i].height) + 0.0;
+		y_pos += pango_units_to_double(fr->lines[i].height);
 
 		cairo_restore(cr);
 

@@ -346,6 +346,8 @@ static void calc_line_geometry(struct wrap_line *line)
 		if ( box->height > line->height ) line->height = box->height;
 		if ( box->ascent > line->ascent ) line->ascent = box->ascent;
 	}
+
+	line->height *= 1.07;
 }
 
 

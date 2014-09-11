@@ -300,57 +300,6 @@ static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
 }
 
 
-static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
-                        enum is_size isz, PangoContext *pc, SCBlock *scblocks,
-			SCBlock *stylesheet)
-{
-	SCInterpreter *scin;
-	int i;
-
-	scin = sc_interp_new(pc, fr);
-	if ( scin == NULL ) {
-		fprintf(stderr, "Failed to set up interpreter.\n");
-		return 1;
-	}
-
-	sc_interp_run_stylesheet(scin, stylesheet);
-
-	for ( i=0; i<fr->n_lines; i++ ) {
-	//	wrap_line_free(&fr->lines[i]);
-	}
-	free(fr->lines);
-	fr->lines = NULL;
-	fr->n_lines = 0;
-	fr->max_lines = 0;
-
-	if ( fr->boxes != NULL ) {
-		free(fr->boxes->boxes);
-		free(fr->boxes);
-	}
-	fr->boxes = malloc(sizeof(struct wrap_line));
-	initialise_line(fr->boxes);
-
-	/* SCBlocks -> frames and wrap boxes (preferably re-using frames) */
-	sc_interp_add_blocks(scin, fr->scblocks);
-
-	recursive_wrap_and_draw(fr, cr, is, isz);
-
-	sc_interp_destroy(scin);
-
-	return 0;
-}
-
-
-void recursive_buffer_free(struct frame *fr)
-{
-	int i;
-
-	for ( i=0; i<fr->num_children; i++ ) {
-		recursive_buffer_free(fr->children[i]);
-	}
-}
-
-
 void free_render_buffers(struct slide *s)
 {
 	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
@@ -375,35 +324,15 @@ void free_render_buffers_except_thumb(struct slide *s)
 }
 
 
-/**
- * render_slide:
- * @s: A slide.
- * @w: Width of the bitmap to produce
- * @ww: Width of the slide in Cairo units
- * @hh: Height of the slide in Cairo units
- *
- * Render the entire slide.
- */
-cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
-                              ImageStore *is, enum is_size isz)
+
+static void render_slide_to_surface(struct slide *s, cairo_surface_t *surf,
+                                    cairo_t *cr,  enum is_size isz,
+                                    double scale, double w, double h,
+                                    ImageStore *is)
 {
-	cairo_surface_t *surf;
-	cairo_t *cr;
-	int h;
-	double scale;
 	PangoFontMap *fontmap;
 	PangoContext *pc;
-
-	h = (hh/ww)*w;
-	scale = w/ww;
-
-	s->top->x = 0.0;
-	s->top->y = 0.0;
-	s->top->w = ww;
-	s->top->h = hh;
-
-	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
-	cr = cairo_create(surf);
+	SCInterpreter *scin;
 
 	cairo_scale(cr, scale, scale);
 
@@ -423,14 +352,53 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	pc = pango_font_map_create_context(fontmap);
 	pango_cairo_update_context(cr, pc);
 
-	render_frame(cr, s->top, is, isz, pc, s->parent->scblocks,
-	             s->parent->stylesheet);
+	scin = sc_interp_new(pc, s->top);
+	if ( scin == NULL ) {
+		fprintf(stderr, "Failed to set up interpreter.\n");
+		return;
+	}
 
+	/* "The rendering pipeline" */
+	sc_interp_run_stylesheet(scin, s->parent->stylesheet);
+	renew_frame(s->top);
+	sc_interp_add_blocks(scin, s->scblocks);
+	recursive_wrap_and_draw(s->top, cr, is, isz);
+
+	sc_interp_destroy(scin);
 	cairo_font_options_destroy(fopts);
 	g_object_unref(pc);
-	cairo_destroy(cr);
-	recursive_buffer_free(s->top);
+}
 
+
+/**
+ * render_slide:
+ * @s: A slide.
+ * @w: Width of the bitmap to produce
+ * @ww: Width of the slide in Cairo units
+ * @hh: Height of the slide in Cairo units
+ *
+ * Render the entire slide.
+ */
+cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
+                              ImageStore *is, enum is_size isz)
+{
+	cairo_surface_t *surf;
+	cairo_t *cr;
+	int h;
+	double scale;
+
+	h = (hh/ww)*w;
+	scale = w/ww;
+
+	s->top->x = 0.0;
+	s->top->y = 0.0;
+	s->top->w = ww;
+	s->top->h = hh;
+
+	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+	cr = cairo_create(surf);
+	render_slide_to_surface(s, surf, cr, isz, scale, w, h, is);
+	cairo_destroy(cr);
 	return surf;
 }
 
@@ -440,43 +408,29 @@ int export_pdf(struct presentation *p, const char *filename)
 	int i;
 	double r;
 	double w = 2048.0;
+	double scale;
 	cairo_surface_t *surf;
 	cairo_t *cr;
-	double scale;
-	PangoFontMap *fontmap;
-	PangoContext *pc;
 
 	r = p->slide_height / p->slide_width;
 
 	surf = cairo_pdf_surface_create(filename, w, w*r);
-
 	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
 		fprintf(stderr, "Couldn't create Cairo surface\n");
 		return 1;
 	}
 
 	cr = cairo_create(surf);
-
 	scale = w / p->slide_width;
-	cairo_scale(cr, scale, scale);
-
-	cairo_font_options_t *fopts;
-	fopts = cairo_font_options_create();
-	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_FULL);
-	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_DEFAULT);
-	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_GRAY);
-	cairo_set_font_options(cr, fopts);
-
-	/* Find and load font */
-	fontmap = pango_cairo_font_map_get_default();
-	pc = pango_font_map_create_context(fontmap);
-	pango_cairo_update_context(cr, pc);
 
 	for ( i=0; i<p->num_slides; i++ ) {
 
 		struct slide *s;
 
 		s = p->slides[i];
+
+		cairo_save(cr);
+
 		cairo_rectangle(cr, 0.0, 0.0, p->slide_width, p->slide_height);
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
@@ -486,16 +440,16 @@ int export_pdf(struct presentation *p, const char *filename)
 		s->top->w = w;
 		s->top->h = w*r;
 
-		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, pc,
-		             s->parent->scblocks, s->parent->stylesheet);
+		render_slide_to_surface(s, surf, cr, ISZ_SLIDESHOW, scale,
+		                        w, w*r, p->is);
+
+		cairo_restore(cr);
 
 		cairo_show_page(cr);
 
 	}
 
 	cairo_surface_finish(surf);
-	cairo_font_options_destroy(fopts);
-	g_object_unref(pc);
 	cairo_destroy(cr);
 
 	return 0;

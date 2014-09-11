@@ -78,6 +78,29 @@ struct frame *frame_new()
 }
 
 
+void renew_frame(struct frame *fr)
+{
+	int i;
+
+	if ( fr == NULL ) return;
+
+	for ( i=0; i<fr->n_lines; i++ ) {
+	//	wrap_line_free(&fr->lines[i]);
+	}
+	free(fr->lines);
+	fr->lines = NULL;
+	fr->n_lines = 0;
+	fr->max_lines = 0;
+
+	if ( fr->boxes != NULL ) {
+		free(fr->boxes->boxes);
+		free(fr->boxes);
+	}
+	fr->boxes = malloc(sizeof(struct wrap_line));
+	initialise_line(fr->boxes);
+}
+
+
 struct frame *add_subframe(struct frame *fr)
 {
 	struct frame *n;

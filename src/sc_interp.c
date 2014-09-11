@@ -563,12 +563,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		struct frame *fr = sc_block_frame(bl);
 
-		if ( fr != NULL ) {
-			free(fr->boxes->boxes);
-			free(fr->boxes);
-			fr->boxes = malloc(sizeof(struct wrap_line));
-			initialise_line(fr->boxes);
-		}
+		renew_frame(fr);
 
 		if ( fr == NULL ) {
 			fr = add_subframe(sc_interp_get_frame(scin));

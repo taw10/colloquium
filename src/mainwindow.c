@@ -1544,8 +1544,8 @@ static struct frame *create_frame(struct presentation *p, double x, double y,
 	fr = add_subframe(parent);
 
 	/* Add to SC */
-	fr->scblocks = sc_block_append_inside(p->cur_edit_slide->scblocks,
-	                                      "f", NULL, NULL);
+	fr->scblocks = sc_block_append_end(p->cur_edit_slide->scblocks,
+	                                   "f", NULL, NULL);
 	sc_block_set_frame(fr->scblocks, fr);
 	sc_block_append_inside(fr->scblocks, NULL, NULL, strdup(""));
 

@@ -95,9 +95,7 @@ int main(int argc, char *argv[])
 	s.rendered_proj = NULL;
 	s.rendered_thumb = NULL;
 	s.parent = &p;
-	s.constants = NULL;
 
-	p.constants = NULL;
 	p.scblocks = fr->scblocks;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);

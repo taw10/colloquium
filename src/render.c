@@ -301,9 +301,7 @@ static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
 
 
 static int render_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
-                        enum is_size isz, struct slide_constants *scc,
-		        struct presentation_constants *pcc,
-			PangoContext *pc, SCBlock *scblocks,
+                        enum is_size isz, PangoContext *pc, SCBlock *scblocks,
 			SCBlock *stylesheet)
 {
 	SCInterpreter *scin;
@@ -425,8 +423,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 	pc = pango_font_map_create_context(fontmap);
 	pango_cairo_update_context(cr, pc);
 
-	render_frame(cr, s->top, is, isz, s->constants,
-	             s->parent->constants, pc, s->parent->scblocks,
+	render_frame(cr, s->top, is, isz, pc, s->parent->scblocks,
 	             s->parent->stylesheet);
 
 	cairo_font_options_destroy(fopts);
@@ -489,9 +486,8 @@ int export_pdf(struct presentation *p, const char *filename)
 		s->top->w = w;
 		s->top->h = w*r;
 
-		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, s->constants,
-		             s->parent->constants, pc, s->parent->scblocks,
-		             s->parent->stylesheet);
+		render_frame(cr, s->top, p->is, ISZ_SLIDESHOW, pc,
+		             s->parent->scblocks, s->parent->stylesheet);
 
 		cairo_show_page(cr);
 

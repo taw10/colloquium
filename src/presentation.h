@@ -34,26 +34,10 @@
 #include "sc_parse.h"
 
 
-struct slide_constants
-{
-	int slide_number;
-};
-
-
-struct presentation_constants
-{
-	char *title;
-	char *author;
-	char *date;
-};
-
-
 struct slide
 {
 	struct presentation *parent;
 	struct slide_template *st;
-
-	struct slide_constants *constants;
 
 	/* Any of these may be NULL */
 	cairo_surface_t *rendered_proj;

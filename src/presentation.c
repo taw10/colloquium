@@ -69,19 +69,6 @@ void free_presentation(struct presentation *p)
 }
 
 
-static void renumber_slides(struct presentation *p)
-{
-	int i;
-	for ( i=0; i<p->num_slides; i++ ) {
-		if ( p->slides[i]->constants != NULL ) {
-			p->slides[i]->constants->slide_number = i+1;
-		} else {
-			fprintf(stderr, "Slide %i has no constants.\n", i);
-		}
-	}
-}
-
-
 /* "pos" is the index that the caller would like this slide to have */
 int insert_slide(struct presentation *p, struct slide *new, int pos)
 {
@@ -109,8 +96,6 @@ int insert_slide(struct presentation *p, struct slide *new, int pos)
 
 	new->parent = p;
 
-	renumber_slides(p);
-
 	return 0;
 }
 
@@ -126,8 +111,6 @@ static void delete_slide_index(struct presentation *p, int pos)
 	p->num_slides--;
 
 	/* Don't bother to resize the array */
-
-	renumber_slides(p);
 }
 
 
@@ -153,12 +136,6 @@ struct slide *new_slide()
 	new->rendered_edit = NULL;
 	new->rendered_proj = NULL;
 	new->rendered_thumb = NULL;
-
-	new->constants = calloc(1, sizeof(struct slide_constants));
-	if ( new->constants == NULL ) {
-		free(new);
-		return NULL;
-	}
 
 	new->top = frame_new();
 	/* FIXME: Set zero margins etc on top level frame */
@@ -262,12 +239,6 @@ struct presentation *new_presentation()
 
 	new = calloc(1, sizeof(struct presentation));
 	if ( new == NULL ) return NULL;
-
-	new->constants = calloc(1, sizeof(struct presentation_constants));
-	if ( new->constants == NULL ) {
-		free(new);
-		return NULL;
-	}
 
 	num_presentations++;
 	new->num_presentations = &num_presentations;

@@ -559,20 +559,6 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			        options);
 		}
 
-	} else if ( strcmp(name, "slidenumber")==0) {
-		if ( scin->s_constants != NULL ) {
-			char *tmp = malloc(64);
-			if ( tmp != NULL ) {
-				snprintf(tmp, 63, "%i",
-					 scin->s_constants->slide_number);
-				split_words(sc_interp_get_frame(scin)->boxes,
-					    scin->pc, bl, tmp, scin->lang, 0,
-					    scin);
-			}
-		} else {
-			printf("No slide constants.\n");
-		}
-
 	} else if ( strcmp(name, "f")==0 ) {
 
 		struct frame *fr = sc_block_frame(bl);

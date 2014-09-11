@@ -446,7 +446,7 @@ next:
 		s->rendered_thumb = render_slide(s, p->thumb_slide_width,
 	                                         p->slide_width,
 		                                 p->slide_height,
-		                                 p->is,  ISZ_THUMBNAIL);
+		                                 p->is,  ISZ_THUMBNAIL, i);
 	}
 
 	return 0;

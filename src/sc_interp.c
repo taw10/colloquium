@@ -704,16 +704,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 }
 
 
-static int add_macro(struct macro *m, char *mname, SCBlock *bl)
-{
-	m->name = mname;
-	m->bl = bl;
-	m->prev = NULL;  /* FIXME: Stacking */
-
-	return 0;
-}
-
-
 static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
 {
 	struct sc_state *st = &scin->state[scin->j];
@@ -729,7 +719,10 @@ static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
 
 	for ( i=0; i<st->n_macros; i++ ) {
 		if ( strcmp(st->macros[i].name, nn) == 0 ) {
-			return add_macro(&st->macros[i], nn, bl);
+			st->macros[i].name = nn;
+			st->macros[i].bl = bl;
+			st->macros[i].prev = NULL;  /* FIXME: Stacking */
+			return 0;
 		}
 	}
 
@@ -750,7 +743,19 @@ static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
 	}
 
 	i = st->n_macros++;
-	return add_macro(&st->macros[i], nn, bl);
+
+	st->macros[i].name = nn;
+	st->macros[i].bl = bl;
+	st->macros[i].prev = NULL;  /* FIXME: Stacking */
+
+	return 0;
+}
+
+
+void add_macro(SCInterpreter *scin, const char *mname, const char *contents)
+{
+	SCBlock *bl = sc_parse(contents);
+	try_add_macro(scin, mname, bl);
 }
 
 

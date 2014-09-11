@@ -329,11 +329,15 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
  * gets there first.  When re-arranging slides, this might not happen */
 static void fixup_proj(struct presentation *p, struct slide *s)
 {
+	int n;
+
 	if ( s->rendered_proj != NULL ) return;
+
+	n = slide_number(p, s);
 
 	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
 	                                p->slide_width, p->slide_height,
-	                                p->is, ISZ_SLIDESHOW);
+	                                p->is, ISZ_SLIDESHOW, n);
 }
 
 
@@ -367,13 +371,14 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		if ( s != NULL ) {
 
 			/* FIXME: Do something */
+			int sn = slide_number(n->p, s);
 
 			s->rendered_thumb = render_slide(s,
 			                                 n->p->thumb_slide_width,
 		                                         n->p->slide_width,
 			                                 n->p->slide_height,
 			                                 n->p->is,
-			                                 ISZ_THUMBNAIL);
+			                                 ISZ_THUMBNAIL, sn);
 
 			/* FIXME: Transfer the notes as well */
 

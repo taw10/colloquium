@@ -32,7 +32,7 @@
 
 extern cairo_surface_t *render_slide(struct slide *s, int w,
                                      double ww, double hh, ImageStore *is,
-                                     enum is_size isz);
+                                     enum is_size isz, int slide_number);
 extern void free_render_buffers(struct slide *s);
 extern void free_render_buffers_except_thumb(struct slide *s);
 extern int export_pdf(struct presentation *p, const char *filename);

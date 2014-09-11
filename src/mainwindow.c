@@ -50,20 +50,21 @@
 void rerender_slide(struct presentation *p)
 {
 	struct slide *s = p->cur_edit_slide;
+	int n = slide_number(p, s);
 
 	free_render_buffers(s);
 
 	s->rendered_thumb = render_slide(s, s->parent->thumb_slide_width,
 	                                 p->slide_width, p->slide_height, p->is,
-	                                 ISZ_THUMBNAIL);
+	                                 ISZ_THUMBNAIL, n);
 
 	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
 	                                p->slide_width, p->slide_height, p->is,
-	                                ISZ_SLIDESHOW);
+	                                ISZ_SLIDESHOW, n);
 
 	s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
 	                                p->slide_width, p->slide_height, p->is,
-	                                ISZ_EDITOR);
+	                                ISZ_EDITOR, n);
 }
 
 
@@ -71,17 +72,18 @@ void rerender_slide(struct presentation *p)
 static void render_edit_and_proj(struct presentation *p)
 {
 	struct slide *s = p->cur_edit_slide;
+	int n = slide_number(p, s);
 
 	if ( s->rendered_proj == NULL ) {
 		s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
 		                               p->slide_width, p->slide_height,
-		                               p->is, ISZ_SLIDESHOW);
+		                               p->is, ISZ_SLIDESHOW, n);
 	}
 
 	if ( s->rendered_edit == NULL ) {
 		s->rendered_edit = render_slide(s, s->parent->edit_slide_width,
-						p->slide_width, p->slide_height,
-				  p->is, ISZ_EDITOR);
+		                                p->slide_width, p->slide_height,
+		                                p->is, ISZ_EDITOR, n);
 	}
 }
 

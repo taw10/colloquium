@@ -60,7 +60,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	cairo_fill(cr);
 
 	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
-	s->rendered_edit = render_slide(s, w, w, h, NULL, ISZ_EDITOR);
+	s->rendered_edit = render_slide(s, w, w, h, NULL, ISZ_EDITOR, 1);
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_surface(cr, s->rendered_edit, 0.0, 0.0);
 	cairo_fill(cr);

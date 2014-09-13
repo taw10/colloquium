@@ -380,9 +380,9 @@ static gint new_sig(GtkWidget *widget, struct presentation *pnn)
 		new = add_slide(p, 0);
 		p->completely_empty = 1;
 		/* FIXME: position */
-		new->scblocks = sc_block_append_inside(p->scblocks, "slide",
-	                                               NULL, NULL);
-
+		new->scblocks = sc_block_append_end(p->scblocks, "slide",
+	                                            NULL, NULL);
+		attach_notes(new);
 		open_mainwindow(p);
 	}
 

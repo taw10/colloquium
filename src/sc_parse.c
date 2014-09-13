@@ -514,6 +514,13 @@ void sc_block_set_options(SCBlock *bl, char *opt)
 }
 
 
+void sc_block_set_contents(SCBlock *bl, char *con)
+{
+	free(bl->contents);
+	bl->contents = con;
+}
+
+
 SCBlock *find_last_child(SCBlock *bl)
 {
 	if ( bl == NULL ) return NULL;

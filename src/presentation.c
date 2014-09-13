@@ -125,7 +125,6 @@ void delete_slide(struct presentation *p, struct slide *s)
 }
 
 
-
 struct slide *new_slide()
 {
 	struct slide *new;
@@ -140,7 +139,8 @@ struct slide *new_slide()
 	new->top = frame_new();
 	/* FIXME: Set zero margins etc on top level frame */
 
-	new->notes = strdup("");
+	new->scblocks = NULL;
+	new->notes = NULL;
 
 	return new;
 }
@@ -424,6 +424,7 @@ int load_presentation(struct presentation *p, const char *filename)
 				s->scblocks = sc_block_child(block);
 				s->top = frame_new();
 				s->top->scblocks = sc_block_child(block);
+				attach_notes(s);
 
 			}
 

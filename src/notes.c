@@ -51,11 +51,20 @@ static void set_notes_title(struct presentation *p)
 static void update_notes(struct presentation *p)
 {
 	GtkTextBuffer *tb;
+	const char *ntext;
+	SCBlock *ch;
 
 	if ( p->notes == NULL ) return;
 
+	ch = sc_block_child(p->cur_edit_slide->notes);
+	if ( ch != NULL ) {
+		ntext = sc_block_contents(ch);
+	} else {
+		ntext = "NOTES ERROR";
+	}
+
 	tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(p->notes->v));
-	gtk_text_buffer_set_text(tb, p->cur_edit_slide->notes, -1);
+	gtk_text_buffer_set_text(tb, ntext, -1);
 }
 
 
@@ -64,6 +73,7 @@ void grab_current_notes(struct presentation *p)
 	gchar *text;
 	GtkTextBuffer *tb;
 	GtkTextIter i1, i2;
+	SCBlock *ch;
 	struct notes *n = p->notes;
 
 	if ( n == NULL ) return;
@@ -73,8 +83,12 @@ void grab_current_notes(struct presentation *p)
 	gtk_text_buffer_get_end_iter(tb, &i2);
 	text = gtk_text_buffer_get_text(tb, &i1, &i2, TRUE);
 
-	free(n->slide->notes);
-	n->slide->notes = text;
+	ch = sc_block_child(n->slide->notes);
+	if ( ch != NULL ) {
+		sc_block_set_contents(ch, text);
+	} else {
+		fprintf(stderr, "NOTES ERROR\n");
+	}
 }
 
 
@@ -129,4 +143,30 @@ void open_notes(struct presentation *p)
 	gtk_widget_show_all(n->window);
 
 	update_notes(p);
+}
+
+
+void attach_notes(struct slide *s)
+{
+	SCBlock *bl = s->scblocks;
+
+	while ( bl != NULL ) {
+
+		const char *name = sc_block_name(bl);
+
+		if ( (name != NULL) && (strcmp(name, "notes") == 0) ) {
+			s->notes = bl;
+			if ( sc_block_child(bl) == NULL ) {
+				sc_block_append_inside(s->notes, NULL, NULL,
+				                       strdup(""));
+			}
+			return;
+		}
+
+		bl = sc_block_next(bl);
+
+	}
+
+	s->notes = sc_block_append_end(s->scblocks, "notes", NULL, NULL);
+	sc_block_append_inside(s->notes, NULL, NULL, strdup(""));
 }

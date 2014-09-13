@@ -49,7 +49,7 @@ struct slide
 	struct frame *top;
 
 	SCBlock *scblocks;
-	char *notes;
+	SCBlock *notes;
 };
 
 

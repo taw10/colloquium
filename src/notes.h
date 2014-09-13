@@ -36,4 +36,6 @@ extern void notify_notes_slide_changed(struct presentation *p,
 
 extern void grab_current_notes(struct presentation *p);
 
+extern void attach_notes(struct slide *s);
+
 #endif	/* NOTES_H */

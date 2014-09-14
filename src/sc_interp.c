@@ -761,6 +761,8 @@ void add_macro(SCInterpreter *scin, const char *mname, const char *contents)
 
 void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 {
+	if ( bl == NULL ) return;
+
 	if ( strcmp(sc_block_name(bl), "stylesheet") != 0 ) {
 		fprintf(stderr, "Style sheet isn't a style sheet.\n");
 		return;

@@ -327,7 +327,7 @@ void free_render_buffers_except_thumb(struct slide *s)
 
 static void render_slide_to_surface(struct slide *s, cairo_surface_t *surf,
                                     cairo_t *cr,  enum is_size isz,
-                                    double scale, double w, double h,
+                                    double scale,
                                     ImageStore *is, int slide_number)
 {
 	PangoFontMap *fontmap;
@@ -337,7 +337,8 @@ static void render_slide_to_surface(struct slide *s, cairo_surface_t *surf,
 
 	cairo_scale(cr, scale, scale);
 
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_rectangle(cr, 0.0, 0.0,
+	                s->parent->slide_width, s->parent->slide_height);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
@@ -402,7 +403,7 @@ cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	cr = cairo_create(surf);
-	render_slide_to_surface(s, surf, cr, isz, scale, w, h, is,
+	render_slide_to_surface(s, surf, cr, isz, scale, is,
 	                        slide_number);
 	cairo_destroy(cr);
 	return surf;
@@ -447,7 +448,7 @@ int export_pdf(struct presentation *p, const char *filename)
 		s->top->h = w*r;
 
 		render_slide_to_surface(s, surf, cr, ISZ_SLIDESHOW, scale,
-		                        w, w*r, p->is, i);
+		                        p->is, i);
 
 		cairo_restore(cr);
 

@@ -978,6 +978,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 {
 	double xoff, yoff;
 	int width, height;
+	int edit_slide_height;
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
@@ -992,8 +993,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	cairo_fill(cr);
 
 	/* Get the overall size */
-	xoff = (width - p->slide_width)/2.0;
-	yoff = (height - p->slide_height)/2.0;
+	edit_slide_height = (p->slide_height/p->slide_width)*p->edit_slide_width;
+	xoff = (width - p->edit_slide_width)/2.0;
+	yoff = (height - edit_slide_height)/2.0;
 	p->border_offs_x = xoff;  p->border_offs_y = yoff;
 
 	/* Draw the slide from the cache */

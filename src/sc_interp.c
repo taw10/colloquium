@@ -647,9 +647,9 @@ static void run_macro_contents(SCInterpreter *scin)
 
 int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 {
-	printf("Running this --------->\n");
-	show_sc_blocks(bl);
-	printf("<------------\n");
+	//printf("Running this --------->\n");
+	//show_sc_blocks(bl);
+	//printf("<------------\n");
 
 	while ( bl != NULL ) {
 
@@ -693,8 +693,8 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else {
 
-			fprintf(stderr, "Don't know what to do with this:\n");
-			show_sc_block(bl, "");
+			//fprintf(stderr, "Don't know what to do with this:\n");
+			//show_sc_block(bl, "");
 
 		}
 

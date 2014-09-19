@@ -165,6 +165,8 @@ static void set_frame_bgcolour(struct frame *fr, const char *colour)
 {
 	GdkRGBA col;
 
+	if ( fr == NULL ) return;
+
 	if ( colour == NULL ) {
 		printf("Invalid colour\n");
 		fr->bgcol[0] = 0.0;
@@ -785,6 +787,9 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {
 			set_colour(scin, options);
+
+		} else if ( strcmp(name, "bgcol") == 0 ) {
+			set_frame_bgcolour(sc_interp_get_frame(scin), options);
 		}
 
 		bl = sc_block_next(bl);

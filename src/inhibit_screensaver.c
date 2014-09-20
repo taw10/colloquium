@@ -242,7 +242,6 @@ struct inhibit_sys *inhibit_prepare()
 	for ( i=0; i<MAX_API; i++ ) {
 		if ( dbus_bus_name_has_owner(sys->conn, dbus_service[i], NULL) )
 		{
-			fprintf(stderr, "found service %s\n", dbus_service[i]);
 			sys->api = i;
 			return sys;
 		}

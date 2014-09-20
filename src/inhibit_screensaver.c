@@ -136,7 +136,6 @@ void do_inhibit(struct inhibit_sys *sys, int flags)
 			}
 			dbus_message_unref(reply);
 		}
-		fprintf(stderr, "got cookie %i\n", (int)sys->cookie);
 
 	}
 

@@ -112,16 +112,11 @@ int sc_interp_get_height(SCInterpreter *scin)
 }
 
 
-static void set_font(SCInterpreter *scin, const char *font_name)
+static void update_font(SCInterpreter *scin)
 {
 	PangoFontMetrics *metrics;
 	struct sc_state *st = &scin->state[scin->j];
 
-	st->fontdesc = pango_font_description_from_string(font_name);
-	if ( st->fontdesc == NULL ) {
-		fprintf(stderr, "Couldn't describe font.\n");
-		return;
-	}
 	st->font = pango_font_map_load_font(pango_context_get_font_map(scin->pc),
 	                                    scin->pc, st->fontdesc);
 	if ( st->font == NULL ) {
@@ -134,6 +129,65 @@ static void set_font(SCInterpreter *scin, const char *font_name)
 	st->ascent = pango_font_metrics_get_ascent(metrics);
 	st->height = st->ascent + pango_font_metrics_get_descent(metrics);
 	pango_font_metrics_unref(metrics);
+}
+
+
+static void set_font(SCInterpreter *scin, const char *font_name)
+{
+	struct sc_state *st = &scin->state[scin->j];
+
+	st->fontdesc = pango_font_description_from_string(font_name);
+	if ( st->fontdesc == NULL ) {
+		fprintf(stderr, "Couldn't describe font.\n");
+		return;
+	}
+
+	update_font(scin);
+}
+
+
+static void copy_top_fontdesc(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+
+	/* If this is the first stack frame, don't even check */
+	if ( scin->j == 0 ) return;
+
+	/* If the fontdesc at the top of the stack is the same as the one
+	 * below, make a copy because we're about to do something to it (which
+	 * should not affect the next level up). */
+	if ( st->fontdesc == scin->state[scin->j-1].fontdesc ) {
+		st->fontdesc = pango_font_description_copy(st->fontdesc);
+	}
+}
+
+
+static void set_fontsize(SCInterpreter *scin, const char *size_str)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	int size;
+	char *end;
+
+	if ( size_str[0] == '\0' ) return;
+
+	size = strtoul(size_str, &end, 10);
+	if ( end[0] != '\0' ) {
+		fprintf(stderr, "Invalid font size '%s'\n", size_str);
+		return;
+	}
+
+	copy_top_fontdesc(scin);
+	pango_font_description_set_size(st->fontdesc, size*PANGO_SCALE);
+	update_font(scin);
+}
+
+
+static void set_bold(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	copy_top_fontdesc(scin);
+	pango_font_description_set_weight(st->fontdesc, PANGO_WEIGHT_BOLD);
+	update_font(scin);
 }
 
 
@@ -667,6 +721,16 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "font") == 0 ) {
 			maybe_recurse_before(scin, child);
 			set_font(scin, options);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "fontsize") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_fontsize(scin, options);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "bold") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_bold(scin);
 			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {

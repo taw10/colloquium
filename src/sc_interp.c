@@ -236,6 +236,48 @@ static void set_frame_bgcolour(struct frame *fr, const char *colour)
 	fr->bgcol[1] = col.green;
 	fr->bgcol[2] = col.blue;
 	fr->bgcol[3] = col.alpha;
+	fr->grad = GRAD_NONE;
+}
+
+
+static void set_frame_bggrad(struct frame *fr, const char *options,
+                             GradientType grad)
+{
+	GdkRGBA col1, col2;
+	char *n2;
+	char *optcopy = strdup(options);
+
+	if ( fr == NULL ) return;
+
+	if ( options == NULL ) {
+		fprintf(stderr, "Invalid bg gradient spec '%s'\n", options);
+		return;
+	}
+
+	n2 = strchr(optcopy, ',');
+	if ( n2 == NULL ) {
+		fprintf(stderr, "Invalid bg gradient spec '%s'\n", options);
+		return;
+	}
+
+	n2[0] = '\0';
+
+	gdk_rgba_parse(&col1, optcopy);
+	gdk_rgba_parse(&col2, &n2[1]);
+
+	fr->bgcol[0] = col1.red;
+	fr->bgcol[1] = col1.green;
+	fr->bgcol[2] = col1.blue;
+	fr->bgcol[3] = col1.alpha;
+
+	fr->bgcol2[0] = col2.red;
+	fr->bgcol2[1] = col2.green;
+	fr->bgcol2[2] = col2.blue;
+	fr->bgcol2[3] = col2.alpha;
+
+	fr->grad = grad;
+
+	free(optcopy);
 }
 
 
@@ -596,11 +638,6 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		            scin->pc, bl, contents, scin->lang, 1,
 		            scin);
 
-	} else if ( strcmp(name, "bgcol") == 0 ) {
-		maybe_recurse_before(scin, child);
-		set_frame_bgcolour(sc_interp_get_frame(scin), options);
-		maybe_recurse_after(scin, child);
-
 	} else if ( strcmp(name, "image")==0 ) {
 		double w, h;
 		char *filename;
@@ -755,6 +792,20 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			maybe_recurse_before(scin, child);
 			maybe_recurse_after(scin, child);
 
+		} else if ( strcmp(name, "bgcol") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_frame_bgcolour(sc_interp_get_frame(scin), options);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "bggradh") == 0 ) {
+			set_frame_bggrad(sc_interp_get_frame(scin), options,
+			                 GRAD_HORIZ);
+
+		} else if ( strcmp(name, "bggradv") == 0 ) {
+			set_frame_bggrad(sc_interp_get_frame(scin), options,
+			                 GRAD_VERT);
+
+
 		} else {
 
 			//fprintf(stderr, "Don't know what to do with this:\n");
@@ -854,6 +905,15 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "bgcol") == 0 ) {
 			set_frame_bgcolour(sc_interp_get_frame(scin), options);
+
+		} else if ( strcmp(name, "bggradh") == 0 ) {
+			set_frame_bggrad(sc_interp_get_frame(scin), options,
+			                 GRAD_HORIZ);
+
+		} else if ( strcmp(name, "bggradv") == 0 ) {
+			set_frame_bggrad(sc_interp_get_frame(scin), options,
+			                 GRAD_VERT);
+
 		}
 
 		bl = sc_block_next(bl);

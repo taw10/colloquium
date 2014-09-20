@@ -253,14 +253,57 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 }
 
 
+static void do_background(cairo_t *cr, struct frame *fr)
+{
+	cairo_pattern_t *patt = NULL;
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
+
+	switch ( fr->grad ) {
+
+		case GRAD_NONE:
+		cairo_set_source_rgba(cr, fr->bgcol[0],
+		                          fr->bgcol[1],
+		                          fr->bgcol[2],
+			                  fr->bgcol[3]);
+		break;
+
+		case GRAD_VERT:
+		patt = cairo_pattern_create_linear(0.0, 0.0,
+			                           0.0, fr->h);
+		cairo_pattern_add_color_stop_rgb(patt, 0.0, fr->bgcol[0],
+			                                    fr->bgcol[1],
+			                                    fr->bgcol[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 1.0, fr->bgcol2[0],
+			                                    fr->bgcol2[1],
+			                                    fr->bgcol2[2]);
+		cairo_set_source(cr, patt);
+		break;
+
+		case GRAD_HORIZ:
+		patt = cairo_pattern_create_linear(0.0, 0.0,
+			                           fr->w, 0.0);
+		cairo_pattern_add_color_stop_rgb(patt, 0.0, fr->bgcol[0],
+			                                    fr->bgcol[1],
+			                                    fr->bgcol[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 1.0, fr->bgcol2[0],
+			                                    fr->bgcol2[1],
+			                                    fr->bgcol2[2]);
+		cairo_set_source(cr, patt);
+		break;
+
+	}
+
+	cairo_fill(cr);
+	if ( patt != NULL ) cairo_pattern_destroy(patt);
+}
+
+
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                      enum is_size isz)
 {
-	cairo_new_path(cr);
-	cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
-	cairo_set_source_rgba(cr, fr->bgcol[0], fr->bgcol[1], fr->bgcol[2],
-	                          fr->bgcol[3]);
-	cairo_fill(cr);
+	do_background(cr, fr);
 
 	if ( fr->trouble ) {
 		cairo_new_path(cr);

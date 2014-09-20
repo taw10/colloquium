@@ -40,6 +40,14 @@ typedef enum
 } LengthUnits;
 
 
+typedef enum
+{
+	GRAD_NONE,
+	GRAD_HORIZ,
+	GRAD_VERT
+} GradientType;
+
+
 struct frame
 {
 	struct frame            **children;
@@ -66,6 +74,8 @@ struct frame
 
 	/* Background properties for this frame */
 	double                    bgcol[4];
+	double                    bgcol2[4];
+	GradientType              grad;
 
 	/* True if this frame should be deleted on the next mouse click */
 	int                       empty;

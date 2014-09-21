@@ -508,7 +508,6 @@ static void distribute_spaces(struct wrap_line *line, double l, double rho)
 }
 
 
-
 static void output_line(int q, int s, struct frame *fr, struct wrap_line *boxes)
 {
 	struct wrap_line *l;

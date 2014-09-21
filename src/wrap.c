@@ -745,6 +745,61 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 }
 
 
+static void space_line_ragged(struct wrap_line *line, double l)
+{
+	int i;
+	for ( i=0; i<line->n_boxes-1; i++ ) {
+		line->boxes[i].sp = sp_x(line->boxes[i].space);
+	}
+}
+
+
+static struct wrap_line *new_line(struct frame *fr)
+{
+	struct wrap_line *l;
+
+	if ( fr->n_lines + 1 > fr->max_lines ) {
+		fr->max_lines += 32;
+		alloc_lines(fr);
+		if ( fr->n_lines == fr->max_lines ) return NULL;
+	}
+
+	l = &fr->lines[fr->n_lines];
+	fr->n_lines++;
+	initialise_line(l);
+	return l;
+}
+
+
+static void first_fit(struct wrap_line *boxes, double line_length,
+                      struct frame *fr)
+{
+	struct wrap_line *line;
+	double len;
+	int j = 0;
+
+	line_length *= PANGO_SCALE;
+
+	line = new_line(fr);
+	len = 0.0;
+
+	do {
+		if ( (j > 0) && (boxes->boxes[j-1].type != WRAP_BOX_SENTINEL) )
+		{
+			len += sp_x(boxes->boxes[j-1].space);
+		}
+		len += boxes->boxes[j].width;
+		if ( len > line_length ) {
+			line = new_line(fr);
+			len = 0.0;
+		}
+		line->boxes[line->n_boxes++] = boxes->boxes[j++];
+	} while ( j < boxes->n_boxes );
+
+	fr->lines[fr->n_lines-1].last_line = 1;
+}
+
+
 void wrap_line_free(struct wrap_line *l)
 {
 	int i;
@@ -861,7 +916,8 @@ int wrap_contents(struct frame *fr)
 		/* Split paragraphs into lines */
 		if ( para != NULL ) {
 
-			knuth_suboptimal_fit(para, wrap_w, fr, rho);
+			//knuth_suboptimal_fit(para, wrap_w, fr, rho);
+			first_fit(para, wrap_w, fr);
 
 			free(para->boxes);
 			free(para);
@@ -874,7 +930,8 @@ int wrap_contents(struct frame *fr)
 
 		struct wrap_line *line = &fr->lines[i];
 
-		distribute_spaces(line, wrap_w, rho);
+		//distribute_spaces(line, wrap_w, rho);
+		space_line_ragged(line, wrap_w);
 
 		/* Strip any sentinel boxes added by the wrapping algorithm */
 		if ( line->boxes[line->n_boxes-1].type == WRAP_BOX_SENTINEL ) {

@@ -881,6 +881,8 @@ void show_boxes(struct wrap_line *boxes)
 			const char *block_text = sc_block_contents(box->scblock);
 			box_text = g_utf8_offset_to_pointer(block_text,
 			                                    box->offs_char);
+		} else if ( box->type == WRAP_BOX_IMAGE ) {
+			box_text = box->filename;
 		} else {
 			box_text = NULL;
 		}

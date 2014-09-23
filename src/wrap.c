@@ -928,20 +928,6 @@ int wrap_contents(struct frame *fr)
 
 	} while ( para != NULL );
 
-	for ( i=0; i<fr->n_lines; i++ ) {
-
-		struct wrap_line *line = &fr->lines[i];
-
-		//distribute_spaces(line, wrap_w, rho);
-		space_line_ragged(line, wrap_w);
-
-		/* Strip any sentinel boxes added by the wrapping algorithm */
-		if ( line->boxes[line->n_boxes-1].type == WRAP_BOX_SENTINEL ) {
-			line->n_boxes--;
-		}
-
-	}
-
 	/* If the last paragraph ended with an EOP, add an extra line */
 	if ( eop || (fr->n_lines == 0) ) {
 
@@ -988,6 +974,20 @@ int wrap_contents(struct frame *fr)
 			l->boxes[0].height = 10000;
 			l->boxes[0].width = 0;
 		}
+	}
+
+	for ( i=0; i<fr->n_lines; i++ ) {
+
+		struct wrap_line *line = &fr->lines[i];
+
+		//distribute_spaces(line, wrap_w, rho);
+		space_line_ragged(line, wrap_w);
+
+		/* Strip any sentinel boxes added by the wrapping algorithm */
+		if ( line->boxes[line->n_boxes-1].type == WRAP_BOX_SENTINEL ) {
+			line->n_boxes--;
+		}
+
 	}
 
 	for ( i=0; i<fr->n_lines; i++ ) {

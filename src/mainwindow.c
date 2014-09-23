@@ -874,6 +874,8 @@ static void draw_caret(cairo_t *cr, struct frame *fr,
 	/* Locate the cursor in a "logical" and "geographical" sense */
 	box = &fr->lines[cursor_line].boxes[cursor_box];
 	get_cursor_pos(box, cursor_pos, &xposd, &yposd, &line_height);
+	xposd += fr->pad_l;
+	yposd += fr->pad_t;
 
 	for ( i=0; i<cursor_line; i++ ) {
 		yposd += pango_units_to_double(fr->lines[i].height);

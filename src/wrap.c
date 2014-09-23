@@ -748,7 +748,7 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 static void space_line_ragged(struct wrap_line *line, double l)
 {
 	int i;
-	for ( i=0; i<line->n_boxes-1; i++ ) {
+	for ( i=0; i<line->n_boxes; i++ ) {
 		line->boxes[i].sp = sp_x(line->boxes[i].space);
 	}
 }

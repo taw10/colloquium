@@ -1,7 +1,7 @@
 /*
  * pr_clock.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -233,7 +233,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
-	s = width-20;
+	s = width-20.0;
 
 	/* Overall background */
 	cairo_rectangle(cr, 10.0, 0.0, s, height);
@@ -261,6 +261,16 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
 	cairo_set_line_width(cr, 2.0);
 	cairo_set_source_rgb(cr, 1.0, 0.0, 1.0);
 	cairo_stroke(cr);
+
+	if ( !n->running ) {
+		cairo_move_to(cr, 10.0, height*0.8);
+		cairo_set_font_size(cr, height*0.8);
+		cairo_select_font_face(cr, "sans-serif",
+		                       CAIRO_FONT_SLANT_NORMAL,
+		                       CAIRO_FONT_WEIGHT_BOLD);
+		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+		cairo_show_text(cr, "Timer is NOT running!");
+	}
 
 	return FALSE;
 }
@@ -333,6 +343,8 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
 		gtk_label_set_text(GTK_LABEL(gtk_bin_get_child(GTK_BIN(w))),
 		                   "Stop");
 	}
+
+	update_clock(n);
 
 	return FALSE;
 }

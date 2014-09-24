@@ -1033,93 +1033,25 @@ void update_titlebar(struct presentation *p)
 }
 
 
-static void cur_box_diag(struct presentation *p)
+static void fixup_cursor(struct presentation *p)
 {
-	int sln, sbx, sps;
-	struct frame *fr;
+	struct wrap_box *sbox;
 
-	fr = p->cursor_frame;
-	sln = p->cursor_line;
-	sbx = p->cursor_box;
-	sps = p->cursor_pos;
+	sbox = &p->cursor_frame->lines[p->cursor_line].boxes[p->cursor_box];
 
-	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
-
-	printf("line/box/pos: [%i of %i]/[%i of %i]/%i\n", sln, fr->n_lines,
-	       sbx, p->cursor_frame->lines[sln].n_boxes, sps);
-	printf("box type is %i, space type is %i\n", sbox->type, sbox->space);
-	if ( sbox->type == WRAP_BOX_NOTHING ) {
-		printf("Warning: in a nothing box!\n");
+	if ( p->cursor_pos > sbox->len_chars ) {
+		advance_cursor(p);
 	}
 }
 
 
 static void move_cursor(struct presentation *p, signed int x, signed int y)
 {
-	cur_box_diag(p);
 	if ( x > 0 ) {
-
-		int advance = 0;
-		signed int cp, cb, cl;
-		struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
-		struct wrap_box *box = &line->boxes[p->cursor_box];
-
-		cp = p->cursor_pos;
-		cb = p->cursor_box;
-		cl = p->cursor_line;
-
-		switch ( box->type ) {
-
-			case WRAP_BOX_PANGO:
-			if ( cp+1 > box->len_chars ) {
-				advance = 1;
-			} else {
-				cp++;
-			}
-			break;
-
-			case WRAP_BOX_NOTHING:
-			case WRAP_BOX_SENTINEL:
-			advance = 1;
-			break;
-
-			case WRAP_BOX_IMAGE:
-			cp++;
-			if ( cp > 1 ) advance = 1;
-			break;
-
-		}
-
-		if ( advance ) {
-
-			do {
-
-				cb++;
-				cp = 0;
-
-				if ( cb >= line->n_boxes ) {
-					cl++;
-					if ( cl >= p->cursor_frame->n_lines ) {
-						/* Give up - could not move */
-						return;
-					}
-					line = &p->cursor_frame->lines[cl];
-					cb = 0;
-					cp = 0;
-				}
-
-			} while ( !line->boxes[cb].editable );
-
-			p->cursor_line = cl;
-			p->cursor_box = cb;
-
-		}
-		p->cursor_pos = cp;
-
+		advance_cursor(p);
 	} else {
 		move_cursor_back(p);
 	}
-	cur_box_diag(p);
 }
 
 
@@ -1139,15 +1071,15 @@ static void insert_text(char *t, struct presentation *p)
 	sps = p->cursor_pos;
 	sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 
-	cur_box_diag(p);
-	printf("inserting block=%p, offset %i+%i, '%s'\n",
-	       sbox->scblock, sps, sbox->offs_char, t);
 	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
-	move_cursor(p, +1, 0);
 
 	fr->empty = 0;
 
 	rerender_slide(p);
+
+	fixup_cursor(p);
+	advance_cursor(p);
+
 	redraw_editor(p);
 }
 
@@ -1166,9 +1098,7 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 	sps = p->cursor_pos;
 	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
 
-	cur_box_diag(p);
 	move_cursor_back(p);
-	cur_box_diag(p);
 
 	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
 	struct wrap_line *fline = &p->cursor_frame->lines[p->cursor_line];

@@ -213,9 +213,100 @@ void move_cursor_back(struct presentation *p)
 		box = &line->boxes[cb];
 		if ( box->type == WRAP_BOX_PANGO ) {
 			cp = box->len_chars;
+			if ( box->space == WRAP_SPACE_NONE ) {
+				cp--;
+			}
 		} else {
 			cp = 1;
 		}
+
+	}
+	p->cursor_pos = cp;
+}
+
+
+void cur_box_diag(struct presentation *p)
+{
+	int sln, sbx, sps;
+	struct frame *fr;
+
+	fr = p->cursor_frame;
+	sln = p->cursor_line;
+	sbx = p->cursor_box;
+	sps = p->cursor_pos;
+
+	struct wrap_box *sbox = &p->cursor_frame->lines[sln].boxes[sbx];
+
+	printf("line/box/pos: [%i of %i]/[%i of %i]/[%i of %i]\n",
+	       sln, fr->n_lines,
+	       sbx, p->cursor_frame->lines[sln].n_boxes,
+	       sps, sbox->len_chars);
+	printf("box type is %i, space type is %i\n", sbox->type, sbox->space);
+	if ( sbox->type == WRAP_BOX_NOTHING ) {
+		printf("Warning: in a nothing box!\n");
+	}
+}
+
+
+void advance_cursor(struct presentation *p)
+{
+	int advance = 0;
+	signed int cp, cb, cl;
+	struct wrap_line *line = &p->cursor_frame->lines[p->cursor_line];
+	struct wrap_box *box = &line->boxes[p->cursor_box];
+
+	cp = p->cursor_pos;
+	cb = p->cursor_box;
+	cl = p->cursor_line;
+
+	switch ( box->type ) {
+
+		case WRAP_BOX_PANGO:
+		if ( cp+1 > box->len_chars ) {
+			advance = 1;
+		} else {
+			cp++;
+		}
+		break;
+
+		case WRAP_BOX_NOTHING:
+		case WRAP_BOX_SENTINEL:
+		advance = 1;
+		break;
+
+		case WRAP_BOX_IMAGE:
+		cp++;
+		if ( cp > 1 ) advance = 1;
+		break;
+
+	}
+
+	if ( advance ) {
+
+		do {
+
+			cb++;
+			cp = 0;
+
+			if ( box->space == WRAP_SPACE_NONE ) {
+				cp = 1;
+			}
+
+			if ( cb >= line->n_boxes ) {
+				cl++;
+				if ( cl >= p->cursor_frame->n_lines ) {
+					/* Give up - could not move */
+					return;
+				}
+				line = &p->cursor_frame->lines[cl];
+				cb = 0;
+				cp = 0;
+			}
+
+		} while ( !line->boxes[cb].editable );
+
+		p->cursor_line = cl;
+		p->cursor_box = cb;
 
 	}
 	p->cursor_pos = cp;

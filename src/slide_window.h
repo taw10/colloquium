@@ -27,14 +27,11 @@
 #include <config.h>
 #endif
 
+typedef struct _slidewindow SlideWindow;
 
-extern void rerender_slide(struct presentation *p);
-
-extern int open_mainwindow(struct presentation *p);
-extern void change_edit_slide(struct presentation *p, struct slide *np);
-extern void redraw_editor(struct presentation *p);
+extern SlideWindow *slide_window_open(struct presentation *p, GApplication *app);
+extern void change_edit_slide(SlideWindow *sw, struct slide *np);
 extern void update_titlebar(struct presentation *p);
-extern void update_toolbar(struct presentation *p);
 
 
 #endif	/* MAINWINDOW_H */

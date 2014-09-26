@@ -1,7 +1,7 @@
 /*
- * slideshow.h
+ * sc_editor.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,27 +20,21 @@
  *
  */
 
-#ifndef SLIDESHOW_H
-#define SLIDESHOW_H
+#ifndef SC_EDITOR_H
+#define SC_EDITOR_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-/* Opaque data structure representing a slideshow */
-typedef struct _slideshow SlideShow;
+#include <gtk/gtk.h>
 
-extern SlideShow *try_start_slideshow(struct presentation *p);
-extern void end_slideshow(SlideShow *ss);
 
-extern void change_proj_slide(SlideShow *ss, struct slide *np);
-extern struct slide *slideshow_slide(SlideShow *ss);
+struct presentation;
+typedef struct _sceditor SCEditor;
 
-extern void toggle_slideshow_link(SlideShow *ss);
-extern int slideshow_linked(SlideShow *ss);
-extern void check_toggle_blank(SlideShow *ss);
+extern void sc_editor_set_slide(SCEditor *e, struct slide *s);
+extern GtkWidget *sc_editor_get_widget(SCEditor *e);
+extern SCEditor *sc_editor_new(struct presentation *p);
 
-extern void redraw_slideshow(SlideShow *ss);
-extern void slideshow_rerender(SlideShow *ss);
-
-#endif	/* SLIDESHOW_H */
+#endif	/* SC_EDITOR_H */

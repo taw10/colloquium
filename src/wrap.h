@@ -105,10 +105,6 @@ extern int wrap_contents(struct frame *fr);
 extern void get_cursor_pos(struct wrap_box *box, int pos,
                            double *xposd, double *yposd, double *line_height);
 
-extern void move_cursor_back(struct presentation *p);
-extern void cur_box_diag(struct presentation *p);
-extern void advance_cursor(struct presentation *p);
-
 extern void find_cursor(struct frame *fr, double xposd, double yposd,
                         int *line, int *box, int *pos);
 

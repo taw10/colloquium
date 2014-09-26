@@ -1,7 +1,7 @@
 /*
- * slideshow.h
+ * narrative_window.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,27 +20,43 @@
  *
  */
 
-#ifndef SLIDESHOW_H
-#define SLIDESHOW_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-/* Opaque data structure representing a slideshow */
-typedef struct _slideshow SlideShow;
+#include <gtk/gtk.h>
+#include <assert.h>
+#include <stdlib.h>
 
-extern SlideShow *try_start_slideshow(struct presentation *p);
-extern void end_slideshow(SlideShow *ss);
+#include "presentation.h"
+#include "narrative_window.h"
 
-extern void change_proj_slide(SlideShow *ss, struct slide *np);
-extern struct slide *slideshow_slide(SlideShow *ss);
 
-extern void toggle_slideshow_link(SlideShow *ss);
-extern int slideshow_linked(SlideShow *ss);
-extern void check_toggle_blank(SlideShow *ss);
+struct _narrative_window
+{
+	GtkWidget *window;
+};
 
-extern void redraw_slideshow(SlideShow *ss);
-extern void slideshow_rerender(SlideShow *ss);
 
-#endif	/* SLIDESHOW_H */
+NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
+{
+	NarrativeWindow *nw;
+
+	if ( p->narrative_window != NULL ) {
+		fprintf(stderr, "Narrative window is already open!\n");
+		return NULL;
+	}
+
+	nw = calloc(1, sizeof(NarrativeWindow));
+	if ( nw == NULL ) return NULL;
+
+	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
+	p->narrative_window = nw;
+
+//	update_titlebar(nw);
+
+	gtk_widget_show_all(nw->window);
+
+	return nw;
+}

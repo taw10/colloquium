@@ -343,31 +343,6 @@ static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
 }
 
 
-void free_render_buffers(struct slide *s)
-{
-	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
-	if ( s->rendered_proj != NULL ) cairo_surface_destroy(s->rendered_proj);
-	if ( s->rendered_thumb != NULL ) {
-		cairo_surface_destroy(s->rendered_thumb);
-	}
-
-	s->rendered_edit = NULL;
-	s->rendered_proj = NULL;
-	s->rendered_thumb = NULL;
-}
-
-
-void free_render_buffers_except_thumb(struct slide *s)
-{
-	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
-	if ( s->rendered_proj != NULL ) cairo_surface_destroy(s->rendered_proj);
-
-	s->rendered_edit = NULL;
-	s->rendered_proj = NULL;
-}
-
-
-
 static void render_slide_to_surface(struct slide *s, cairo_surface_t *surf,
                                     cairo_t *cr,  enum is_size isz,
                                     double scale,

@@ -32,7 +32,7 @@
 
 #include "presentation.h"
 #include "render.h"
-#include "mainwindow.h"
+#include "slide_window.h"
 #include "slideshow.h"
 
 
@@ -216,7 +216,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 			n->dragging_cur_edit_slide = 0;
 		}
 
-		if ( n->p->cur_proj_slide == n->selected_slide ) {
+		if ( slideshow_slide(n->p->slideshow) == n->selected_slide ) {
 			n->dragging_cur_proj_slide = 1;
 		} else {
 			n->dragging_cur_proj_slide = 0;
@@ -329,15 +329,7 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
  * gets there first.  When re-arranging slides, this might not happen */
 static void fixup_proj(struct presentation *p, struct slide *s)
 {
-	int n;
-
-	if ( s->rendered_proj != NULL ) return;
-
-	n = slide_number(p, s);
-
-	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
-	                                p->slide_width, p->slide_height,
-	                                p->is, ISZ_SLIDESHOW, n);
+	slideshow_rerender(p->slideshow);
 }
 
 
@@ -373,8 +365,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			/* FIXME: Do something */
 			int sn = slide_number(n->p, s);
 
-			s->rendered_thumb = render_slide(s,
-			                                 n->p->thumb_slide_width,
+			s->rendered_thumb = render_slide(s, n->tw,
 		                                         n->p->slide_width,
 			                                 n->p->slide_height,
 			                                 n->p->is,
@@ -392,7 +383,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 			if ( n->dragging_cur_proj_slide ) {
 				fixup_proj(n->p, s);
-				change_proj_slide(n->p, s);
+				change_proj_slide(n->p->slideshow, s);
 			}
 
 			redraw_slidesorter(n);
@@ -484,7 +475,7 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 
 	}
 
-	if ( n->p->cur_proj_slide == n->selected_slide ) {
+	if ( slideshow_slide(n->p->slideshow) == n->selected_slide ) {
 
 		if ( same ) {
 
@@ -501,7 +492,7 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 				ct = sn - 1;
 			}
 
-			change_proj_slide(n->p, n->p->slides[ct]);
+			change_proj_slide(n->p->slideshow, n->p->slides[ct]);
 
 		}
 
@@ -527,8 +518,8 @@ void open_slidesorter(struct presentation *p)
 	n->width = 6;
 	n->bw = 5;
 	n->selection = 0;
-	n->tw = p->thumb_slide_width;
-	n->th = (p->slide_height/p->slide_width) * p->thumb_slide_width;
+	n->tw = 320;
+	n->th = (p->slide_height/p->slide_width) * n->tw;
 	n->drag_preview_pending = 0;
 	n->have_drag_data = 0;
 	n->dragging = 0;

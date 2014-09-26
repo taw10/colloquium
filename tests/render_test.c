@@ -117,7 +117,5 @@ int main(int argc, char *argv[])
 	gtk_widget_show_all(window);
 	gtk_main();
 
-	free_render_buffers(&s);
-
 	return 0;
 }

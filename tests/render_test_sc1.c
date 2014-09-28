@@ -47,6 +47,7 @@ static gint mw_destroy(GtkWidget *w, void *p)
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 {
 	gint w, h;
+	cairo_surface_t *surface;
 	struct slide *s = data;
 
 	w = gtk_widget_get_allocated_width(da);
@@ -57,11 +58,11 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
-	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
-	s->rendered_edit = render_slide(s, w, w, h, NULL, ISZ_EDITOR, 1);
+	surface = render_slide(s, w, w, h, NULL, ISZ_EDITOR, 1);
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_surface(cr, s->rendered_edit, 0.0, 0.0);
+	cairo_set_source_surface(cr, surface, 0.0, 0.0);
 	cairo_fill(cr);
+	cairo_surface_destroy(surface);
 
 	return FALSE;
 }
@@ -91,9 +92,6 @@ int main(int argc, char *argv[])
 	fr->pad_b = 20.0;
 
 	s.top = fr;
-	s.rendered_edit = NULL;
-	s.rendered_proj = NULL;
-	s.rendered_thumb = NULL;
 	s.parent = &p;
 	s.scblocks = fr->scblocks;
 

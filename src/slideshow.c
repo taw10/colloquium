@@ -50,6 +50,7 @@ struct _slideshow
 	int                  slide_width;
 	struct inhibit_sys  *inhibit;
 	int                  linked;
+	cairo_surface_t     *surface;
 };
 
 
@@ -69,15 +70,12 @@ void slideshow_rerender(SlideShow *ss)
 {
 	int n;
 
-	if ( ss->cur_slide->rendered_proj != NULL ) return;
-
 	n = slide_number(ss->p, ss->cur_slide);
-	ss->cur_slide->rendered_proj = render_slide(ss->cur_slide,
-	                                            ss->slide_width,
-	                                            ss->p->slide_width,
-	                                            ss->p->slide_height,
-	                                            ss->p->is, ISZ_SLIDESHOW,
-	                                            n);
+	ss->surface = render_slide(ss->cur_slide,
+	                           ss->slide_width,
+	                           ss->p->slide_width,
+	                           ss->p->slide_height,
+	                           ss->p->is, ISZ_SLIDESHOW, n);
 }
 
 
@@ -116,8 +114,7 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SlideShow *ss)
 
 		/* Draw the slide from the cache */
 		cairo_rectangle(cr, xoff, yoff, ss->slide_width, h);
-		cairo_set_source_surface(cr, ss->cur_slide->rendered_proj,
-		                         xoff, yoff);
+		cairo_set_source_surface(cr, ss->surface, xoff, yoff);
 		cairo_fill(cr);
 
 	}
@@ -143,7 +140,7 @@ static gint prev_slide_sig(GtkWidget *widget, SlideShow *ss)
 	int cur_slide_number;
 	cur_slide_number = slide_number(ss->p, ss->p->cur_edit_slide);
 	if ( cur_slide_number == 0 ) return FALSE;
-	change_edit_slide(ss->p, ss->p->slides[cur_slide_number-1]);
+	change_edit_slide(ss->p->slidewindow, ss->p->slides[cur_slide_number-1]);
 	return FALSE;
 }
 
@@ -153,7 +150,7 @@ static gint next_slide_sig(GtkWidget *widget, SlideShow *ss)
 	int cur_slide_number;
 	cur_slide_number = slide_number(ss->p, ss->p->cur_edit_slide);
 	if ( cur_slide_number == ss->p->num_slides-1 ) return FALSE;
-	change_edit_slide(ss->p, ss->p->slides[cur_slide_number+1]);
+	change_edit_slide(ss->p->slidewindow, ss->p->slides[cur_slide_number+1]);
 	return FALSE;
 }
 
@@ -165,7 +162,7 @@ void end_slideshow(SlideShow *ss)
 	gtk_widget_destroy(ss->slideshow);
 	free(ss);
 	ss->p->slideshow = NULL;
-	redraw_editor(ss->p);
+	redraw_editor(ss->p->slidewindow);
 }
 
 

@@ -129,10 +129,6 @@ struct slide *new_slide()
 	new = calloc(1, sizeof(struct slide));
 	if ( new == NULL ) return NULL;
 
-	new->rendered_edit = NULL;
-	new->rendered_proj = NULL;
-	new->rendered_thumb = NULL;
-
 	new->top = frame_new();
 	/* FIXME: Set zero margins etc on top level frame */
 

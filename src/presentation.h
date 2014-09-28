@@ -44,13 +44,6 @@ struct slide
 	struct presentation *parent;
 	struct slide_template *st;
 
-	/* Any of these may be NULL */
-	cairo_surface_t *rendered_proj;
-	cairo_surface_t *rendered_edit;
-
-	/* This should always be present (and up to date). */
-	cairo_surface_t *rendered_thumb;
-
 	struct frame *top;
 
 	SCBlock *scblocks;

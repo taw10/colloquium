@@ -591,6 +591,8 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 
 	window = gtk_application_window_new(GTK_APPLICATION(app));
 	sw->window = window;
+	sw->p = p;
+	sw->cur_slide = p->slides[0];
 
 	update_titlebar(p);
 

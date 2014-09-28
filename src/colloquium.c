@@ -32,10 +32,77 @@
 #include "narrative_window.h"
 
 
+typedef struct
+{
+	GtkApplication parent_instance;
+} Colloquium;
+
+
+typedef GtkApplicationClass ColloquiumClass;
+
+
+G_DEFINE_TYPE(Colloquium, colloquium, GTK_TYPE_APPLICATION)
+
+
 static void colloquium_activate(GApplication *app)
 {
 	printf("activate!\n");
 }
+
+
+static void new_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	GApplication *app = vp;
+	g_application_activate(app);
+}
+
+
+static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	GtkWidget *window;
+
+	const gchar *authors[] = {
+		"Thomas White <taw@bitwiz.org.uk>",
+		NULL
+	};
+
+	window = gtk_about_dialog_new();
+
+	gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(window),
+	    "Colloquium");
+	gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(window),
+	    PACKAGE_VERSION);
+	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
+	    "© 2013 Thomas White <taw@bitwiz.org.uk>");
+	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
+	    "A tiny presentation program");
+	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
+	    "© 2013 Thomas White <taw@bitwiz.org.uk>\n");
+	gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(window),
+	    "http://www.bitwiz.org.uk/");
+	gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(window), authors);
+
+	g_signal_connect(window, "response", G_CALLBACK(gtk_widget_destroy),
+	    NULL);
+
+	gtk_widget_show_all(window);
+}
+
+
+static void quit_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	GApplication *app = vp;
+	g_application_quit(app);
+}
+
+
+GActionEntry app_entries[] = {
+
+	{ "new", new_sig, NULL, NULL, NULL  },
+	{ "about", about_sig, NULL, NULL, NULL  },
+	{ "quit", quit_sig, NULL, NULL, NULL  },
+
+};
 
 
 static void colloquium_open(GApplication  *app, GFile **files, gint n_files,
@@ -46,7 +113,6 @@ static void colloquium_open(GApplication  *app, GFile **files, gint n_files,
 	for ( i = 0; i<n_files; i++ ) {
 		struct presentation *p;
 		char *uri = g_file_get_path(files[i]);
-		printf("open %s\n", uri);
 		p = new_presentation();
 		load_presentation(p, uri);
 		narrative_window_new(p, app);
@@ -54,14 +120,6 @@ static void colloquium_open(GApplication  *app, GFile **files, gint n_files,
 	}
 }
 
-typedef struct
-{
-	GtkApplication parent_instance;
-} Colloquium;
-
-typedef GtkApplicationClass ColloquiumClass;
-
-G_DEFINE_TYPE(Colloquium, colloquium, GTK_TYPE_APPLICATION)
 
 static void colloquium_finalize(GObject *object)
 {
@@ -71,7 +129,65 @@ static void colloquium_finalize(GObject *object)
 
 static void colloquium_startup(GApplication *app)
 {
+	GtkBuilder *builder;
+
 	G_APPLICATION_CLASS(colloquium_parent_class)->startup(app);
+
+	g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries,
+	                                 G_N_ELEMENTS(app_entries), app);
+
+	builder = gtk_builder_new();
+	gtk_builder_add_from_string(builder,
+	    "<interface>"
+
+	    "  <menu id='app-menu'>"
+	    "    <section>"
+	    "      <item>"
+	    "        <attribute name='label'>_New</attribute>"
+	    "        <attribute name='action'>app.new</attribute>"
+	    "        <attribute name='accel'>&lt;Primary&gt;n</attribute>"
+	    "      </item>"
+	    "    </section>"
+	    "    <section>"
+	    "      <item>"
+	    "        <attribute name='label'>_About</attribute>"
+	    "        <attribute name='action'>app.about</attribute>"
+	    "      </item>"
+	    "    </section>"
+	    "    <section>"
+	    "      <item>"
+	    "        <attribute name='label'>_Quit</attribute>"
+	    "        <attribute name='action'>app.quit</attribute>"
+	    "        <attribute name='accel'>&lt;Primary&gt;q</attribute>"
+	    "      </item>"
+	    "    </section>"
+	    "  </menu>"
+
+	    "  <menu id='menubar'>"
+	    "    <submenu>"
+	    "      <attribute name='label' translatable='yes'>File</attribute>"
+	    "      <section>"
+	    "        <item>"
+	    "          <attribute name='label'>_Save</attribute>"
+	    "          <attribute name='action'>file.save</attribute>"
+	    "          <attribute name='accel'>&lt;Primary&gt;s</attribute>"
+	    "        </item>"
+	    "        <item>"
+	    "          <attribute name='label'>Export PDF</attribute>"
+	    "          <attribute name='action'>file.exportpdf</attribute>"
+	    "        </item>"
+	    "      </section>"
+	    "    </submenu>"
+	    "  </menu>"
+
+	    "</interface>", -1, NULL);
+
+	gtk_application_set_app_menu(GTK_APPLICATION(app),
+	    G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu")));
+	gtk_application_set_menubar(GTK_APPLICATION(app),
+	    G_MENU_MODEL(gtk_builder_get_object(builder, "menubar")));
+
+	g_object_unref(builder);
 }
 
 

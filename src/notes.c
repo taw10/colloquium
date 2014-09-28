@@ -94,6 +94,7 @@ void grab_current_notes(struct presentation *p)
 
 void notify_notes_slide_changed(struct presentation *p, struct slide *np)
 {
+	if ( p->notes == NULL ) return;
 	grab_current_notes(p);
 	p->notes->slide = np;
 	update_notes(p);

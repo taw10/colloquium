@@ -234,6 +234,7 @@ struct presentation *new_presentation()
 
 	new->num_slides = 0;
 	new->slides = NULL;
+	add_slide(new, 0);
 
 	new->completely_empty = 1;
 	new->stylesheet = NULL;

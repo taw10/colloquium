@@ -398,24 +398,26 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 {
 	double x, y, w, h;
 
-	draw_editing_box(cr, e->selection);
 
-	x = e->selection->x;
-	y = e->selection->y;
-	w = e->selection->w;
-	h = e->selection->h;
-
-	/* Draw resize handles */
-	/* FIXME: Not if this frame can't be resized */
-	draw_resize_handle(cr, x, y+h-20.0);
-	draw_resize_handle(cr, x+w-20.0, y);
-	draw_resize_handle(cr, x, y);
-	draw_resize_handle(cr, x+w-20.0, y+h-20.0);
-
-	/* If only one frame is selected, draw the caret */
 	if ( e->selection != NULL ) {
+
+		draw_editing_box(cr, e->selection);
+
+		x = e->selection->x;
+		y = e->selection->y;
+		w = e->selection->w;
+		h = e->selection->h;
+
+		/* Draw resize handles */
+		/* FIXME: Not if this frame can't be resized */
+		draw_resize_handle(cr, x, y+h-20.0);
+		draw_resize_handle(cr, x+w-20.0, y);
+		draw_resize_handle(cr, x, y);
+		draw_resize_handle(cr, x+w-20.0, y+h-20.0);
+
 		draw_caret(cr, e->cursor_frame, e->cursor_line, e->cursor_box,
 		               e->cursor_pos);
+
 	}
 
 	if ( (e->drag_status == DRAG_STATUS_DRAGGING)
@@ -473,9 +475,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	e->border_offs_x = xoff;  e->border_offs_y = yoff;
 
 	/* Draw the slide from the cache */
-	if ( e->cur_slide->rendered_edit != NULL ) {
-		cairo_set_source_surface(cr, e->cur_slide->rendered_edit,
-			                 xoff, yoff);
+	if ( e->surface != NULL ) {
+		cairo_set_source_surface(cr, e->surface, xoff, yoff);
 		cairo_paint(cr);
 	} else {
 		fprintf(stderr, "Current slide not rendered yet!\n");
@@ -1402,7 +1403,10 @@ SCEditor *sc_editor_new(struct presentation *p)
 	sceditor = calloc(1, sizeof(SCEditor));
 	if ( sceditor == NULL ) return NULL;
 
+	sceditor->p = p;
 	sceditor->drawingarea = gtk_drawing_area_new();
+	sceditor->cur_slide = p->slides[0];  /* FIXME */
+	sceditor->surface = NULL;
 
 	gtk_widget_set_size_request(GTK_WIDGET(sceditor->drawingarea),
 	                            p->slide_width + 20,
@@ -1426,13 +1430,13 @@ SCEditor *sc_editor_new(struct presentation *p)
 	gtk_drag_dest_set(sceditor->drawingarea, 0, targets, 1,
 	                  GDK_ACTION_PRIVATE);
 	g_signal_connect(sceditor->drawingarea, "drag-data-received",
-	                 G_CALLBACK(dnd_receive), p);
+	                 G_CALLBACK(dnd_receive), sceditor);
 	g_signal_connect(sceditor->drawingarea, "drag-motion",
-	                 G_CALLBACK(dnd_motion), p);
+	                 G_CALLBACK(dnd_motion), sceditor);
 	g_signal_connect(sceditor->drawingarea, "drag-drop",
-	                 G_CALLBACK(dnd_drop), p);
+	                 G_CALLBACK(dnd_drop), sceditor);
 	g_signal_connect(sceditor->drawingarea, "drag-leave",
-	                 G_CALLBACK(dnd_leave), p);
+	                 G_CALLBACK(dnd_leave), sceditor);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(sceditor->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(sceditor->drawingarea),
@@ -1442,11 +1446,11 @@ SCEditor *sc_editor_new(struct presentation *p)
 	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
 
 	g_signal_connect(G_OBJECT(sceditor->drawingarea), "draw",
-			 G_CALLBACK(draw_sig), p);
+			 G_CALLBACK(draw_sig), sceditor);
 
 	gtk_widget_grab_focus(GTK_WIDGET(sceditor->drawingarea));
 
 	gtk_widget_show(sceditor->drawingarea);
 
-	return 0;
+	return sceditor;
 }

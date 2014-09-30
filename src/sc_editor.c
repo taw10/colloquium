@@ -76,7 +76,10 @@ struct _sceditor
 {
 	GtkWidget           *drawingarea;
 	GtkIMContext        *im_context;
-	int                  slide_width;
+	int                  w;   /* Surface size in pixels */
+	int                  h;
+	double               ww;  /* Size of surface in "SC units" */
+	double               hh;
 	struct presentation *p;
 	cairo_surface_t     *surface;
 
@@ -132,7 +135,7 @@ static void rerender_slide(SCEditor *e)
 		cairo_surface_destroy(e->surface);
 	}
 
-	e->surface = render_slide(s, e->slide_width,
+	e->surface = render_slide(s, e->w, e->h,
 	                          e->p->slide_width, e->p->slide_height,
 	                          e->p->is, ISZ_EDITOR, n);
 }
@@ -452,8 +455,6 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 {
 	double xoff, yoff;
 	int width, height;
-	int edit_slide_height;
-	double ratio;
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
@@ -468,11 +469,10 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	cairo_fill(cr);
 
 	/* Get the overall size */
-	ratio =  e->p->slide_height/e->p->slide_width;
-	edit_slide_height = ratio*e->slide_width;
-	xoff = (width - e->slide_width)/2.0;
-	yoff = (height - edit_slide_height)/2.0;
-	e->border_offs_x = xoff;  e->border_offs_y = yoff;
+	xoff = (width - e->w)/2.0;
+	yoff = (height - e->h)/2.0;
+	e->border_offs_x = xoff;
+	e->border_offs_y = yoff;
 
 	/* Draw the slide from the cache */
 	if ( e->surface != NULL ) {
@@ -1202,21 +1202,21 @@ static void chomp(char *s)
 /* Scale the image down if it's a silly size */
 static void check_import_size(SCEditor *e)
 {
-	if ( e->import_width > e->slide_width ) {
+	if ( e->import_width > e->w ) {
 
 		int new_import_width;
 
-		new_import_width = e->slide_width/2;
+		new_import_width = e->w/2;
 		e->import_height = (new_import_width *e->import_height)
-		                     / e->import_width;
+		                     / e->w;
 		e->import_width = new_import_width;
 	}
 
-	if ( e->import_height > e->p->slide_height ) {
+	if ( e->import_height > e->h ) {
 
 		int new_import_height;
 
-		new_import_height = e->p->slide_height/2;
+		new_import_height = e->w/2;
 		e->import_width = (new_import_height*e->import_width)
 		                    / e->import_height;
 		e->import_height = new_import_height;
@@ -1394,6 +1394,13 @@ void sc_editor_set_slide(SCEditor *e, struct slide *s)
 }
 
 
+void sc_editor_set_size(SCEditor *e, int w, int h)
+{
+	e->w = w;
+	e->h = h;
+}
+
+
 /* FIXME: GObjectify this */
 SCEditor *sc_editor_new(struct presentation *p)
 {
@@ -1407,10 +1414,13 @@ SCEditor *sc_editor_new(struct presentation *p)
 	sceditor->drawingarea = gtk_drawing_area_new();
 	sceditor->cur_slide = p->slides[0];  /* FIXME */
 	sceditor->surface = NULL;
+	sceditor->w = 100;
+	sceditor->h = 100;
+
+	rerender_slide(sceditor);
 
 	gtk_widget_set_size_request(GTK_WIDGET(sceditor->drawingarea),
-	                            p->slide_width + 20,
-	                            p->slide_height + 20);
+	                            sceditor->w, sceditor->h);
 
 	g_signal_connect(G_OBJECT(sceditor->drawingarea), "destroy",
 	                 G_CALLBACK(destroy_sig), sceditor);

@@ -58,7 +58,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
 	cairo_fill(cr);
 
-	surface = render_slide(s, w, w, h, NULL, ISZ_EDITOR, 1);
+	surface = render_slide(s, w, h, w, h, NULL, ISZ_EDITOR, 1);
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_surface(cr, surface, 0.0, 0.0);
 	cairo_fill(cr);

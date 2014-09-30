@@ -402,16 +402,15 @@ static void render_slide_to_surface(struct slide *s, cairo_surface_t *surf,
  *
  * Render the entire slide.
  */
-cairo_surface_t *render_slide(struct slide *s, int w, double ww, double hh,
+cairo_surface_t *render_slide(struct slide *s, int w, int h,
+                              double ww, double hh,
                               ImageStore *is, enum is_size isz,
                               int slide_number)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
-	int h;
 	double scale;
 
-	h = (hh/ww)*w;
 	scale = w/ww;
 
 	s->top->x = 0.0;

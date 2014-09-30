@@ -609,6 +609,10 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
 	                                      sc_editor_get_widget(sw->sceditor));
 
+	/* Size of SCEditor surface in pixels */
+	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
+	sc_editor_set_size(sw->sceditor, 1024, 768);
+
 	add_menu_bar(sw, vbox);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 

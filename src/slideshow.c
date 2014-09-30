@@ -48,6 +48,7 @@ struct _slideshow
 	int                  blank;
 	char                 geom[256];
 	int                  slide_width;
+	int                  slide_height;
 	struct inhibit_sys  *inhibit;
 	int                  linked;
 	cairo_surface_t     *surface;
@@ -73,6 +74,7 @@ void slideshow_rerender(SlideShow *ss)
 	n = slide_number(ss->p, ss->cur_slide);
 	ss->surface = render_slide(ss->cur_slide,
 	                           ss->slide_width,
+	                           ss->slide_height,
 	                           ss->p->slide_width,
 	                           ss->p->slide_height,
 	                           ss->p->is, ISZ_SLIDESHOW, n);

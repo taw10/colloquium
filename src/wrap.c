@@ -690,15 +690,6 @@ static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
 }
 
 
-static void space_line_ragged(struct wrap_line *line, double l)
-{
-	int i;
-	for ( i=0; i<line->n_boxes; i++ ) {
-		line->boxes[i].sp = sp_x(line->boxes[i].space);
-	}
-}
-
-
 static struct wrap_line *new_line(struct frame *fr)
 {
 	struct wrap_line *l;
@@ -729,16 +720,22 @@ static void first_fit(struct wrap_line *boxes, double line_length,
 	len = 0.0;
 
 	do {
+
+		boxes->boxes[j].sp = sp_x(boxes->boxes[j].space);
+
+		len += boxes->boxes[j].width;
+
+		if ( len > line_length ) {
+			line = new_line(fr);
+			len = boxes->boxes[j].width;
+		}
+		line->boxes[line->n_boxes++] = boxes->boxes[j++];
+
 		if ( (j > 0) && (boxes->boxes[j-1].type != WRAP_BOX_SENTINEL) )
 		{
 			len += sp_x(boxes->boxes[j-1].space);
 		}
-		len += boxes->boxes[j].width;
-		if ( len > line_length ) {
-			line = new_line(fr);
-			len = 0.0;
-		}
-		line->boxes[line->n_boxes++] = boxes->boxes[j++];
+
 	} while ( j < boxes->n_boxes );
 
 	fr->lines[fr->n_lines-1].last_line = 1;
@@ -926,7 +923,6 @@ int wrap_contents(struct frame *fr)
 		struct wrap_line *line = &fr->lines[i];
 
 		//distribute_spaces(line, wrap_w, rho);
-		space_line_ragged(line, wrap_w);
 
 		/* Strip any sentinel boxes added by the wrapping algorithm */
 		if ( line->boxes[line->n_boxes-1].type == WRAP_BOX_SENTINEL ) {

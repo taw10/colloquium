@@ -1035,9 +1035,39 @@ void update_titlebar(struct presentation *p)
 
 static void fixup_cursor(struct presentation *p)
 {
+	struct frame *fr;
+	struct wrap_line *sline;
 	struct wrap_box *sbox;
 
-	sbox = &p->cursor_frame->lines[p->cursor_line].boxes[p->cursor_box];
+	fr = p->cursor_frame;
+
+	if ( p->cursor_line >= fr->n_lines ) {
+		/* We find ourselves on a line which doesn't exist */
+		p->cursor_line = fr->n_lines-1;
+		p->cursor_box = fr->lines[fr->n_lines-1].n_boxes-1;
+	}
+
+	sline = &fr->lines[p->cursor_line];
+
+	if ( p->cursor_box >= sline->n_boxes ) {
+
+		/* We find ourselves in a box which doesn't exist */
+
+		if ( p->cursor_line > fr->n_lines-1 ) {
+			/* This isn't the last line, so go to the first box of
+			 * the next line */
+			p->cursor_line++;
+			p->cursor_box = 0;
+			sline = &p->cursor_frame->lines[p->cursor_line];
+		} else {
+			/* There are no more lines, so just go to the end */
+			p->cursor_line = fr->n_lines-1;
+			sline = &p->cursor_frame->lines[p->cursor_line];
+			p->cursor_box = sline->n_boxes-1;
+		}
+	}
+
+	sbox = &sline->boxes[p->cursor_box];
 
 	if ( p->cursor_pos > sbox->len_chars ) {
 		advance_cursor(p);
@@ -1121,6 +1151,7 @@ static void do_backspace(struct frame *fr, struct presentation *p)
 //	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
 	rerender_slide(p);
+	fixup_cursor(p);
 	redraw_editor(p);
 }
 

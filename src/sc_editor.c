@@ -491,9 +491,39 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 
 static void fixup_cursor(SCEditor *e)
 {
+	struct frame *fr;
+	struct wrap_line *sline;
 	struct wrap_box *sbox;
 
-	sbox = &e->cursor_frame->lines[e->cursor_line].boxes[e->cursor_box];
+	fr = e->cursor_frame;
+
+	if ( e->cursor_line >= fr->n_lines ) {
+		/* We find ourselves on a line which doesn't exist */
+		e->cursor_line = fr->n_lines-1;
+		e->cursor_box = fr->lines[fr->n_lines-1].n_boxes-1;
+	}
+
+	sline = &fr->lines[e->cursor_line];
+
+	if ( e->cursor_box >= sline->n_boxes ) {
+
+		/* We find ourselves in a box which doesn't exist */
+
+		if ( e->cursor_line > fr->n_lines-1 ) {
+			/* This isn't the last line, so go to the first box of
+			 * the next line */
+			e->cursor_line++;
+			e->cursor_box = 0;
+			sline = &e->cursor_frame->lines[e->cursor_line];
+		} else {
+			/* There are no more lines, so just go to the end */
+			e->cursor_line = fr->n_lines-1;
+			sline = &e->cursor_frame->lines[e->cursor_line];
+			e->cursor_box = sline->n_boxes-1;
+		}
+	}
+
+	sbox = &sline->boxes[e->cursor_box];
 
 	if ( e->cursor_pos > sbox->len_chars ) {
 		advance_cursor(e);
@@ -577,6 +607,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 //	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
 	rerender_slide(e);
+	fixup_cursor(e);
 	redraw_editor(e);
 }
 

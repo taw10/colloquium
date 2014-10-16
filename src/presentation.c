@@ -325,6 +325,7 @@ int load_presentation(struct presentation *p, const char *filename)
 	everything = strdup("");
 
 	assert(p->completely_empty);
+	delete_slide(p, p->slides[0]);
 
 	fh = fopen(filename, "r");
 	if ( fh == NULL ) return 1;

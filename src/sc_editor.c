@@ -78,15 +78,16 @@ struct _sceditor
 	GtkIMContext        *im_context;
 	int                  w;   /* Surface size in pixels */
 	int                  h;
-	double               ww;  /* Size of surface in "SC units" */
-	double               hh;
-	struct presentation *p;
+	double               log_w;  /* Size of surface in "SC units" */
+	double               log_h;
+	SCBlock             *scblocks;
 	cairo_surface_t     *surface;
+	struct frame         top;
+	SCBlock             *stylesheet;
+	ImageStore          *is;
 
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;
-
-	struct slide        *cur_slide;
 
 	PangoContext        *pc;
 
@@ -125,19 +126,17 @@ struct _sceditor
 };
 
 
-/* Update a slide, once it's been edited in some way. */
-static void rerender_slide(SCEditor *e)
+/* Update the view, once it's been edited in some way. */
+static void rerender(SCEditor *e)
 {
-	struct slide *s = e->cur_slide;
-	int n = slide_number(e->p, s);
-
 	if ( e->surface != NULL ) {
 		cairo_surface_destroy(e->surface);
 	}
 
-	e->surface = render_slide(s, e->w, e->h,
-	                          e->p->slide_width, e->p->slide_height,
-	                          e->p->is, ISZ_EDITOR, n);
+	/* FIXME: Slide number, if appropriate */
+	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
+	                       &e->top, e->stylesheet, e->is, ISZ_EDITOR,
+	                       0);
 }
 
 
@@ -461,11 +460,11 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 
 	/* Overall background */
 	cairo_rectangle(cr, 0.0, 0.0, width, height);
-	if ( slideshow_linked(e->p->slideshow)  ) {
-		cairo_set_source_rgb(cr, 1.0, 0.3, 0.2);
-	} else {
+//	if ( slideshow_linked(e->p->slideshow)  ) {
+//		cairo_set_source_rgb(cr, 1.0, 0.3, 0.2);
+//	} else {
 		cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
-	}
+//	} FIXME
 	cairo_fill(cr);
 
 	/* Get the overall size */
@@ -561,7 +560,7 @@ static void insert_text(char *t, SCEditor *e)
 
 	fr->empty = 0;
 
-	rerender_slide(e);
+	rerender(e);
 
 	fixup_cursor(e);
 	advance_cursor(e);
@@ -606,7 +605,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 //		scbl = sc_block_next(scbl);
 //	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
-	rerender_slide(e);
+	rerender(e);
 	fixup_cursor(e);
 	redraw_editor(e);
 }
@@ -615,17 +614,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
                               SCEditor *e)
 {
-	if ( e->selection == NULL ) {
-		if ( str[0] == 'b' ) {
-			check_toggle_blank(e->p->slideshow);
-		} else {
-			printf("IM keypress: %s\n", str);
-		}
-		return FALSE;
-	}
-
 	insert_text(str, e);
-
 	return FALSE;
 }
 
@@ -827,7 +816,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	if ( within_frame(e->selection, x, y) ) {
 		clicked = e->selection;
 	} else {
-		clicked = find_frame_at_position(e->cur_slide->top, x, y);
+		clicked = find_frame_at_position(&e->top, x, y);
 	}
 
 	/* If the user clicked the currently selected frame, position cursor
@@ -870,7 +859,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		}
 
-	} else if ( (clicked == NULL) || (clicked == e->cur_slide->top) ) {
+	} else if ( (clicked == NULL) || (clicked == &e->top) ) {
 
 		/* Clicked no object. Deselect old object and set up for
 		 * (maybe) creating a new one. */
@@ -953,7 +942,7 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	struct frame *parent;
 	struct frame *fr;
 
-	parent = e->cur_slide->top;
+	parent = &e->top;
 
 	if ( w < 0.0 ) {
 		x += w;
@@ -968,7 +957,7 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	fr = add_subframe(parent);
 
 	/* Add to SC */
-	fr->scblocks = sc_block_append_end(e->cur_slide->scblocks,
+	fr->scblocks = sc_block_append_end(e->scblocks,
 	                                   "f", NULL, NULL);
 	sc_block_set_frame(fr->scblocks, fr);
 	sc_block_append_inside(fr->scblocks, NULL, NULL, strdup(""));
@@ -1009,7 +998,7 @@ static void do_resize(SCEditor *e, double x, double y, double w, double h)
 	fr->h = h;
 	update_geom(fr);
 
-	rerender_slide(e);
+	rerender(e);
 	redraw_editor(e);
 }
 
@@ -1041,7 +1030,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
 		                     e->drag_corner_x - e->start_corner_x,
 		                     e->drag_corner_y - e->start_corner_y);
-		rerender_slide(e);
+		rerender(e);
 		e->selection = fr;
 		break;
 
@@ -1091,7 +1080,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_Escape :
-		if ( e->p->slideshow != NULL ) end_slideshow(e->p->slideshow);
 		e->selection = NULL;
 		redraw_editor(e);
 		claim = 1;
@@ -1140,19 +1128,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			do_backspace(e->selection, e);
 			claim = 1;
 		}
-		break;
-
-		case GDK_KEY_B :
-		case GDK_KEY_b :
-		if ( e->p->slideshow != NULL ) {
-			//if ( p->prefs->b_splits ) {
-				toggle_slideshow_link(e->p->slideshow);
-			//} else {
-			//	p->ss_blank = 1-p->ss_blank;
-			//	redraw_slideshow(p);
-			//}
-		}
-		claim = 1;
 		break;
 
 	}
@@ -1362,8 +1337,8 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			fr->is_image = 1;
 			fr->empty = 0;
 			sc_block_append_inside(fr->scblocks, "image", opts, "");
-			show_hierarchy(e->cur_slide->top, "");
-			rerender_slide(e);
+			show_hierarchy(&e->top, "");
+			rerender(e);
 			e->selection = fr;
 			redraw_editor(e);
 			free(filename);
@@ -1408,7 +1383,7 @@ static gint realise_sig(GtkWidget *da, SCEditor *e)
 
 	/* FIXME: Can do this "properly" by setting up a separate font map */
 	e->pc = gtk_widget_get_pango_context(e->drawingarea);
-	rerender_slide(e);
+	rerender(e);
 
 	return FALSE;
 }
@@ -1432,8 +1407,15 @@ void sc_editor_set_size(SCEditor *e, int w, int h)
 }
 
 
+void sc_editor_set_logical_size(SCEditor *e, double w, double h)
+{
+	e->log_w = w;
+	e->log_h = h;
+}
+
+
 /* FIXME: GObjectify this */
-SCEditor *sc_editor_new(struct presentation *p)
+SCEditor *sc_editor_new(SCBlock *scblocks)
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
@@ -1441,14 +1423,23 @@ SCEditor *sc_editor_new(struct presentation *p)
 	sceditor = calloc(1, sizeof(SCEditor));
 	if ( sceditor == NULL ) return NULL;
 
-	sceditor->p = p;
+	sceditor->scblocks = scblocks;
 	sceditor->drawingarea = gtk_drawing_area_new();
-	sceditor->cur_slide = p->slides[0];  /* FIXME */
 	sceditor->surface = NULL;
 	sceditor->w = 100;
 	sceditor->h = 100;
+	sceditor->log_w = 100;
+	sceditor->log_h = 100;
+	sceditor->is = imagestore_new();
 
-	rerender_slide(sceditor);
+	sceditor->top.children = NULL;
+	sceditor->top.num_children = 0;
+	sceditor->top.max_children = 0;
+	sceditor->top.lines = NULL;
+	sceditor->top.n_lines = 0;
+	sceditor->top.max_lines = 0;
+
+	rerender(sceditor);
 
 	gtk_widget_set_size_request(GTK_WIDGET(sceditor->drawingarea),
 	                            sceditor->w, sceditor->h);

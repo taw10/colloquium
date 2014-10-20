@@ -30,9 +30,12 @@
 #include "presentation.h"
 #include "imagestore.h"
 
-extern cairo_surface_t *render_slide(struct slide *s, int w, int h,
-                                     double ww, double hh, ImageStore *is,
-                                     enum is_size isz, int slide_number);
+extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
+                           double log_w, double log_h, struct frame *top,
+                           SCBlock *stylesheet,
+                           ImageStore *is, enum is_size isz,
+                           int slide_number);
+
 extern int export_pdf(struct presentation *p, const char *filename);
 
 #endif	/* RENDER_H */

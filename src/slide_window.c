@@ -601,7 +601,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
-	sw->sceditor = sc_editor_new(p);
+	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks);
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,

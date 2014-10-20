@@ -72,11 +72,13 @@ void slideshow_rerender(SlideShow *ss)
 	int n;
 
 	n = slide_number(ss->p, ss->cur_slide);
-	ss->surface = render_slide(ss->cur_slide,
+	ss->surface = render_sc(ss->cur_slide->scblocks,
 	                           ss->slide_width,
 	                           ss->slide_height,
 	                           ss->p->slide_width,
 	                           ss->p->slide_height,
+	                           ss->cur_slide->top,
+	                           ss->p->stylesheet,
 	                           ss->p->is, ISZ_SLIDESHOW, n);
 }
 
@@ -174,7 +176,7 @@ void toggle_slideshow_link(SlideShow *ss)
 	if ( ss->linked ) {
 		change_proj_slide(ss, ss->p->cur_edit_slide);
 	}
-	redraw_editor(ss->p);
+	//redraw_editor(ss->p); FIXME
 }
 
 

@@ -601,7 +601,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
-	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks);
+	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, p->stylesheet);
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,
@@ -612,6 +612,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	/* Size of SCEditor surface in pixels */
 	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
 	sc_editor_set_size(sw->sceditor, 1024, 768);
+	sc_editor_set_logical_size(sw->sceditor, 1024.0, 768.0);
 
 	add_menu_bar(sw, vbox);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);

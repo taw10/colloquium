@@ -1411,11 +1411,13 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 {
 	e->log_w = w;
 	e->log_h = h;
+	e->top.w = w;
+	e->top.h = h;
 }
 
 
 /* FIXME: GObjectify this */
-SCEditor *sc_editor_new(SCBlock *scblocks)
+SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
@@ -1431,6 +1433,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks)
 	sceditor->log_w = 100;
 	sceditor->log_h = 100;
 	sceditor->is = imagestore_new();
+	sceditor->stylesheet = stylesheet;
 
 	sceditor->top.children = NULL;
 	sceditor->top.num_children = 0;
@@ -1438,6 +1441,18 @@ SCEditor *sc_editor_new(SCBlock *scblocks)
 	sceditor->top.lines = NULL;
 	sceditor->top.n_lines = 0;
 	sceditor->top.max_lines = 0;
+	sceditor->top.pad_l = 0;
+	sceditor->top.pad_r = 0;
+	sceditor->top.pad_t = 0;
+	sceditor->top.pad_b = 0;
+	sceditor->top.w = sceditor->log_w;
+	sceditor->top.h = sceditor->log_h;
+	sceditor->top.grad = GRAD_NONE;
+	sceditor->top.bgcol[0] = 1.0;
+	sceditor->top.bgcol[1] = 1.0;
+	sceditor->top.bgcol[2] = 1.0;
+	sceditor->top.bgcol[3] = 1.0;
+
 
 	rerender(sceditor);
 

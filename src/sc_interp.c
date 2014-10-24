@@ -789,10 +789,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			set_padding(sc_interp_get_frame(scin), options);
 			maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "slide") == 0 ) {
-			maybe_recurse_before(scin, child);
-			maybe_recurse_after(scin, child);
-
 		} else if ( strcmp(name, "bgcol") == 0 ) {
 			maybe_recurse_before(scin, child);
 			set_frame_bgcolour(sc_interp_get_frame(scin), options);

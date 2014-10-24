@@ -342,7 +342,7 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 
 	update_toolbar(sw);
 
-	sc_editor_set_slide(sw->sceditor, np);
+	sc_editor_set_scblock(sw->sceditor, np->scblocks);
 
 	notify_notes_slide_changed(sw->p, np);
 

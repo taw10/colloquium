@@ -1395,8 +1395,58 @@ GtkWidget *sc_editor_get_widget(SCEditor *e)
 }
 
 
-void sc_editor_set_slide(SCEditor *e, struct slide *s)
+static void unset_all_frames(SCBlock *bl)
 {
+	while ( bl != NULL ) {
+		sc_block_set_frame(bl, NULL);
+		if ( sc_block_child(bl) != NULL ) {
+			unset_all_frames(sc_block_child(bl));
+		}
+		if ( sc_block_macro_child(bl) != NULL ) {
+			unset_all_frames(sc_block_macro_child(bl));
+		}
+		bl = sc_block_next(bl);
+	}
+}
+
+
+static void free_frame_contents(struct frame *fr)
+{
+	int i;
+
+	for ( i=0; i<fr->n_lines; i++ ) {
+		wrap_line_free(&fr->lines[i]);
+	}
+	free(fr->lines);
+	fr->lines = NULL;
+	fr->n_lines = 0;
+	fr->max_lines = 0;
+
+	if ( fr->boxes != NULL ) {
+		free(fr->boxes->boxes);
+		free(fr->boxes);
+	}
+
+	fr->boxes = NULL;
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		free_frame_contents(fr->children[i]);
+	}
+
+	fr->num_children = 0;
+}
+
+
+void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
+{
+	unset_all_frames(e->scblocks);
+	e->scblocks = scblocks;
+
+	/* Free all subframes */
+	free_frame_contents(&e->top);
+
+	rerender(e);
+	redraw_editor(e);
 }
 
 

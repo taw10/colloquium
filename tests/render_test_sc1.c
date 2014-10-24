@@ -44,6 +44,22 @@ static gint mw_destroy(GtkWidget *w, void *p)
 	exit(0);
 }
 
+
+static void unset_all_frames(SCBlock *bl)
+{
+	while ( bl != NULL ) {
+		sc_block_set_frame(bl, NULL);
+		if ( sc_block_child(bl) != NULL ) {
+			unset_all_frames(sc_block_child(bl));
+		}
+		if ( sc_block_macro_child(bl) != NULL ) {
+			unset_all_frames(sc_block_macro_child(bl));
+		}
+		bl = sc_block_next(bl);
+	}
+}
+
+
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 {
 	gint w, h;
@@ -72,6 +88,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	top.num_children = 0;
 	top.max_children = 0;
 	top.boxes = NULL;
+	unset_all_frames(scblocks);
 
 	surface = render_sc(scblocks, w, h, w, h, &top, NULL, NULL,
 	                    ISZ_EDITOR, 1);

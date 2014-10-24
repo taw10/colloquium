@@ -31,12 +31,13 @@
 
 #include "presentation.h"
 #include "narrative_window.h"
+#include "sc_editor.h"
 
 
 struct _narrative_window
 {
 	GtkWidget *window;
-	GtkWidget *drawingarea;  /* FIXME: Should be an SCEditor */
+	SCEditor *sceditor;
 	GApplication *app;
 	struct presentation *p;
 };
@@ -151,22 +152,18 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	nw->drawingarea = gtk_drawing_area_new();
+	nw->sceditor = sc_editor_new(nw->p->scblocks, p->stylesheet);
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,
 	                               GTK_POLICY_AUTOMATIC);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
-	                                      GTK_WIDGET(nw->drawingarea));
+	                                      sc_editor_get_widget(nw->sceditor));
 
-	g_signal_connect(G_OBJECT(nw->drawingarea), "button-press-event",
-	                 G_CALLBACK(button_press_sig), nw);
-	gtk_widget_set_can_focus(GTK_WIDGET(nw->drawingarea), TRUE);
-	gtk_widget_add_events(GTK_WIDGET(nw->drawingarea),
-	                      GDK_POINTER_MOTION_HINT_MASK
-	                       | GDK_BUTTON1_MOTION_MASK
-	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
-	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
+	/* Size of SCEditor surface in pixels */
+	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
+	sc_editor_set_size(nw->sceditor, 640, 1024);
+	sc_editor_set_logical_size(nw->sceditor, 640.0, 1024.0);
 
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 

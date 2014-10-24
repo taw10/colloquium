@@ -390,6 +390,7 @@ void sc_interp_destroy(SCInterpreter *scin)
 
 	pango_font_description_free(scin->state[0].fontdesc);
 
+	free(scin->state);
 	free(scin);
 }
 

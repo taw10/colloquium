@@ -731,7 +731,6 @@ static void calculate_box_size(struct frame *fr, SCEditor *e,
 		break;
 
 	}
-
 }
 
 
@@ -1432,7 +1431,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor->top.bgcol[1] = 1.0;
 	sceditor->top.bgcol[2] = 1.0;
 	sceditor->top.bgcol[3] = 1.0;
-
 
 	rerender(sceditor);
 

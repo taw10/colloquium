@@ -33,6 +33,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <math.h>
 
+#include "colloquium.h"
 #include "presentation.h"
 #include "slide_window.h"
 #include "render.h"
@@ -44,86 +45,17 @@
 #include "slideshow.h"
 
 
-enum drag_reason
+G_DEFINE_TYPE(SCEditor, sc_editor, GTK_TYPE_DRAWING_AREA);
+
+
+static void sc_editor_class_init(SCEditorClass *klass)
 {
-	DRAG_REASON_NONE,
-	DRAG_REASON_CREATE,
-	DRAG_REASON_IMPORT,
-	DRAG_REASON_RESIZE,
-	DRAG_REASON_MOVE
-};
+}
 
 
-enum corner
+static void sc_editor_init(SCEditor *self)
 {
-	CORNER_NONE,
-	CORNER_TL,
-	CORNER_TR,
-	CORNER_BL,
-	CORNER_BR
-};
-
-
-enum drag_status
-{
-	DRAG_STATUS_NONE,
-	DRAG_STATUS_COULD_DRAG,
-	DRAG_STATUS_DRAGGING,
-};
-
-
-struct _sceditor
-{
-	GtkWidget           *drawingarea;
-	GtkIMContext        *im_context;
-	int                  w;   /* Surface size in pixels */
-	int                  h;
-	double               log_w;  /* Size of surface in "SC units" */
-	double               log_h;
-	SCBlock             *scblocks;
-	cairo_surface_t     *surface;
-	struct frame         top;
-	SCBlock             *stylesheet;
-	ImageStore          *is;
-
-	/* Pointers to the frame currently being edited */
-	struct frame        *selection;
-
-	PangoContext        *pc;
-
-	/* Location of the cursor */
-	struct frame        *cursor_frame;
-	int                  cursor_line;
-	int                  cursor_box;
-	int                  cursor_pos;  /* characters into box */
-
-	/* Border surrounding actual slide within drawingarea */
-	double               border_offs_x;
-	double               border_offs_y;
-
-	/* Rubber band boxes and related stuff */
-	double               start_corner_x;
-	double               start_corner_y;
-	double               drag_corner_x;
-	double               drag_corner_y;
-	double               diagonal_length;
-	double               box_x;
-	double               box_y;
-	double               box_width;
-	double               box_height;
-	enum drag_reason     drag_reason;
-	enum drag_status     drag_status;
-	enum corner          drag_corner;
-
-	/* Stuff to do with drag and drop import of "content" */
-	int                  drag_preview_pending;
-	int                  have_drag_data;
-	int                  drag_highlight;
-	double               import_width;
-	double               import_height;
-	int                  import_acceptable;
-
-};
+}
 
 
 /* Update the view, once it's been edited in some way. */
@@ -1466,14 +1398,12 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 }
 
 
-/* FIXME: GObjectify this */
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
 
-	sceditor = calloc(1, sizeof(SCEditor));
-	if ( sceditor == NULL ) return NULL;
+	sceditor = g_object_new(SC_TYPE_EDITOR, NULL);
 
 	sceditor->scblocks = scblocks;
 	sceditor->drawingarea = gtk_drawing_area_new();

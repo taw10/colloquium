@@ -28,10 +28,120 @@
 #endif
 
 #include <gtk/gtk.h>
+#include <glib-object.h>
 
+#include "frame.h"
 
 struct presentation;
+
+
+#define SC_TYPE_EDITOR            (sc_editor_get_type())
+
+#define SC_EDITOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                   SC_TYPE_EDITOR, SCEditor))
+
+#define SC_IS_EDITOR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
+                                   SC_TYPE_EDITOR))
+
+#define SC_EDITOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((obj), \
+                                   SC_TYPE_EDITOR, SCEditorClass))
+
+#define SC_IS_EDITOR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
+                                   SC_TYPE_EDITOR))
+
+#define SC_EDITOR_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), \
+                                   SC_TYPE_EDITOR, SCEditorClass))
+
+enum drag_reason
+{
+	DRAG_REASON_NONE,
+	DRAG_REASON_CREATE,
+	DRAG_REASON_IMPORT,
+	DRAG_REASON_RESIZE,
+	DRAG_REASON_MOVE
+};
+
+
+enum corner
+{
+	CORNER_NONE,
+	CORNER_TL,
+	CORNER_TR,
+	CORNER_BL,
+	CORNER_BR
+};
+
+
+enum drag_status
+{
+	DRAG_STATUS_NONE,
+	DRAG_STATUS_COULD_DRAG,
+	DRAG_STATUS_DRAGGING,
+};
+
+
+struct _sceditor
+{
+	GtkDrawingArea       parent_instance;
+
+	/*< private >*/
+	GtkWidget           *drawingarea;
+	GtkIMContext        *im_context;
+	int                  w;   /* Surface size in pixels */
+	int                  h;
+	double               log_w;  /* Size of surface in "SC units" */
+	double               log_h;
+	SCBlock             *scblocks;
+	cairo_surface_t     *surface;
+	struct frame         top;
+	SCBlock             *stylesheet;
+	ImageStore          *is;
+
+	/* Pointers to the frame currently being edited */
+	struct frame        *selection;
+
+	PangoContext        *pc;
+
+	/* Location of the cursor */
+	struct frame        *cursor_frame;
+	int                  cursor_line;
+	int                  cursor_box;
+	int                  cursor_pos;  /* characters into box */
+
+	/* Border surrounding actual slide within drawingarea */
+	double               border_offs_x;
+	double               border_offs_y;
+
+	/* Rubber band boxes and related stuff */
+	double               start_corner_x;
+	double               start_corner_y;
+	double               drag_corner_x;
+	double               drag_corner_y;
+	double               diagonal_length;
+	double               box_x;
+	double               box_y;
+	double               box_width;
+	double               box_height;
+	enum drag_reason     drag_reason;
+	enum drag_status     drag_status;
+	enum corner          drag_corner;
+
+	/* Stuff to do with drag and drop import of "content" */
+	int                  drag_preview_pending;
+	int                  have_drag_data;
+	int                  drag_highlight;
+	double               import_width;
+	double               import_height;
+	int                  import_acceptable;
+};
+
+struct _sceditorclass
+{
+	GtkDrawingAreaClass parent_class;
+};
+
 typedef struct _sceditor SCEditor;
+typedef struct _sceditorclass SCEditorClass;
 
 extern void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks);
 extern GtkWidget *sc_editor_get_widget(SCEditor *e);

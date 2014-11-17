@@ -28,14 +28,15 @@
 #include <gtk/gtk.h>
 #include <getopt.h>
 
+#include "colloquium.h"
 #include "presentation.h"
 #include "narrative_window.h"
 
 
-typedef struct
+struct _colloquium
 {
 	GtkApplication parent_instance;
-} Colloquium;
+};
 
 
 typedef GtkApplicationClass ColloquiumClass;

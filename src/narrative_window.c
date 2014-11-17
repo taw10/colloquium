@@ -158,7 +158,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	                               GTK_POLICY_AUTOMATIC,
 	                               GTK_POLICY_AUTOMATIC);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
-	                                      sc_editor_get_widget(nw->sceditor));
+	                                      GTK_WIDGET(nw->sceditor));
 
 	/* Size of SCEditor surface in pixels */
 	/* FIXME: Somewhat arbitrary.  Should come from slide itself */

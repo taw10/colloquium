@@ -85,7 +85,6 @@ struct _sceditor
 	GtkDrawingArea       parent_instance;
 
 	/*< private >*/
-	GtkWidget           *drawingarea;
 	GtkIMContext        *im_context;
 	int                  w;   /* Surface size in pixels */
 	int                  h;

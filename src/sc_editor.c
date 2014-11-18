@@ -77,10 +77,10 @@ void redraw_editor(SCEditor *e)
 {
 	gint w, h;
 
-	w = gtk_widget_get_allocated_width(GTK_WIDGET(e->drawingarea));
-	h = gtk_widget_get_allocated_height(GTK_WIDGET(e->drawingarea));
+	w = gtk_widget_get_allocated_width(GTK_WIDGET(e));
+	h = gtk_widget_get_allocated_height(GTK_WIDGET(e));
 
-	gtk_widget_queue_draw_area(e->drawingarea, 0, 0, w, h);
+	gtk_widget_queue_draw_area(GTK_WIDGET(e), 0, 0, w, h);
 }
 
 
@@ -1303,26 +1303,20 @@ static gint realise_sig(GtkWidget *da, SCEditor *e)
 
 	/* Keyboard and input method stuff */
 	e->im_context = gtk_im_multicontext_new();
-	win = gtk_widget_get_window(e->drawingarea);
+	win = gtk_widget_get_window(GTK_WIDGET(e));
 	gtk_im_context_set_client_window(GTK_IM_CONTEXT(e->im_context),
 	                                 win);
 	gdk_window_set_accept_focus(win, TRUE);
 	g_signal_connect(G_OBJECT(e->im_context), "commit",
 			 G_CALLBACK(im_commit_sig), e);
-	g_signal_connect(G_OBJECT(e->drawingarea), "key-press-event",
+	g_signal_connect(G_OBJECT(e), "key-press-event",
 			 G_CALLBACK(key_press_sig), e);
 
 	/* FIXME: Can do this "properly" by setting up a separate font map */
-	e->pc = gtk_widget_get_pango_context(e->drawingarea);
+	e->pc = gtk_widget_get_pango_context(GTK_WIDGET(e));
 	rerender(e);
 
 	return FALSE;
-}
-
-
-GtkWidget *sc_editor_get_widget(SCEditor *e)
-{
-	return e->drawingarea;
 }
 
 
@@ -1405,7 +1399,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor = g_object_new(SC_TYPE_EDITOR, NULL);
 
 	sceditor->scblocks = scblocks;
-	sceditor->drawingarea = gtk_drawing_area_new();
 	sceditor->surface = NULL;
 	sceditor->w = 100;
 	sceditor->h = 100;
@@ -1434,48 +1427,48 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 
 	rerender(sceditor);
 
-	gtk_widget_set_size_request(GTK_WIDGET(sceditor->drawingarea),
+	gtk_widget_set_size_request(GTK_WIDGET(sceditor),
 	                            sceditor->w, sceditor->h);
 
-	g_signal_connect(G_OBJECT(sceditor->drawingarea), "destroy",
+	g_signal_connect(G_OBJECT(sceditor), "destroy",
 	                 G_CALLBACK(destroy_sig), sceditor);
-	g_signal_connect(G_OBJECT(sceditor->drawingarea), "realize",
+	g_signal_connect(G_OBJECT(sceditor), "realize",
 	                 G_CALLBACK(realise_sig), sceditor);
-	g_signal_connect(G_OBJECT(sceditor->drawingarea), "button-press-event",
+	g_signal_connect(G_OBJECT(sceditor), "button-press-event",
 	                 G_CALLBACK(button_press_sig), sceditor);
-	g_signal_connect(G_OBJECT(sceditor->drawingarea), "button-release-event",
+	g_signal_connect(G_OBJECT(sceditor), "button-release-event",
 	                 G_CALLBACK(button_release_sig), sceditor);
-	g_signal_connect(G_OBJECT(sceditor->drawingarea), "motion-notify-event",
+	g_signal_connect(G_OBJECT(sceditor), "motion-notify-event",
 	                 G_CALLBACK(motion_sig), sceditor);
 
 	/* Drag and drop */
 	targets[0].target = "text/uri-list";
 	targets[0].flags = 0;
 	targets[0].info = 1;
-	gtk_drag_dest_set(sceditor->drawingarea, 0, targets, 1,
+	gtk_drag_dest_set(GTK_WIDGET(sceditor), 0, targets, 1,
 	                  GDK_ACTION_PRIVATE);
-	g_signal_connect(sceditor->drawingarea, "drag-data-received",
+	g_signal_connect(sceditor, "drag-data-received",
 	                 G_CALLBACK(dnd_receive), sceditor);
-	g_signal_connect(sceditor->drawingarea, "drag-motion",
+	g_signal_connect(sceditor, "drag-motion",
 	                 G_CALLBACK(dnd_motion), sceditor);
-	g_signal_connect(sceditor->drawingarea, "drag-drop",
+	g_signal_connect(sceditor, "drag-drop",
 	                 G_CALLBACK(dnd_drop), sceditor);
-	g_signal_connect(sceditor->drawingarea, "drag-leave",
+	g_signal_connect(sceditor, "drag-leave",
 	                 G_CALLBACK(dnd_leave), sceditor);
 
-	gtk_widget_set_can_focus(GTK_WIDGET(sceditor->drawingarea), TRUE);
-	gtk_widget_add_events(GTK_WIDGET(sceditor->drawingarea),
+	gtk_widget_set_can_focus(GTK_WIDGET(sceditor), TRUE);
+	gtk_widget_add_events(GTK_WIDGET(sceditor),
 	                      GDK_POINTER_MOTION_HINT_MASK
 	                       | GDK_BUTTON1_MOTION_MASK
 	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
 	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
 
-	g_signal_connect(G_OBJECT(sceditor->drawingarea), "draw",
+	g_signal_connect(G_OBJECT(sceditor), "draw",
 			 G_CALLBACK(draw_sig), sceditor);
 
-	gtk_widget_grab_focus(GTK_WIDGET(sceditor->drawingarea));
+	gtk_widget_grab_focus(GTK_WIDGET(sceditor));
 
-	gtk_widget_show(sceditor->drawingarea);
+	gtk_widget_show(GTK_WIDGET(sceditor));
 
 	return sceditor;
 }

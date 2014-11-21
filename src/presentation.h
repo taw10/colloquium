@@ -44,8 +44,6 @@ struct slide
 	struct presentation *parent;
 	struct slide_template *st;
 
-	struct frame *top;
-
 	SCBlock *scblocks;
 	SCBlock *notes;
 };
@@ -93,7 +91,7 @@ extern int insert_slide(struct presentation *p, struct slide *s, int pos);
 extern void free_slide(struct slide *s);
 extern void delete_slide(struct presentation *p, struct slide *s);
 
-extern void delete_subframe(struct slide *s, struct frame *fr);
+extern void delete_subframe(struct frame *top, struct frame *fr);
 
 
 extern char *packed_sc(struct frame *fr);

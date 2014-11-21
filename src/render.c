@@ -443,6 +443,7 @@ int export_pdf(struct presentation *p, const char *filename)
 	for ( i=0; i<p->num_slides; i++ ) {
 
 		struct slide *s;
+		struct frame top;
 
 		s = p->slides[i];
 
@@ -454,13 +455,28 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
 
-		s->top->x = 0.0;
-		s->top->y = 0.0;
-		s->top->w = w;
-		s->top->h = w*r;
+		top.x = 0.0;
+		top.y = 0.0;
+		top.children = NULL;
+		top.num_children = 0;
+		top.max_children = 0;
+		top.lines = NULL;
+		top.n_lines = 0;
+		top.max_lines = 0;
+		top.pad_l = 0;
+		top.pad_r = 0;
+		top.pad_t = 0;
+		top.pad_b = 0;
+		top.w = w;
+		top.h = w*r;
+		top.grad = GRAD_NONE;
+		top.bgcol[0] = 1.0;
+		top.bgcol[1] = 1.0;
+		top.bgcol[2] = 1.0;
+		top.bgcol[3] = 1.0;
 
 		render_sc_to_surface(s->scblocks, surf, cr, p->slide_width,
-		                     p->slide_height, s->top, p->stylesheet,
+		                     p->slide_height, &top, p->stylesheet,
 		                     p->is, ISZ_SLIDESHOW, i);
 
 		cairo_restore(cr);

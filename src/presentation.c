@@ -129,9 +129,6 @@ struct slide *new_slide()
 	new = calloc(1, sizeof(struct slide));
 	if ( new == NULL ) return NULL;
 
-	new->top = frame_new();
-	/* FIXME: Set zero margins etc on top level frame */
-
 	new->scblocks = NULL;
 	new->notes = NULL;
 
@@ -377,8 +374,6 @@ int load_presentation(struct presentation *p, const char *filename)
 			if ( s != NULL ) {
 
 				s->scblocks = sc_block_child(block);
-				s->top = frame_new();
-				s->top->scblocks = sc_block_child(block);
 				attach_notes(s);
 
 			}
@@ -419,12 +414,12 @@ static struct frame *find_parent(struct frame *fr, struct frame *search)
 }
 
 
-void delete_subframe(struct slide *s, struct frame *fr)
+void delete_subframe(struct frame *top, struct frame *fr)
 {
 	struct frame *parent;
 	int i, idx, found;
 
-	parent = find_parent(s->top, fr);
+	parent = find_parent(top, fr);
 	if ( parent == NULL ) {
 		fprintf(stderr, "Couldn't find parent when deleting frame.\n");
 		return;

@@ -202,6 +202,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 		/* If we are dragging the current editor or projector slide,
 		 * we'd better remember to update when we're finished. */
+#if 0  /* FIXME! */
 		if ( n->p->cur_edit_slide == n->selected_slide ) {
 			n->dragging_cur_edit_slide = 1;
 		} else {
@@ -213,7 +214,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		} else {
 			n->dragging_cur_proj_slide = 0;
 		}
-
+#endif
 		list = gtk_target_list_new(targets, 1);
 		gtk_drag_begin(da, list, GDK_ACTION_COPY | GDK_ACTION_MOVE,
 		               1, (GdkEvent *)event);
@@ -438,6 +439,7 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 
 	if ( sn < n->drop_here ) n->drop_here--;
 
+#if 0  /* FIXME ! */
 	if ( n->p->cur_edit_slide == n->selected_slide ) {
 
 		if ( same ) {
@@ -483,7 +485,7 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 		}
 
 	}
-
+#endif
 	delete_slide(n->p, n->selected_slide);
 }
 

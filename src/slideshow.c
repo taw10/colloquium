@@ -36,13 +36,14 @@
 #include "render.h"
 #include "pr_clock.h"
 #include "inhibit_screensaver.h"
-
+#include "frame.h"
 
 struct _slideshow
 {
 	struct presentation *p;
+	SlideWindow         *slide_window;  /* Slide window controlling us */
 	struct slide        *cur_slide;
-	GtkWidget           *slideshow;
+	GtkWidget           *window;
 	GtkWidget           *drawingarea;
 	GdkCursor           *blank_cursor;
 	int                  blank;
@@ -52,6 +53,7 @@ struct _slideshow
 	struct inhibit_sys  *inhibit;
 	int                  linked;
 	cairo_surface_t     *surface;
+	struct frame         top;
 };
 
 
@@ -72,19 +74,21 @@ void slideshow_rerender(SlideShow *ss)
 	int n;
 
 	n = slide_number(ss->p, ss->cur_slide);
+	printf("rendering %p\n", ss->cur_slide->scblocks);
+	show_sc_blocks(ss->cur_slide->scblocks);
 	ss->surface = render_sc(ss->cur_slide->scblocks,
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
-	                        ss->cur_slide->top,
+	                        &ss->top,
 	                        ss->p->stylesheet,
 	                        ss->p->is, ISZ_SLIDESHOW, n);
 }
 
 
-static gint ss_destroy_sig(GtkWidget *widget, struct presentation *p)
+static gint ss_destroy_sig(GtkWidget *widget, SlideShow *ss)
 {
-	p->slideshow = NULL;
-	g_object_unref(p->slideshow->blank_cursor);
+	g_object_unref(ss->p->slideshow->blank_cursor);
+	ss->p->slideshow = NULL;
 	return FALSE;
 }
 
@@ -131,28 +135,21 @@ void change_proj_slide(SlideShow *ss, struct slide *np)
 
 	notify_clock_slide_changed(ss->p, np);
 
-	/* The slide is already rendered, because the editor always gets there
-	 * first, so we only need to do this: */
+	slideshow_rerender(ss);
 	redraw_slideshow(ss);
 }
 
 
 static gint prev_slide_sig(GtkWidget *widget, SlideShow *ss)
 {
-	int cur_slide_number;
-	cur_slide_number = slide_number(ss->p, ss->p->cur_edit_slide);
-	if ( cur_slide_number == 0 ) return FALSE;
-	change_edit_slide(ss->p->slidewindow, ss->p->slides[cur_slide_number-1]);
+	change_slide_backwards(ss->slide_window);
 	return FALSE;
 }
 
 
 static gint next_slide_sig(GtkWidget *widget, SlideShow *ss)
 {
-	int cur_slide_number;
-	cur_slide_number = slide_number(ss->p, ss->p->cur_edit_slide);
-	if ( cur_slide_number == ss->p->num_slides-1 ) return FALSE;
-	change_edit_slide(ss->p->slidewindow, ss->p->slides[cur_slide_number+1]);
+	change_slide_forwards(ss->slide_window);
 	return FALSE;
 }
 
@@ -161,10 +158,10 @@ void end_slideshow(SlideShow *ss)
 {
 	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 0);
 	gtk_widget_destroy(ss->drawingarea);
-	gtk_widget_destroy(ss->slideshow);
-	free(ss);
+	gtk_widget_destroy(ss->window);
 	ss->p->slideshow = NULL;
-	redraw_editor(ss->p->slidewindow);
+	slidewindow_redraw(ss->slide_window);
+	free(ss);
 }
 
 
@@ -172,9 +169,9 @@ void toggle_slideshow_link(SlideShow *ss)
 {
 	ss->linked = 1 - ss->linked;
 	if ( ss->linked ) {
-		change_proj_slide(ss, ss->p->cur_edit_slide);
+		change_proj_slide(ss, slidewindow_get_slide(ss->slide_window));
 	}
-	//redraw_editor(ss->p); FIXME
+	slidewindow_redraw(ss->slide_window);
 }
 
 
@@ -200,7 +197,7 @@ void check_toggle_blank(SlideShow *ss)
 
 
 static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
-                                SlideShow *ss)
+                                 SlideShow *ss)
 {
 	switch ( event->keyval )
 	{
@@ -240,6 +237,7 @@ static gboolean ss_realize_sig(GtkWidget *w, SlideShow *ss)
 	gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
 
 	gtk_window_parse_geometry(GTK_WINDOW(w), ss->geom);
+	slideshow_rerender(ss);
 
 	return FALSE;
 }
@@ -252,40 +250,59 @@ struct slide *slideshow_slide(SlideShow *ss)
 }
 
 
-SlideShow *try_start_slideshow(struct presentation *p)
+SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p)
 {
-	GtkWidget *n;
 	GdkScreen *screen;
 	int n_monitors;
 	int i;
 	SlideShow *ss;
-
-	/* Presentation already running? */
-	if ( p->slideshow != NULL ) return p->slideshow;
-
+	double slide_width = 1024.0; /* Logical slide size */
+	double slide_height = 768.0; /* FIXME: Should come from slide */
 	ss = calloc(1, sizeof(SlideShow));
 	if ( ss == NULL ) return NULL;
 
-	ss->p = p;
+	ss->slide_window = sw;
 	ss->blank = 0;
+	ss->p = p;
+	ss->cur_slide = slidewindow_get_slide(sw);
 
 	if ( ss->inhibit == NULL ) {
 		ss->inhibit = inhibit_prepare();
 	}
 
-	n = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	ss->top.children = NULL;
+	ss->top.num_children = 0;
+	ss->top.max_children = 0;
+	ss->top.lines = NULL;
+	ss->top.n_lines = 0;
+	ss->top.max_lines = 0;
+	ss->top.pad_l = 0;
+	ss->top.pad_r = 0;
+	ss->top.pad_t = 0;
+	ss->top.pad_b = 0;
+	ss->top.w = slide_width;
+	ss->top.h = slide_height;
+	ss->top.grad = GRAD_NONE;
+	ss->top.bgcol[0] = 1.0;
+	ss->top.bgcol[1] = 1.0;
+	ss->top.bgcol[2] = 1.0;
+	ss->top.bgcol[3] = 1.0;
+
+	ss->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 	ss->drawingarea = gtk_drawing_area_new();
-	gtk_container_add(GTK_CONTAINER(n), ss->drawingarea);
+	gtk_container_add(GTK_CONTAINER(ss->window), ss->drawingarea);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(ss->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(ss->drawingarea),
 	                      GDK_KEY_PRESS_MASK);
 
 	g_signal_connect(G_OBJECT(ss->drawingarea), "key-press-event",
-			 G_CALLBACK(ss_key_press_sig), p);
-	g_signal_connect(G_OBJECT(n), "destroy", G_CALLBACK(ss_destroy_sig), p);
-	g_signal_connect(G_OBJECT(n), "realize", G_CALLBACK(ss_realize_sig), ss);
+			 G_CALLBACK(ss_key_press_sig), ss);
+	g_signal_connect(G_OBJECT(ss->window), "destroy",
+	                 G_CALLBACK(ss_destroy_sig), ss);
+	g_signal_connect(G_OBJECT(ss->window), "realize",
+	                 G_CALLBACK(ss_realize_sig), ss);
 
 	g_signal_connect(G_OBJECT(ss->drawingarea), "draw",
 			 G_CALLBACK(ss_draw_sig), ss);
@@ -303,20 +320,19 @@ SlideShow *try_start_slideshow(struct presentation *p)
 		snprintf(ss->geom, 255, "%ix%i+%i+%i",
 		         rect.width, rect.height, rect.x, rect.y);
 
-		w = rect.height * p->slide_width/p->slide_height;
+		w = rect.height * slide_width/slide_height;
 		if ( w > rect.width ) w = rect.width;
 		ss->slide_width = w;
 
 	} /* FIXME: Sensible (configurable) choice of monitor */
 
 	ss->linked = 1;
-	gtk_window_fullscreen(GTK_WINDOW(n));
-	gtk_widget_show_all(GTK_WIDGET(n));
+	gtk_window_fullscreen(GTK_WINDOW(ss->window));
+	gtk_widget_show_all(GTK_WIDGET(ss->window));
 
 	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 1);
 
-	ss->cur_slide = p->cur_edit_slide;
-	notify_clock_slide_changed(p, ss->cur_slide);
+	//notify_clock_slide_changed(p, ss->cur_slide); FIXME
 
 	return ss;
 }

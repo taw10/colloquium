@@ -32,7 +32,7 @@
 
 #include "presentation.h"
 
-
+#if 0  /* FIXME */
 struct notes
 {
 	GtkWidget *window;
@@ -92,36 +92,31 @@ void grab_current_notes(struct presentation *p)
 }
 
 
-void notify_notes_slide_changed(struct presentation *p, struct slide *np)
+void notes_set_slide(struct notes *notes, struct slide *np)
 {
-	if ( p->notes == NULL ) return;
-	grab_current_notes(p);
-	p->notes->slide = np;
-	update_notes(p);
+	if ( notes == NULL ) return;
+	grab_current_notes(notes);
+	notes->slide = np;
+	update_notes(notes);
 }
 
 
-static gint close_notes_sig(GtkWidget *w, struct presentation *p)
+static gint close_notes_sig(GtkWidget *w, struct notes *notes)
 {
-	grab_current_notes(p);
-	p->notes = NULL;
+	grab_current_notes(notes);
+	notes->p->notes = NULL;
 	return FALSE;
 }
 
 
-void open_notes(struct presentation *p)
+void open_notes(SlideWindow *sw)
 {
 	struct notes *n;
 	GtkWidget *sc;
 	PangoFontDescription *desc;
 
-	if ( p->notes != NULL ) return;  /* Already open */
-
 	n = malloc(sizeof(struct notes));
 	if ( n == NULL ) return;
-	p->notes = n;
-
-	p->notes->slide = p->cur_edit_slide;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(n->window), 800, 256);
@@ -143,10 +138,11 @@ void open_notes(struct presentation *p)
 	set_notes_title(p);
 	gtk_widget_show_all(n->window);
 
-	update_notes(p);
+	update_notes(notes);
 }
 
 
+#endif
 void attach_notes(struct slide *s)
 {
 	SCBlock *bl = s->scblocks;

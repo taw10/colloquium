@@ -27,10 +27,12 @@
 #include <config.h>
 #endif
 
+#include "slide_window.h"
+
 /* Opaque data structure representing a slideshow */
 typedef struct _slideshow SlideShow;
 
-extern SlideShow *try_start_slideshow(struct presentation *p);
+extern SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p);
 extern void end_slideshow(SlideShow *ss);
 
 extern void change_proj_slide(SlideShow *ss, struct slide *np);

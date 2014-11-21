@@ -147,5 +147,6 @@ extern GtkWidget *sc_editor_get_widget(SCEditor *e);
 extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet);
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
+extern void sc_editor_redraw(SCEditor *e);
 
 #endif	/* SC_EDITOR_H */

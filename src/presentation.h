@@ -68,9 +68,6 @@ struct presentation
 	struct pr_clock  *clock;
 	struct slide_sorter *slide_sorter;
 
-	/* Pointers to the current "editing" slide */
-	struct slide     *cur_edit_slide;
-
 	/* This is the "native" size of the slide.  It only exists to give
 	 * font size some meaning in the context of a somewhat arbitrary DPI */
 	double            slide_width;

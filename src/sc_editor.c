@@ -73,7 +73,7 @@ static void rerender(SCEditor *e)
 
 
 /* Force a redraw of the editor window */
-void redraw_editor(SCEditor *e)
+static void redraw_editor(SCEditor *e)
 {
 	gint w, h;
 
@@ -83,6 +83,11 @@ void redraw_editor(SCEditor *e)
 	gtk_widget_queue_draw_area(GTK_WIDGET(e), 0, 0, w, h);
 }
 
+/* Force a redraw of the editor window */
+void sc_editor_redraw(SCEditor *e)
+{
+	redraw_editor(e);
+}
 
 static void move_cursor_back(SCEditor *e)
 {

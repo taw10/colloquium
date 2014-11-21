@@ -1,7 +1,7 @@
 /*
- * presentation.h
+ * slide_window.h
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef SLIDEWINDOW_H
+#define SLIDEWINDOW_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -33,5 +33,12 @@ extern SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 extern void change_edit_slide(SlideWindow *sw, struct slide *np);
 extern void update_titlebar(struct presentation *p);
 
+extern void change_slide_first(SlideWindow *sw);
+extern void change_slide_backwards(SlideWindow *sw);
+extern void change_slide_forwards(SlideWindow *sw);
+extern void change_slide_last(SlideWindow *sw);
 
-#endif	/* MAINWINDOW_H */
+extern struct slide *slidewindow_get_slide(SlideWindow *sw);
+extern void slidewindow_redraw(SlideWindow *sw);
+
+#endif	/* SLIDEWINDOW_H */

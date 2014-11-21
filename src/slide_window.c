@@ -330,7 +330,7 @@ static gint about_sig(GtkWidget *widget, SlideWindow *sw)
 
 static gint start_slideshow_sig(GtkWidget *widget, SlideWindow *sw)
 {
-	sw->p->slideshow = try_start_slideshow(sw->p);
+	sw->p->slideshow = try_start_slideshow(sw, sw->p);
 	return FALSE;
 }
 
@@ -344,7 +344,7 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 
 	sc_editor_set_scblock(sw->sceditor, np->scblocks);
 
-	notify_notes_slide_changed(sw->p, np);
+	// FIXME notify_notes_slide_changed(sw->p, np);
 
 	if ( slideshow_linked(sw->p->slideshow) ) {
 		change_proj_slide(sw->p->slideshow, np);
@@ -369,50 +369,71 @@ static gint add_slide_sig(GtkWidget *widget, SlideWindow *sw)
 }
 
 
-static gint first_slide_sig(GtkWidget *widget, SlideWindow *sw)
+void change_slide_first(SlideWindow *sw)
 {
 	change_edit_slide(sw, sw->p->slides[0]);
+}
+
+
+void change_slide_backwards(SlideWindow *sw)
+{
+	int cur_slide_number;
+
+	cur_slide_number = slide_number(sw->p, sw->cur_slide);
+	if ( cur_slide_number == 0 ) return;
+
+	change_edit_slide(sw, sw->p->slides[cur_slide_number-1]);
+}
+
+
+void change_slide_forwards(SlideWindow *sw)
+{
+	int cur_slide_number;
+
+	cur_slide_number = slide_number(sw->p, sw->cur_slide);
+	if ( cur_slide_number == sw->p->num_slides-1 ) return;
+
+	change_edit_slide(sw, sw->p->slides[cur_slide_number+1]);
+}
+
+
+void change_slide_last(SlideWindow *sw)
+{
+	change_edit_slide(sw, sw->p->slides[sw->p->num_slides-1]);
+}
+
+
+static gint first_slide_sig(GtkWidget *widget, SlideWindow *sw)
+{
+	change_slide_first(sw);
 	return FALSE;
 }
 
 
 static gint prev_slide_sig(GtkWidget *widget, SlideWindow *sw)
 {
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(sw->p, sw->cur_slide);
-	if ( cur_slide_number == 0 ) return FALSE;
-
-	change_edit_slide(sw, sw->p->slides[cur_slide_number-1]);
-
+	change_slide_backwards(sw);
 	return FALSE;
 }
 
 
 static gint next_slide_sig(GtkWidget *widget, SlideWindow *sw)
 {
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(sw->p, sw->cur_slide);
-	if ( cur_slide_number == sw->p->num_slides-1 ) return FALSE;
-
-	change_edit_slide(sw, sw->p->slides[cur_slide_number+1]);
-
+	change_slide_forwards(sw);
 	return FALSE;
 }
 
 
 static gint last_slide_sig(GtkWidget *widget, SlideWindow *sw)
 {
-	change_edit_slide(sw, sw->p->slides[sw->p->num_slides-1]);
-
+	change_slide_last(sw);
 	return FALSE;
 }
 
 
 static gint open_notes_sig(GtkWidget *widget, SlideWindow *sw)
 {
-	open_notes(sw->p);
+	// FIXME open_notes(sw->p);
 	return FALSE;
 }
 
@@ -430,6 +451,7 @@ static gint open_slidesorter_sig(GtkWidget *widget, SlideWindow *sw)
 	return FALSE;
 }
 
+
 static gint delete_frame_sig(GtkWidget *widget, SlideWindow *sw)
 {
 #if 0
@@ -443,6 +465,18 @@ static gint delete_frame_sig(GtkWidget *widget, SlideWindow *sw)
 #endif
 /* FIXME: implement */
 	return FALSE;
+}
+
+
+void slidewindow_redraw(SlideWindow *sw)
+{
+	sc_editor_redraw(sw->sceditor);
+}
+
+
+struct slide *slidewindow_get_slide(SlideWindow *sw)
+{
+	return sw->cur_slide;
 }
 
 

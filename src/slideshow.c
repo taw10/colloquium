@@ -77,7 +77,6 @@ void slideshow_rerender(SlideShow *ss)
 	ss->surface = render_sc(ss->cur_slide->scblocks,
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
-	                        &ss->top,
 	                        ss->p->stylesheet,
 	                        ss->p->is, ISZ_SLIDESHOW, n);
 }

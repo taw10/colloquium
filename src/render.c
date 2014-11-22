@@ -345,7 +345,7 @@ static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
 
 static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
                                  cairo_t *cr, double log_w, double log_h,
-                                 struct frame *top, SCBlock *stylesheet,
+                                 SCBlock *stylesheet,
                                  ImageStore *is, enum is_size isz,
                                  int slide_number)
 {
@@ -353,6 +353,7 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
 	PangoContext *pc;
 	SCInterpreter *scin;
 	char snum[64];
+	struct frame *top;
 
 	cairo_rectangle(cr, 0.0, 0.0, log_w, log_h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
@@ -369,6 +370,16 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
 	fontmap = pango_cairo_font_map_get_default();
 	pc = pango_font_map_create_context(fontmap);
 	pango_cairo_update_context(cr, pc);
+
+	top = sc_block_frame(scblocks);
+	if ( top == NULL ) {
+		top = frame_new();
+		sc_block_set_frame(scblocks, top);
+	}
+	top->x = 0.0;
+	top->y = 0.0;
+	top->w = log_w;
+	top->h = log_h;
 
 	scin = sc_interp_new(pc, top);
 	if ( scin == NULL ) {
@@ -402,7 +413,7 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
  * Render the entire slide.
  */
 cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
-                           double log_w, double log_h, struct frame *top,
+                           double log_w, double log_h,
                            SCBlock *stylesheet,
                            ImageStore *is, enum is_size isz,
                            int slide_number)
@@ -413,8 +424,8 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	cr = cairo_create(surf);
 	cairo_scale(cr, w/log_w, h/log_h);
-	render_sc_to_surface(scblocks, surf, cr, log_w, log_h, top, stylesheet,
-	                     is, isz,slide_number);
+	render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
+	                     stylesheet, is, isz,slide_number);
 	cairo_destroy(cr);
 	return surf;
 }
@@ -443,7 +454,6 @@ int export_pdf(struct presentation *p, const char *filename)
 	for ( i=0; i<p->num_slides; i++ ) {
 
 		struct slide *s;
-		struct frame top;
 
 		s = p->slides[i];
 
@@ -455,28 +465,8 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
 
-		top.x = 0.0;
-		top.y = 0.0;
-		top.children = NULL;
-		top.num_children = 0;
-		top.max_children = 0;
-		top.lines = NULL;
-		top.n_lines = 0;
-		top.max_lines = 0;
-		top.pad_l = 0;
-		top.pad_r = 0;
-		top.pad_t = 0;
-		top.pad_b = 0;
-		top.w = w;
-		top.h = w*r;
-		top.grad = GRAD_NONE;
-		top.bgcol[0] = 1.0;
-		top.bgcol[1] = 1.0;
-		top.bgcol[2] = 1.0;
-		top.bgcol[3] = 1.0;
-
 		render_sc_to_surface(s->scblocks, surf, cr, p->slide_width,
-		                     p->slide_height, &top, p->stylesheet,
+		                     p->slide_height, p->stylesheet,
 		                     p->is, ISZ_SLIDESHOW, i);
 
 		cairo_restore(cr);

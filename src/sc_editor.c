@@ -67,8 +67,7 @@ static void rerender(SCEditor *e)
 
 	/* FIXME: Slide number, if appropriate */
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
-	                       &e->top, e->stylesheet, e->is, ISZ_EDITOR,
-	                       0);
+	                       e->stylesheet, e->is, ISZ_EDITOR, 0);
 }
 
 
@@ -752,7 +751,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	if ( within_frame(e->selection, x, y) ) {
 		clicked = e->selection;
 	} else {
-		clicked = find_frame_at_position(&e->top, x, y);
+		clicked = find_frame_at_position(sc_block_frame(e->scblocks),
+		                                 x, y);
 	}
 
 	/* If the user clicked the currently selected frame, position cursor
@@ -795,8 +795,9 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		}
 
-	} else if ( (clicked == NULL) || (clicked == &e->top) ) {
-
+	} else if ( (clicked == NULL)
+	         || (clicked == sc_block_frame(e->scblocks)) )
+	{
 		/* Clicked no object. Deselect old object and set up for
 		 * (maybe) creating a new one. */
 		e->selection = NULL;
@@ -878,7 +879,7 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	struct frame *parent;
 	struct frame *fr;
 
-	parent = &e->top;
+	parent = sc_block_frame(e->scblocks);
 
 	if ( w < 0.0 ) {
 		x += w;
@@ -1273,7 +1274,6 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			fr->is_image = 1;
 			fr->empty = 0;
 			sc_block_append_inside(fr->scblocks, "image", opts, "");
-			show_hierarchy(&e->top, "");
 			rerender(e);
 			e->selection = fr;
 			redraw_editor(e);
@@ -1344,6 +1344,8 @@ static void free_frame_contents(struct frame *fr)
 {
 	int i;
 
+	if ( fr == NULL ) return;
+
 	for ( i=0; i<fr->n_lines; i++ ) {
 		wrap_line_free(&fr->lines[i]);
 	}
@@ -1373,7 +1375,7 @@ void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
 	e->scblocks = scblocks;
 
 	/* Free all subframes */
-	free_frame_contents(&e->top);
+	free_frame_contents(sc_block_frame(e->scblocks));
 
 	rerender(e);
 	redraw_editor(e);
@@ -1391,8 +1393,6 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 {
 	e->log_w = w;
 	e->log_h = h;
-	e->top.w = w;
-	e->top.h = h;
 }
 
 
@@ -1411,24 +1411,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor->log_h = 100;
 	sceditor->is = imagestore_new();
 	sceditor->stylesheet = stylesheet;
-
-	sceditor->top.children = NULL;
-	sceditor->top.num_children = 0;
-	sceditor->top.max_children = 0;
-	sceditor->top.lines = NULL;
-	sceditor->top.n_lines = 0;
-	sceditor->top.max_lines = 0;
-	sceditor->top.pad_l = 0;
-	sceditor->top.pad_r = 0;
-	sceditor->top.pad_t = 0;
-	sceditor->top.pad_b = 0;
-	sceditor->top.w = sceditor->log_w;
-	sceditor->top.h = sceditor->log_h;
-	sceditor->top.grad = GRAD_NONE;
-	sceditor->top.bgcol[0] = 1.0;
-	sceditor->top.bgcol[1] = 1.0;
-	sceditor->top.bgcol[2] = 1.0;
-	sceditor->top.bgcol[3] = 1.0;
 
 	rerender(sceditor);
 

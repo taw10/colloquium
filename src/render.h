@@ -31,7 +31,7 @@
 #include "imagestore.h"
 
 extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
-                           double log_w, double log_h, struct frame *top,
+                           double log_w, double log_h,
                            SCBlock *stylesheet,
                            ImageStore *is, enum is_size isz,
                            int slide_number);

@@ -92,7 +92,6 @@ struct _sceditor
 	double               log_h;
 	SCBlock             *scblocks;
 	cairo_surface_t     *surface;
-	struct frame         top;
 	SCBlock             *stylesheet;
 	ImageStore          *is;
 

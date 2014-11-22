@@ -51,31 +51,11 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	gint w, h;
 	cairo_surface_t *surface;
 	SCBlock *scblocks = data;
-	struct frame top;
 
 	w = gtk_widget_get_allocated_width(da);
 	h = gtk_widget_get_allocated_height(da);
 
-	top.pad_l = 20.0;
-	top.pad_r = 20.0;
-	top.pad_t = 20.0;
-	top.pad_b = 20.0;
-	top.w = w;
-	top.h = h;
-	top.grad = GRAD_NONE;
-	top.bgcol[0] = 1.0;
-	top.bgcol[1] = 1.0;
-	top.bgcol[2] = 0.6;
-	top.bgcol[3] = 1.0;
-
-	top.lines = NULL;
-	top.n_lines = 0;
-	top.children = NULL;
-	top.num_children = 0;
-	top.max_children = 0;
-	top.boxes = NULL;
-
-	surface = render_sc(scblocks, w, h, w, h, &top, NULL, NULL,
+	surface = render_sc(scblocks, w, h, w, h, NULL, NULL,
 	                    ISZ_EDITOR, 1);
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_surface(cr, surface, 0.0, 0.0);

@@ -74,8 +74,6 @@ void slideshow_rerender(SlideShow *ss)
 	int n;
 
 	n = slide_number(ss->p, ss->cur_slide);
-	printf("rendering %p\n", ss->cur_slide->scblocks);
-	show_sc_blocks(ss->cur_slide->scblocks);
 	ss->surface = render_sc(ss->cur_slide->scblocks,
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
@@ -280,6 +278,8 @@ SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p)
 	ss->top.pad_r = 0;
 	ss->top.pad_t = 0;
 	ss->top.pad_b = 0;
+	ss->top.x = 0.0;
+	ss->top.y = 0.0;
 	ss->top.w = slide_width;
 	ss->top.h = slide_height;
 	ss->top.grad = GRAD_NONE;
@@ -323,6 +323,7 @@ SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p)
 		w = rect.height * slide_width/slide_height;
 		if ( w > rect.width ) w = rect.width;
 		ss->slide_width = w;
+		ss->slide_height = rect.height;
 
 	} /* FIXME: Sensible (configurable) choice of monitor */
 

@@ -1006,16 +1006,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	switch ( event->keyval ) {
 
-		case GDK_KEY_Page_Up :
-		//prev_slide_sig(NULL, p);
-		claim = 1;
-		break;
-
-		case GDK_KEY_Page_Down :
-		//next_slide_sig(NULL, p);  FIXME!
-		claim = 1;
-		break;
-
 		case GDK_KEY_Escape :
 		e->selection = NULL;
 		redraw_editor(e);

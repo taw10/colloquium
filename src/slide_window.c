@@ -608,6 +608,24 @@ void update_titlebar(struct presentation *p)
 }
 
 
+static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
+                              SlideWindow *sw)
+{
+	switch ( event->keyval ) {
+
+		case GDK_KEY_Page_Up :
+		change_slide_backwards(sw);
+		break;
+
+		case GDK_KEY_Page_Down :
+		change_slide_forwards(sw);
+		break;
+	}
+
+	return FALSE;
+}
+
+
 SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 {
 	GtkWidget *window;
@@ -644,6 +662,9 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	                                      GTK_WIDGET(sw->sceditor));
 
 	/* Size of SCEditor surface in pixels */
+	g_signal_connect(G_OBJECT(sw->sceditor), "key-press-event",
+			 G_CALLBACK(key_press_sig), sw);
+
 	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
 	sc_editor_set_size(sw->sceditor, 1024, 768);
 	sc_editor_set_logical_size(sw->sceditor, 1024.0, 768.0);

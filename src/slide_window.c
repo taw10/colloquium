@@ -60,6 +60,8 @@ struct _slidewindow
 	int                  n_style_menu;
 
 	struct slide        *cur_slide;  /* FIXME: SPOT inside SCEditor */
+
+	SlideShow           *show;
 };
 
 
@@ -328,9 +330,15 @@ static gint about_sig(GtkWidget *widget, SlideWindow *sw)
 }
 
 
+void slidewindow_slideshow_ended(SlideWindow *sw)
+{
+	sw->show = NULL;
+}
+
+
 static gint start_slideshow_sig(GtkWidget *widget, SlideWindow *sw)
 {
-	sw->p->slideshow = try_start_slideshow(sw, sw->p);
+	sw->show = try_start_slideshow(sw, sw->p);
 	return FALSE;
 }
 
@@ -346,8 +354,8 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 
 	// FIXME notify_notes_slide_changed(sw->p, np);
 
-	if ( slideshow_linked(sw->p->slideshow) ) {
-		change_proj_slide(sw->p->slideshow, np);
+	if ( slideshow_linked(sw->show) ) {
+		change_proj_slide(sw->show, np);
 	} /* else leave the slideshow alone */
 }
 
@@ -468,8 +476,19 @@ static gint delete_frame_sig(GtkWidget *widget, SlideWindow *sw)
 }
 
 
+static void slidewindow_set_background(SlideWindow *sw)
+{
+	if ( (sw->show != NULL) && !slideshow_linked(sw->show) ) {
+		sc_editor_set_background(sw->sceditor, 1.0, 0.3, 0.2);
+	} else {
+		sc_editor_set_background(sw->sceditor, 0.9, 0.9, 0.9);
+	}
+}
+
+
 void slidewindow_redraw(SlideWindow *sw)
 {
+	slidewindow_set_background(sw);
 	sc_editor_redraw(sw->sceditor);
 }
 
@@ -620,6 +639,11 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_Page_Down :
 		change_slide_forwards(sw);
 		break;
+
+		case GDK_KEY_b :
+		if ( sw->show != NULL ) {
+			toggle_slideshow_link(sw->show);
+		}
 	}
 
 	return FALSE;
@@ -645,6 +669,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	sw->window = window;
 	sw->p = p;
 	sw->cur_slide = p->slides[0];
+	sw->show = NULL;
 
 	update_titlebar(p);
 
@@ -675,6 +700,9 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	/* Default size */
 	gtk_window_set_default_size(GTK_WINDOW(sw->window), 1024+100, 768+150);
 	gtk_window_set_resizable(GTK_WINDOW(sw->window), TRUE);
+
+	/* Initial background colour */
+	slidewindow_set_background(sw);
 
 	gtk_widget_show_all(window);
 

@@ -46,11 +46,6 @@ void free_presentation(struct presentation *p)
 	int i;
 	int final = 0;
 
-	if ( p->slideshow != NULL ) {
-		end_slideshow(p->slideshow);
-		p->slideshow = NULL;
-	}
-
 	for ( i=0; i<p->num_slides; i++ ) {
 		free_slide(p->slides[i]);
 	}
@@ -219,8 +214,6 @@ struct presentation *new_presentation()
 
 	new->filename = NULL;
 	new->titlebar = get_titlebar_string(new);
-
-	new->slideshow = NULL;
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;

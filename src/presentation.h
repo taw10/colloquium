@@ -60,7 +60,6 @@ struct presentation
 
 	NarrativeWindow  *narrative_window;
 	SlideWindow      *slidewindow;
-	SlideShow        *slideshow;
 
 	struct notes     *notes;
 	struct pr_clock  *clock;

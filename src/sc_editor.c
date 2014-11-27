@@ -58,6 +58,14 @@ static void sc_editor_init(SCEditor *self)
 }
 
 
+void sc_editor_set_background(SCEditor *e, double r, double g, double b)
+{
+	e->bgcol[0] = r;
+	e->bgcol[1] = g;
+	e->bgcol[2] = b;
+}
+
+
 /* Update the view, once it's been edited in some way. */
 static void rerender(SCEditor *e)
 {
@@ -396,11 +404,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 
 	/* Overall background */
 	cairo_rectangle(cr, 0.0, 0.0, width, height);
-//	if ( slideshow_linked(e->p->slideshow)  ) {
-//		cairo_set_source_rgb(cr, 1.0, 0.3, 0.2);
-//	} else {
-		cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
-//	} FIXME
+	cairo_set_source_rgb(cr, e->bgcol[0], e->bgcol[1], e->bgcol[2]);
 	cairo_fill(cr);
 
 	/* Get the overall size */

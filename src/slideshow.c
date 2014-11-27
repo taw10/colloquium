@@ -84,8 +84,10 @@ void slideshow_rerender(SlideShow *ss)
 
 static gint ss_destroy_sig(GtkWidget *widget, SlideShow *ss)
 {
-	g_object_unref(ss->p->slideshow->blank_cursor);
-	ss->p->slideshow = NULL;
+	g_object_unref(ss->blank_cursor);
+	slidewindow_slideshow_ended(ss->slide_window);
+	slidewindow_redraw(ss->slide_window);
+	free(ss);
 	return FALSE;
 }
 
@@ -156,9 +158,6 @@ void end_slideshow(SlideShow *ss)
 	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 0);
 	gtk_widget_destroy(ss->drawingarea);
 	gtk_widget_destroy(ss->window);
-	ss->p->slideshow = NULL;
-	slidewindow_redraw(ss->slide_window);
-	free(ss);
 }
 
 
@@ -181,15 +180,7 @@ int slideshow_linked(SlideShow *ss)
 
 void check_toggle_blank(SlideShow *ss)
 {
-	if ( ss != NULL ) {
-		//if ( p->prefs->b_splits ) {
-			toggle_slideshow_link(ss);
-		//} else {
-		//	p->ss_blank = 1-p->ss_blank;
-		//	gdk_window_invalidate_rect(p->ss_drawingarea->window,
-		//			           NULL, FALSE);
-		//}  FIXME!
-	}
+	toggle_slideshow_link(ss);
 }
 
 

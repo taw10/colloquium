@@ -109,6 +109,7 @@ struct _sceditor
 	/* Border surrounding actual slide within drawingarea */
 	double               border_offs_x;
 	double               border_offs_y;
+	double               bgcol[3];
 
 	/* Rubber band boxes and related stuff */
 	double               start_corner_x;
@@ -147,5 +148,6 @@ extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet);
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
 extern void sc_editor_redraw(SCEditor *e);
+extern void sc_editor_set_background(SCEditor *e, double r, double g, double b);
 
 #endif	/* SC_EDITOR_H */

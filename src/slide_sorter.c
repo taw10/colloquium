@@ -322,7 +322,7 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
  * gets there first.  When re-arranging slides, this might not happen */
 static void fixup_proj(struct presentation *p, struct slide *s)
 {
-	slideshow_rerender(p->slideshow);
+//	slideshow_rerender(p->slideshow); FIXME
 }
 
 
@@ -370,7 +370,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 			if ( n->dragging_cur_proj_slide ) {
 				fixup_proj(n->p, s);
-				change_proj_slide(n->p->slideshow, s);
+				// FIXME change_proj_slide(n->p->slideshow, s);
 			}
 
 			redraw_slidesorter(n);

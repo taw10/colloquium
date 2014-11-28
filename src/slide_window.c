@@ -640,6 +640,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		change_slide_forwards(sw);
 		break;
 
+		case GDK_KEY_B :
 		case GDK_KEY_b :
 		if ( sw->show != NULL ) {
 			toggle_slideshow_link(sw->show);

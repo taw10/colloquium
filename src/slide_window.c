@@ -686,6 +686,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	                               GTK_POLICY_AUTOMATIC);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
 	                                      GTK_WIDGET(sw->sceditor));
+	gtk_window_set_focus(GTK_WINDOW(window), GTK_WIDGET(sw->sceditor));
 
 	/* Size of SCEditor surface in pixels */
 	g_signal_connect(G_OBJECT(sw->sceditor), "key-press-event",

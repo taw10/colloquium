@@ -73,9 +73,8 @@ static void rerender(SCEditor *e)
 		cairo_surface_destroy(e->surface);
 	}
 
-	/* FIXME: Slide number, if appropriate */
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
-	                       e->stylesheet, e->is, ISZ_EDITOR, 0);
+	                       e->stylesheet, e->is, ISZ_EDITOR, e->slidenum);
 }
 
 
@@ -1392,6 +1391,12 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 }
 
 
+void sc_editor_set_slidenum(SCEditor *e, int slidenum)
+{
+	e->slidenum = slidenum;
+}
+
+
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 {
 	SCEditor *sceditor;
@@ -1407,6 +1412,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor->log_h = 100;
 	sceditor->is = imagestore_new();
 	sceditor->stylesheet = stylesheet;
+	sceditor->slidenum = 0;
 
 	rerender(sceditor);
 

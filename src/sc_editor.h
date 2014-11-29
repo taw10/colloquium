@@ -132,6 +132,9 @@ struct _sceditor
 	double               import_width;
 	double               import_height;
 	int                  import_acceptable;
+
+	/* Stuff that doesn't really belong here */
+	int                  slidenum;
 };
 
 struct _sceditorclass
@@ -149,5 +152,6 @@ extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
 extern void sc_editor_redraw(SCEditor *e);
 extern void sc_editor_set_background(SCEditor *e, double r, double g, double b);
+extern void sc_editor_set_slidenum(SCEditor *e, int slidenum);
 
 #endif	/* SC_EDITOR_H */

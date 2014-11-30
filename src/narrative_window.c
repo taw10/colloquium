@@ -156,7 +156,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,
-	                               GTK_POLICY_AUTOMATIC);
+	                               GTK_POLICY_ALWAYS);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
 	                                      GTK_WIDGET(nw->sceditor));
 
@@ -168,6 +168,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	g_signal_connect(G_OBJECT(nw->sceditor), "button-press-event",
 	                 G_CALLBACK(button_press_sig), nw);
 
+	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 
 	gtk_widget_show_all(nw->window);

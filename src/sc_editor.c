@@ -1381,6 +1381,7 @@ void sc_editor_set_size(SCEditor *e, int w, int h)
 {
 	e->w = w;
 	e->h = h;
+	gtk_widget_set_size_request(GTK_WIDGET(e), w, h);
 }
 
 

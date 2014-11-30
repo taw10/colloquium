@@ -500,116 +500,6 @@ struct slide *slidewindow_get_slide(SlideWindow *sw)
 }
 
 
-static void add_menu_bar(SlideWindow *sw, GtkWidget *vbox)
-{
-	GError *error = NULL;
-	GtkWidget *toolbar;
-	GtkWidget *menu;
-	GtkWidget *item;
-
-	GtkActionEntry entries[] = {
-
-		{ "FileAction", NULL, "_File", NULL, NULL, NULL },
-//		{ "NewAction", GTK_STOCK_NEW, "_New",
-//			NULL, NULL, G_CALLBACK(new_sig) },
-//		{ "OpenAction", GTK_STOCK_OPEN, "_Open...",
-//			NULL, NULL, G_CALLBACK(open_sig) },
-//		{ "LoadStyleAction", NULL, "_Load Stylesheet...",
-//			NULL, NULL, G_CALLBACK(loadstyle_sig) },
-		{ "SaveAction", GTK_STOCK_SAVE, "_Save",
-			NULL, NULL, G_CALLBACK(save_sig) },
-		{ "SaveAsAction", GTK_STOCK_SAVE_AS, "Save _As...",
-			NULL, NULL, G_CALLBACK(saveas_sig) },
-//		{ "SaveStyleAction", NULL, "Save St_ylesheet",
-//			NULL, NULL, G_CALLBACK(save_ss_sig) },
-		{ "ExportPDFAction", NULL, "Export PDF",
-			NULL, NULL, G_CALLBACK(export_pdf_sig) },
-//		{ "QuitAction", GTK_STOCK_QUIT, "_Quit",
-//			NULL, NULL, G_CALLBACK(quit_sig) },
-
-		{ "EditAction", NULL, "_Edit", NULL, NULL, NULL },
-		{ "SorterAction", NULL, "_Open Slide Sorter...",
-			NULL, NULL, G_CALLBACK(open_slidesorter_sig) },
-		{ "UndoAction", GTK_STOCK_UNDO, "_Undo",
-			NULL, NULL, NULL },
-		{ "RedoAction", GTK_STOCK_REDO, "_Redo",
-			NULL, NULL, NULL },
-		{ "CutAction", GTK_STOCK_CUT, "Cut",
-			NULL, NULL, NULL },
-		{ "CopyAction", GTK_STOCK_COPY, "Copy",
-			NULL, NULL, NULL },
-		{ "PasteAction", GTK_STOCK_PASTE, "Paste",
-			NULL, NULL, NULL },
-		{ "DeleteFrameAction", GTK_STOCK_DELETE, "Delete Frame",
-			NULL, NULL, G_CALLBACK(delete_frame_sig) },
-//		{ "EditStyleAction", NULL, "Stylesheet...",
-//			NULL, NULL, G_CALLBACK(open_stylesheet_sig) },
-
-		{ "InsertAction", NULL, "_Insert", NULL, NULL, NULL },
-		{ "NewSlideAction", GTK_STOCK_ADD, "_New Slide",
-			NULL, NULL, G_CALLBACK(add_slide_sig) },
-
-		{ "ToolsAction", NULL, "_Tools", NULL, NULL, NULL },
-		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start Slideshow",
-			"F5", NULL, G_CALLBACK(start_slideshow_sig) },
-		{ "NotesAction", NULL, "_Open slide notes",
-			"F8", NULL, G_CALLBACK(open_notes_sig) },
-		{ "ClockAction", NULL, "_Open presentation clock",
-			"F9", NULL, G_CALLBACK(open_clock_sig) },
-		{ "PrefsAction", GTK_STOCK_PREFERENCES, "_Preferences",
-		        NULL, NULL, NULL },
-
-		{ "HelpAction", NULL, "_Help", NULL, NULL, NULL },
-		{ "AboutAction", GTK_STOCK_ABOUT, "_About...",
-			NULL, NULL,  G_CALLBACK(about_sig) },
-
-		{ "SlideshowAction", GTK_STOCK_FULLSCREEN, "Start Presentation",
-			NULL, NULL, G_CALLBACK(start_slideshow_sig) },
-		{ "AddSlideAction", GTK_STOCK_ADD, "Add Slide",
-			NULL, NULL, G_CALLBACK(add_slide_sig) },
-		{ "ButtonFirstSlideAction", GTK_STOCK_GOTO_FIRST, "First Slide",
-			NULL, NULL, G_CALLBACK(first_slide_sig) },
-		{ "ButtonPrevSlideAction", GTK_STOCK_GO_BACK, "Previous Slide",
-			NULL, NULL, G_CALLBACK(prev_slide_sig) },
-		{ "ButtonNextSlideAction", GTK_STOCK_GO_FORWARD, "Next Slide",
-			NULL, NULL, G_CALLBACK(next_slide_sig) },
-		{ "ButtonLastSlideAction", GTK_STOCK_GOTO_LAST, "Last Slide",
-			NULL, NULL, G_CALLBACK(last_slide_sig) },
-
-	};
-	guint n_entries = G_N_ELEMENTS(entries);
-
-	sw->action_group = gtk_action_group_new("mainwindow");
-	gtk_action_group_add_actions(sw->action_group, entries, n_entries, sw);
-
-	sw->ui = gtk_ui_manager_new();
-	gtk_ui_manager_insert_action_group(sw->ui, sw->action_group, 0);
-	g_signal_connect(sw->ui, "add_widget", G_CALLBACK(add_ui_sig), vbox);
-	if ( gtk_ui_manager_add_ui_from_file(sw->ui,
-	     DATADIR"/colloquium/colloquium.ui", &error) == 0 ) {
-		fprintf(stderr, "Error loading main window menu bar: %s\n",
-			error->message);
-		return;
-	}
-
-	gtk_window_add_accel_group(GTK_WINDOW(sw->window),
-				   gtk_ui_manager_get_accel_group(sw->ui));
-	gtk_ui_manager_ensure_update(sw->ui);
-
-	toolbar = gtk_ui_manager_get_widget(sw->ui, "/displaywindowtoolbar");
-	gtk_toolbar_insert(GTK_TOOLBAR(toolbar),
-	                   gtk_separator_tool_item_new(), -1);
-
-	menu = gtk_ui_manager_get_widget(sw->ui, "/displaywindow/insert");
-	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
-	item = gtk_separator_menu_item_new();
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-
-	update_style_menus(sw);
-	update_toolbar(sw);
-}
-
-
 void update_titlebar(struct presentation *p)
 {
 	get_titlebar_string(p);
@@ -697,7 +587,6 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	sc_editor_set_size(sw->sceditor, 1024, 768);
 	sc_editor_set_logical_size(sw->sceditor, 1024.0, 768.0);
 
-	add_menu_bar(sw, vbox);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 
 	/* Default size */

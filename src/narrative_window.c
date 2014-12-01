@@ -27,6 +27,7 @@
 
 #include <gtk/gtk.h>
 #include <assert.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "presentation.h"
@@ -43,8 +44,59 @@ struct _narrative_window
 };
 
 
+static gint saveas_response_sig(GtkWidget *d, gint response,
+                                NarrativeWindow *nw)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+
+		if ( save_presentation(nw->p, filename) ) {
+			//show_error(sw, "Failed to save presentation");
+		}
+
+		g_free(filename);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	GtkWidget *d;
+	NarrativeWindow *nw = vp;
+
+	d = gtk_file_chooser_dialog_new("Save Presentation",
+	                                GTK_WINDOW(nw->window),
+	                                GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
+	                                               TRUE);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(saveas_response_sig), nw);
+
+	gtk_widget_show_all(d);
+}
+
+
 static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
+	NarrativeWindow *nw = vp;
+
+	if ( nw->p->filename == NULL ) {
+		return saveas_sig(NULL, NULL, nw);
+	}
+
+	save_presentation(nw->p, nw->p->filename);
 }
 
 
@@ -54,62 +106,47 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+}
+
+
+static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+}
+
+
+static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+}
+
+
+static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+}
+
+
+static void open_notes_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+}
+
+
+static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+}
+
+
 GActionEntry nw_entries[] = {
 
-	{ "save", save_sig, NULL, NULL, NULL, },
+	{ "save", save_sig, NULL, NULL, NULL },
+	{ "saveas", saveas_sig, NULL, NULL, NULL },
 	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
-
-#if 0
-		{ "EditAction", NULL, "_Edit", NULL, NULL, NULL },
-		{ "SorterAction", NULL, "_Open Slide Sorter...",
-			NULL, NULL, G_CALLBACK(open_slidesorter_sig) },
-		{ "UndoAction", GTK_STOCK_UNDO, "_Undo",
-			NULL, NULL, NULL },
-		{ "RedoAction", GTK_STOCK_REDO, "_Redo",
-			NULL, NULL, NULL },
-		{ "CutAction", GTK_STOCK_CUT, "Cut",
-			NULL, NULL, NULL },
-		{ "CopyAction", GTK_STOCK_COPY, "Copy",
-			NULL, NULL, NULL },
-		{ "PasteAction", GTK_STOCK_PASTE, "Paste",
-			NULL, NULL, NULL },
-		{ "DeleteFrameAction", GTK_STOCK_DELETE, "Delete Frame",
-			NULL, NULL, G_CALLBACK(delete_frame_sig) },
-//		{ "EditStyleAction", NULL, "Stylesheet...",
-//			NULL, NULL, G_CALLBACK(open_stylesheet_sig) },
-
-		{ "InsertAction", NULL, "_Insert", NULL, NULL, NULL },
-		{ "NewSlideAction", GTK_STOCK_ADD, "_New Slide",
-			NULL, NULL, G_CALLBACK(add_slide_sig) },
-
-		{ "ToolsAction", NULL, "_Tools", NULL, NULL, NULL },
-		{ "TSlideshowAction", GTK_STOCK_FULLSCREEN, "_Start Slideshow",
-			"F5", NULL, G_CALLBACK(start_slideshow_sig) },
-		{ "NotesAction", NULL, "_Open slide notes",
-			"F8", NULL, G_CALLBACK(open_notes_sig) },
-		{ "ClockAction", NULL, "_Open presentation clock",
-			"F9", NULL, G_CALLBACK(open_clock_sig) },
-		{ "PrefsAction", GTK_STOCK_PREFERENCES, "_Preferences",
-		        NULL, NULL, NULL },
-
-		{ "HelpAction", NULL, "_Help", NULL, NULL, NULL },
-		{ "AboutAction", GTK_STOCK_ABOUT, "_About...",
-			NULL, NULL,  G_CALLBACK(about_sig) },
-
-		{ "SlideshowAction", GTK_STOCK_FULLSCREEN, "Start Presentation",
-			NULL, NULL, G_CALLBACK(start_slideshow_sig) },
-		{ "AddSlideAction", GTK_STOCK_ADD, "Add Slide",
-			NULL, NULL, G_CALLBACK(add_slide_sig) },
-		{ "ButtonFirstSlideAction", GTK_STOCK_GOTO_FIRST, "First Slide",
-			NULL, NULL, G_CALLBACK(first_slide_sig) },
-		{ "ButtonPrevSlideAction", GTK_STOCK_GO_BACK, "Previous Slide",
-			NULL, NULL, G_CALLBACK(prev_slide_sig) },
-		{ "ButtonNextSlideAction", GTK_STOCK_GO_FORWARD, "Next Slide",
-			NULL, NULL, G_CALLBACK(next_slide_sig) },
-		{ "ButtonLastSlideAction", GTK_STOCK_GOTO_LAST, "Last Slide",
-			NULL, NULL, G_CALLBACK(last_slide_sig) },
-#endif
-
+	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
+	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
+	{ "insert.slide", add_slide_sig, NULL, NULL, NULL },
+	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
+	{ "notes", open_notes_sig, NULL, NULL, NULL },
+	{ "clock", open_clock_sig, NULL, NULL, NULL },
 };
 
 
@@ -121,6 +158,24 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	}
 
 	return 0;
+}
+
+
+static void nw_update_titlebar(NarrativeWindow *nw)
+{
+	get_titlebar_string(nw->p);
+
+	if ( nw->p->slidewindow != NULL ) {
+
+		char *title;
+
+		title = malloc(strlen(nw->p->titlebar)+14);
+		sprintf(title, "%s - Colloquium", nw->p->titlebar);
+		gtk_window_set_title(GTK_WINDOW(nw->window), title);
+		free(title);
+
+       }
+
 }
 
 
@@ -145,9 +200,9 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	p->narrative_window = nw;
 
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
-	                                G_N_ELEMENTS(nw_entries), nw->window);
+	                                G_N_ELEMENTS(nw_entries), nw);
 
-//	update_titlebar(nw);
+	nw_update_titlebar(nw);
 
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
@@ -160,8 +215,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
 	                                      GTK_WIDGET(nw->sceditor));
 
-	/* Size of SCEditor surface in pixels */
-	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
 	sc_editor_set_size(nw->sceditor, 640, 1024);
 	sc_editor_set_logical_size(nw->sceditor, 640.0, 1024.0);
 

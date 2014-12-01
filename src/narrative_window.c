@@ -143,7 +143,7 @@ GActionEntry nw_entries[] = {
 	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
 	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
-	{ "insert.slide", add_slide_sig, NULL, NULL, NULL },
+	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
 	{ "notes", open_notes_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },

@@ -65,15 +65,6 @@ struct _slidewindow
 };
 
 
-static void add_ui_sig(GtkUIManager *ui, GtkWidget *widget,
-                       GtkContainer *container)
-{
-	gtk_box_pack_start(GTK_BOX(container), widget, FALSE, FALSE, 0);
-	if ( GTK_IS_TOOLBAR(widget) ) {
-		gtk_toolbar_set_show_arrow(GTK_TOOLBAR(widget), TRUE);
-	}
-}
-
 void update_toolbar(SlideWindow *sw)
 {
 	GtkWidget *d;
@@ -194,7 +185,7 @@ static void update_style_menus(SlideWindow *sw)
 
 
 static gint saveas_response_sig(GtkWidget *d, gint response,
-                              SlideWindow *sw)
+                                SlideWindow *sw)
 {
 	if ( response == GTK_RESPONSE_ACCEPT ) {
 
@@ -216,9 +207,10 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 }
 
 
-static gint saveas_sig(GtkWidget *widget, SlideWindow *sw)
+static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	GtkWidget *d;
+	SlideWindow *sw = vp;
 
 	d = gtk_file_chooser_dialog_new("Save Presentation",
 	                                GTK_WINDOW(sw->window),
@@ -233,20 +225,71 @@ static gint saveas_sig(GtkWidget *widget, SlideWindow *sw)
 	                 G_CALLBACK(saveas_response_sig), sw);
 
 	gtk_widget_show_all(d);
-
-	return 0;
 }
 
 
-static gint save_sig(GtkWidget *widget, SlideWindow *sw)
+static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
+	SlideWindow *sw = vp;
+
 	if ( sw->p->filename == NULL ) {
-		return saveas_sig(widget, sw);
+		return saveas_sig(NULL, NULL, sw);
 	}
 
 	save_presentation(sw->p, sw->p->filename);
+}
 
-	return 0;
+
+static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+}
+
+
+static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	SlideWindow *sw = vp;
+	open_slidesorter(sw->p);
+}
+
+
+static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	SlideWindow *sw = vp;
+#if 0
+	int i;
+
+	delete_subframe(sw->cur_slide, sw->p->selection);
+	p->n_selection = 0;
+
+	rerender_slide(p);
+	redraw_editor(p);
+#endif
+/* FIXME: implement */
+}
+
+
+static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	SlideWindow *sw = vp;
+	struct slide *new;
+	int cur_slide_number;
+
+	cur_slide_number = slide_number(sw->p, sw->cur_slide);
+
+	new = add_slide(sw->p, cur_slide_number+1);
+	new->scblocks = sc_block_insert_after(sw->cur_slide->scblocks,
+	                                      "slide", NULL, NULL);
+
+	change_edit_slide(sw, new);
+
+}
+
+
+static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	SlideWindow *sw = vp;
+	sw->show = try_start_slideshow(sw, sw->p);
 }
 
 
@@ -295,51 +338,9 @@ static gint export_pdf_sig(GtkWidget *widget, SlideWindow *sw)
 }
 
 
-static gint about_sig(GtkWidget *widget, SlideWindow *sw)
-{
-	GtkWidget *window;
-
-	const gchar *authors[] = {
-		"Thomas White <taw@bitwiz.org.uk>",
-		NULL
-	};
-
-	window = gtk_about_dialog_new();
-	gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(sw->window));
-
-	gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(window),
-	        "Colloquium");
-	gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(window),
-	        PACKAGE_VERSION);
-	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
-		"© 2014 Thomas White <taw@bitwiz.org.uk>");
-	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
-		"A tiny presentation program");
-	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
-		"© 2014 Thomas White <taw@bitwiz.org.uk>\n");
-	gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(window),
-		"http://www.bitwiz.org.uk/");
-	gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(window), authors);
-
-	g_signal_connect(window, "response", G_CALLBACK(gtk_widget_destroy),
-			 NULL);
-
-	gtk_widget_show_all(window);
-
-	return 0;
-}
-
-
 void slidewindow_slideshow_ended(SlideWindow *sw)
 {
 	sw->show = NULL;
-}
-
-
-static gint start_slideshow_sig(GtkWidget *widget, SlideWindow *sw)
-{
-	sw->show = try_start_slideshow(sw, sw->p);
-	return FALSE;
 }
 
 
@@ -358,23 +359,6 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 	if ( slideshow_linked(sw->show) ) {
 		change_proj_slide(sw->show, np);
 	} /* else leave the slideshow alone */
-}
-
-
-static gint add_slide_sig(GtkWidget *widget, SlideWindow *sw)
-{
-	struct slide *new;
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(sw->p, sw->cur_slide);
-
-	new = add_slide(sw->p, cur_slide_number+1);
-	new->scblocks = sc_block_insert_after(sw->cur_slide->scblocks,
-	                                      "slide", NULL, NULL);
-
-	change_edit_slide(sw, new);
-
-	return FALSE;
 }
 
 
@@ -412,68 +396,51 @@ void change_slide_last(SlideWindow *sw)
 }
 
 
-static gint first_slide_sig(GtkWidget *widget, SlideWindow *sw)
+static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
 {
+	SlideWindow *sw = vp;
 	change_slide_first(sw);
-	return FALSE;
 }
 
 
-static gint prev_slide_sig(GtkWidget *widget, SlideWindow *sw)
+static void prev_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
 {
+	SlideWindow *sw = vp;
 	change_slide_backwards(sw);
-	return FALSE;
 }
 
 
-static gint next_slide_sig(GtkWidget *widget, SlideWindow *sw)
+static void next_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
 {
+	SlideWindow *sw = vp;
 	change_slide_forwards(sw);
-	return FALSE;
 }
 
 
-static gint last_slide_sig(GtkWidget *widget, SlideWindow *sw)
+static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
 {
+	SlideWindow *sw = vp;
 	change_slide_last(sw);
-	return FALSE;
 }
 
 
-static gint open_notes_sig(GtkWidget *widget, SlideWindow *sw)
+static void open_notes_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
 {
+	SlideWindow *sw = vp;
 	// FIXME open_notes(sw->p);
-	return FALSE;
 }
 
 
-static gint open_clock_sig(GtkWidget *widget, SlideWindow *sw)
+static void open_clock_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
 {
+	SlideWindow *sw = vp;
 	open_clock(sw->p);
-	return FALSE;
-}
-
-
-static gint open_slidesorter_sig(GtkWidget *widget, SlideWindow *sw)
-{
-	open_slidesorter(sw->p);
-	return FALSE;
-}
-
-
-static gint delete_frame_sig(GtkWidget *widget, SlideWindow *sw)
-{
-#if 0
-	int i;
-
-	delete_subframe(sw->cur_slide, sw->p->selection);
-	p->n_selection = 0;
-
-	rerender_slide(p);
-	redraw_editor(p);
-#endif
-/* FIXME: implement */
-	return FALSE;
 }
 
 
@@ -542,11 +509,31 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
+GActionEntry sw_entries[] = {
+
+	{ "save", save_sig, NULL, NULL, NULL },
+	{ "saveas", saveas_sig, NULL, NULL, NULL },
+	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
+	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
+	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
+	{ "slide", add_slide_sig, NULL, NULL, NULL },
+	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
+	{ "notes", open_notes_sig, NULL, NULL, NULL },
+	{ "clock", open_clock_sig, NULL, NULL, NULL },
+	{ "first", first_slide_sig, NULL, NULL, NULL },
+	{ "prev", prev_slide_sig, NULL, NULL, NULL },
+	{ "next", next_slide_sig, NULL, NULL, NULL },
+	{ "last", last_slide_sig, NULL, NULL, NULL },
+};
+
+
 SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 {
 	GtkWidget *window;
 	GtkWidget *vbox;
 	GtkWidget *scroll;
+	GtkWidget *toolbar;
+	GtkToolItem *button;
 	SlideWindow *sw;
 
 	if ( p->slidewindow != NULL ) {
@@ -558,6 +545,8 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	if ( sw == NULL ) return NULL;
 
 	window = gtk_application_window_new(GTK_APPLICATION(app));
+	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
+	                                G_N_ELEMENTS(sw_entries), sw);
 	sw->window = window;
 	sw->p = p;
 	sw->cur_slide = p->slides[0];
@@ -569,6 +558,46 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
+
+	toolbar = gtk_toolbar_new();
+	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);
+	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
+
+	/* Fullscreen */
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_FULLSCREEN);
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.startslideshow");
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	button = gtk_separator_tool_item_new();
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	/* Add slide */
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_ADD);
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.slide");
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	button = gtk_separator_tool_item_new();
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	/* Change slide */
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_FIRST);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.first");
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.prev");
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.next");
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_LAST);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.last");
 
 	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, p->stylesheet);
 	scroll = gtk_scrolled_window_new(NULL, NULL);

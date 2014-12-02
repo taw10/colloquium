@@ -51,8 +51,10 @@ struct _slidewindow
 {
 	struct presentation *p;
 	GtkWidget           *window;
-	GtkUIManager        *ui;
-	GtkActionGroup      *action_group;
+	GtkToolItem         *bfirst;
+	GtkToolItem         *bprev;
+	GtkToolItem         *bnext;
+	GtkToolItem         *blast;
 
 	SCEditor            *sceditor;
 
@@ -65,43 +67,27 @@ struct _slidewindow
 };
 
 
+
 void update_toolbar(SlideWindow *sw)
 {
-	GtkWidget *d;
 	int cur_slide_number;
-
-	d = gtk_ui_manager_get_widget(sw->ui, "/ui/displaywindowtoolbar/first");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
-	d = gtk_ui_manager_get_widget(sw->ui, "/ui/displaywindowtoolbar/prev");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
-	d = gtk_ui_manager_get_widget(sw->ui, "/ui/displaywindowtoolbar/next");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
-	d = gtk_ui_manager_get_widget(sw->ui, "/ui/displaywindowtoolbar/last");
-	gtk_widget_set_sensitive(GTK_WIDGET(d), TRUE);
 
 	cur_slide_number = slide_number(sw->p, sw->cur_slide);
 	if ( cur_slide_number == 0 ) {
-
-		d = gtk_ui_manager_get_widget(sw->ui,
-					"/ui/displaywindowtoolbar/first");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-		d = gtk_ui_manager_get_widget(sw->ui,
-					"/ui/displaywindowtoolbar/prev");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->bfirst), FALSE);
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->bprev), FALSE);
+	} else {
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->bfirst), TRUE);
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->bprev), TRUE);
 	}
 
 	if ( cur_slide_number == sw->p->num_slides-1 ) {
-
-		d = gtk_ui_manager_get_widget(sw->ui,
-					"/ui/displaywindowtoolbar/next");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-		d = gtk_ui_manager_get_widget(sw->ui,
-					"/ui/displaywindowtoolbar/last");
-		gtk_widget_set_sensitive(GTK_WIDGET(d), FALSE);
-
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->bnext), FALSE);
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->blast), FALSE);
+	} else {
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->bnext), TRUE);
+		gtk_widget_set_sensitive(GTK_WIDGET(sw->blast), TRUE);
 	}
-
 
 }
 
@@ -157,6 +143,7 @@ static void update_style_menus(SlideWindow *sw)
 	sw->style_menu = calloc(n_sty, sizeof(struct menu_pl));
 	if ( sw->style_menu == NULL ) return;
 
+#if 0   //  FIXME
 	/* Add the styles to the "Insert" menu */
 	menu = gtk_ui_manager_get_widget(sw->ui, "/displaywindow/insert");
 	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
@@ -181,6 +168,7 @@ static void update_style_menus(SlideWindow *sw)
 
 	gtk_widget_show_all(menu);
 	free(styles);
+#endif
 }
 
 
@@ -576,22 +564,23 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
 
 	/* Change slide */
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_FIRST);
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	sw->bfirst = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_FIRST);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bfirst));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bfirst),
 	                               "win.first");
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	sw->bprev = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bprev));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bprev),
 	                               "win.prev");
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	sw->bnext = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bnext));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bnext),
 	                               "win.next");
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_LAST);
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	sw->blast = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_LAST);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->blast));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->blast),
 	                               "win.last");
+	update_toolbar(sw);
 
 	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, p->stylesheet);
 	scroll = gtk_scrolled_window_new(NULL, NULL);

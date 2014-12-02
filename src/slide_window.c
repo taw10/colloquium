@@ -240,12 +240,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
-}
-
-
 static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	SlideWindow *sw = vp;
@@ -316,8 +310,10 @@ static gint export_pdf_response_sig(GtkWidget *d, gint response,
 }
 
 
-static gint export_pdf_sig(GtkWidget *widget, SlideWindow *sw)
+static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
 {
+	SlideWindow *sw = vp;
 	GtkWidget *d;
 
 	d = gtk_file_chooser_dialog_new("Export PDF",
@@ -333,8 +329,6 @@ static gint export_pdf_sig(GtkWidget *widget, SlideWindow *sw)
 	                 G_CALLBACK(export_pdf_response_sig), sw);
 
 	gtk_widget_show_all(d);
-
-	return 0;
 }
 
 

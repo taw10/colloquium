@@ -32,7 +32,7 @@
 
 #include "presentation.h"
 #include "render.h"
-#include "mainwindow.h"
+#include "slide_window.h"
 #include "slideshow.h"
 
 
@@ -99,7 +99,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 
 		int x = i % n->width;
 		int y = i / n->width;
-		struct slide *s = n->p->slides[i];
+		//struct slide *s = n->p->slides[i];
 
 		cairo_save(cr);
 
@@ -120,17 +120,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct slide_sorter *n)
 		cairo_rectangle(cr, 0.0, 0.0, n->tw, n->th);
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill_preserve(cr);
-		if ( (s != NULL) && (s->rendered_thumb != NULL) ) {
-			cairo_set_source_surface(cr, s->rendered_thumb,
-			                         0.0, 0.0);
-		} else {
-			printf("Slide %i: %p", i, s);
-			if ( s != NULL ) {
-				printf(" %p\n", s->rendered_thumb);
-			} else {
-				printf("\n");
-			}
-		}
+		/* FIXME */
+		//cairo_set_source_surface(cr, s->rendered_thumb,
+		//                         0.0, 0.0);
 		cairo_fill(cr);
 
 		cairo_rectangle(cr, 0.5, 0.5, n->tw, n->th);
@@ -210,18 +202,19 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 		/* If we are dragging the current editor or projector slide,
 		 * we'd better remember to update when we're finished. */
+#if 0  /* FIXME! */
 		if ( n->p->cur_edit_slide == n->selected_slide ) {
 			n->dragging_cur_edit_slide = 1;
 		} else {
 			n->dragging_cur_edit_slide = 0;
 		}
 
-		if ( n->p->cur_proj_slide == n->selected_slide ) {
+		if ( slideshow_slide(n->p->slideshow) == n->selected_slide ) {
 			n->dragging_cur_proj_slide = 1;
 		} else {
 			n->dragging_cur_proj_slide = 0;
 		}
-
+#endif
 		list = gtk_target_list_new(targets, 1);
 		gtk_drag_begin(da, list, GDK_ACTION_COPY | GDK_ACTION_MOVE,
 		               1, (GdkEvent *)event);
@@ -329,15 +322,7 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
  * gets there first.  When re-arranging slides, this might not happen */
 static void fixup_proj(struct presentation *p, struct slide *s)
 {
-	int n;
-
-	if ( s->rendered_proj != NULL ) return;
-
-	n = slide_number(p, s);
-
-	s->rendered_proj = render_slide(s, s->parent->proj_slide_width,
-	                                p->slide_width, p->slide_height,
-	                                p->is, ISZ_SLIDESHOW, n);
+//	slideshow_rerender(p->slideshow); FIXME
 }
 
 
@@ -356,10 +341,10 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 
 	} else {
 
-		const char *sc;
+		//const char *sc;
 		struct slide *s = NULL;
 
-		sc = (const char *)gtk_selection_data_get_data(seldata);
+		//sc = (const char *)gtk_selection_data_get_data(seldata);
 
 		n->dragging = 0;
 		gtk_drag_finish(drag_context, TRUE, TRUE, time);
@@ -371,28 +356,21 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 		if ( s != NULL ) {
 
 			/* FIXME: Do something */
-			int sn = slide_number(n->p, s);
+			//int sn = slide_number(n->p, s);
 
-			s->rendered_thumb = render_slide(s,
-			                                 n->p->thumb_slide_width,
-		                                         n->p->slide_width,
-			                                 n->p->slide_height,
-			                                 n->p->is,
-			                                 ISZ_THUMBNAIL, sn);
+			//s->rendered_thumb = render_slide(s, n->tw,
+		        //                                 n->p->slide_width,
+			//                                 n->p->slide_height,
+			//                                 n->p->is,
+			//                                 ISZ_THUMBNAIL, sn);
 
 			/* FIXME: Transfer the notes as well */
 
-			if ( n->dragging_cur_edit_slide ) {
-				change_edit_slide(n->p, s);
-			} else {
-				/* Slide order has changed, so slide change
-				 * buttons might need to be greyed out */
-				update_toolbar(n->p);
-			}
+			change_edit_slide(n->p->slidewindow, s);
 
 			if ( n->dragging_cur_proj_slide ) {
 				fixup_proj(n->p, s);
-				change_proj_slide(n->p, s);
+				// FIXME change_proj_slide(n->p->slideshow, s);
 			}
 
 			redraw_slidesorter(n);
@@ -422,6 +400,7 @@ static void dnd_get(GtkWidget *widget, GdkDragContext *drag_context,
 		char *sc;
 		/* FIXME: packed sc */
 		//sc = packed_sc(n->p->slides[n->selection]->top, n->p->ss);
+		sc = NULL;
 		gtk_selection_data_set(seldata, target, 8, (guchar *)sc,
 		                       strlen(sc));
 
@@ -460,6 +439,7 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 
 	if ( sn < n->drop_here ) n->drop_here--;
 
+#if 0  /* FIXME ! */
 	if ( n->p->cur_edit_slide == n->selected_slide ) {
 
 		if ( same ) {
@@ -477,14 +457,13 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 				ct = sn - 1;
 			}
 
-			change_edit_slide(n->p, n->p->slides[ct]);
-			update_toolbar(n->p);
+			change_edit_slide(n->p->slidewindow, n->p->slides[ct]);
 
 		}
 
 	}
 
-	if ( n->p->cur_proj_slide == n->selected_slide ) {
+	if ( slideshow_slide(n->p->slideshow) == n->selected_slide ) {
 
 		if ( same ) {
 
@@ -501,12 +480,12 @@ static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
 				ct = sn - 1;
 			}
 
-			change_proj_slide(n->p, n->p->slides[ct]);
+			change_proj_slide(n->p->slideshow, n->p->slides[ct]);
 
 		}
 
 	}
-
+#endif
 	delete_slide(n->p, n->selected_slide);
 }
 
@@ -527,8 +506,8 @@ void open_slidesorter(struct presentation *p)
 	n->width = 6;
 	n->bw = 5;
 	n->selection = 0;
-	n->tw = p->thumb_slide_width;
-	n->th = (p->slide_height/p->slide_width) * p->thumb_slide_width;
+	n->tw = 320;
+	n->th = (p->slide_height/p->slide_width) * n->tw;
 	n->drag_preview_pending = 0;
 	n->have_drag_data = 0;
 	n->dragging = 0;

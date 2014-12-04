@@ -31,7 +31,7 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
-#include "mainwindow.h"
+#include "slide_window.h"
 #include "frame.h"
 #include "imagestore.h"
 #include "wrap.h"
@@ -39,9 +39,6 @@
 #include "inhibit_screensaver.h"
 #include "render.h"
 #include "sc_interp.h"
-
-
-static int num_presentations = 0;
 
 
 void free_presentation(struct presentation *p)
@@ -52,11 +49,6 @@ void free_presentation(struct presentation *p)
 	for ( i=0; i<p->num_slides; i++ ) {
 		free_slide(p->slides[i]);
 	}
-
-	(*p->num_presentations)--;
-	if ( *p->num_presentations == 0 ) final = 1;
-
-	if ( p->inhibit != NULL ) inhibit_cleanup(p->inhibit);
 
 	/* FIXME: Loads of stuff leaks here */
 	free(p->filename);
@@ -132,13 +124,6 @@ struct slide *new_slide()
 	new = calloc(1, sizeof(struct slide));
 	if ( new == NULL ) return NULL;
 
-	new->rendered_edit = NULL;
-	new->rendered_proj = NULL;
-	new->rendered_thumb = NULL;
-
-	new->top = frame_new();
-	/* FIXME: Set zero margins etc on top level frame */
-
 	new->scblocks = NULL;
 	new->notes = NULL;
 
@@ -198,14 +183,12 @@ static char *safe_basename(const char *in)
 }
 
 
-void get_titlebar_string(struct presentation *p)
+char *get_titlebar_string(struct presentation *p)
 {
-	free(p->titlebar);
-
 	if ( p->filename == NULL ) {
-		p->titlebar = strdup("(untitled)");
+		return strdup("(untitled)");
 	} else {
-		p->titlebar = safe_basename(p->filename);
+		return safe_basename(p->filename);
 	}
 }
 
@@ -222,17 +205,6 @@ int slide_number(struct presentation *p, struct slide *s)
 }
 
 
-static int alloc_selection(struct presentation *p)
-{
-	struct frame **new_selection;
-	new_selection = realloc(p->selection,
-	                        p->max_selection*sizeof(struct frame *));
-	if ( new_selection == NULL ) return 1;
-	p->selection = new_selection;
-	return 0;
-}
-
-
 struct presentation *new_presentation()
 {
 	struct presentation *new;
@@ -240,43 +212,18 @@ struct presentation *new_presentation()
 	new = calloc(1, sizeof(struct presentation));
 	if ( new == NULL ) return NULL;
 
-	num_presentations++;
-	new->num_presentations = &num_presentations;
-
 	new->filename = NULL;
-	new->titlebar = NULL;
-	get_titlebar_string(new);
-
-	new->window = NULL;
-	new->ui = NULL;
-	new->action_group = NULL;
-	new->slideshow = NULL;
+	new->titlebar = get_titlebar_string(new);
 
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;
 
-	new->edit_slide_width = 1024;
-	new->proj_slide_width = 2048;
-	new->thumb_slide_width = 180;
-
-	/* Add one blank slide and view it */
 	new->num_slides = 0;
 	new->slides = NULL;
-	new->cur_edit_slide = NULL;
-	new->cur_proj_slide = NULL;
+	add_slide(new, 0);
 
 	new->completely_empty = 1;
-
 	new->stylesheet = NULL;
-
-	new->n_style_menu = 0;
-	new->style_menu = NULL;
-
-	new->selection = NULL;
-	new->n_selection = 0;
-	new->max_selection = 64;
-	if ( alloc_selection(new) ) return NULL;
-
 	new->is = imagestore_new();
 
 	return new;
@@ -288,7 +235,7 @@ int save_presentation(struct presentation *p, const char *filename)
 	FILE *fh;
 	char *old_fn;
 
-	grab_current_notes(p);
+	// FIXME grab_current_notes(p);
 
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
@@ -361,7 +308,6 @@ int load_presentation(struct presentation *p, const char *filename)
 {
 	FILE *fh;
 	int r = 0;
-	int i;
 	char *everything;
 	size_t el = 1;
 	SCBlock *block;
@@ -369,6 +315,7 @@ int load_presentation(struct presentation *p, const char *filename)
 	everything = strdup("");
 
 	assert(p->completely_empty);
+	delete_slide(p, p->slides[0]);
 
 	fh = fopen(filename, "r");
 	if ( fh == NULL ) return 1;
@@ -400,8 +347,6 @@ int load_presentation(struct presentation *p, const char *filename)
 	if ( p->scblocks == NULL ) r = 1;
 
 	if ( r ) {
-		p->cur_edit_slide = new_slide();
-		insert_slide(p, p->cur_edit_slide, 0);
 		p->completely_empty = 1;
 		return r;  /* Error */
 	}
@@ -422,8 +367,6 @@ int load_presentation(struct presentation *p, const char *filename)
 			if ( s != NULL ) {
 
 				s->scblocks = sc_block_child(block);
-				s->top = frame_new();
-				s->top->scblocks = sc_block_child(block);
 				attach_notes(s);
 
 			}
@@ -439,16 +382,6 @@ next:
 	p->filename = strdup(filename);
 	update_titlebar(p);
 	imagestore_set_presentation_file(p->is, filename);
-
-	p->cur_edit_slide = p->slides[0];
-
-	for ( i=0; i<p->num_slides; i++ ) {
-		struct slide *s = p->slides[i];
-		s->rendered_thumb = render_slide(s, p->thumb_slide_width,
-	                                         p->slide_width,
-		                                 p->slide_height,
-		                                 p->is,  ISZ_THUMBNAIL, i);
-	}
 
 	return 0;
 }
@@ -474,12 +407,12 @@ static struct frame *find_parent(struct frame *fr, struct frame *search)
 }
 
 
-void delete_subframe(struct slide *s, struct frame *fr)
+void delete_subframe(struct frame *top, struct frame *fr)
 {
 	struct frame *parent;
 	int i, idx, found;
 
-	parent = find_parent(s->top, fr);
+	parent = find_parent(top, fr);
 	if ( parent == NULL ) {
 		fprintf(stderr, "Couldn't find parent when deleting frame.\n");
 		return;
@@ -506,41 +439,3 @@ void delete_subframe(struct slide *s, struct frame *fr)
 	parent->num_children--;
 }
 
-
-void set_edit(struct presentation *p, struct slide *s)
-{
-	p->cur_edit_slide = s;
-}
-
-
-void set_selection(struct presentation *p, struct frame *fr)
-{
-	if ( p->n_selection != 0 ) {
-		int i;
-		for ( i=0; i<p->n_selection; i++ ) {
-			if ( p->selection[i]->empty ) {
-				delete_subframe(p->cur_edit_slide,
-				                p->selection[i]);
-			}
-		}
-	}
-
-	p->selection[0] = fr;
-	p->n_selection = 1;
-
-	if ( fr == NULL ) p->n_selection = 0;
-}
-
-
-void add_selection(struct presentation *p, struct frame *fr)
-{
-	if ( p->n_selection == p->max_selection ) {
-		p->max_selection += 64;
-		if ( alloc_selection(p) ) {
-			fprintf(stderr, "Not enough memory for selection.\n");
-			return;
-		}
-	}
-
-	p->selection[p->n_selection++] = fr;
-}

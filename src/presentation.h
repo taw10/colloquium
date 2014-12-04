@@ -30,142 +30,45 @@
 #include <cairo.h>
 #include <gtk/gtk.h>
 
+struct presentation;
+struct slide;
+
 #include "imagestore.h"
 #include "sc_parse.h"
-
+#include "slideshow.h"
+#include "narrative_window.h"
+#include "slide_window.h"
 
 struct slide
 {
 	struct presentation *parent;
 	struct slide_template *st;
 
-	/* Any of these may be NULL */
-	cairo_surface_t *rendered_proj;
-	cairo_surface_t *rendered_edit;
-
-	/* This should always be present (and up to date). */
-	cairo_surface_t *rendered_thumb;
-
-	struct frame *top;
-
 	SCBlock *scblocks;
 	SCBlock *notes;
 };
 
-
-enum drag_reason
-{
-	DRAG_REASON_NONE,
-	DRAG_REASON_CREATE,
-	DRAG_REASON_IMPORT,
-	DRAG_REASON_RESIZE,
-	DRAG_REASON_MOVE
-};
-
-
-enum corner
-{
-	CORNER_NONE,
-	CORNER_TL,
-	CORNER_TR,
-	CORNER_BL,
-	CORNER_BR
-};
-
-
-enum drag_status
-{
-	DRAG_STATUS_NONE,
-	DRAG_STATUS_COULD_DRAG,
-	DRAG_STATUS_DRAGGING,
-};
-
-
 struct menu_pl;
-
 
 struct presentation
 {
-	char             *titlebar;
 	char             *filename;
+	char             *titlebar;  /* basename(filename) or "(untitled)" */
 	int               completely_empty;
-	int              *num_presentations;
 
-	struct presentation_constants *constants;
-
-	GtkWidget        *window;
-	GtkWidget        *drawingarea;
-	GtkUIManager     *ui;
-	GtkActionGroup   *action_group;
-	GtkIMContext     *im_context;
-	struct menu_pl   *style_menu;
-	int               n_style_menu;
-	PangoContext     *pc;
 	ImageStore       *is;
+
+	NarrativeWindow  *narrative_window;
+	SlideWindow      *slidewindow;
 
 	struct notes     *notes;
 	struct pr_clock  *clock;
 	struct slide_sorter *slide_sorter;
 
-	/* Pointers to the current "editing" and "projection" slides */
-	struct slide     *cur_edit_slide;
-	struct slide     *cur_proj_slide;
-	int               slideshow_linked;
-
-	/* Pointers to the frame currently being edited */
-	struct frame    **selection;
-	int               n_selection;
-	int               max_selection;
-
-	/* Location of the cursor */
-	struct frame     *cursor_frame;
-	int               cursor_line;
-	int               cursor_box;
-	int               cursor_pos;  /* characters into box */
-
 	/* This is the "native" size of the slide.  It only exists to give
 	 * font size some meaning in the context of a somewhat arbitrary DPI */
 	double            slide_width;
 	double            slide_height;
-
-	/* Width of a slide in the editor, projector or thumbnail (pixels) */
-	int               edit_slide_width;
-	int               proj_slide_width;
-	int               thumb_slide_width;
-
-	/* This is just to help with rendering the slides within the
-	 * editing window. */
-	double            border_offs_x;
-	double            border_offs_y;
-
-	/* Rubber band boxes and related stuff */
-	double            start_corner_x;
-	double            start_corner_y;
-	double            drag_corner_x;
-	double            drag_corner_y;
-	double            diagonal_length;
-	double            box_x;
-	double            box_y;
-	double            box_width;
-	double            box_height;
-	enum drag_reason  drag_reason;
-	enum drag_status  drag_status;
-	enum corner       drag_corner;
-
-	/* Stuff to do with drag and drop import of "content" */
-	int               drag_preview_pending;
-	int               have_drag_data;
-	int               drag_highlight;
-	double            import_width;
-	double            import_height;
-	int               import_acceptable;
-
-	/* Slideshow stuff */
-	GtkWidget        *slideshow;
-	GtkWidget        *ss_drawingarea;
-	GdkCursor        *blank_cursor;
-	int               ss_blank;
-	char              ss_geom[256];
 
 	unsigned int      num_slides;
 	struct slide    **slides;
@@ -173,12 +76,13 @@ struct presentation
 	SCBlock          *stylesheet;
 	SCBlock          *scblocks;
 
-	struct inhibit_sys *inhibit;
 };
 
 
 extern struct presentation *new_presentation(void);
 extern void free_presentation(struct presentation *p);
+
+extern char *get_titlebar_string(struct presentation *p);
 
 extern struct slide *new_slide(void);
 extern struct slide *add_slide(struct presentation *p, int pos);
@@ -186,9 +90,8 @@ extern int insert_slide(struct presentation *p, struct slide *s, int pos);
 extern void free_slide(struct slide *s);
 extern void delete_slide(struct presentation *p, struct slide *s);
 
-extern void delete_subframe(struct slide *s, struct frame *fr);
+extern void delete_subframe(struct frame *top, struct frame *fr);
 
-extern void get_titlebar_string(struct presentation *p);
 
 extern char *packed_sc(struct frame *fr);
 
@@ -198,8 +101,6 @@ extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);
 
 extern void set_edit(struct presentation *p, struct slide *s);
-extern void set_selection(struct presentation *p, struct frame *fr);
-extern void add_selection(struct presentation *p, struct frame *fr);
 
 #define UNUSED __attribute__((unused))
 

@@ -1,7 +1,7 @@
 /*
- * slideshow.h
+ * colloquium.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,29 +20,17 @@
  *
  */
 
-#ifndef SLIDESHOW_H
-#define SLIDESHOW_H
+#ifndef COLLOQUIUM_H
+#define COLLOQUIUM_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include "slide_window.h"
+#include <glib-object.h>
 
-/* Opaque data structure representing a slideshow */
-typedef struct _slideshow SlideShow;
 
-extern SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p);
-extern void end_slideshow(SlideShow *ss);
+typedef struct _colloquium Colloquium;
 
-extern void change_proj_slide(SlideShow *ss, struct slide *np);
-extern struct slide *slideshow_slide(SlideShow *ss);
 
-extern void toggle_slideshow_link(SlideShow *ss);
-extern int slideshow_linked(SlideShow *ss);
-extern void check_toggle_blank(SlideShow *ss);
-
-extern void redraw_slideshow(SlideShow *ss);
-extern void slideshow_rerender(SlideShow *ss);
-
-#endif	/* SLIDESHOW_H */
+#endif	/* COLLOQUIUM_H */

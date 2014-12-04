@@ -49,21 +49,18 @@ static gint mw_destroy(GtkWidget *w, void *p)
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 {
 	gint w, h;
-	struct slide *s = data;
+	cairo_surface_t *surface;
+	SCBlock *scblocks = data;
 
 	w = gtk_widget_get_allocated_width(da);
 	h = gtk_widget_get_allocated_height(da);
 
-	/* Overall background */
+	surface = render_sc(scblocks, w, h, w, h, NULL, NULL,
+	                    ISZ_EDITOR, 1);
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
+	cairo_set_source_surface(cr, surface, 0.0, 0.0);
 	cairo_fill(cr);
-
-	if ( s->rendered_edit != NULL ) cairo_surface_destroy(s->rendered_edit);
-	s->rendered_edit = render_slide(s, w, w, h, NULL, ISZ_EDITOR, 1);
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_surface(cr, s->rendered_edit, 0.0, 0.0);
-	cairo_fill(cr);
+	cairo_surface_destroy(surface);
 
 	return FALSE;
 }
@@ -73,34 +70,15 @@ int main(int argc, char *argv[])
 {
 	GtkWidget *window;
 	GtkWidget *drawingarea;
-	struct frame *fr;
-	struct slide s;
-	struct presentation p;
+	SCBlock *scblocks;
 
 	gtk_init(&argc, &argv);
 
-	fr = frame_new();
-	if ( fr == NULL ) return 1;
-	fr->scblocks = sc_parse(sc);
-	if ( fr->scblocks == NULL ) {
+	scblocks = sc_parse(sc);
+	if ( scblocks == NULL ) {
 		fprintf(stderr, "SC parse failed.\n");
 		return 1;
 	}
-
-	fr->pad_l = 20.0;
-	fr->pad_r = 20.0;
-	fr->pad_t = 20.0;
-	fr->pad_b = 20.0;
-
-	s.top = fr;
-	s.rendered_edit = NULL;
-	s.rendered_proj = NULL;
-	s.rendered_thumb = NULL;
-	s.parent = &p;
-	s.scblocks = fr->scblocks;
-
-	p.stylesheet = NULL;
-	p.scblocks = fr->scblocks;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
@@ -112,12 +90,10 @@ int main(int argc, char *argv[])
 	                 NULL);
 
 	g_signal_connect(G_OBJECT(drawingarea), "draw",
-			 G_CALLBACK(draw_sig), &s);
+			 G_CALLBACK(draw_sig), scblocks);
 
 	gtk_widget_show_all(window);
 	gtk_main();
-
-	free_render_buffers(&s);
 
 	return 0;
 }

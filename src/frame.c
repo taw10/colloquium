@@ -85,7 +85,7 @@ void renew_frame(struct frame *fr)
 	if ( fr == NULL ) return;
 
 	for ( i=0; i<fr->n_lines; i++ ) {
-	//	wrap_line_free(&fr->lines[i]);
+		wrap_line_free(&fr->lines[i]);
 	}
 	free(fr->lines);
 	fr->lines = NULL;

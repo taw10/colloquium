@@ -41,5 +41,6 @@ extern void change_slide_last(SlideWindow *sw);
 extern struct slide *slidewindow_get_slide(SlideWindow *sw);
 extern void slidewindow_redraw(SlideWindow *sw);
 extern void slidewindow_slideshow_ended(SlideWindow *sw);
+extern void slidewindow_notes_closed(SlideWindow *sw);
 
 #endif	/* SLIDEWINDOW_H */

@@ -64,6 +64,7 @@ struct _slidewindow
 	struct slide        *cur_slide;  /* FIXME: SPOT inside SCEditor */
 
 	SlideShow           *show;
+	struct notes        *notes;
 };
 
 
@@ -326,6 +327,12 @@ void slidewindow_slideshow_ended(SlideWindow *sw)
 }
 
 
+void slidewindow_notes_closed(SlideWindow *sw)
+{
+	sw->notes = NULL;
+}
+
+
 /* Change the editor's slide to "np" */
 void change_edit_slide(SlideWindow *sw, struct slide *np)
 {
@@ -336,7 +343,7 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, np));
 	sc_editor_set_scblock(sw->sceditor, np->scblocks);
 
-	// FIXME notify_notes_slide_changed(sw->p, np);
+	if ( sw->notes != NULL ) notes_set_slide(sw->notes, np);
 
 	if ( slideshow_linked(sw->show) ) {
 		change_proj_slide(sw->show, np);
@@ -414,7 +421,7 @@ static void open_notes_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
 	SlideWindow *sw = vp;
-	// FIXME open_notes(sw->p);
+	sw->notes = open_notes(sw, sw->cur_slide);
 }
 
 

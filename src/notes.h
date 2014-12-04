@@ -29,12 +29,11 @@
 
 struct notes;
 
-extern void open_notes(struct presentation *p);
+extern struct notes *open_notes(SlideWindow *sw, struct slide *slide);
 
-extern void notify_notes_slide_changed(struct presentation *p,
-                                       struct slide *np);
+extern void notes_set_slide(struct notes *n, struct slide *np);
 
-extern void grab_current_notes(struct presentation *p);
+extern void grab_current_notes(struct notes *n);
 
 extern void attach_notes(struct slide *s);
 

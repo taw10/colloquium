@@ -31,50 +31,44 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
+#include "notes.h"
 
-#if 0  /* FIXME */
 struct notes
 {
 	GtkWidget *window;
 	GtkWidget *v;
 
-	struct slide *slide;
+	struct slide *cur_slide;
+	SlideWindow *sw;
 };
 
 
-static void set_notes_title(struct presentation *p)
-{
-	gtk_window_set_title(GTK_WINDOW(p->notes->window), "Colloquium notes");
-}
-
-
-static void update_notes(struct presentation *p)
+static void update_notes(struct notes *notes)
 {
 	GtkTextBuffer *tb;
 	const char *ntext;
 	SCBlock *ch;
 
-	if ( p->notes == NULL ) return;
+	if ( notes == NULL ) return;
 
-	ch = sc_block_child(p->cur_edit_slide->notes);
+	ch = sc_block_child(notes->cur_slide->notes);
 	if ( ch != NULL ) {
 		ntext = sc_block_contents(ch);
 	} else {
 		ntext = "NOTES ERROR";
 	}
 
-	tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(p->notes->v));
+	tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(notes->v));
 	gtk_text_buffer_set_text(tb, ntext, -1);
 }
 
 
-void grab_current_notes(struct presentation *p)
+void grab_current_notes(struct notes *n)
 {
 	gchar *text;
 	GtkTextBuffer *tb;
 	GtkTextIter i1, i2;
 	SCBlock *ch;
-	struct notes *n = p->notes;
 
 	if ( n == NULL ) return;
 
@@ -83,7 +77,7 @@ void grab_current_notes(struct presentation *p)
 	gtk_text_buffer_get_end_iter(tb, &i2);
 	text = gtk_text_buffer_get_text(tb, &i1, &i2, TRUE);
 
-	ch = sc_block_child(n->slide->notes);
+	ch = sc_block_child(n->cur_slide->notes);
 	if ( ch != NULL ) {
 		sc_block_set_contents(ch, text);
 	} else {
@@ -96,7 +90,7 @@ void notes_set_slide(struct notes *notes, struct slide *np)
 {
 	if ( notes == NULL ) return;
 	grab_current_notes(notes);
-	notes->slide = np;
+	notes->cur_slide = np;
 	update_notes(notes);
 }
 
@@ -104,19 +98,21 @@ void notes_set_slide(struct notes *notes, struct slide *np)
 static gint close_notes_sig(GtkWidget *w, struct notes *notes)
 {
 	grab_current_notes(notes);
-	notes->p->notes = NULL;
+	slidewindow_notes_closed(notes->sw);
 	return FALSE;
 }
 
 
-void open_notes(SlideWindow *sw)
+struct notes *open_notes(SlideWindow *sw, struct slide *slide)
 {
 	struct notes *n;
 	GtkWidget *sc;
 	PangoFontDescription *desc;
 
 	n = malloc(sizeof(struct notes));
-	if ( n == NULL ) return;
+	if ( n == NULL ) return NULL;
+	n->sw = sw;
+	n->cur_slide = slide;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(n->window), 800, 256);
@@ -133,16 +129,16 @@ void open_notes(SlideWindow *sw)
 	gtk_container_add(GTK_CONTAINER(sc), n->v);
 
 	g_signal_connect(G_OBJECT(n->v), "destroy",
-	                 G_CALLBACK(close_notes_sig), p);
+	                 G_CALLBACK(close_notes_sig), n);
 
-	set_notes_title(p);
+	gtk_window_set_title(GTK_WINDOW(n->window), "Colloquium notes");
 	gtk_widget_show_all(n->window);
 
-	update_notes(notes);
+	update_notes(n);
+	return n;
 }
 
 
-#endif
 void attach_notes(struct slide *s)
 {
 	SCBlock *bl = s->scblocks;

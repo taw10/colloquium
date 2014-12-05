@@ -30,6 +30,10 @@ EXTRA_DIST += src/presentation.h src/render.h src/wrap.h \
 src/default_stylesheet.o: src/default_stylesheet.sty
 	ld -r -b binary -o src/default_stylesheet.o src/default_stylesheet.sty
 
+colloquiumdir = $(datadir)/colloquium
+colloquium_DATA = data/sky.png data/canvas.png
+EXTRA_DIST += $(colloquium_DATA)
+
 iconsdir = $(datadir)/icons/hicolor/scalable/apps
 icons_DATA = data/colloquium.svg
 EXTRA_DIST += $(icons_DATA)

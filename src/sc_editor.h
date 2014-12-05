@@ -110,6 +110,7 @@ struct _sceditor
 	double               border_offs_x;
 	double               border_offs_y;
 	double               bgcol[3];
+	GdkPixbuf           *bg_pixbuf;
 
 	/* Rubber band boxes and related stuff */
 	double               start_corner_x;

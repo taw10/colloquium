@@ -394,6 +394,24 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 }
 
 
+static void tile_pixbuf(cairo_t *cr, GdkPixbuf *pb, int width, int height)
+{
+	int nx, ny, ix, iy, bgw, bgh;
+
+	bgw = gdk_pixbuf_get_width(pb);
+	bgh = gdk_pixbuf_get_height(pb);
+	nx = width/bgw + 1;
+	ny = height/bgh+ 1;
+	for ( ix=0; ix<nx; ix++ ) {
+	for ( iy=0; iy<ny; iy++ ) {
+		gdk_cairo_set_source_pixbuf(cr, pb, ix*bgw, iy*bgh);
+		cairo_rectangle(cr, ix*bgw, iy*bgh, width, height);
+		cairo_fill(cr);
+	}
+	}
+}
+
+
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
                          SCEditor *e)
 {
@@ -404,8 +422,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
 
 	/* Overall background */
+	tile_pixbuf(cr, e->bg_pixbuf, width, height);
+	cairo_set_source_rgba(cr, e->bgcol[0], e->bgcol[1], e->bgcol[2], 0.5);
 	cairo_rectangle(cr, 0.0, 0.0, width, height);
-	cairo_set_source_rgb(cr, e->bgcol[0], e->bgcol[1], e->bgcol[2]);
 	cairo_fill(cr);
 
 	/* Get the overall size */
@@ -1402,6 +1421,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
+	GError *err;
 
 	sceditor = g_object_new(SC_TYPE_EDITOR, NULL);
 
@@ -1414,6 +1434,13 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor->is = imagestore_new();
 	sceditor->stylesheet = stylesheet;
 	sceditor->slidenum = 0;
+
+	err = NULL;
+	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/colloquium/sky.png", &err);
+	if ( sceditor->bg_pixbuf == NULL ) {
+		fprintf(stderr, "Failed to load background: %s\n",
+		        err->message);
+	}
 
 	rerender(sceditor);
 

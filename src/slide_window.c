@@ -69,7 +69,7 @@ struct _slidewindow
 
 
 
-void update_toolbar(SlideWindow *sw)
+static void update_toolbar(SlideWindow *sw)
 {
 	int cur_slide_number;
 

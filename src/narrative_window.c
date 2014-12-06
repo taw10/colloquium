@@ -38,6 +38,10 @@
 struct _narrative_window
 {
 	GtkWidget *window;
+	GtkToolItem         *bfirst;
+	GtkToolItem         *bprev;
+	GtkToolItem         *bnext;
+	GtkToolItem         *blast;
 	SCEditor *sceditor;
 	GApplication *app;
 	struct presentation *p;
@@ -179,11 +183,18 @@ static void nw_update_titlebar(NarrativeWindow *nw)
 }
 
 
+static void update_toolbar(NarrativeWindow *nw)
+{
+}
+
+
 NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 {
 	NarrativeWindow *nw;
 	GtkWidget *vbox;
 	GtkWidget *scroll;
+	GtkWidget *toolbar;
+	GtkToolItem *button;
 
 	if ( p->narrative_window != NULL ) {
 		fprintf(stderr, "Narrative window is already open!\n");
@@ -208,6 +219,48 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
 	nw->sceditor = sc_editor_new(nw->p->scblocks, p->stylesheet);
+
+	toolbar = gtk_toolbar_new();
+	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);
+	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
+
+	/* Fullscreen */
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_FULLSCREEN);
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.startslideshow");
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	button = gtk_separator_tool_item_new();
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	/* Add slide */
+	button = gtk_tool_button_new_from_stock(GTK_STOCK_ADD);
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.slide");
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	button = gtk_separator_tool_item_new();
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	/* Change slide */
+	nw->bfirst = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_FIRST);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bfirst));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bfirst),
+	                               "win.first");
+	nw->bprev = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bprev));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bprev),
+	                               "win.prev");
+	nw->bnext = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bnext));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bnext),
+	                               "win.next");
+	nw->blast = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_LAST);
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->blast));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
+	                               "win.last");
+	update_toolbar(nw);
+
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,

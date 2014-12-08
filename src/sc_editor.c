@@ -415,7 +415,6 @@ static void tile_pixbuf(cairo_t *cr, GdkPixbuf *pb, int width, int height)
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
                          SCEditor *e)
 {
-	double xoff, yoff;
 	int width, height;
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
@@ -428,20 +427,25 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	cairo_fill(cr);
 
 	/* Get the overall size */
-	xoff = (width - e->w)/2.0;
-	yoff = (height - e->h)/2.0;
-	e->border_offs_x = xoff;
-	e->border_offs_y = yoff;
+	e->border_offs_x = (width - e->w)/2.0;
+	e->border_offs_y = (height - e->h)/2.0;
+	if ( e->border_offs_x < e->min_border ) {
+		e->border_offs_x = e->min_border;
+	}
+	if ( e->border_offs_y < e->min_border ) {
+		e->border_offs_y = e->min_border;
+	}
 
 	/* Draw the slide from the cache */
 	if ( e->surface != NULL ) {
-		cairo_set_source_surface(cr, e->surface, xoff, yoff);
+		cairo_set_source_surface(cr, e->surface, e->border_offs_x,
+		                                         e->border_offs_y);
 		cairo_paint(cr);
 	} else {
 		fprintf(stderr, "Current slide not rendered yet!\n");
 	}
 
-	cairo_translate(cr, xoff, yoff);
+	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
 	draw_overlay(cr, e);
 
 	return FALSE;
@@ -1396,11 +1400,18 @@ void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
 }
 
 
+static void update_size_request(SCEditor *e)
+{
+	gtk_widget_set_size_request(GTK_WIDGET(e), e->w + 2.0*e->min_border,
+	                                           e->h + 2.0*e->min_border);
+}
+
+
 void sc_editor_set_size(SCEditor *e, int w, int h)
 {
 	e->w = w;
 	e->h = h;
-	gtk_widget_set_size_request(GTK_WIDGET(e), w, h);
+	update_size_request(e);
 }
 
 
@@ -1414,6 +1425,13 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 void sc_editor_set_slidenum(SCEditor *e, int slidenum)
 {
 	e->slidenum = slidenum;
+}
+
+
+void sc_editor_set_min_border(SCEditor *e, double min_border)
+{
+	e->min_border = min_border;
+	update_size_request(e);
 }
 
 
@@ -1434,6 +1452,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor->is = imagestore_new();
 	sceditor->stylesheet = stylesheet;
 	sceditor->slidenum = 0;
+	sceditor->min_border = 0.0;
 
 	err = NULL;
 	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/colloquium/sky.png", &err);

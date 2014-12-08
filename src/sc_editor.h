@@ -109,6 +109,7 @@ struct _sceditor
 	/* Border surrounding actual slide within drawingarea */
 	double               border_offs_x;
 	double               border_offs_y;
+	double               min_border;
 	double               bgcol[3];
 	GdkPixbuf           *bg_pixbuf;
 
@@ -154,5 +155,6 @@ extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
 extern void sc_editor_redraw(SCEditor *e);
 extern void sc_editor_set_background(SCEditor *e, double r, double g, double b);
 extern void sc_editor_set_slidenum(SCEditor *e, int slidenum);
+extern void sc_editor_set_min_border(SCEditor *e, double min_border);
 
 #endif	/* SC_EDITOR_H */

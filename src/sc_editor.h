@@ -97,6 +97,7 @@ struct _sceditor
 
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;
+	int                 top_editable;
 
 	PangoContext        *pc;
 
@@ -156,5 +157,7 @@ extern void sc_editor_redraw(SCEditor *e);
 extern void sc_editor_set_background(SCEditor *e, double r, double g, double b);
 extern void sc_editor_set_slidenum(SCEditor *e, int slidenum);
 extern void sc_editor_set_min_border(SCEditor *e, double min_border);
+extern void sc_editor_set_top_frame_editable(SCEditor *e,
+                                             int top_frame_editable);
 
 #endif	/* SC_EDITOR_H */

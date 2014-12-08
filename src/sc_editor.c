@@ -824,7 +824,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		}
 
 	} else if ( (clicked == NULL)
-	         || (clicked == sc_block_frame(e->scblocks)) )
+	         || ( !e->top_editable
+	           && (clicked == sc_block_frame(e->scblocks)) ) )
 	{
 		/* Clicked no object. Deselect old object and set up for
 		 * (maybe) creating a new one. */
@@ -1435,6 +1436,12 @@ void sc_editor_set_min_border(SCEditor *e, double min_border)
 }
 
 
+void sc_editor_set_top_frame_editable(SCEditor *e, int top_frame_editable)
+{
+	e->top_editable = top_frame_editable;
+}
+
+
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 {
 	SCEditor *sceditor;
@@ -1453,6 +1460,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor->stylesheet = stylesheet;
 	sceditor->slidenum = 0;
 	sceditor->min_border = 0.0;
+	sceditor->top_editable = 0;
 
 	err = NULL;
 	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/colloquium/sky.png", &err);

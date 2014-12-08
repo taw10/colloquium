@@ -272,6 +272,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	sc_editor_set_logical_size(nw->sceditor, 640.0, 1024.0);
 	sc_editor_set_background(nw->sceditor, 0.9, 0.9, 0.9);
 	sc_editor_set_min_border(nw->sceditor, 40.0);
+	sc_editor_set_top_frame_editable(nw->sceditor, 1);
 
 	g_signal_connect(G_OBJECT(nw->sceditor), "button-press-event",
 	                 G_CALLBACK(button_press_sig), nw);

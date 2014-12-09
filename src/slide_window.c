@@ -474,6 +474,12 @@ void update_titlebar(struct presentation *p)
 }
 
 
+static gboolean close_sig(GtkWidget *w, SlideWindow *sw)
+{
+	sw->p->slidewindow = NULL;
+}
+
+
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               SlideWindow *sw)
 {
@@ -543,7 +549,8 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 
 	update_titlebar(p);
 
-//	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(close_sig), p);
+	g_signal_connect(G_OBJECT(window), "destroy",
+	                 G_CALLBACK(close_sig), sw);
 
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);

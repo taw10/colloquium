@@ -345,7 +345,7 @@ static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
 
 static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
                                  cairo_t *cr, double log_w, double log_h,
-                                 SCBlock *stylesheet,
+                                 SCBlock **stylesheets,
                                  ImageStore *is, enum is_size isz,
                                  int slide_number)
 {
@@ -391,7 +391,14 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
 	add_macro(scin, "slidenumber", snum);
 
 	/* "The rendering pipeline" */
-	if ( stylesheet != NULL ) sc_interp_run_stylesheet(scin, stylesheet);
+
+	if ( stylesheets != NULL ) {
+		int i = 0;
+		while ( stylesheets[i] != NULL ) {
+			sc_interp_run_stylesheet(scin, stylesheets[i]);
+			i++;
+		}
+	}
 	renew_frame(top);
 	sc_interp_add_blocks(scin, scblocks);
 	recursive_wrap_and_draw(top, cr, is, isz);
@@ -414,7 +421,7 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
  */
 cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                            double log_w, double log_h,
-                           SCBlock *stylesheet,
+                           SCBlock **stylesheets,
                            ImageStore *is, enum is_size isz,
                            int slide_number)
 {
@@ -425,7 +432,7 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	cr = cairo_create(surf);
 	cairo_scale(cr, w/log_w, h/log_h);
 	render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
-	                     stylesheet, is, isz,slide_number);
+	                     stylesheets, is, isz,slide_number);
 	cairo_destroy(cr);
 	return surf;
 }
@@ -454,8 +461,11 @@ int export_pdf(struct presentation *p, const char *filename)
 	for ( i=0; i<p->num_slides; i++ ) {
 
 		struct slide *s;
+		SCBlock *stylesheets[2];
 
 		s = p->slides[i];
+		stylesheets[0] = p->stylesheet;
+		stylesheets[1] = NULL;
 
 		cairo_save(cr);
 
@@ -466,7 +476,7 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_fill(cr);
 
 		render_sc_to_surface(s->scblocks, surf, cr, p->slide_width,
-		                     p->slide_height, p->stylesheet,
+		                     p->slide_height, stylesheets,
 		                     p->is, ISZ_SLIDESHOW, i);
 
 		cairo_restore(cr);

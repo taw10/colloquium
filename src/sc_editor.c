@@ -69,12 +69,17 @@ void sc_editor_set_background(SCEditor *e, double r, double g, double b)
 /* Update the view, once it's been edited in some way. */
 static void rerender(SCEditor *e)
 {
+	SCBlock *stylesheets[2];
+
 	if ( e->surface != NULL ) {
 		cairo_surface_destroy(e->surface);
 	}
 
+	stylesheets[0] = e->stylesheet;
+	stylesheets[1] = NULL;
+
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
-	                       e->stylesheet, e->is, ISZ_EDITOR, e->slidenum);
+	                       stylesheets, e->is, ISZ_EDITOR, e->slidenum);
 }
 
 

@@ -72,13 +72,16 @@ void redraw_slideshow(SlideShow *ss)
 void slideshow_rerender(SlideShow *ss)
 {
 	int n;
+	SCBlock *stylesheets[2];
+
+	stylesheets[0] = ss->p->stylesheet;
+	stylesheets[1] = NULL;
 
 	n = slide_number(ss->p, ss->cur_slide);
 	ss->surface = render_sc(ss->cur_slide->scblocks,
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
-	                        ss->p->stylesheet,
-	                        ss->p->is, ISZ_SLIDESHOW, n);
+	                        stylesheets, ss->p->is, ISZ_SLIDESHOW, n);
 }
 
 

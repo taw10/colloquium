@@ -477,6 +477,7 @@ void update_titlebar(struct presentation *p)
 static gboolean close_sig(GtkWidget *w, SlideWindow *sw)
 {
 	sw->p->slidewindow = NULL;
+	return FALSE;
 }
 
 

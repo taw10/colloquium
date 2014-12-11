@@ -188,6 +188,12 @@ static void update_toolbar(NarrativeWindow *nw)
 }
 
 
+static SCBlock *narrative_stylesheet()
+{
+	return sc_parse("\\ss[slide]{\nSLIDE\n}");
+}
+
+
 NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 {
 	NarrativeWindow *nw;
@@ -195,6 +201,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	GtkWidget *scroll;
 	GtkWidget *toolbar;
 	GtkToolItem *button;
+	SCBlock *stylesheets[3];
 
 	if ( p->narrative_window != NULL ) {
 		fprintf(stderr, "Narrative window is already open!\n");
@@ -218,7 +225,10 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	nw->sceditor = sc_editor_new(nw->p->scblocks, p->stylesheet);
+	stylesheets[0] = p->stylesheet;
+	stylesheets[1] = narrative_stylesheet();
+	stylesheets[2] = NULL;
+	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets);
 
 	toolbar = gtk_toolbar_new();
 	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);

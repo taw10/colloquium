@@ -530,6 +530,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	GtkWidget *toolbar;
 	GtkToolItem *button;
 	SlideWindow *sw;
+	SCBlock *stylesheets[2];
 
 	if ( p->slidewindow != NULL ) {
 		fprintf(stderr, "Slide window is already open!\n");
@@ -596,7 +597,9 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	                               "win.last");
 	update_toolbar(sw);
 
-	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, p->stylesheet);
+	stylesheets[0] = p->stylesheet;
+	stylesheets[1] = NULL;
+	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, stylesheets);
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,

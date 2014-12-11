@@ -92,7 +92,7 @@ struct _sceditor
 	double               log_h;
 	SCBlock             *scblocks;
 	cairo_surface_t     *surface;
-	SCBlock             *stylesheet;
+	SCBlock             **stylesheets;
 	ImageStore          *is;
 
 	/* Pointers to the frame currently being edited */
@@ -150,7 +150,7 @@ typedef struct _sceditorclass SCEditorClass;
 
 extern void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks);
 extern GtkWidget *sc_editor_get_widget(SCEditor *e);
-extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet);
+extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets);
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
 extern void sc_editor_redraw(SCEditor *e);

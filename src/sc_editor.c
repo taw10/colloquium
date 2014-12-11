@@ -69,17 +69,17 @@ void sc_editor_set_background(SCEditor *e, double r, double g, double b)
 /* Update the view, once it's been edited in some way. */
 static void rerender(SCEditor *e)
 {
-	SCBlock *stylesheets[2];
-
 	if ( e->surface != NULL ) {
 		cairo_surface_destroy(e->surface);
 	}
 
-	stylesheets[0] = e->stylesheet;
-	stylesheets[1] = NULL;
-
+	int i=0;
+	do {
+		printf("---%i: %p\n", i, e->stylesheets[i]);
+		i++;
+	} while ( e->stylesheets[i-1] != NULL );
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
-	                       stylesheets, e->is, ISZ_EDITOR, e->slidenum);
+	                       e->stylesheets, e->is, ISZ_EDITOR, e->slidenum);
 }
 
 
@@ -1447,7 +1447,7 @@ void sc_editor_set_top_frame_editable(SCEditor *e, int top_frame_editable)
 }
 
 
-SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
+SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
@@ -1462,7 +1462,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet)
 	sceditor->log_w = 100;
 	sceditor->log_h = 100;
 	sceditor->is = imagestore_new();
-	sceditor->stylesheet = stylesheet;
+	sceditor->stylesheets = stylesheets;
 	sceditor->slidenum = 0;
 	sceditor->min_border = 0.0;
 	sceditor->top_editable = 0;

@@ -73,11 +73,6 @@ static void rerender(SCEditor *e)
 		cairo_surface_destroy(e->surface);
 	}
 
-	int i=0;
-	do {
-		printf("---%i: %p\n", i, e->stylesheets[i]);
-		i++;
-	} while ( e->stylesheets[i-1] != NULL );
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
 	                       e->stylesheets, e->is, ISZ_EDITOR, e->slidenum);
 }
@@ -1447,6 +1442,26 @@ void sc_editor_set_top_frame_editable(SCEditor *e, int top_frame_editable)
 }
 
 
+static SCBlock **copy_ss_list(SCBlock **stylesheets)
+{
+	int n_ss = 0;
+	int i = 0;
+	SCBlock **ssc;
+
+	if ( stylesheets == NULL ) return NULL;
+
+	while ( stylesheets[n_ss] != NULL ) n_ss++;
+	n_ss++;  /* One more for sentinel */
+
+	ssc = malloc(n_ss*sizeof(SCBlock *));
+	if ( ssc == NULL ) return NULL;
+
+	for ( i=0; i<n_ss; i++ ) ssc[i] = stylesheets[i];
+
+	return ssc;
+}
+
+
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 {
 	SCEditor *sceditor;
@@ -1462,10 +1477,11 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	sceditor->log_w = 100;
 	sceditor->log_h = 100;
 	sceditor->is = imagestore_new();
-	sceditor->stylesheets = stylesheets;
 	sceditor->slidenum = 0;
 	sceditor->min_border = 0.0;
 	sceditor->top_editable = 0;
+
+	sceditor->stylesheets = copy_ss_list(stylesheets);
 
 	err = NULL;
 	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/colloquium/sky.png", &err);

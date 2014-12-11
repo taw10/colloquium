@@ -190,7 +190,7 @@ static void update_toolbar(NarrativeWindow *nw)
 
 static SCBlock *narrative_stylesheet()
 {
-	return sc_parse("\\ss[slide]{\nSLIDE\n}");
+	return sc_parse("\\stylesheet{\\ss[slide]{\nSLIDE\n}}");
 }
 
 

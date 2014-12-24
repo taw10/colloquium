@@ -60,6 +60,7 @@ struct sc_state
 	struct macro *macros;  /* Contents need to be copied on push */
 
 	SCBlock *macro_contents;
+	SCBlock *macro_real_block;
 };
 
 
@@ -75,6 +76,32 @@ struct _scinterp
 	int j;  /* Index of the current state */
 	int max_state;
 };
+
+
+SCCallbackList *sc_callback_list_new()
+{
+}
+
+
+void sc_callback_list_free(SCCallbackList *cbl)
+{
+}
+
+
+void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
+                                 cairo_surface_t *(*func)(SCBlock *bl, void *p))
+{
+}
+
+
+void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl)
+{
+}
+
+
+static void do_callback(SCInterpreter *scin, const char *name)
+{
+}
 
 
 PangoFont *sc_interp_get_font(SCInterpreter *scin)
@@ -328,6 +355,13 @@ struct frame *sc_interp_get_frame(SCInterpreter *scin)
 {
 	struct sc_state *st = &scin->state[scin->j];
 	return st->fr;
+}
+
+
+SCBlock *sc_interp_get_macro_real_block(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->macro_real_block;
 }
 
 
@@ -705,6 +739,7 @@ static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
 	struct sc_state *st = &scin->state[scin->j];
 
 	st->macro_contents = child;
+	st->macro_real_block = bl;
 
 	mchild = sc_block_macro_child(bl);
 	if ( mchild == NULL ) {
@@ -801,7 +836,8 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "bggradv") == 0 ) {
 			set_frame_bggrad(sc_interp_get_frame(scin), options,
 			                 GRAD_VERT);
-
+		} else if ( strcmp(name, "callback") == 0 ) {
+			do_callback(scin, options);
 
 		} else {
 

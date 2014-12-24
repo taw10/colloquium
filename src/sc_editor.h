@@ -31,6 +31,7 @@
 #include <glib-object.h>
 
 #include "frame.h"
+#include "sc_interp.h"
 
 struct presentation;
 
@@ -94,6 +95,7 @@ struct _sceditor
 	cairo_surface_t     *surface;
 	SCBlock             **stylesheets;
 	ImageStore          *is;
+	SCCallbackList      *cbl;
 
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;
@@ -159,5 +161,6 @@ extern void sc_editor_set_slidenum(SCEditor *e, int slidenum);
 extern void sc_editor_set_min_border(SCEditor *e, double min_border);
 extern void sc_editor_set_top_frame_editable(SCEditor *e,
                                              int top_frame_editable);
+extern void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl);
 
 #endif	/* SC_EDITOR_H */

@@ -74,7 +74,8 @@ static void rerender(SCEditor *e)
 	}
 
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
-	                       e->stylesheets, e->is, ISZ_EDITOR, e->slidenum);
+	                       e->stylesheets, e->cbl, e->is, ISZ_EDITOR,
+	                       e->slidenum);
 }
 
 
@@ -1462,6 +1463,13 @@ static SCBlock **copy_ss_list(SCBlock **stylesheets)
 }
 
 
+void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl)
+{
+	if ( e->cbl != NULL ) sc_callback_list_free(e->cbl);
+	e->cbl = cbl;
+}
+
+
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 {
 	SCEditor *sceditor;
@@ -1480,6 +1488,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	sceditor->slidenum = 0;
 	sceditor->min_border = 0.0;
 	sceditor->top_editable = 0;
+	sceditor->cbl = NULL;
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 

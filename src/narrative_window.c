@@ -190,7 +190,14 @@ static void update_toolbar(NarrativeWindow *nw)
 
 static SCBlock *narrative_stylesheet()
 {
-	return sc_parse("\\stylesheet{\\ss[slide]{\nSLIDE\n}}");
+	return sc_parse("\\stylesheet{\\ss[slide]{\n\\callback[sthumb]\n}}");
+}
+
+
+static cairo_surface_t *render_thumbnail(SCBlock *scblocks, void *vp)
+{
+	struct presentation *p = vp;
+	return NULL;
 }
 
 
@@ -202,6 +209,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	GtkWidget *toolbar;
 	GtkToolItem *button;
 	SCBlock *stylesheets[3];
+	SCCallbackList *cbl;
 
 	if ( p->narrative_window != NULL ) {
 		fprintf(stderr, "Narrative window is already open!\n");
@@ -229,6 +237,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	stylesheets[1] = narrative_stylesheet();
 	stylesheets[2] = NULL;
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets);
+	cbl = sc_callback_list_new();
+	sc_editor_set_callbacks(nw->sceditor, cbl);
 
 	toolbar = gtk_toolbar_new();
 	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);

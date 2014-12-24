@@ -29,12 +29,13 @@
 
 #include "presentation.h"
 #include "imagestore.h"
+#include "sc_interp.h"
 
 extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
-                           double log_w, double log_h,
-                           SCBlock **stylesheets,
-                           ImageStore *is, enum is_size isz,
-                           int slide_number);
+                                  double log_w, double log_h,
+                                  SCBlock **stylesheets, SCCallbackList *cbl,
+                                  ImageStore *is, enum is_size isz,
+                                  int slide_number);
 
 extern int export_pdf(struct presentation *p, const char *filename);
 

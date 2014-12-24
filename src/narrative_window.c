@@ -79,8 +79,8 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	d = gtk_file_chooser_dialog_new("Save Presentation",
 	                                GTK_WINDOW(nw->window),
 	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                "_Cancel", GTK_RESPONSE_CANCEL,
+	                                "_Open", GTK_RESPONSE_ACCEPT,
 	                                NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
 	                                               TRUE);
@@ -235,7 +235,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
 
 	/* Fullscreen */
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_FULLSCREEN);
+	button = gtk_tool_button_new(gtk_image_new_from_icon_name("view-fullscreen", GTK_ICON_SIZE_LARGE_TOOLBAR), "Start slideshow");
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
 	                               "win.startslideshow");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));

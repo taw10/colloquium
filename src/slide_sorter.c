@@ -429,13 +429,13 @@ static void dnd_end(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_delete(GtkWidget *widget, GdkDragContext *drag_context,
                        struct slide_sorter *n)
 {
-	int same;
+	//int same;
 	int sn;
 
 	sn = slide_number(n->p, n->selected_slide);
 
-	same = (gdk_drag_context_get_source_window(drag_context)
-	       ==  gdk_drag_context_get_dest_window(drag_context));
+	//same = (gdk_drag_context_get_source_window(drag_context)
+	//       ==  gdk_drag_context_get_dest_window(drag_context));
 
 	if ( sn < n->drop_here ) n->drop_here--;
 

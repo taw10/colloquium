@@ -102,7 +102,7 @@ struct menu_pl
 };
 
 
-static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
+static gint UNUSED add_furniture(GtkWidget *widget, struct menu_pl *pl)
 {
 	sc_block_append_end(pl->sw->cur_slide->scblocks,
 	                    strdup(pl->style_name), NULL, NULL);
@@ -113,9 +113,9 @@ static gint add_furniture(GtkWidget *widget, struct menu_pl *pl)
 }
 
 
-static void update_style_menus(SlideWindow *sw)
+static void UNUSED update_style_menus(SlideWindow *sw)
 {
-	GtkWidget *menu;
+	//GtkWidget *menu;
 	SCInterpreter *scin;
 	struct style_id *styles;
 	int i, n_sty;
@@ -238,8 +238,8 @@ static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter, gpo
 
 static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-	SlideWindow *sw = vp;
 #if 0
+	SlideWindow *sw = vp;
 	int i;
 
 	delete_subframe(sw->cur_slide, sw->p->selection);

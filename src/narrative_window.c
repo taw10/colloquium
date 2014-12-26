@@ -238,6 +238,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	stylesheets[2] = NULL;
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets);
 	cbl = sc_callback_list_new();
+	sc_callback_list_add_callback(cbl, "sthumb", render_thumbnail);
 	sc_editor_set_callbacks(nw->sceditor, cbl);
 
 	toolbar = gtk_toolbar_new();

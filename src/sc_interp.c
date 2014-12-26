@@ -75,32 +75,113 @@ struct _scinterp
 	struct sc_state *state;
 	int j;  /* Index of the current state */
 	int max_state;
+
+	SCCallbackList *cbl;
+};
+
+typedef cairo_surface_t *(*SCCallbackFunc)(SCBlock *bl, void *);
+
+struct _sccallbacklist
+{
+	int n_callbacks;
+	int max_callbacks;
+	char **names;
+	SCCallbackFunc *funcs;
 };
 
 
 SCCallbackList *sc_callback_list_new()
 {
+	SCCallbackList *cbl;
+
+	cbl = malloc(sizeof(struct _sccallbacklist));
+	if ( cbl == NULL ) return NULL;
+
+	cbl->names = calloc(8, sizeof(char *));
+	if ( cbl->names == NULL ) return NULL;
+
+	cbl->funcs = calloc(8, sizeof(cbl->funcs[0]));
+	if ( cbl->funcs == NULL ) return NULL;
+
+	cbl->max_callbacks = 8;
+	cbl->n_callbacks = 0;
+
+	return cbl;
 }
 
 
 void sc_callback_list_free(SCCallbackList *cbl)
 {
+	int i;
+
+	if ( cbl == NULL ) return;
+
+	for ( i=0; i<cbl->n_callbacks; i++ ) {
+		free(cbl->names[i]);
+	}
+
+	free(cbl->names);
+	free(cbl->funcs);
+	free(cbl);
 }
 
 
 void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
-                                 cairo_surface_t *(*func)(SCBlock *bl, void *p))
+                                   SCCallbackFunc func)
 {
+	if ( cbl->n_callbacks == cbl->max_callbacks ) {
+
+		SCCallbackFunc *funcs_new;
+		char **names_new;
+		int mcn = cbl->max_callbacks + 8;
+
+		names_new = realloc(cbl->names, mcn*sizeof(char *));
+		funcs_new = realloc(cbl->funcs, mcn*sizeof(SCCallbackFunc));
+
+		if ( (names_new == NULL) || (funcs_new == NULL) ) {
+			fprintf(stderr, "Failed to grow callback list\n");
+			return;
+		}
+
+		cbl->names = names_new;
+		cbl->funcs = funcs_new;
+		cbl->max_callbacks = mcn;
+
+	}
+
+	cbl->names[cbl->n_callbacks] = strdup(name);
+	cbl->funcs[cbl->n_callbacks] = func;
+	cbl->n_callbacks++;
 }
 
 
 void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl)
 {
+	if ( scin->cbl != NULL ) {
+		fprintf(stderr, "WARNING: Interpreter already has a callback "
+		                "list.\n");
+	}
+	scin->cbl = cbl;
 }
 
 
 static void do_callback(SCInterpreter *scin, const char *name)
 {
+	int i;
+	SCCallbackList *cbl = scin->cbl;
+
+	if ( cbl == NULL ) {
+		fprintf(stderr, "No callback list.\n");
+		return;
+	}
+
+	for ( i=0; i<cbl->n_callbacks; i++ ) {
+		if ( strcmp(cbl->names[i], name) != 0 ) continue;
+		cbl->funcs[i](NULL, NULL);
+		return;
+	}
+
+	fprintf(stderr, "Unknown callback '%s'\n", name);
 }
 
 
@@ -391,6 +472,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 	scin->pc = pc;
 	scin->s_constants = NULL;
 	scin->p_constants = NULL;
+	scin->cbl = NULL;
 
 	st = &scin->state[0];
 	st->n_macros = 0;

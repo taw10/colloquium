@@ -79,8 +79,6 @@ struct _scinterp
 	SCCallbackList *cbl;
 };
 
-typedef cairo_surface_t *(*SCCallbackFunc)(SCBlock *bl, void *);
-
 struct _sccallbacklist
 {
 	int n_callbacks;

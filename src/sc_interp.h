@@ -32,6 +32,7 @@
 struct presentation;
 typedef struct _scinterp SCInterpreter;
 typedef struct _sccallbacklist SCCallbackList;
+typedef cairo_surface_t *(*SCCallbackFunc)(SCBlock *bl, void *);
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top);
 extern void sc_interp_destroy(SCInterpreter *scin);
@@ -51,7 +52,7 @@ extern void add_macro(SCInterpreter *scin, const char *mname,
 extern SCCallbackList *sc_callback_list_new();
 extern void sc_callback_list_free(SCCallbackList *cbl);
 extern void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
-                                cairo_surface_t *(*func)(SCBlock *bl, void *p));
+                                          SCCallbackFunc func);
 extern void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl);
 
 /* Get the current state of the interpreter */

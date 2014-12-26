@@ -194,9 +194,12 @@ static SCBlock *narrative_stylesheet()
 }
 
 
-static cairo_surface_t *render_thumbnail(SCBlock *scblocks, void *vp)
+static cairo_surface_t *render_thumbnail(SCInterpreter *scin, SCBlock *bl,
+                                         void *vp)
 {
 	struct presentation *p = vp;
+	printf("thumbnail callback\n");
+	show_sc_block(sc_interp_get_macro_real_block(scin), "");
 	return NULL;
 }
 
@@ -238,7 +241,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	stylesheets[2] = NULL;
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets);
 	cbl = sc_callback_list_new();
-	sc_callback_list_add_callback(cbl, "sthumb", render_thumbnail);
+	sc_callback_list_add_callback(cbl, "sthumb", render_thumbnail, NULL);
 	sc_editor_set_callbacks(nw->sceditor, cbl);
 
 	toolbar = gtk_toolbar_new();

@@ -85,6 +85,7 @@ struct _sccallbacklist
 	int max_callbacks;
 	char **names;
 	SCCallbackFunc *funcs;
+	void **vps;
 };
 
 
@@ -100,6 +101,9 @@ SCCallbackList *sc_callback_list_new()
 
 	cbl->funcs = calloc(8, sizeof(cbl->funcs[0]));
 	if ( cbl->funcs == NULL ) return NULL;
+
+	cbl->vps = calloc(8, sizeof(cbl->vps[0]));
+	if ( cbl->vps == NULL ) return NULL;
 
 	cbl->max_callbacks = 8;
 	cbl->n_callbacks = 0;
@@ -120,35 +124,41 @@ void sc_callback_list_free(SCCallbackList *cbl)
 
 	free(cbl->names);
 	free(cbl->funcs);
+	free(cbl->vps);
 	free(cbl);
 }
 
 
 void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
-                                   SCCallbackFunc func)
+                                   SCCallbackFunc func, void *vp)
 {
 	if ( cbl->n_callbacks == cbl->max_callbacks ) {
 
 		SCCallbackFunc *funcs_new;
 		char **names_new;
+		void **vps_new;
 		int mcn = cbl->max_callbacks + 8;
 
 		names_new = realloc(cbl->names, mcn*sizeof(char *));
 		funcs_new = realloc(cbl->funcs, mcn*sizeof(SCCallbackFunc));
+		vps_new = realloc(cbl->vps, mcn*sizeof(void *));
 
-		if ( (names_new == NULL) || (funcs_new == NULL) ) {
+		if ( (names_new == NULL) || (funcs_new == NULL)
+		  || (vps_new == NULL) ) {
 			fprintf(stderr, "Failed to grow callback list\n");
 			return;
 		}
 
 		cbl->names = names_new;
 		cbl->funcs = funcs_new;
+		cbl->vps = vps_new;
 		cbl->max_callbacks = mcn;
 
 	}
 
 	cbl->names[cbl->n_callbacks] = strdup(name);
 	cbl->funcs[cbl->n_callbacks] = func;
+	cbl->vps[cbl->n_callbacks] = vp;
 	cbl->n_callbacks++;
 }
 
@@ -163,7 +173,7 @@ void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl)
 }
 
 
-static void do_callback(SCInterpreter *scin, const char *name)
+static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 {
 	int i;
 	SCCallbackList *cbl = scin->cbl;
@@ -175,7 +185,7 @@ static void do_callback(SCInterpreter *scin, const char *name)
 
 	for ( i=0; i<cbl->n_callbacks; i++ ) {
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
-		cbl->funcs[i](NULL, NULL);
+		cbl->funcs[i](scin, bl, cbl->vps[i]);
 		return;
 	}
 
@@ -917,7 +927,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			set_frame_bggrad(sc_interp_get_frame(scin), options,
 			                 GRAD_VERT);
 		} else if ( strcmp(name, "callback") == 0 ) {
-			do_callback(scin, options);
+			do_callback(scin, bl, options);
 
 		} else {
 

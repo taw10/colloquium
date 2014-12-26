@@ -409,7 +409,8 @@ static enum wrap_box_space space(struct wrap_line *boxes, int i)
 }
 
 
-static void distribute_spaces(struct wrap_line *line, double l, double rho)
+static void UNUSED distribute_spaces(struct wrap_line *line, double l,
+                                     double rho)
 {
 	int i;
 	double L, Y, Z, r;
@@ -506,8 +507,9 @@ static void output(int a, int i, int *p, struct frame *fr,
  * Practice and Experience 11 (1981) p1119-1184.  Despite the name, it's
  * supposed to work as well as the full TeX algorithm in almost all of the cases
  * that we care about here. */
-static void knuth_suboptimal_fit(struct wrap_line *boxes, double line_length,
-                                 struct frame *fr, double rho)
+static void UNUSED knuth_suboptimal_fit(struct wrap_line *boxes,
+                                        double line_length, struct frame *fr,
+                                        double rho)
 {
 	int a = 0;
 	int *p;
@@ -841,7 +843,7 @@ int wrap_contents(struct frame *fr)
 {
 	struct wrap_line *para;
 	int i, eop = 0;
-	const double rho = 2.0;
+	//const double rho = 2.0;
 	const double wrap_w = fr->w - fr->pad_l - fr->pad_r;
 
 	/* Clear lines */

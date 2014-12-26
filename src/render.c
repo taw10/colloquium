@@ -108,7 +108,7 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 }
 
 
-static void draw_outline(cairo_t *cr, struct wrap_box *box)
+static void UNUSED draw_outline(cairo_t *cr, struct wrap_box *box)
 {
 	double asc, desc;
 

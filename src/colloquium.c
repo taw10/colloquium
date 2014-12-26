@@ -313,7 +313,6 @@ static Colloquium *colloquium_new()
 {
 	Colloquium *app;
 
-	g_type_init();
 	g_set_application_name("Colloquium");
 	app = g_object_new(colloquium_get_type(),
 	                   "application-id", "uk.org.bitwiz.Colloquium",

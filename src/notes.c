@@ -121,7 +121,7 @@ struct notes *open_notes(SlideWindow *sw, struct slide *slide)
 
 	n->v = gtk_text_view_new();
 	desc = pango_font_description_from_string("Sans 24");
-	gtk_widget_modify_font(n->v, desc);
+	gtk_widget_override_font(n->v, desc);
 	pango_font_description_free(desc);
 	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(n->v), 30);
 	gtk_text_view_set_right_margin(GTK_TEXT_VIEW(n->v), 30);

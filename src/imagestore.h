@@ -1,7 +1,7 @@
 /*
  * imagestore.h
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -27,7 +27,7 @@
 #include <config.h>
 #endif
 
-#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <cairo.h>
 
 
 typedef struct _imagestore ImageStore;
@@ -46,8 +46,8 @@ extern void imagestore_destroy(ImageStore *is);
 extern void imagestore_set_presentation_file(ImageStore *is,
                                              const char *filename);
 
-extern GdkPixbuf *lookup_image(ImageStore *is, const char *filename, int w,
-                               enum is_size isz);
+extern cairo_surface_t *lookup_image(ImageStore *is, const char *filename,
+                                     int w, enum is_size isz);
 
 extern void show_imagestore(ImageStore *is);
 

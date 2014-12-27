@@ -63,7 +63,7 @@ static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
                              enum is_size isz)
 {
-	GdkPixbuf *pixbuf;
+	cairo_surface_t *surf;
 	double w, h;
 	int wi;
 	double ascd;
@@ -91,16 +91,16 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 
 	wi = lrint(w);
 
-	pixbuf = lookup_image(is, box->filename, wi, isz);
+	surf = lookup_image(is, box->filename, wi, isz);
 	//show_imagestore(is);
 
-	if ( pixbuf == NULL ) {
+	if ( surf == NULL ) {
 		cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);
 		fprintf(stderr, "Failed to load '%s' at size %i\n",
 		        box->filename, wi);
 	} else {
 		cairo_identity_matrix(cr);
-		gdk_cairo_set_source_pixbuf(cr, pixbuf, x, y);
+		cairo_set_source_surface(cr, surf, x, y);
 	}
 
 	cairo_fill(cr);

@@ -198,9 +198,13 @@ static cairo_surface_t *render_thumbnail(SCInterpreter *scin, SCBlock *bl,
                                          void *vp)
 {
 	struct presentation *p = vp;
+	cairo_surface_t *surf;
+
 	printf("thumbnail callback\n");
 	show_sc_block(sc_interp_get_macro_real_block(scin), "");
-	return NULL;
+
+	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 256, 256);
+	return surf;
 }
 
 

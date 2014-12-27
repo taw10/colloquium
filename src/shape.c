@@ -131,10 +131,41 @@ static int add_wrap_boxes(struct wrap_line *line, const char *text,
 }
 
 
+void add_surface_box(struct wrap_line *line, cairo_surface_t *surf,
+                     double w, double h)
+{
+	struct wrap_box *box;
+
+	if ( line->n_boxes == line->max_boxes ) {
+		line->max_boxes += 32;
+		alloc_boxes(line);
+		if ( line->n_boxes == line->max_boxes ) return;
+	}
+	box = &line->boxes[line->n_boxes];
+
+	box->type = WRAP_BOX_SURFACE;
+	box->scblock = NULL;
+	box->offs_char = 0;
+	box->space = WRAP_SPACE_NONE;
+	box->width = pango_units_from_double(w);
+	box->ascent = pango_units_from_double(h);
+	box->height = pango_units_from_double(h);
+	box->surf = surf;
+	box->editable = 0;
+	line->n_boxes++;
+}
+
+
 void add_image_box(struct wrap_line *line, const char *filename,
                    int w, int h, int editable)
 {
 	struct wrap_box *box;
+
+	if ( line->n_boxes == line->max_boxes ) {
+		line->max_boxes += 32;
+		alloc_boxes(line);
+		if ( line->n_boxes == line->max_boxes ) return;
+	}
 
 	box = &line->boxes[line->n_boxes];
 	box->type = WRAP_BOX_IMAGE;

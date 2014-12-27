@@ -38,7 +38,8 @@ enum wrap_box_type
 	WRAP_BOX_NOTHING,
 	WRAP_BOX_SENTINEL,
 	WRAP_BOX_PANGO,
-	WRAP_BOX_IMAGE
+	WRAP_BOX_IMAGE,
+	WRAP_BOX_SURFACE
 };
 
 
@@ -81,6 +82,9 @@ struct wrap_box
 
 	/* For type == WRAP_BOX_IMAGE */
 	char *filename;
+
+	/* For type == WRAP_BOX_SURFACE */
+	cairo_surface_t *surf;
 };
 
 

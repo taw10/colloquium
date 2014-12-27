@@ -184,8 +184,12 @@ static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 	}
 
 	for ( i=0; i<cbl->n_callbacks; i++ ) {
+		cairo_surface_t *surf;
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
-		cbl->funcs[i](scin, bl, cbl->vps[i]);
+		surf = cbl->funcs[i](scin, bl, cbl->vps[i]);
+		if ( surf == NULL ) return;
+		add_surface_box(sc_interp_get_frame(scin)->boxes, surf,
+		                256, 256); // FIXME: Box size
 		return;
 	}
 

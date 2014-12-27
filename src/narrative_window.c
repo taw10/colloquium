@@ -199,11 +199,14 @@ static cairo_surface_t *render_thumbnail(SCInterpreter *scin, SCBlock *bl,
 {
 	struct presentation *p = vp;
 	cairo_surface_t *surf;
-
-	printf("thumbnail callback\n");
-	show_sc_block(sc_interp_get_macro_real_block(scin), "");
+	cairo_t *cr;
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 256, 256);
+	cr = cairo_create(surf);
+	cairo_set_source_rgb(cr, 0.0, 0.5, 0.0);
+	cairo_paint(cr);
+	cairo_destroy(cr);
+
 	return surf;
 }
 

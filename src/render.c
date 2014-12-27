@@ -59,6 +59,35 @@ static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 }
 
 
+static void render_surface_box(cairo_t *cr, struct wrap_box *box)
+{
+	double ascd;
+	double x, y;
+
+	cairo_save(cr);
+
+	ascd = pango_units_to_double(box->ascent);
+
+	x = 0.0;
+	y = -ascd;
+	cairo_user_to_device(cr, &x, &y);
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, 0.0, -ascd, pango_units_to_double(box->width),
+	                                pango_units_to_double(box->height));
+
+	if ( box->surf == NULL ) {
+		cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);
+		fprintf(stderr, "Null surface box");
+	} else {
+		cairo_identity_matrix(cr);
+		cairo_set_source_surface(cr, box->surf, x, y);
+	}
+
+	cairo_fill(cr);
+	cairo_restore(cr);
+}
+
 
 static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
                              enum is_size isz)
@@ -155,6 +184,10 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 
 			case WRAP_BOX_IMAGE :
 			render_image_box(cr, box, is, isz);
+			break;
+
+			case WRAP_BOX_SURFACE:
+			render_surface_box(cr, box);
 			break;
 
 			case WRAP_BOX_NOTHING :

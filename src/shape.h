@@ -38,8 +38,8 @@ extern int split_words(struct wrap_line *boxes, PangoContext *pc,
 extern void add_image_box(struct wrap_line *line, const char *filename,
                           int w, int h, int editable);
 
-extern void add_surface_box(struct wrap_line *line, cairo_surface_t *surf,
-                            double w, double h);
+extern void add_callback_box(struct wrap_line *line, double w, double h,
+                             SCCallbackDrawFunc func, void *bvp, void *vp);
 
 extern void reshape_box(struct wrap_box *box);
 

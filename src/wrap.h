@@ -30,6 +30,7 @@
 #endif
 
 #include "frame.h"
+#include "sc_interp.h"
 #include "presentation.h"
 
 
@@ -39,7 +40,7 @@ enum wrap_box_type
 	WRAP_BOX_SENTINEL,
 	WRAP_BOX_PANGO,
 	WRAP_BOX_IMAGE,
-	WRAP_BOX_SURFACE
+	WRAP_BOX_CALLBACK
 };
 
 
@@ -83,8 +84,10 @@ struct wrap_box
 	/* For type == WRAP_BOX_IMAGE */
 	char *filename;
 
-	/* For type == WRAP_BOX_SURFACE */
-	cairo_surface_t *surf;
+	/* For type == WRAP_BOX_CALLBACK */
+	SCCallbackDrawFunc draw_func;
+	void *bvp;
+	void *vp;
 };
 
 

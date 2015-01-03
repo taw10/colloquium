@@ -59,10 +59,12 @@ static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 }
 
 
-static void render_surface_box(cairo_t *cr, struct wrap_box *box)
+static void render_callback_box(cairo_t *cr, struct wrap_box *box)
 {
 	double ascd;
-	double x, y;
+	double x, y, w, h;
+
+	cairo_surface_t *surf;
 
 	cairo_save(cr);
 
@@ -72,16 +74,24 @@ static void render_surface_box(cairo_t *cr, struct wrap_box *box)
 	y = -ascd;
 	cairo_user_to_device(cr, &x, &y);
 
+	/* This is how wide the image should be in Cairo units */
+	w = pango_units_to_double(box->width);
+	h = pango_units_to_double(box->height);
+	cairo_user_to_device_distance(cr, &w, &h);
+	/* w is now how wide the image should be in pixels */
+
+	surf = box->draw_func(w, h, box->bvp, box->vp);
+
 	cairo_new_path(cr);
 	cairo_rectangle(cr, 0.0, -ascd, pango_units_to_double(box->width),
 	                                pango_units_to_double(box->height));
 
-	if ( box->surf == NULL ) {
+	if ( surf == NULL ) {
 		cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);
 		fprintf(stderr, "Null surface box");
 	} else {
 		cairo_identity_matrix(cr);
-		cairo_set_source_surface(cr, box->surf, x, y);
+		cairo_set_source_surface(cr, surf, x, y);
 	}
 
 	cairo_fill(cr);
@@ -186,8 +196,8 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 			render_image_box(cr, box, is, isz);
 			break;
 
-			case WRAP_BOX_SURFACE:
-			render_surface_box(cr, box);
+			case WRAP_BOX_CALLBACK:
+			render_callback_box(cr, box);
 			break;
 
 			case WRAP_BOX_NOTHING :

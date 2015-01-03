@@ -1,7 +1,7 @@
 /*
  * sc_interp.h
  *
- * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -32,8 +32,9 @@
 struct presentation;
 typedef struct _scinterp SCInterpreter;
 typedef struct _sccallbacklist SCCallbackList;
-typedef cairo_surface_t *(*SCCallbackFunc)(SCInterpreter *scin, SCBlock *bl,
-                                           void *);
+typedef int (*SCCallbackBoxFunc)(SCInterpreter *scin, SCBlock *bl,
+                                  double *w, double *h, void **, void *);
+typedef cairo_surface_t *(*SCCallbackDrawFunc)(int w, int h, void *, void *);
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top);
 extern void sc_interp_destroy(SCInterpreter *scin);
@@ -53,7 +54,9 @@ extern void add_macro(SCInterpreter *scin, const char *mname,
 extern SCCallbackList *sc_callback_list_new();
 extern void sc_callback_list_free(SCCallbackList *cbl);
 extern void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
-                                          SCCallbackFunc func, void *vp);
+                                          SCCallbackBoxFunc box_func,
+                                          SCCallbackDrawFunc draw_func,
+                                          void *vp);
 extern void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl);
 
 /* Get the current state of the interpreter */

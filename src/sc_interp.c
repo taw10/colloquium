@@ -84,7 +84,8 @@ struct _sccallbacklist
 	int n_callbacks;
 	int max_callbacks;
 	char **names;
-	SCCallbackFunc *funcs;
+	SCCallbackBoxFunc *box_funcs;
+	SCCallbackDrawFunc *draw_funcs;
 	void **vps;
 };
 
@@ -99,8 +100,11 @@ SCCallbackList *sc_callback_list_new()
 	cbl->names = calloc(8, sizeof(char *));
 	if ( cbl->names == NULL ) return NULL;
 
-	cbl->funcs = calloc(8, sizeof(cbl->funcs[0]));
-	if ( cbl->funcs == NULL ) return NULL;
+	cbl->box_funcs = calloc(8, sizeof(cbl->box_funcs[0]));
+	if ( cbl->box_funcs == NULL ) return NULL;
+
+	cbl->draw_funcs = calloc(8, sizeof(cbl->draw_funcs[0]));
+	if ( cbl->draw_funcs == NULL ) return NULL;
 
 	cbl->vps = calloc(8, sizeof(cbl->vps[0]));
 	if ( cbl->vps == NULL ) return NULL;
@@ -123,41 +127,50 @@ void sc_callback_list_free(SCCallbackList *cbl)
 	}
 
 	free(cbl->names);
-	free(cbl->funcs);
+	free(cbl->box_funcs);
+	free(cbl->draw_funcs);
 	free(cbl->vps);
 	free(cbl);
+
 }
 
 
 void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
-                                   SCCallbackFunc func, void *vp)
+                                   SCCallbackBoxFunc box_func,
+                                   SCCallbackDrawFunc draw_func, void *vp)
 {
 	if ( cbl->n_callbacks == cbl->max_callbacks ) {
 
-		SCCallbackFunc *funcs_new;
+		SCCallbackBoxFunc *box_funcs_new;
+		SCCallbackDrawFunc *draw_funcs_new;
 		char **names_new;
 		void **vps_new;
 		int mcn = cbl->max_callbacks + 8;
 
 		names_new = realloc(cbl->names, mcn*sizeof(char *));
-		funcs_new = realloc(cbl->funcs, mcn*sizeof(SCCallbackFunc));
+		box_funcs_new = realloc(cbl->box_funcs,
+		                        mcn*sizeof(SCCallbackBoxFunc));
+		draw_funcs_new = realloc(cbl->draw_funcs,
+		                        mcn*sizeof(SCCallbackDrawFunc));
 		vps_new = realloc(cbl->vps, mcn*sizeof(void *));
 
-		if ( (names_new == NULL) || (funcs_new == NULL)
-		  || (vps_new == NULL) ) {
+		if ( (names_new == NULL) || (box_funcs_new == NULL)
+		  || (vps_new == NULL) || (draw_funcs_new == NULL) ) {
 			fprintf(stderr, "Failed to grow callback list\n");
 			return;
 		}
 
 		cbl->names = names_new;
-		cbl->funcs = funcs_new;
+		cbl->box_funcs = box_funcs_new;
+		cbl->draw_funcs = draw_funcs_new;
 		cbl->vps = vps_new;
 		cbl->max_callbacks = mcn;
 
 	}
 
 	cbl->names[cbl->n_callbacks] = strdup(name);
-	cbl->funcs[cbl->n_callbacks] = func;
+	cbl->box_funcs[cbl->n_callbacks] = box_func;
+	cbl->draw_funcs[cbl->n_callbacks] = draw_func;
 	cbl->vps[cbl->n_callbacks] = vp;
 	cbl->n_callbacks++;
 }
@@ -184,12 +197,17 @@ static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 	}
 
 	for ( i=0; i<cbl->n_callbacks; i++ ) {
-		cairo_surface_t *surf;
+
+		double w, h;
+		int r;
+		void *bvp;
+
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
-		surf = cbl->funcs[i](scin, bl, cbl->vps[i]);
-		if ( surf == NULL ) return;
-		add_surface_box(sc_interp_get_frame(scin)->boxes, surf,
-		                256, 256); // FIXME: Box size
+		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
+		if ( !r ) return;
+		add_callback_box(sc_interp_get_frame(scin)->boxes, w, h,
+		                 cbl->draw_funcs[i], bvp, cbl->vps[i]);
+
 		return;
 	}
 

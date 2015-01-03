@@ -33,6 +33,8 @@
 #include "presentation.h"
 #include "narrative_window.h"
 #include "sc_editor.h"
+#include "sc_parse.h"
+#include "render.h"
 
 
 struct _narrative_window
@@ -194,18 +196,33 @@ static SCBlock *narrative_stylesheet()
 }
 
 
-static cairo_surface_t *render_thumbnail(SCInterpreter *scin, SCBlock *bl,
-                                         void *vp)
+static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
+                            double *w, double *h, void **bvp, void *vp)
+{
+	SCBlock *b;
+
+	*w = 320.0;
+	*h = 256.0;
+	b = sc_interp_get_macro_real_block(scin);
+
+	*bvp = b;
+
+	return 1;
+}
+
+
+static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 {
 	struct presentation *p = vp;
+	SCBlock *scblocks = bvp;
 	cairo_surface_t *surf;
-	cairo_t *cr;
+	SCBlock *stylesheets[2];
 
-	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 256, 256);
-	cr = cairo_create(surf);
-	cairo_set_source_rgb(cr, 0.0, 0.5, 0.0);
-	cairo_paint(cr);
-	cairo_destroy(cr);
+	scblocks = sc_block_child(scblocks);
+	stylesheets[0] = p->stylesheet;
+	stylesheets[1] = NULL;
+	surf = render_sc(scblocks, w, h, 1024.0, 768.0, stylesheets, NULL,
+	                 p->is, ISZ_THUMBNAIL, 0);
 
 	return surf;
 }
@@ -248,7 +265,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	stylesheets[2] = NULL;
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets);
 	cbl = sc_callback_list_new();
-	sc_callback_list_add_callback(cbl, "sthumb", render_thumbnail, NULL);
+	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
+	                              render_thumbnail, p);
 	sc_editor_set_callbacks(nw->sceditor, cbl);
 
 	toolbar = gtk_toolbar_new();

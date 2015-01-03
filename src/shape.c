@@ -131,8 +131,8 @@ static int add_wrap_boxes(struct wrap_line *line, const char *text,
 }
 
 
-void add_surface_box(struct wrap_line *line, cairo_surface_t *surf,
-                     double w, double h)
+void add_callback_box(struct wrap_line *line, double w, double h,
+                      SCCallbackDrawFunc func, void *bvp, void *vp)
 {
 	struct wrap_box *box;
 
@@ -143,14 +143,16 @@ void add_surface_box(struct wrap_line *line, cairo_surface_t *surf,
 	}
 	box = &line->boxes[line->n_boxes];
 
-	box->type = WRAP_BOX_SURFACE;
+	box->type = WRAP_BOX_CALLBACK;
 	box->scblock = NULL;
 	box->offs_char = 0;
 	box->space = WRAP_SPACE_NONE;
 	box->width = pango_units_from_double(w);
 	box->ascent = pango_units_from_double(h);
 	box->height = pango_units_from_double(h);
-	box->surf = surf;
+	box->draw_func = func;
+	box->bvp = bvp;
+	box->vp = vp;
 	box->editable = 0;
 	line->n_boxes++;
 }

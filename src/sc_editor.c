@@ -428,8 +428,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 	cairo_fill(cr);
 
 	/* Get the overall size */
-	e->border_offs_x = (width - e->w)/2.0;
-	e->border_offs_y = (height - e->h)/2.0;
+	e->border_offs_x = rint((width - e->w)/2.0);
+	e->border_offs_y = rint((height - e->h)/2.0);
 	if ( e->border_offs_x < e->min_border ) {
 		e->border_offs_x = e->min_border;
 	}
@@ -439,8 +439,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
 
 	/* Draw the slide from the cache */
 	if ( e->surface != NULL ) {
-		cairo_set_source_surface(cr, e->surface, e->border_offs_x,
-		                                         e->border_offs_y);
+		cairo_set_source_surface(cr, e->surface,
+		                         rint(e->border_offs_x),
+		                         rint(e->border_offs_y));
 		cairo_paint(cr);
 	} else {
 		fprintf(stderr, "Current slide not rendered yet!\n");

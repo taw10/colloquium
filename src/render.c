@@ -70,10 +70,6 @@ static void render_callback_box(cairo_t *cr, struct wrap_box *box)
 
 	ascd = pango_units_to_double(box->ascent);
 
-	x = 0.0;
-	y = -ascd;
-	cairo_user_to_device(cr, &x, &y);
-
 	/* This is how wide the image should be in Cairo units */
 	w = pango_units_to_double(box->width);
 	h = pango_units_to_double(box->height);
@@ -83,18 +79,30 @@ static void render_callback_box(cairo_t *cr, struct wrap_box *box)
 	surf = box->draw_func(w, h, box->bvp, box->vp);
 
 	cairo_new_path(cr);
-	cairo_rectangle(cr, 0.0, -ascd, pango_units_to_double(box->width),
-	                                pango_units_to_double(box->height));
+	x = 0.0;  y = -ascd;
+	cairo_user_to_device(cr, &x, &y);
+	x = rint(x);  y = rint(y);
+	cairo_device_to_user(cr, &x, &y);
+	cairo_rectangle(cr, x, y, pango_units_to_double(box->width),
+	                          pango_units_to_double(box->height));
+	cairo_clip_preserve(cr);
 
 	if ( surf == NULL ) {
 		cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);
 		fprintf(stderr, "Null surface box");
 	} else {
-		cairo_identity_matrix(cr);
 		cairo_set_source_surface(cr, surf, x, y);
 	}
 
-	cairo_fill(cr);
+	cairo_paint(cr);
+	cairo_reset_clip(cr);
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x+0.5, y+0.5, pango_units_to_double(box->width),
+	                                  pango_units_to_double(box->height));
+	cairo_set_line_width(cr, 1.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_stroke(cr);
 	cairo_restore(cr);
 }
 

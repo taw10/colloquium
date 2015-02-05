@@ -52,10 +52,9 @@ static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 		fprintf(stderr, "Box %p has NULL pointer.\n", box);
 		return;
 	}
-	pango_cairo_glyph_string_path(cr, box->font, box->glyphs);
 	cairo_set_source_rgba(cr, box->col[0], box->col[1], box->col[2],
 	                      box->col[3]);
-	cairo_fill(cr);
+	pango_cairo_show_glyph_string(cr, box->font, box->glyphs);
 }
 
 

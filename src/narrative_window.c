@@ -1,7 +1,7 @@
 /*
  * narrative_window.c
  *
- * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -228,6 +228,15 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 }
 
 
+static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
+                           NarrativeWindow *nw)
+{
+	sc_editor_set_size(nw->sceditor, event->width, 12000);
+	sc_editor_set_logical_size(nw->sceditor, event->width, 12000);
+	return FALSE;
+}
+
+
 NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 {
 	NarrativeWindow *nw;
@@ -320,12 +329,14 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	sc_editor_set_size(nw->sceditor, 640, 12000);
 	sc_editor_set_logical_size(nw->sceditor, 640.0, 12000);
 	sc_editor_set_background(nw->sceditor, 0.9, 0.9, 0.9);
-	sc_editor_set_min_border(nw->sceditor, 40.0);
+	sc_editor_set_min_border(nw->sceditor, 0.0);
 	sc_editor_set_top_frame_editable(nw->sceditor, 1);
 
 	g_signal_connect(G_OBJECT(nw->sceditor), "button-press-event",
 	                 G_CALLBACK(button_press_sig), nw);
 
+	g_signal_connect(G_OBJECT(nw->sceditor), "configure-event",
+	                 G_CALLBACK(resize_sig), nw);
 	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 

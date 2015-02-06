@@ -1415,6 +1415,8 @@ void sc_editor_set_size(SCEditor *e, int w, int h)
 	e->w = w;
 	e->h = h;
 	update_size_request(e);
+	rerender(e);
+	redraw_editor(e);
 }
 
 
@@ -1422,6 +1424,8 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 {
 	e->log_w = w;
 	e->log_h = h;
+	rerender(e);
+	redraw_editor(e);
 }
 
 

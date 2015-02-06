@@ -1,9 +1,9 @@
 /*
  * wrap.c
  *
- * Text wrapping, hyphenation, justification and shaping
+ * Text wrapping, hyphenation, justification etc
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *

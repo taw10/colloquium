@@ -1,7 +1,7 @@
 /*
  * shape.c
  *
- * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -99,6 +99,31 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 }
 
 
+static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
+                            int editable)
+{
+	struct wrap_box *box;
+
+	if ( line->n_boxes == line->max_boxes ) {
+		line->max_boxes += 32;
+		alloc_boxes(line);
+		if ( line->n_boxes == line->max_boxes ) return;
+	}
+
+	box = &line->boxes[line->n_boxes];
+	box->type = WRAP_BOX_NOTHING;
+	box->scblock = scblock;
+	box->offs_char = 0;
+	box->space = WRAP_SPACE_EOP;
+	box->width = 0;
+	box->ascent = 0;
+	box->height = 0;
+	box->filename = NULL;
+	box->editable = editable;
+	line->n_boxes++;
+}
+
+
 /* Add "text", followed by a space of type "space", to "line" */
 static int add_wrap_boxes(struct wrap_line *line, const char *text,
                           enum wrap_box_space space, PangoContext *pc,
@@ -109,6 +134,11 @@ static int add_wrap_boxes(struct wrap_line *line, const char *text,
 	PangoAttrList *attrs;
 	PangoAttribute *attr;
 	struct box_adding_stuff bas;
+
+	if ( (strlen(text) == 1) && (text[0] == '\n') ) {
+		add_nothing_box(line, bl, editable);
+		return 0;
+	}
 
 	attrs = pango_attr_list_new();
 	attr = pango_attr_font_desc_new(sc_interp_get_fontdesc(scin));

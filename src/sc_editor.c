@@ -1405,8 +1405,7 @@ void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
 
 static void update_size_request(SCEditor *e)
 {
-	gtk_widget_set_size_request(GTK_WIDGET(e), e->w + 2.0*e->min_border,
-	                                           e->h + 2.0*e->min_border);
+	gtk_widget_set_size_request(GTK_WIDGET(e), 0, e->h + 2.0*e->min_border);
 }
 
 

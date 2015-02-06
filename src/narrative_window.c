@@ -246,6 +246,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	GtkToolItem *button;
 	SCBlock *stylesheets[3];
 	SCCallbackList *cbl;
+	GtkWidget *image;
 
 	if ( p->narrative_window != NULL ) {
 		fprintf(stderr, "Narrative window is already open!\n");
@@ -283,7 +284,9 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
 
 	/* Fullscreen */
-	button = gtk_tool_button_new(gtk_image_new_from_icon_name("view-fullscreen", GTK_ICON_SIZE_LARGE_TOOLBAR), "Start slideshow");
+	image = gtk_image_new_from_icon_name("view-fullscreen",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	button = gtk_tool_button_new(image, "Start slideshow");
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
 	                               "win.startslideshow");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
@@ -292,7 +295,9 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
 
 	/* Add slide */
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_ADD);
+	image = gtk_image_new_from_icon_name("add",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	button = gtk_tool_button_new(image, "Add slide");
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
 	                               "win.slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
@@ -300,20 +305,31 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	button = gtk_separator_tool_item_new();
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
 
-	/* Change slide */
-	nw->bfirst = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_FIRST);
+	/* Change slide.  FIXME: LTR vs RTL */
+	image = gtk_image_new_from_icon_name("gtk-goto-first-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	nw->bfirst = gtk_tool_button_new(image, "First slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bfirst));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bfirst),
 	                               "win.first");
-	nw->bprev = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+
+	image = gtk_image_new_from_icon_name("gtk-go-forward-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	nw->bprev = gtk_tool_button_new(image, "Previous slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bprev));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bprev),
 	                               "win.prev");
-	nw->bnext = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+
+	image = gtk_image_new_from_icon_name("gtk-go-back-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	nw->bnext = gtk_tool_button_new(image, "Next slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bnext));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bnext),
 	                               "win.next");
-	nw->blast = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_LAST);
+
+	image = gtk_image_new_from_icon_name("gtk-goto-last-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	nw->blast = gtk_tool_button_new(image, "Last slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->blast));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
 	                               "win.last");
@@ -323,8 +339,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,
 	                               GTK_POLICY_ALWAYS);
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
-	                                      GTK_WIDGET(nw->sceditor));
+	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(nw->sceditor));
 
 	sc_editor_set_size(nw->sceditor, 640, 12000);
 	sc_editor_set_logical_size(nw->sceditor, 640.0, 12000);

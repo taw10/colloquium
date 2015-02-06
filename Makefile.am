@@ -15,7 +15,7 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/frame.c src/sc_parse.c \
                          src/slideshow.c src/wrap.c src/sc_interp.c \
                          src/imagestore.c src/notes.c src/pr_clock.c \
-                         src/inhibit_screensaver.c src/slide_sorter.c \
+                         src/inhibit_screensaver.c \
                          src/shape.c src/sc_editor.c src/narrative_window.c \
                          src/slide_window.c
 
@@ -24,7 +24,7 @@ INCLUDES = -Iharfatum/src
 EXTRA_DIST += src/presentation.h src/render.h src/wrap.h \
               src/slideshow.h src/sc_parse.h src/sc_interp.h \
               src/imagestore.h src/notes.h src/pr_clock.h \
-              src/inhibit_screensaver.h src/slide_sorter.h src/shape.h \
+              src/inhibit_screensaver.h src/shape.h \
               src/sc_editor.h src/slide_window.h src/narrative_window.c
 
 src/default_stylesheet.o: src/default_stylesheet.sty

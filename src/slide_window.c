@@ -1,7 +1,7 @@
 /*
  * slide_window.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -41,7 +41,6 @@
 #include "wrap.h"
 #include "notes.h"
 #include "pr_clock.h"
-#include "slide_sorter.h"
 #include "sc_parse.h"
 #include "sc_interp.h"
 #include "sc_editor.h"
@@ -204,8 +203,8 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	d = gtk_file_chooser_dialog_new("Save Presentation",
 	                                GTK_WINDOW(sw->window),
 	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                "_Cancel", GTK_RESPONSE_CANCEL,
+	                                "_Save", GTK_RESPONSE_ACCEPT,
 	                                NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
 	                                               TRUE);
@@ -226,13 +225,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	}
 
 	save_presentation(sw->p, sw->p->filename);
-}
-
-
-static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-	SlideWindow *sw = vp;
-	open_slidesorter(sw->p);
 }
 
 
@@ -308,8 +300,8 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
 	d = gtk_file_chooser_dialog_new("Export PDF",
 	                                GTK_WINDOW(sw->window),
 	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                "_Cancel", GTK_RESPONSE_CANCEL,
+	                                "_Export", GTK_RESPONSE_ACCEPT,
 	                                NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
 	                                               TRUE);
@@ -510,7 +502,6 @@ GActionEntry sw_entries[] = {
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
 	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
-	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
 	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
@@ -532,6 +523,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	GtkToolItem *button;
 	SlideWindow *sw;
 	SCBlock *stylesheets[2];
+	GtkWidget *image;
 
 	if ( p->slidewindow != NULL ) {
 		fprintf(stderr, "Slide window is already open!\n");
@@ -562,7 +554,9 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
 
 	/* Fullscreen */
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_FULLSCREEN);
+	image = gtk_image_new_from_icon_name("view-fullscreen",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	button = gtk_tool_button_new(image, "Start slideshow");
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
 	                               "win.startslideshow");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
@@ -571,7 +565,9 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
 
 	/* Add slide */
-	button = gtk_tool_button_new_from_stock(GTK_STOCK_ADD);
+	image = gtk_image_new_from_icon_name("add",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	button = gtk_tool_button_new(image, "Add slide");
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
 	                               "win.slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
@@ -579,20 +575,31 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	button = gtk_separator_tool_item_new();
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
 
-	/* Change slide */
-	sw->bfirst = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_FIRST);
+	/* Change slide.  FIXME: LTR vs RTL */
+	image = gtk_image_new_from_icon_name("gtk-goto-first-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	sw->bfirst = gtk_tool_button_new(image, "First slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bfirst));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bfirst),
 	                               "win.first");
-	sw->bprev = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
+
+	image = gtk_image_new_from_icon_name("gtk-go-forward-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	sw->bprev = gtk_tool_button_new(image, "Previous slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bprev));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bprev),
 	                               "win.prev");
-	sw->bnext = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
+
+	image = gtk_image_new_from_icon_name("gtk-go-back-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	sw->bnext = gtk_tool_button_new(image, "Next slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bnext));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bnext),
 	                               "win.next");
-	sw->blast = gtk_tool_button_new_from_stock(GTK_STOCK_GOTO_LAST);
+
+	image = gtk_image_new_from_icon_name("gtk-goto-last-ltr",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	sw->blast = gtk_tool_button_new(image, "Last slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->blast));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->blast),
 	                               "win.last");
@@ -605,8 +612,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,
 	                               GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
-	                                      GTK_WIDGET(sw->sceditor));
+	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(sw->sceditor));
 	gtk_window_set_focus(GTK_WINDOW(window), GTK_WIDGET(sw->sceditor));
 
 	/* Size of SCEditor surface in pixels */

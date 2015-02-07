@@ -338,7 +338,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
-	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(nw->sceditor));
+	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
+	                                      GTK_WIDGET(nw->sceditor));
 
 	sc_editor_set_size(nw->sceditor, 640, 12000);
 	sc_editor_set_logical_size(nw->sceditor, 640.0, 12000);

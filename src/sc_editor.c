@@ -1414,8 +1414,10 @@ void sc_editor_set_size(SCEditor *e, int w, int h)
 	e->w = w;
 	e->h = h;
 	update_size_request(e);
-	rerender(e);
-	redraw_editor(e);
+	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
+		rerender(e);
+		redraw_editor(e);
+	}
 }
 
 
@@ -1423,8 +1425,10 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 {
 	e->log_w = w;
 	e->log_h = h;
-	rerender(e);
-	redraw_editor(e);
+	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
+		rerender(e);
+		redraw_editor(e);
+	}
 }
 
 
@@ -1502,8 +1506,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 		fprintf(stderr, "Failed to load background: %s\n",
 		        err->message);
 	}
-
-	rerender(sceditor);
 
 	gtk_widget_set_size_request(GTK_WIDGET(sceditor),
 	                            sceditor->w, sceditor->h);

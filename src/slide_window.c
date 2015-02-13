@@ -583,14 +583,14 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bfirst),
 	                               "win.first");
 
-	image = gtk_image_new_from_icon_name("gtk-go-forward-ltr",
+	image = gtk_image_new_from_icon_name("gtk-go-back-ltr",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
 	sw->bprev = gtk_tool_button_new(image, "Previous slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bprev));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bprev),
 	                               "win.prev");
 
-	image = gtk_image_new_from_icon_name("gtk-go-back-ltr",
+	image = gtk_image_new_from_icon_name("gtk-go-forward-ltr",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
 	sw->bnext = gtk_tool_button_new(image, "Next slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bnext));

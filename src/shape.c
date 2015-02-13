@@ -101,7 +101,7 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 
 
 static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
-                            int editable)
+                            int editable, enum wrap_box_space sp)
 {
 	struct wrap_box *box;
 
@@ -115,7 +115,7 @@ static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
 	box->type = WRAP_BOX_NOTHING;
 	box->scblock = scblock;
 	box->offs_char = 0;
-	box->space = WRAP_SPACE_EOP;
+	box->space = sp;
 	box->width = 0;
 	box->ascent = 0;
 	box->height = 0;
@@ -180,7 +180,7 @@ static int add_wrap_boxes(struct wrap_line *line, const char *text,
 	//printf("adding '%s'\n", swizzle(text+offs, len));
 
 	while ( len==0 ) {
-		add_nothing_box(line, bl, editable);
+		add_nothing_box(line, bl, editable, space);
 		return 0;
 	}
 

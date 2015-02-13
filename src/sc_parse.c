@@ -258,6 +258,14 @@ void save_sc_block(FILE *fh, const SCBlock *bl)
 				fprintf(fh, "%s", bl->contents);
 			}
 
+			/* Special case to prevent "\somethingSome text" */
+			if ( (bl->name != NULL) && (bl->options == NULL)
+			  && (bl->contents == NULL) && (bl->next != NULL)
+			  && (bl->next->name == NULL) && (bl->child == NULL) )
+			{
+				fprintf(fh, "{}");
+			}
+
 		}
 
 		if ( bl->child != NULL ) {

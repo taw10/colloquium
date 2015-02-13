@@ -82,6 +82,7 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box->glyphs = pango_glyph_string_new();
 	box->item = item;
 
+	//printf("shaping '%s'\n", bas->text+bas->offs+item->offset);
 	pango_shape(bas->text+bas->offs+item->offset, item->length,
 	            &item->analysis, box->glyphs);
 
@@ -124,6 +125,47 @@ static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
 }
 
 
+static UNUSED char *swizzle(const char *inp, size_t len)
+{
+	int i;
+	char *out = malloc(len+1);
+	strncpy(out, inp, len);
+	out[len] = '\0';
+	for ( i=0; i<len; i++ ) {
+		if ( out[i] == '\n' ) out[i] = '`';
+	}
+	return out;
+}
+
+
+static UNUSED void debug_log_attrs(size_t len_chars, const char *text,
+                                   PangoLogAttr *log_attrs)
+{
+	int i;
+
+	for ( i=0; i<len_chars; i++ ) {
+		if ( text[i] == '\n' ) {
+			printf("`");
+		} else {
+			printf("%c", text[i]);
+		}
+	}
+	printf("\n");
+	for ( i=0; i<len_chars; i++ ) {
+		if ( log_attrs[i].is_line_break ) {
+			if ( log_attrs[i].is_mandatory_break ) {
+				printf("n");
+			} else {
+				printf("b");
+			}
+		} else {
+			printf(".");
+		}
+	}
+	printf("\n");
+}
+
+
 /* Add "text", followed by a space of type "space", to "line" */
 static int add_wrap_boxes(struct wrap_line *line, const char *text,
                           enum wrap_box_space space, PangoContext *pc,
@@ -135,7 +177,9 @@ static int add_wrap_boxes(struct wrap_line *line, const char *text,
 	PangoAttribute *attr;
 	struct box_adding_stuff bas;
 
-	if ( (strlen(text) == 1) && (text[0] == '\n') ) {
+	//printf("adding '%s'\n", swizzle(text+offs, len));
+
+	while ( len==0 ) {
 		add_nothing_box(line, bl, editable);
 		return 0;
 	}
@@ -232,8 +276,9 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 	log_attrs = malloc((len_chars+1)*sizeof(PangoLogAttr));
 	if ( log_attrs == NULL ) return 1;
 
-	/* Create glyph string */
 	pango_get_log_attrs(text, len_bytes, -1, lang, log_attrs, len_chars+1);
+
+	//debug_log_attrs(len_chars, text, log_attrs);
 
 	start = 0;
 	for ( i=0; i<len_chars; i++ ) {
@@ -253,12 +298,11 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 			len = offs - start;
 			if ( log_attrs[i].is_mandatory_break ) {
 				type = WRAP_SPACE_EOP;
-				if ( (offs>0) && (text[offs-1] == '\n') ) len--;
-				if ( (offs>0) && (text[offs-1] == '\r') ) len--;
+				if ( (i>0) && (text[i-1]=='\n') ) len--;
 			} else if ( (i>0)
 			         && log_attrs[i-1].is_expandable_space ) {
 				type = WRAP_SPACE_INTERWORD;
-				len--;  /* Not interested in spaces */
+				len--;
 			} else {
 				type = WRAP_SPACE_NONE;
 			}

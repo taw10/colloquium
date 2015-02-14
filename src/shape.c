@@ -102,7 +102,7 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 
 static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
                             int editable, enum wrap_box_space sp,
-                            SCInterpreter *scin)
+                            SCInterpreter *scin, size_t offs)
 {
 	struct wrap_box *box;
 
@@ -115,7 +115,7 @@ static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
 	box = &line->boxes[line->n_boxes];
 	box->type = WRAP_BOX_NOTHING;
 	box->scblock = scblock;
-	box->offs_char = 0;
+	box->offs_char = offs;
 	box->space = sp;
 	box->width = 0;
 	box->ascent = sc_interp_get_ascent(scin);
@@ -181,7 +181,7 @@ static int add_wrap_boxes(struct wrap_line *line, const char *text,
 	//printf("adding '%s'\n", swizzle(text+offs, len));
 
 	while ( len==0 ) {
-		add_nothing_box(line, bl, editable, space, scin);
+		add_nothing_box(line, bl, editable, space, scin, offs);
 		return 0;
 	}
 

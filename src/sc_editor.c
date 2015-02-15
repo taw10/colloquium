@@ -148,7 +148,7 @@ static void move_cursor_back(SCEditor *e)
 				cp--;
 			}
 		} else {
-			cp = 1;
+			cp = 0;
 		}
 
 	}

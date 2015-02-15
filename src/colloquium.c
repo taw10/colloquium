@@ -114,8 +114,11 @@ static void colloquium_open(GApplication  *app, GFile **files, gint n_files,
 		struct presentation *p;
 		char *uri = g_file_get_path(files[i]);
 		p = new_presentation();
-		load_presentation(p, uri);
-		narrative_window_new(p, app);
+		if ( load_presentation(p, uri) == 0 ) {
+			narrative_window_new(p, app);
+		} else {
+			fprintf(stderr, "Failed to load '%s'\n", uri);
+		}
 		g_free(uri);
 	}
 }

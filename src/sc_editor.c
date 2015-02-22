@@ -506,6 +506,35 @@ static void move_cursor(SCEditor *e, signed int x, signed int y)
 }
 
 
+void insert_scblock(SCBlock *scblock, SCEditor *e)
+{
+	int sln, sbx, sps;
+	struct wrap_box *sbox;
+	struct frame *fr = e->cursor_frame;
+
+	if ( fr == NULL ) return;
+
+	/* If this is, say, the top level frame, do nothing */
+	if ( fr->boxes == NULL ) return;
+
+	sln = e->cursor_line;
+	sbx = e->cursor_box;
+	sps = e->cursor_pos;
+	sbox = &e->cursor_frame->lines[sln].boxes[sbx];
+
+	sc_insert_block(sbox->scblock, sps+sbox->offs_char, scblock);
+
+	fr->empty = 0;
+
+	rerender(e);
+
+	fixup_cursor(e);
+	advance_cursor(e);
+
+	redraw_editor(e);
+}
+
+
 static void insert_text(char *t, SCEditor *e)
 {
 	int sln, sbx, sps;

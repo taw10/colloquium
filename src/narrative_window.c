@@ -124,6 +124,10 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointe
 
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
+	SCBlock *slide;
+	NarrativeWindow *nw = vp;
+	slide = sc_parse("\\slide{}");
+	insert_scblock(slide, nw->sceditor);
 }
 
 

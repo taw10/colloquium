@@ -1,7 +1,7 @@
 /*
  * sc_parse.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -552,6 +552,17 @@ void sc_insert_text(SCBlock *b1, int o1, const char *t)
 	strcpy(p1+strlen(t), tmp);
 	free(tmp);
 	b1->contents = cnew;
+}
+
+
+void sc_insert_block(SCBlock *b1, int o1, SCBlock *ins)
+{
+	char *p1 = g_utf8_offset_to_pointer(b1->contents, o1);
+	SCBlock *old_next = b1->next;
+	b1->next = ins;
+	if ( strlen(p1) > 0 ) {
+	//	sc_block_append_end(b1, NULL, NULL, p1);
+	}
 }
 
 

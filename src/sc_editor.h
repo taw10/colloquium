@@ -162,5 +162,6 @@ extern void sc_editor_set_min_border(SCEditor *e, double min_border);
 extern void sc_editor_set_top_frame_editable(SCEditor *e,
                                              int top_frame_editable);
 extern void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl);
+extern void insert_scblock(SCBlock *scblock, SCEditor *e);
 
 #endif	/* SC_EDITOR_H */

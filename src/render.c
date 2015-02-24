@@ -103,6 +103,8 @@ static void render_callback_box(cairo_t *cr, struct wrap_box *box)
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_stroke(cr);
 	cairo_restore(cr);
+
+	cairo_surface_destroy(surf);
 }
 
 

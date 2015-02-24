@@ -1,7 +1,7 @@
 /*
  * slideshow.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -74,6 +74,10 @@ void slideshow_rerender(SlideShow *ss)
 	int n;
 	SCBlock *stylesheets[2];
 
+	if ( ss->surface != NULL ) {
+		cairo_surface_destroy(ss->surface);
+	}
+
 	stylesheets[0] = ss->p->stylesheet;
 	stylesheets[1] = NULL;
 
@@ -90,6 +94,9 @@ static gint ss_destroy_sig(GtkWidget *widget, SlideShow *ss)
 	g_object_unref(ss->blank_cursor);
 	slidewindow_slideshow_ended(ss->slide_window);
 	slidewindow_redraw(ss->slide_window);
+	if ( ss->surface != NULL ) {
+		cairo_surface_destroy(ss->surface);
+	}
 	free(ss);
 	return FALSE;
 }

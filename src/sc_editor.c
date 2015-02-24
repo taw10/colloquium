@@ -244,9 +244,11 @@ void advance_cursor(SCEditor *e)
 }
 
 
-static gint destroy_sig(GtkWidget *window, SCEditor *sceditor)
+static gint destroy_sig(GtkWidget *window, SCEditor *e)
 {
-	/* FIXME: free stuff */
+	if ( e->surface != NULL ) {
+		cairo_surface_destroy(e->surface);
+	}
 	return 0;
 }
 

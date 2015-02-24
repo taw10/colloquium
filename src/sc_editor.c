@@ -1202,9 +1202,10 @@ static void check_import_size(SCEditor *e)
 		int new_import_width;
 
 		new_import_width = e->w/2;
-		e->import_height = (new_import_width *e->import_height)
-		                     / e->w;
+		e->import_height = (new_import_width * e->import_height) /
+		                     e->import_width;
 		e->import_width = new_import_width;
+
 	}
 
 	if ( e->import_height > e->h ) {
@@ -1212,9 +1213,10 @@ static void check_import_size(SCEditor *e)
 		int new_import_height;
 
 		new_import_height = e->w/2;
-		e->import_width = (new_import_height*e->import_width)
-		                    / e->import_height;
+		e->import_width = (new_import_height*e->import_width) /
+		                    e->import_height;
 		e->import_height = new_import_height;
+
 	}
 }
 

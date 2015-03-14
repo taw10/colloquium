@@ -773,6 +773,14 @@ static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child)
 }
 
 
+static int in_macro(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	if ( st->macro_contents == NULL ) return 0;
+	return 1;
+}
+
+
 static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 {
 	const char *name = sc_block_name(bl);
@@ -809,6 +817,11 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			fr = add_subframe(sc_interp_get_frame(scin));
 			sc_block_set_frame(bl, fr);
 			fr->scblocks = bl;
+			if ( in_macro(scin) ) {
+				fr->resizable = 0;
+			} else {
+				fr->resizable = 1;
+			}
 		}
 		if ( fr == NULL ) {
 			fprintf(stderr, "Failed to add frame.\n");

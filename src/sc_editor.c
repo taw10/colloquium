@@ -358,12 +358,13 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 		w = e->selection->w;
 		h = e->selection->h;
 
-		/* Draw resize handles */
-		/* FIXME: Not if this frame can't be resized */
-		draw_resize_handle(cr, x, y+h-20.0);
-		draw_resize_handle(cr, x+w-20.0, y);
-		draw_resize_handle(cr, x, y);
-		draw_resize_handle(cr, x+w-20.0, y+h-20.0);
+		if ( e->selection->resizable ) {
+			/* Draw resize handles */
+			draw_resize_handle(cr, x, y+h-20.0);
+			draw_resize_handle(cr, x+w-20.0, y);
+			draw_resize_handle(cr, x, y);
+			draw_resize_handle(cr, x+w-20.0, y+h-20.0);
+		}
 
 		draw_caret(cr, e->cursor_frame, e->cursor_line, e->cursor_box,
 		               e->cursor_pos);
@@ -826,7 +827,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		/* Within the resizing region? */
 		c = which_corner(x, y, fr);
-		if ( c != CORNER_NONE ) {
+		if ( (c != CORNER_NONE) && (fr->resizable) ) {
 
 			e->drag_reason = DRAG_REASON_RESIZE;
 			e->drag_corner = c;
@@ -851,8 +852,11 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 			e->start_corner_x = event->x - e->border_offs_x;
 			e->start_corner_y = event->y - e->border_offs_y;
-			e->drag_status = DRAG_STATUS_COULD_DRAG;
-			e->drag_reason = DRAG_REASON_MOVE;
+
+			if ( fr->resizable ) {
+				e->drag_status = DRAG_STATUS_COULD_DRAG;
+				e->drag_reason = DRAG_REASON_MOVE;
+			}
 
 		}
 

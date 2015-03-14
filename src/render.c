@@ -426,6 +426,7 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
 	top = sc_block_frame(scblocks);
 	if ( top == NULL ) {
 		top = frame_new();
+		top->resizable = 0;
 		sc_block_set_frame(scblocks, top);
 	}
 	top->x = 0.0;

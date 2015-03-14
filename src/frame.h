@@ -83,6 +83,9 @@ struct frame
 	/* True if the aspect ratio of this frame should be maintained */
 	int                       is_image;
 
+	/* True if this frame can be resized and moved */
+	int                       resizable;
+
 	/* True if wrapping failed for this frame */
 	int                       trouble;
 };

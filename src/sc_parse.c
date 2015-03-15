@@ -428,6 +428,10 @@ SCBlock *sc_parse(const char *sc)
 
 	if ( sc == NULL ) return NULL;
 
+	if ( strlen(sc) == 0 ) {
+		return sc_block_new();
+	}
+
 	bl = NULL;
 
 	len = strlen(sc);

@@ -348,6 +348,7 @@ int load_presentation(struct presentation *p, const char *filename)
 
 	if ( r ) {
 		p->completely_empty = 1;
+		fprintf(stderr, "Parse error.\n");
 		return r;  /* Error */
 	}
 

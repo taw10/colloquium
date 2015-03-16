@@ -905,7 +905,7 @@ int wrap_contents(struct frame *fr)
 		if ( last_box != NULL ) {
 			l->boxes[0].scblock = last_box->scblock;
 			l->boxes[0].offs_char = last_box->len_chars
-			                        + last_box->offs_char + 1;
+			                        + last_box->offs_char;
 			l->boxes[0].ascent = last_box->ascent;
 			l->boxes[0].height = last_box->height;
 			l->boxes[0].width = 0;

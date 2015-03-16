@@ -271,7 +271,11 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 	if ( text == NULL ) return 1;
 
 	len_chars = g_utf8_strlen(text, -1);
-	if ( len_chars == 0 ) return 1;
+	if ( len_chars == 0 ) {
+		add_wrap_boxes(boxes, text,
+		               WRAP_SPACE_NONE, pc, scin, bl, 0, 0, editable);
+		return 1;
+	}
 
 	len_bytes = strlen(text);
 

@@ -429,7 +429,9 @@ SCBlock *sc_parse(const char *sc)
 	if ( sc == NULL ) return NULL;
 
 	if ( strlen(sc) == 0 ) {
-		return sc_block_new();
+		SCBlock *bl = sc_block_new();
+		sc_block_set_contents(bl, strdup(""));
+		return bl;
 	}
 
 	bl = NULL;

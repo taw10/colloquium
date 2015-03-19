@@ -878,6 +878,10 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		e->drag_status = DRAG_STATUS_NONE;
 		e->drag_reason = DRAG_REASON_NONE;
 		e->selection = clicked;
+		e->cursor_frame = clicked;
+		find_cursor(clicked, x-clicked->x, y-clicked->y,
+		            &e->cursor_line, &e->cursor_box,
+		            &e->cursor_pos);
 
 	}
 

@@ -196,7 +196,7 @@ static void update_toolbar(NarrativeWindow *nw)
 
 static SCBlock *narrative_stylesheet()
 {
-	return sc_parse("\\stylesheet{\\ss[slide]{\n\\callback[sthumb]\n}}");
+	return sc_parse("\\stylesheet{\\ss[slide]{\\callback[sthumb]}}");
 }
 
 

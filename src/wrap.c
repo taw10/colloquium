@@ -158,6 +158,12 @@ void get_cursor_pos(struct wrap_box *box, int pos,
 		} /* else zero */
 		break;
 
+		case WRAP_BOX_CALLBACK :
+		if ( pos > 0 ) {
+			*xposd += pango_units_to_double(box->width);
+		}
+		break;
+
 		case WRAP_BOX_NOTHING :
 		case WRAP_BOX_SENTINEL :
 		*xposd = 0.0;
@@ -254,6 +260,7 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 		case WRAP_BOX_NOTHING:
 		case WRAP_BOX_SENTINEL:
 		case WRAP_BOX_IMAGE:
+		case WRAP_BOX_CALLBACK:
 		offs = 0;
 		break;
 
@@ -267,6 +274,11 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 		                              &b->item->analysis,
 		                              x_pos_i, &idx, &trail);
 		offs = idx + trail;
+		break;
+
+		default:
+		fprintf(stderr, "find_cursor(): box %i\n", b->type);
+		offs = 0;
 		break;
 
 	}
@@ -757,6 +769,9 @@ void wrap_line_free(struct wrap_line *l)
 			break;
 
 			case WRAP_BOX_IMAGE :
+			break;
+
+			case WRAP_BOX_CALLBACK :
 			break;
 
 			case WRAP_BOX_NOTHING :

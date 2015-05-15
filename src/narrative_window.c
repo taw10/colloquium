@@ -146,6 +146,13 @@ static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer 
 }
 
 
+static void testcard_sig(GSimpleAction *action, GVariant *parameter,
+                         NarrativeWindow *nw)
+{
+	show_testcard(nw->p);
+}
+
+
 GActionEntry nw_entries[] = {
 
 	{ "save", save_sig, NULL, NULL, NULL },
@@ -157,6 +164,7 @@ GActionEntry nw_entries[] = {
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
 	{ "notes", open_notes_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },
+	{ "testcard", testcard_sig, NULL, NULL, NULL },
 };
 
 

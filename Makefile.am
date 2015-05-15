@@ -17,7 +17,7 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/imagestore.c src/notes.c src/pr_clock.c \
                          src/inhibit_screensaver.c \
                          src/shape.c src/sc_editor.c src/narrative_window.c \
-                         src/slide_window.c
+                         src/slide_window.c src/testcard.c
 
 INCLUDES = -Iharfatum/src
 

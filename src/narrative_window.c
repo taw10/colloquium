@@ -35,6 +35,7 @@
 #include "sc_editor.h"
 #include "sc_parse.h"
 #include "render.h"
+#include "testcard.h"
 
 
 struct _narrative_window
@@ -147,8 +148,9 @@ static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer 
 
 
 static void testcard_sig(GSimpleAction *action, GVariant *parameter,
-                         NarrativeWindow *nw)
+                         gpointer vp)
 {
+	NarrativeWindow *nw = vp;
 	show_testcard(nw->p);
 }
 

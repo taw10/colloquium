@@ -212,7 +212,7 @@ static int find_cursor_box(struct frame *fr, struct wrap_line *l,
 	}
 
 	*end = 1;
-	*x_pos = xposd - x;
+	*x_pos = x;
 	return l->n_boxes-1;
 }
 
@@ -249,6 +249,10 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 	}
 	b = &l->boxes[bn];
 	*box = bn;
+	if ( end ) {
+		*pos = b->len_chars;
+		return;
+	}
 
 	if ( !b->editable ) {
 		*pos = 0;
@@ -266,14 +270,23 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 
 		case WRAP_BOX_PANGO:
 		x_pos_i = pango_units_from_double(x_pos);
-		block_text = sc_block_contents(b->scblock);
-		box_text = g_utf8_offset_to_pointer(block_text, b->offs_char);
-		/* cast because this function is not const-clean */
-		pango_glyph_string_x_to_index(b->glyphs, (char *)box_text,
-		                              strlen(box_text),
-		                              &b->item->analysis,
-		                              x_pos_i, &idx, &trail);
-		offs = idx + trail;
+		if ( x_pos_i < b->width ) {
+			block_text = sc_block_contents(b->scblock);
+			box_text = g_utf8_offset_to_pointer(block_text,
+			                                    b->offs_char);
+			printf("box text '%s'\n", box_text);
+			/* cast because this function is not const-clean */
+			pango_glyph_string_x_to_index(b->glyphs,
+			                              (char *)box_text,
+			                              strlen(box_text),
+			                              &b->item->analysis,
+			                              x_pos_i, &idx, &trail);
+			offs = idx + trail;
+			/* FIXME: Bug in Pango? */
+			if ( offs > b->len_chars ) offs = b->len_chars;
+		} else {
+			offs = 0;
+		};
 		break;
 
 		default:

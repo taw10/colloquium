@@ -150,16 +150,16 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	/* Arrows showing edges of slide */
 	cairo_translate(cr, xoff, yoff);
 	cairo_set_source_rgb(cr, 0.5, 0.0, 0.0);
-	cairo_move_to(cr, 0.0, h/2);
+	cairo_move_to(cr, 0.0, 100+h/2);
 	arrow_left(cr, 80.0);
 	cairo_fill(cr);
-	cairo_move_to(cr, tc->slide_width, h/2);
+	cairo_move_to(cr, tc->slide_width, 100+h/2);
 	arrow_right(cr, 80.0);
 	cairo_fill(cr);
-	cairo_move_to(cr, tc->slide_width/2, h);
+	cairo_move_to(cr, 100+tc->slide_width/2, h);
 	arrow_down(cr, 80.0);
 	cairo_fill(cr);
-	cairo_move_to(cr, tc->slide_width/2, 0.0);
+	cairo_move_to(cr, 100+tc->slide_width/2, 0.0);
 	arrow_up(cr, 80.0);
 	cairo_fill(cr);
 	return FALSE;

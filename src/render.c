@@ -167,8 +167,16 @@ static void UNUSED draw_outline(cairo_t *cr, struct wrap_box *box)
 
 	cairo_rectangle(cr, 0.0, -asc, pango_units_to_double(box->width),
 			         asc + desc);
-	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+	if ( box->type == WRAP_BOX_NOTHING ) {
+		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+		cairo_set_line_width(cr, 0.1);
+	} else if ( box->type == WRAP_BOX_SENTINEL ) {
+		cairo_set_source_rgb(cr, 1.0, 0.0, 1.0);
+		cairo_set_line_width(cr, 0.5);
+	} else {
+		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 0.1);
+	}
 	cairo_stroke(cr);
 
 	cairo_rectangle(cr, pango_units_to_double(box->width), -asc,

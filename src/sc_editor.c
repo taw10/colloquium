@@ -1039,6 +1039,9 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		                     e->drag_corner_y - e->start_corner_y);
 		rerender(e);
 		e->selection = fr;
+		e->cursor_frame = fr;
+		e->cursor_line = 0;
+		e->cursor_pos = 0;
 		break;
 
 		case DRAG_REASON_IMPORT :

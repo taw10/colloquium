@@ -980,6 +980,7 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	fr->h = h;
 	fr->is_image = 0;
 	fr->empty = 1;
+	fr->resizable = 1;
 
 	update_geom(fr);
 

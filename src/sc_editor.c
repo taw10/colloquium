@@ -80,7 +80,7 @@ static void rerender(SCEditor *e)
 
 
 /* Force a redraw of the editor window */
-static void redraw_editor(SCEditor *e)
+void sc_editor_redraw(SCEditor *e)
 {
 	gint w, h;
 
@@ -91,10 +91,15 @@ static void redraw_editor(SCEditor *e)
 }
 
 
-/* Force a redraw of the editor window */
-void sc_editor_redraw(SCEditor *e)
+void sc_editor_delete_selected_frame(SCEditor *e)
 {
-	redraw_editor(e);
+	sc_block_delete(e->scblocks, e->selection->scblocks);
+	e->cursor_frame = NULL;
+	e->cursor_line = 0;
+	e->cursor_pos = 0;
+	e->selection = NULL;
+	rerender(e);
+	sc_editor_redraw(e);
 }
 
 
@@ -534,7 +539,7 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 	fixup_cursor(e);
 	advance_cursor(e);
 
-	redraw_editor(e);
+	sc_editor_redraw(e);
 }
 
 
@@ -563,7 +568,7 @@ static void insert_text(char *t, SCEditor *e)
 	fixup_cursor(e);
 	advance_cursor(e);
 
-	redraw_editor(e);
+	sc_editor_redraw(e);
 }
 
 
@@ -605,7 +610,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 
 	rerender(e);
 	fixup_cursor(e);
-	redraw_editor(e);
+	sc_editor_redraw(e);
 }
 
 
@@ -886,7 +891,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
-	redraw_editor(e);
+	sc_editor_redraw(e);
 	return FALSE;
 }
 
@@ -916,7 +921,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		case DRAG_REASON_CREATE :
 		e->drag_corner_x = x;
 		e->drag_corner_y = y;
-		redraw_editor(e);
+		sc_editor_redraw(e);
 		break;
 
 		case DRAG_REASON_IMPORT :
@@ -925,7 +930,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 		case DRAG_REASON_RESIZE :
 		calculate_box_size(fr, e,  x, y);
-		redraw_editor(e);
+		sc_editor_redraw(e);
 		break;
 
 		case DRAG_REASON_MOVE :
@@ -933,7 +938,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		e->box_y = (fr->y - e->start_corner_y) + y;
 		e->box_width = fr->w;
 		e->box_height = fr->h;
-		redraw_editor(e);
+		sc_editor_redraw(e);
 		break;
 
 	}
@@ -1006,7 +1011,7 @@ static void do_resize(SCEditor *e, double x, double y, double w, double h)
 	update_geom(fr);
 
 	rerender(e);
-	redraw_editor(e);
+	sc_editor_redraw(e);
 }
 
 
@@ -1061,7 +1066,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 	e->drag_reason = DRAG_REASON_NONE;
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
-	redraw_editor(e);
+	sc_editor_redraw(e);
 	return FALSE;
 }
 
@@ -1081,14 +1086,14 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Escape :
 		e->selection = NULL;
-		redraw_editor(e);
+		sc_editor_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Left :
 		if ( e->selection != NULL ) {
 			move_cursor(e, -1, 0);
-			redraw_editor(e);
+			sc_editor_redraw(e);
 		}
 		claim = 1;
 		break;
@@ -1096,7 +1101,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_Right :
 		if ( e->selection != NULL ) {
 			move_cursor(e, +1, 0);
-			redraw_editor(e);
+			sc_editor_redraw(e);
 		}
 		claim = 1;
 		break;
@@ -1104,7 +1109,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_Up :
 		if ( e->selection != NULL ) {
 			move_cursor(e, 0, -1);
-			redraw_editor(e);
+			sc_editor_redraw(e);
 		}
 		claim = 1;
 		break;
@@ -1112,7 +1117,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_Down :
 		if ( e->selection != NULL ) {
 			move_cursor(e, 0, +1);
-			redraw_editor(e);
+			sc_editor_redraw(e);
 		}
 		claim = 1;
 		break;
@@ -1165,7 +1170,7 @@ static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
 		e->drag_corner_x = x + e->import_width/2.0;
 		e->drag_corner_y = y + e->import_height/2.0;
 
-		redraw_editor(e);
+		sc_editor_redraw(e);
 
 	}
 
@@ -1341,7 +1346,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			sc_block_append_inside(fr->scblocks, "image", opts, "");
 			rerender(e);
 			e->selection = fr;
-			redraw_editor(e);
+			sc_editor_redraw(e);
 			free(filename);
 
 		} else {
@@ -1394,7 +1399,7 @@ void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
 {
 	e->scblocks = scblocks;
 	rerender(e);
-	redraw_editor(e);
+	sc_editor_redraw(e);
 }
 
 
@@ -1411,7 +1416,7 @@ void sc_editor_set_size(SCEditor *e, int w, int h)
 	update_size_request(e);
 	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
 		rerender(e);
-		redraw_editor(e);
+		sc_editor_redraw(e);
 	}
 }
 
@@ -1422,7 +1427,7 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 	e->log_h = h;
 	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
 		rerender(e);
-		redraw_editor(e);
+		sc_editor_redraw(e);
 	}
 }
 

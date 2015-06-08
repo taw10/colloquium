@@ -439,4 +439,3 @@ void delete_subframe(struct frame *top, struct frame *fr)
 
 	parent->num_children--;
 }
-

@@ -163,5 +163,6 @@ extern void sc_editor_set_top_frame_editable(SCEditor *e,
                                              int top_frame_editable);
 extern void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl);
 extern void insert_scblock(SCBlock *scblock, SCEditor *e);
+extern void sc_editor_delete_selected_frame(SCEditor *e);
 
 #endif	/* SC_EDITOR_H */

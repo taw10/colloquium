@@ -224,6 +224,44 @@ SCBlock *sc_block_insert_after(SCBlock *afterme,
 }
 
 
+static SCBlock *sc_find_parent(SCBlock *top, SCBlock *find)
+{
+	if ( top->child == find ) return top;
+	if ( top->next == find ) return top;
+
+	if ( top->child != NULL ) {
+		SCBlock *t = sc_find_parent(top->child, find);
+		if ( t != NULL ) return t;
+	}
+	if ( top->next != NULL ) {
+		SCBlock *t = sc_find_parent(top->next, find);
+		if ( t != NULL ) return t;
+	}
+	return NULL;
+}
+
+
+/* Delete "deleteme", which is somewhere under "top" */
+void sc_block_delete(SCBlock *top, SCBlock *deleteme)
+{
+	SCBlock *parent = sc_find_parent(top, deleteme);
+	if ( parent == NULL ) {
+		fprintf(stderr, "Couldn't find block parent!\n");
+		return;
+	}
+
+	if ( parent->next == deleteme ) {
+		parent->next = deleteme->next;
+	}
+
+	if ( parent->child == deleteme ) {
+		parent->child = NULL;
+	}
+
+	sc_block_free(deleteme);
+}
+
+
 /* Frees "bl" and all its children */
 void sc_block_free(SCBlock *bl)
 {

@@ -59,6 +59,8 @@ extern SCBlock *sc_block_append_inside(SCBlock *parent,
 extern SCBlock *sc_block_insert_after(SCBlock *afterme,
                                       char *name, char *opt, char *contents);
 
+extern void sc_block_delete(SCBlock *top, SCBlock *deleteme);
+
 extern struct frame *sc_block_frame(const SCBlock *bl);
 extern void sc_block_set_frame(SCBlock *bl, struct frame *fr);
 

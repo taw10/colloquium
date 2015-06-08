@@ -228,19 +228,11 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
+                             gpointer vp)
 {
-#if 0
 	SlideWindow *sw = vp;
-	int i;
-
-	delete_subframe(sw->cur_slide, sw->p->selection);
-	p->n_selection = 0;
-
-	rerender_slide(p);
-	redraw_editor(p);
-#endif
-/* FIXME: implement */
+	sc_editor_delete_selected_frame(sw->sceditor);
 }
 
 

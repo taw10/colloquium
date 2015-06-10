@@ -900,14 +900,15 @@ static void delete_unused_subframes(struct frame *fr)
 {
 	int i;
 	int done = 1;
+	int start = 0;
 
 	do {
-		printf("checking %i children of %p\n", fr->num_children, fr);
-		for ( i=0; i<fr->num_children; i++ ) {
+		done = 1;
+		for ( i=start; i<fr->num_children; i++ ) {
 			if ( !fr->children[i]->visited ) {
 				delete_subframe(fr, fr->children[i]);
 				done = 0;
-				printf("deleting %p\n", fr->children[i]);
+				start = i;
 				break;
 			} else {
 				delete_unused_subframes(fr->children[i]);

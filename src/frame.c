@@ -98,6 +98,11 @@ void renew_frame(struct frame *fr)
 	}
 	fr->boxes = malloc(sizeof(struct wrap_line));
 	initialise_line(fr->boxes);
+
+	fr->visited = 0;
+	for ( i=0; i<fr->num_children; i++ ) {
+		renew_frame(fr->children[i]);
+	}
 }
 
 
@@ -133,4 +138,57 @@ void show_hierarchy(struct frame *fr, const char *t)
 		show_hierarchy(fr->children[i], tn);
 	}
 
+}
+
+
+static struct frame *find_parent(struct frame *fr, struct frame *search)
+{
+	int i;
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		if ( fr->children[i] == search ) {
+			return fr;
+		}
+	}
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		struct frame *tt;
+		tt = find_parent(fr->children[i], search);
+		if ( tt != NULL ) return tt;
+	}
+
+	return NULL;
+}
+
+
+void delete_subframe(struct frame *top, struct frame *fr)
+{
+	struct frame *parent;
+	int i, idx, found;
+
+	parent = find_parent(top, fr);
+	if ( parent == NULL ) {
+		fprintf(stderr, "Couldn't find parent when deleting frame.\n");
+		return;
+	}
+
+	found = 0;
+	for ( i=0; i<parent->num_children; i++ ) {
+		if ( parent->children[i] == fr ) {
+			idx = i;
+			found = 1;
+			break;
+		}
+	}
+
+	if ( !found ) {
+		fprintf(stderr, "Couldn't find child when deleting frame.\n");
+		return;
+	}
+
+	for ( i=idx; i<parent->num_children-1; i++ ) {
+		parent->children[i] = parent->children[i+1];
+	}
+
+	parent->num_children--;
 }

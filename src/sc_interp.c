@@ -811,8 +811,6 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		struct frame *fr = sc_block_frame(bl);
 
-		renew_frame(fr);
-
 		if ( fr == NULL ) {
 			fr = add_subframe(sc_interp_get_frame(scin));
 			sc_block_set_frame(bl, fr);
@@ -827,6 +825,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			fprintf(stderr, "Failed to add frame.\n");
 			return 1;
 		}
+		fr->visited = 1;
 
 		parse_frame_options(fr, sc_interp_get_frame(scin),
 			            options);
@@ -894,6 +893,27 @@ static void run_macro_contents(SCInterpreter *scin)
 	sc_interp_save(scin);
 	sc_interp_add_blocks(scin, st->macro_contents);
 	sc_interp_restore(scin);
+}
+
+
+static void delete_unused_subframes(struct frame *fr)
+{
+	int i;
+	int done = 1;
+
+	do {
+		printf("checking %i children of %p\n", fr->num_children, fr);
+		for ( i=0; i<fr->num_children; i++ ) {
+			if ( !fr->children[i]->visited ) {
+				delete_subframe(fr, fr->children[i]);
+				done = 0;
+				printf("deleting %p\n", fr->children[i]);
+				break;
+			} else {
+				delete_unused_subframes(fr->children[i]);
+			}
+		}
+	} while ( !done );
 }
 
 
@@ -974,6 +994,8 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		bl = sc_block_next(bl);
 
 	}
+
+	delete_unused_subframes(sc_interp_get_frame(scin));
 
 	return 0;
 }

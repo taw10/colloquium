@@ -1,7 +1,7 @@
 /*
  * frame.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -56,6 +56,7 @@ struct frame
 
 	SCBlock                  *scblocks;
 	struct wrap_line         *boxes;  /* The unwrapped boxes */
+	int                       visited;
 
 	int                       n_lines;
 	int                       max_lines;
@@ -95,5 +96,6 @@ extern struct frame *frame_new(void);
 extern struct frame *add_subframe(struct frame *fr);
 extern void renew_frame(struct frame *fr);
 extern void show_hierarchy(struct frame *fr, const char *t);
+extern void delete_subframe(struct frame *top, struct frame *fr);
 
 #endif	/* FRAME_H */

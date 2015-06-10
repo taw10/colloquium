@@ -211,6 +211,7 @@ void advance_cursor(SCEditor *e)
 		break;
 
 		case WRAP_BOX_IMAGE:
+		case WRAP_BOX_CALLBACK:
 		cp++;
 		if ( cp > 1 ) advance = 1;
 		break;

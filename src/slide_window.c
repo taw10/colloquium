@@ -324,7 +324,7 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 
 	update_toolbar(sw);
 
-	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, np));
+	sc_editor_set_slidenum(sw->sceditor, 1+slide_number(sw->p, np));
 	sc_editor_set_scblock(sw->sceditor, np->scblocks);
 
 	if ( sw->notes != NULL ) notes_set_slide(sw->notes, np);

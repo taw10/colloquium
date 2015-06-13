@@ -866,7 +866,8 @@ static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
 	st->macro_real_block = bl;
 
 	mchild = sc_block_macro_child(bl);
-	if ( mchild == NULL ) {
+
+	if ( (mchild == NULL) || (strcmp(sc_block_name(bl), "slidenumber")==0) ) {
 
 		int i;
 		const char *name;
@@ -906,10 +907,10 @@ static void delete_unused_subframes(struct frame *fr)
 		done = 1;
 		for ( i=start; i<fr->num_children; i++ ) {
 			if ( !fr->children[i]->visited ) {
-				delete_subframe(fr, fr->children[i]);
-				done = 0;
-				start = i;
-				break;
+			//	delete_subframe(fr, fr->children[i]);
+			//	done = 0;
+			//	start = i;
+			//	break;
 			} else {
 				delete_unused_subframes(fr->children[i]);
 			}

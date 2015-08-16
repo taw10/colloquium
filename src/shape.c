@@ -118,7 +118,7 @@ static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
 	box->offs_char = offs;
 	box->space = sp;
 	box->width = 0;
-	box->len_chars = 1;
+	box->len_chars = 0;
 	box->ascent = sc_interp_get_ascent(scin);
 	box->height = sc_interp_get_height(scin);
 	box->filename = NULL;

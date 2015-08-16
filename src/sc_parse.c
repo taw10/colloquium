@@ -438,7 +438,7 @@ SCBlock *sc_parse(const char *sc)
 
 	if ( strlen(sc) == 0 ) {
 		SCBlock *bl = sc_block_new();
-		sc_block_set_contents(bl, strdup(""));
+		sc_block_set_contents(bl, g_strdup(""));
 		return bl;
 	}
 
@@ -538,7 +538,7 @@ void sc_block_set_options(SCBlock *bl, char *opt)
 
 void sc_block_set_contents(SCBlock *bl, char *con)
 {
-	free(bl->contents);
+	g_free(bl->contents);
 	bl->contents = con;
 }
 
@@ -571,12 +571,21 @@ void sc_insert_text(SCBlock *b1, int o1, const char *t)
 
 void sc_insert_block(SCBlock *b1, int o1, SCBlock *ins)
 {
+	SCBlock *second;
 	char *p1 = g_utf8_offset_to_pointer(b1->contents, o1);
+
+	/* Create a new block containing the second half of b1 */
+	second = sc_block_new();
+	sc_block_set_contents(second, g_strdup(p1));
+
+	/* Chop off b1 at the insertion point */
+	sc_block_set_contents(b1, g_utf8_substring(b1->contents, 0, o1));
+
+	/* Link the new block into the chain */
 	SCBlock *old_next = b1->next;
 	b1->next = ins;
-	if ( strlen(p1) > 0 ) {
-	//	sc_block_append_end(b1, NULL, NULL, p1);
-	}
+	ins->next = second;
+	second->next = old_next;
 }
 
 

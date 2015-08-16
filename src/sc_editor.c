@@ -614,8 +614,8 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 //	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
 	full_rerender(e); /* FIXME: No need for full */
-	fixup_cursor(e);
-	sc_editor_redraw(e);
+	//fixup_cursor(e);
+	//sc_editor_redraw(e);
 }
 
 

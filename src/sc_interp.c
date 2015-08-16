@@ -867,6 +867,7 @@ static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
 			scin->state[scin->j].macro_contents = child;
 			sc_interp_add_blocks(scin, st->macros[i].bl);
 			sc_interp_restore(scin);
+			break;
 		}
 	}
 }

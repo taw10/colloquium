@@ -95,7 +95,6 @@ struct frame
 extern struct frame *frame_new(void);
 extern void frame_free(struct frame *fr);
 extern struct frame *add_subframe(struct frame *fr);
-extern void renew_frame(struct frame *fr);
 extern void show_hierarchy(struct frame *fr, const char *t);
 extern void delete_subframe(struct frame *top, struct frame *fr);
 

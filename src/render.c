@@ -459,7 +459,6 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 			i++;
 		}
 	}
-	renew_frame(top);
 	sc_interp_add_blocks(scin, scblocks);
 	recursive_wrap_and_draw(top, cr, is, isz);
 

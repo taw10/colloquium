@@ -66,20 +66,29 @@ void sc_editor_set_background(SCEditor *e, double r, double g, double b)
 }
 
 
-/* Update the view, once it's been edited in some way. */
-static void rerender(SCEditor *e)
+/* (Re-)run the entire rendering pipeline.
+ * NB "full" means "full".  All frame, line and box handles will become
+ * invalid.  The cursor position will be unset. */
+static void full_rerender(SCEditor *e)
 {
 	if ( e->surface != NULL ) {
 		cairo_surface_destroy(e->surface);
 	}
 
+	frame_free(e->top);
+	e->cursor_frame = NULL;
+	e->cursor_line = 0;
+	e->cursor_pos = 0;
+	e->selection = NULL;
+
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
 	                       e->stylesheets, e->cbl, e->is, ISZ_EDITOR,
 	                       e->slidenum, &e->top);
+
+	sc_editor_redraw(e);
 }
 
 
-/* Force a redraw of the editor window */
 void sc_editor_redraw(SCEditor *e)
 {
 	gint w, h;
@@ -94,12 +103,7 @@ void sc_editor_redraw(SCEditor *e)
 void sc_editor_delete_selected_frame(SCEditor *e)
 {
 	sc_block_delete(e->scblocks, e->selection->scblocks);
-	e->cursor_frame = NULL;
-	e->cursor_line = 0;
-	e->cursor_pos = 0;
-	e->selection = NULL;
-	rerender(e);
-	sc_editor_redraw(e);
+	full_rerender(e);
 }
 
 
@@ -535,12 +539,11 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 
 	fr->empty = 0;
 
-	rerender(e);
+	full_rerender(e); /* FIXME: No need for full */
 
-	fixup_cursor(e);
-	advance_cursor(e);
-
-	sc_editor_redraw(e);
+	//fixup_cursor(e);
+	//advance_cursor(e);
+	//sc_editor_redraw(e);
 }
 
 
@@ -560,16 +563,17 @@ static void insert_text(char *t, SCEditor *e)
 	sps = e->cursor_pos;
 	sbox = &e->cursor_frame->lines[sln].boxes[sbx];
 
+	cur_box_diag(e);
+	printf("sps=%i, offs_char=%i\n", sps, sbox->offs_char);
 	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
 
 	fr->empty = 0;
 
-	rerender(e);
+	full_rerender(e); /* FIXME: No need for full */
 
-	fixup_cursor(e);
-	advance_cursor(e);
-
-	sc_editor_redraw(e);
+	//fixup_cursor(e);
+	//advance_cursor(e);
+	//sc_editor_redraw(e);
 }
 
 
@@ -609,7 +613,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 //		scbl = sc_block_next(scbl);
 //	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
-	rerender(e);
+	full_rerender(e); /* FIXME: No need for full */
 	fixup_cursor(e);
 	sc_editor_redraw(e);
 }
@@ -1009,7 +1013,7 @@ static void do_resize(SCEditor *e, double x, double y, double w, double h)
 	fr->h = h;
 	update_geom(fr);
 
-	rerender(e);
+	full_rerender(e);
 	sc_editor_redraw(e);
 }
 
@@ -1041,7 +1045,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
 		                     e->drag_corner_x - e->start_corner_x,
 		                     e->drag_corner_y - e->start_corner_y);
-		rerender(e);
+		full_rerender(e);
 		e->selection = fr;
 		e->cursor_frame = fr;
 		e->cursor_line = 0;
@@ -1343,7 +1347,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			fr->is_image = 1;
 			fr->empty = 0;
 			sc_block_append_inside(fr->scblocks, "image", opts, "");
-			rerender(e);
+			full_rerender(e); /* FIXME: No need for full */
 			e->selection = fr;
 			sc_editor_redraw(e);
 			free(filename);
@@ -1388,7 +1392,7 @@ static gint realise_sig(GtkWidget *da, SCEditor *e)
 
 	/* FIXME: Can do this "properly" by setting up a separate font map */
 	e->pc = gtk_widget_get_pango_context(GTK_WIDGET(e));
-	rerender(e);
+	full_rerender(e);
 
 	return FALSE;
 }
@@ -1397,8 +1401,7 @@ static gint realise_sig(GtkWidget *da, SCEditor *e)
 void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
 {
 	e->scblocks = scblocks;
-	rerender(e);
-	sc_editor_redraw(e);
+	full_rerender(e);
 }
 
 
@@ -1414,7 +1417,7 @@ void sc_editor_set_size(SCEditor *e, int w, int h)
 	e->h = h;
 	update_size_request(e);
 	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
-		rerender(e);
+		full_rerender(e);
 		sc_editor_redraw(e);
 	}
 }
@@ -1425,7 +1428,7 @@ void sc_editor_set_logical_size(SCEditor *e, double w, double h)
 	e->log_w = w;
 	e->log_h = h;
 	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
-		rerender(e);
+		full_rerender(e);
 		sc_editor_redraw(e);
 	}
 }

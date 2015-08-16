@@ -82,40 +82,27 @@ void frame_free(struct frame *fr)
 {
 	int i;
 
-	free(fr->boxes);
-	for ( i=0; i<fr->num_children; i++ ) {
-		frame_free(fr->children[i]);
-	}
-	free(fr->children);
-	free(fr);
-}
-
-
-void renew_frame(struct frame *fr)
-{
-	int i;
-
 	if ( fr == NULL ) return;
 
+	/* Free all lines */
 	for ( i=0; i<fr->n_lines; i++ ) {
 		wrap_line_free(&fr->lines[i]);
 	}
 	free(fr->lines);
-	fr->lines = NULL;
-	fr->n_lines = 0;
-	fr->max_lines = 0;
 
+	/* Free unwrapped boxes */
 	if ( fr->boxes != NULL ) {
 		free(fr->boxes->boxes);
 		free(fr->boxes);
 	}
-	fr->boxes = malloc(sizeof(struct wrap_line));
-	initialise_line(fr->boxes);
 
-	fr->visited = 0;
+	/* Free all children */
 	for ( i=0; i<fr->num_children; i++ ) {
-		renew_frame(fr->children[i]);
+		frame_free(fr->children[i]);
 	}
+	free(fr->children);
+
+	free(fr);
 }
 
 

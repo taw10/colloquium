@@ -43,9 +43,6 @@ struct _scblock
 	SCBlock *next;
 	SCBlock *prev;
 	SCBlock *child;
-	SCBlock *macro_child;
-
-	struct frame *fr;
 };
 
 
@@ -55,8 +52,6 @@ SCBlock *sc_block_new()
 
 	bl = calloc(1, sizeof(SCBlock));
 	if ( bl == NULL ) return NULL;
-
-	bl->macro_child = NULL;
 
 	return bl;
 }
@@ -71,18 +66,6 @@ SCBlock *sc_block_next(const SCBlock *bl)
 SCBlock *sc_block_child(const SCBlock *bl)
 {
 	return bl->child;
-}
-
-
-SCBlock *sc_block_macro_child(const SCBlock *bl)
-{
-	return bl->macro_child;
-}
-
-
-void sc_block_set_macro_child(SCBlock *bl, SCBlock *mchild)
-{
-	bl->macro_child = mchild;
 }
 
 
@@ -101,18 +84,6 @@ const char *sc_block_options(const SCBlock *bl)
 const char *sc_block_contents(const SCBlock *bl)
 {
 	return bl->contents;
-}
-
-
-struct frame *sc_block_frame(const SCBlock *bl)
-{
-	return bl->fr;
-}
-
-
-void sc_block_set_frame(SCBlock *bl, struct frame *fr)
-{
-	bl->fr = fr;
 }
 
 
@@ -335,7 +306,6 @@ void show_sc_block(const SCBlock *bl, const char *prefix)
 	if ( bl->name != NULL ) printf("\\%s ", bl->name);
 	if ( bl->options != NULL ) printf("[%s] ", bl->options);
 	if ( bl->contents != NULL ) printf("{%s} ", bl->contents);
-	if ( bl->fr != NULL ) printf("-> frame %p", bl->fr);
 	printf("\n");
 
 	if ( bl->child != NULL ) {

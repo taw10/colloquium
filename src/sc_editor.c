@@ -819,8 +819,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	if ( within_frame(e->selection, x, y) ) {
 		clicked = e->selection;
 	} else {
-		clicked = find_frame_at_position(sc_block_frame(e->scblocks),
-		                                 x, y);
+		clicked = find_frame_at_position(e->top, x, y);
 	}
 
 	/* If the user clicked the currently selected frame, position cursor
@@ -867,8 +866,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		}
 
 	} else if ( (clicked == NULL)
-	         || ( !e->top_editable
-	           && (clicked == sc_block_frame(e->scblocks)) ) )
+	         || ( !e->top_editable && (clicked == e->top) ) )
 	{
 		/* Clicked no object. Deselect old object and set up for
 		 * (maybe) creating a new one. */
@@ -955,7 +953,7 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	struct frame *parent;
 	struct frame *fr;
 
-	parent = sc_block_frame(e->scblocks);
+	parent = e->top;
 
 	if ( w < 0.0 ) {
 		x += w;
@@ -972,7 +970,6 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	/* Add to SC */
 	fr->scblocks = sc_block_append_end(e->scblocks,
 	                                   "f", NULL, NULL);
-	sc_block_set_frame(fr->scblocks, fr);
 	sc_block_append_inside(fr->scblocks, NULL, NULL, strdup(""));
 
 	fr->x = x;

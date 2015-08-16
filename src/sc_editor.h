@@ -96,6 +96,7 @@ struct _sceditor
 	SCBlock             **stylesheets;
 	ImageStore          *is;
 	SCCallbackList      *cbl;
+	struct frame        *top;
 
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;

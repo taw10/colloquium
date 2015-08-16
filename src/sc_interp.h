@@ -29,6 +29,8 @@
 
 #include <pango/pangocairo.h>
 
+#include "frame.h"
+
 struct presentation;
 typedef struct _scinterp SCInterpreter;
 typedef struct _sccallbacklist SCCallbackList;

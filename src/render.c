@@ -431,12 +431,8 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
 	pc = pango_font_map_create_context(fontmap);
 	pango_cairo_update_context(cr, pc);
 
-	top = sc_block_frame(scblocks);
-	if ( top == NULL ) {
-		top = frame_new();
-		top->resizable = 0;
-		sc_block_set_frame(scblocks, top);
-	}
+	top = frame_new();
+	top->resizable = 0;
 	top->x = 0.0;
 	top->y = 0.0;
 	top->w = log_w;

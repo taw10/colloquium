@@ -39,12 +39,9 @@ extern SCBlock *sc_block_copy(const SCBlock *bl);
 
 extern SCBlock *sc_block_next(const SCBlock *bl);
 extern SCBlock *sc_block_child(const SCBlock *bl);
-extern SCBlock *sc_block_macro_child(const SCBlock *bl);
 extern const char *sc_block_name(const SCBlock *bl);
 extern const char *sc_block_options(const SCBlock *bl);
 extern const char *sc_block_contents(const SCBlock *bl);
-
-extern void sc_block_set_macro_child(SCBlock *bl, SCBlock *mchild);
 
 extern SCBlock *sc_block_append(SCBlock *bl,
                                 char *name, char *opt, char *contents,
@@ -60,9 +57,6 @@ extern SCBlock *sc_block_insert_after(SCBlock *afterme,
                                       char *name, char *opt, char *contents);
 
 extern void sc_block_delete(SCBlock *top, SCBlock *deleteme);
-
-extern struct frame *sc_block_frame(const SCBlock *bl);
-extern void sc_block_set_frame(SCBlock *bl, struct frame *fr);
 
 extern SCBlock *find_last_child(SCBlock *bl);
 

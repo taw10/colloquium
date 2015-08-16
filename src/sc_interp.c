@@ -809,23 +809,19 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 	} else if ( strcmp(name, "f")==0 ) {
 
-		struct frame *fr = sc_block_frame(bl);
+		struct frame *fr;
 
-		if ( fr == NULL ) {
-			fr = add_subframe(sc_interp_get_frame(scin));
-			sc_block_set_frame(bl, fr);
-			fr->scblocks = bl;
-			if ( in_macro(scin) ) {
-				fr->resizable = 0;
-			} else {
-				fr->resizable = 1;
-			}
+		fr = add_subframe(sc_interp_get_frame(scin));
+		fr->scblocks = bl;
+		if ( in_macro(scin) ) {
+			fr->resizable = 0;
+		} else {
+			fr->resizable = 1;
 		}
 		if ( fr == NULL ) {
 			fprintf(stderr, "Failed to add frame.\n");
 			return 1;
 		}
-		fr->visited = 1;
 
 		parse_frame_options(fr, sc_interp_get_frame(scin),
 			            options);
@@ -859,31 +855,20 @@ static int check_macro(const char *name, SCInterpreter *scin)
 
 static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
 {
-	SCBlock *mchild;
 	struct sc_state *st = &scin->state[scin->j];
+	int i;
+	const char *name;
 
-	st->macro_contents = child;
-	st->macro_real_block = bl;
-
-	mchild = sc_block_macro_child(bl);
-
-	if ( (mchild == NULL) || (strcmp(sc_block_name(bl), "slidenumber")==0) ) {
-
-		int i;
-		const char *name;
-
-		/* Copy macro blocks into structure */
-		name = sc_block_name(bl);
-		for ( i=0; i<st->n_macros; i++ ) {
-			if ( strcmp(st->macros[i].name, name) == 0 ) {
-				mchild = sc_block_copy(st->macros[i].bl);
-				sc_block_set_macro_child(bl, mchild);
-			}
+	name = sc_block_name(bl);
+	for ( i=0; i<st->n_macros; i++ ) {
+		if ( strcmp(st->macros[i].name, name) == 0 ) {
+			sc_interp_save(scin);
+			scin->state[scin->j].macro_real_block = bl;
+			scin->state[scin->j].macro_contents = child;
+			sc_interp_add_blocks(scin, st->macros[i].bl);
+			sc_interp_restore(scin);
 		}
-
 	}
-
-	sc_interp_add_blocks(scin, mchild);
 }
 
 
@@ -894,28 +879,6 @@ static void run_macro_contents(SCInterpreter *scin)
 	sc_interp_save(scin);
 	sc_interp_add_blocks(scin, st->macro_contents);
 	sc_interp_restore(scin);
-}
-
-
-static void delete_unused_subframes(struct frame *fr)
-{
-	int i;
-	int done = 1;
-	int start = 0;
-
-	do {
-		done = 1;
-		for ( i=start; i<fr->num_children; i++ ) {
-			if ( !fr->children[i]->visited ) {
-			//	delete_subframe(fr, fr->children[i]);
-			//	done = 0;
-			//	start = i;
-			//	break;
-			} else {
-				delete_unused_subframes(fr->children[i]);
-			}
-		}
-	} while ( !done );
 }
 
 
@@ -996,8 +959,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		bl = sc_block_next(bl);
 
 	}
-
-	delete_unused_subframes(sc_interp_get_frame(scin));
 
 	return 0;
 }

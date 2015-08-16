@@ -946,6 +946,7 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "bggradv") == 0 ) {
 			set_frame_bggrad(sc_interp_get_frame(scin), options,
 			                 GRAD_VERT);
+
 		} else if ( strcmp(name, "callback") == 0 ) {
 			do_callback(scin, bl, options);
 

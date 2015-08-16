@@ -231,12 +231,14 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	SCBlock *scblocks = bvp;
 	cairo_surface_t *surf;
 	SCBlock *stylesheets[2];
+	struct frame *top;
 
 	scblocks = sc_block_child(scblocks);
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
 	surf = render_sc(scblocks, w, h, 1024.0, 768.0, stylesheets, NULL,
-	                 p->is, ISZ_THUMBNAIL, 0);
+	                 p->is, ISZ_THUMBNAIL, 0, &top);
+	frame_free(top);
 
 	return surf;
 }

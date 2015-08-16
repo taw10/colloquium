@@ -75,7 +75,7 @@ static void rerender(SCEditor *e)
 
 	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
 	                       e->stylesheets, e->cbl, e->is, ISZ_EDITOR,
-	                       e->slidenum);
+	                       e->slidenum, &e->top);
 }
 
 

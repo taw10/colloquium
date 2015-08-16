@@ -78,6 +78,19 @@ struct frame *frame_new()
 }
 
 
+void frame_free(struct frame *fr)
+{
+	int i;
+
+	free(fr->boxes);
+	for ( i=0; i<fr->num_children; i++ ) {
+		frame_free(fr->children[i]);
+	}
+	free(fr->children);
+	free(fr);
+}
+
+
 void renew_frame(struct frame *fr)
 {
 	int i;

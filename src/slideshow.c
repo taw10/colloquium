@@ -53,7 +53,7 @@ struct _slideshow
 	struct inhibit_sys  *inhibit;
 	int                  linked;
 	cairo_surface_t     *surface;
-	struct frame         top;
+	struct frame        *top;
 };
 
 
@@ -85,7 +85,8 @@ void slideshow_rerender(SlideShow *ss)
 	ss->surface = render_sc(ss->cur_slide->scblocks,
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
-	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n);
+	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n,
+	                        &ss->top);
 }
 
 
@@ -267,26 +268,6 @@ SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p)
 	if ( ss->inhibit == NULL ) {
 		ss->inhibit = inhibit_prepare();
 	}
-
-	ss->top.children = NULL;
-	ss->top.num_children = 0;
-	ss->top.max_children = 0;
-	ss->top.lines = NULL;
-	ss->top.n_lines = 0;
-	ss->top.max_lines = 0;
-	ss->top.pad_l = 0;
-	ss->top.pad_r = 0;
-	ss->top.pad_t = 0;
-	ss->top.pad_b = 0;
-	ss->top.x = 0.0;
-	ss->top.y = 0.0;
-	ss->top.w = slide_width;
-	ss->top.h = slide_height;
-	ss->top.grad = GRAD_NONE;
-	ss->top.bgcol[0] = 1.0;
-	ss->top.bgcol[1] = 1.0;
-	ss->top.bgcol[2] = 1.0;
-	ss->top.bgcol[3] = 1.0;
 
 	ss->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 

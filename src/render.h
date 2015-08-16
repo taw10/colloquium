@@ -1,7 +1,7 @@
 /*
  * render.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -30,12 +30,13 @@
 #include "presentation.h"
 #include "imagestore.h"
 #include "sc_interp.h"
+#include "frame.h"
 
 extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                                   double log_w, double log_h,
                                   SCBlock **stylesheets, SCCallbackList *cbl,
                                   ImageStore *is, enum is_size isz,
-                                  int slide_number);
+                                  int slide_number, struct frame **ptop);
 
 extern int export_pdf(struct presentation *p, const char *filename);
 

@@ -403,7 +403,7 @@ static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
 }
 
 
-static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
+static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
                                  cairo_t *cr, double log_w, double log_h,
                                  SCBlock **stylesheets, SCCallbackList *cbl,
                                  ImageStore *is, enum is_size isz,
@@ -441,7 +441,8 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
 	scin = sc_interp_new(pc, top);
 	if ( scin == NULL ) {
 		fprintf(stderr, "Failed to set up interpreter.\n");
-		return;
+		frame_free(top);
+		return NULL;
 	}
 
 	sc_interp_set_callbacks(scin, cbl);
@@ -465,34 +466,30 @@ static void render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
 	sc_interp_destroy(scin);
 	cairo_font_options_destroy(fopts);
 	g_object_unref(pc);
+
+	return top;
 }
 
 
-/**
- * render_slide:
- * @s: A slide.
- * @w: Width of bitmap to output
- * @h: Height of bitmap to produce
- * @ww: Logical width of the rendering area
- * @hh: Logical height of the rendering area
- *
- * Render the entire slide.
- */
 cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                            double log_w, double log_h,
                            SCBlock **stylesheets, SCCallbackList *cbl,
                            ImageStore *is, enum is_size isz,
-                           int slide_number)
+                           int slide_number, struct frame **ptop)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
+	struct frame *top;
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	cr = cairo_create(surf);
 	cairo_scale(cr, w/log_w, h/log_h);
-	render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
-	                     stylesheets, cbl, is, isz,slide_number);
+	top = render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
+	                           stylesheets, cbl, is, isz,slide_number);
 	cairo_destroy(cr);
+
+	*ptop = top;
+
 	return surf;
 }
 

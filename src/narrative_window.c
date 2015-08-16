@@ -125,10 +125,34 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointe
 
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-	SCBlock *slide;
+	struct slide *slide;
+	int n_slides;
+	SCBlock *block;
+	SCBlock *nsblock;
 	NarrativeWindow *nw = vp;
-	slide = sc_parse("\\slide{}");
-	insert_scblock(slide, nw->sceditor);
+
+	slide = new_slide();
+
+	/* Link it into the SC structure */
+	nsblock = sc_parse("\\slide{}");
+	insert_scblock(nsblock, nw->sceditor);
+
+	/* Iterate over blocks of presentation, counting \slides, until
+	 * we reach the block we just added */
+	block = nw->p->scblocks;
+	n_slides = 0;
+	while ( block != NULL ) {
+		const char *n = sc_block_name(block);
+		if ( n == NULL ) goto next;
+		if ( strcmp(n, "slide") == 0 ) {
+			if ( block == nsblock ) break;
+			n_slides++;
+		}
+next:
+		block = sc_block_next(block);
+	}
+	slide->scblocks = sc_block_child(nsblock);
+	insert_slide(nw->p, slide, n_slides);
 }
 
 

@@ -843,6 +843,8 @@ static int check_macro(const char *name, SCInterpreter *scin)
 	int i;
 	struct sc_state *st = &scin->state[scin->j];
 
+	if ( name == NULL ) return 0;
+
 	for ( i=0; i<st->n_macros; i++ ) {
 		if ( strcmp(st->macros[i].name, name) == 0 ) {
 			return 1;
@@ -895,7 +897,12 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		const char *options = sc_block_options(bl);
 		SCBlock *child = sc_block_child(bl);
 
-		if ((sc_interp_get_frame(scin) != NULL)
+		if ( check_macro(name, scin) ) {
+			sc_interp_save(scin);
+			exec_macro(bl, scin, child);
+			sc_interp_restore(scin);
+
+		} else if ((sc_interp_get_frame(scin) != NULL)
 		  && check_outputs(bl, scin) ) {
 			/* Block handled as output thing */
 
@@ -921,11 +928,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			maybe_recurse_before(scin, child);
 			set_colour(scin, options);
 			maybe_recurse_after(scin, child);
-
-		} else if ( check_macro(name, scin) ) {
-			sc_interp_save(scin);
-			exec_macro(bl, scin, child);
-			sc_interp_restore(scin);
 
 		} else if ( strcmp(name, "contents") == 0 ) {
 			run_macro_contents(scin);

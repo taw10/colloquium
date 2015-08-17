@@ -48,7 +48,32 @@ struct _narrative_window
 	SCEditor *sceditor;
 	GApplication *app;
 	struct presentation *p;
+	SlideShow           *show;
+	struct slide        *sel_slide;
 };
+
+
+static void update_toolbar(NarrativeWindow *nw)
+{
+	int cur_slide_number;
+
+	cur_slide_number = slide_number(nw->p, nw->sel_slide);
+	if ( cur_slide_number == 0 ) {
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
+	} else {
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), TRUE);
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), TRUE);
+	}
+
+	if ( cur_slide_number == nw->p->num_slides-1 ) {
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
+	} else {
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), TRUE);
+		gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), TRUE);
+	}
+}
 
 
 static gint saveas_response_sig(GtkWidget *d, gint response,
@@ -156,8 +181,100 @@ next:
 }
 
 
-static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+static void ss_end_show(SlideShow *ss, void *vp)
 {
+	NarrativeWindow *nw = vp;
+	nw->show = NULL;
+}
+
+
+static void ss_next_slide(SlideShow *ss, void *vp)
+{
+	NarrativeWindow *nw = vp;
+	int cur_slide_number;
+	cur_slide_number = slide_number(nw->p, nw->sel_slide);
+	if ( cur_slide_number == nw->p->num_slides-1 ) return;
+	nw->sel_slide = nw->p->slides[cur_slide_number+1];
+	if ( slideshow_linked(nw->show) ) {
+		change_proj_slide(nw->show, nw->sel_slide);
+	} /* else leave the slideshow alone */
+	update_toolbar(nw);
+}
+
+
+static void ss_prev_slide(SlideShow *ss, void *vp)
+{
+	NarrativeWindow *nw = vp;
+	int cur_slide_number;
+	cur_slide_number = slide_number(nw->p, nw->sel_slide);
+	if ( cur_slide_number == 0 ) return;
+	nw->sel_slide = nw->p->slides[cur_slide_number-1];
+	if ( slideshow_linked(nw->show) ) {
+		change_proj_slide(nw->show, nw->sel_slide);
+	} /* else leave the slideshow alone */
+	update_toolbar(nw);
+}
+
+
+static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+}
+
+
+static void prev_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	ss_prev_slide(NULL, vp);
+}
+
+
+static void next_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	ss_next_slide(NULL, vp);
+}
+
+
+static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+}
+
+
+static void ss_changed_link(SlideShow *ss, void *vp)
+{
+}
+
+
+static struct slide *ss_cur_slide(SlideShow *ss, void *vp)
+{
+	NarrativeWindow *nw = vp;
+	return nw->sel_slide;
+}
+
+
+static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
+                                gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	struct sscontrolfuncs ssc;
+
+	if ( nw->p->num_slides == 0 ) return;
+
+	ssc.next_slide = ss_next_slide;
+	ssc.prev_slide = ss_prev_slide;
+	ssc.current_slide = ss_cur_slide;
+	ssc.changed_link = ss_changed_link;
+	ssc.end_show = ss_end_show;
+
+	nw->sel_slide = nw->p->slides[0];
+
+	nw->show = try_start_slideshow(nw->p, ssc, nw);
 }
 
 
@@ -191,6 +308,10 @@ GActionEntry nw_entries[] = {
 	{ "notes", open_notes_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },
 	{ "testcard", testcard_sig, NULL, NULL, NULL },
+	{ "first", first_slide_sig, NULL, NULL, NULL },
+	{ "prev", prev_slide_sig, NULL, NULL, NULL },
+	{ "next", next_slide_sig, NULL, NULL, NULL },
+	{ "last", last_slide_sig, NULL, NULL, NULL },
 };
 
 
@@ -220,11 +341,6 @@ static void nw_update_titlebar(NarrativeWindow *nw)
 
        }
 
-}
-
-
-static void update_toolbar(NarrativeWindow *nw)
-{
 }
 
 
@@ -373,6 +489,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->blast));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
 	                               "win.last");
+
+	nw->sel_slide = nw->p->slides[0];
 	update_toolbar(nw);
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);

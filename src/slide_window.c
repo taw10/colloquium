@@ -253,13 +253,6 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer v
 }
 
 
-static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-	SlideWindow *sw = vp;
-	sw->show = try_start_slideshow(sw, sw->p);
-}
-
-
 static gint export_pdf_response_sig(GtkWidget *d, gint response,
                                     SlideWindow *sw)
 {
@@ -305,12 +298,6 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-void slidewindow_slideshow_ended(SlideWindow *sw)
-{
-	sw->show = NULL;
-}
-
-
 void slidewindow_notes_closed(SlideWindow *sw)
 {
 	sw->notes = NULL;
@@ -335,13 +322,13 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 }
 
 
-void change_slide_first(SlideWindow *sw)
+static void change_slide_first(SlideWindow *sw)
 {
 	change_edit_slide(sw, sw->p->slides[0]);
 }
 
 
-void change_slide_backwards(SlideWindow *sw)
+static void change_slide_backwards(SlideWindow *sw)
 {
 	int cur_slide_number;
 
@@ -352,7 +339,7 @@ void change_slide_backwards(SlideWindow *sw)
 }
 
 
-void change_slide_forwards(SlideWindow *sw)
+static void change_slide_forwards(SlideWindow *sw)
 {
 	int cur_slide_number;
 
@@ -363,7 +350,7 @@ void change_slide_forwards(SlideWindow *sw)
 }
 
 
-void change_slide_last(SlideWindow *sw)
+static void change_slide_last(SlideWindow *sw)
 {
 	change_edit_slide(sw, sw->p->slides[sw->p->num_slides-1]);
 }
@@ -434,12 +421,6 @@ void slidewindow_redraw(SlideWindow *sw)
 }
 
 
-struct slide *slidewindow_get_slide(SlideWindow *sw)
-{
-	return sw->cur_slide;
-}
-
-
 void update_titlebar(struct presentation *p)
 {
 	get_titlebar_string(p);
@@ -462,6 +443,57 @@ static gboolean close_sig(GtkWidget *w, SlideWindow *sw)
 {
 	sw->p->slidewindow = NULL;
 	return FALSE;
+}
+
+
+static void ss_end_show(SlideShow *ss, void *vp)
+{
+	SlideWindow *sw = vp;
+	sw->show = NULL;
+}
+
+
+static void ss_next_slide(SlideShow *ss, void *vp)
+{
+	SlideWindow *sw = vp;
+	change_slide_forwards(sw);
+}
+
+
+static void ss_prev_slide(SlideShow *ss, void *vp)
+{
+	SlideWindow *sw = vp;
+	change_slide_backwards(sw);
+}
+
+
+static void ss_changed_link(SlideShow *ss, void *vp)
+{
+	SlideWindow *sw = vp;
+	slidewindow_redraw(sw);
+}
+
+
+static struct slide *ss_cur_slide(SlideShow *ss, void *vp)
+{
+	SlideWindow *sw = vp;
+	return sw->cur_slide;
+}
+
+
+static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
+                                gpointer vp)
+{
+	SlideWindow *sw = vp;
+	struct sscontrolfuncs ssc;
+
+	ssc.next_slide = ss_next_slide;
+	ssc.prev_slide = ss_prev_slide;
+	ssc.current_slide = ss_cur_slide;
+	ssc.changed_link = ss_changed_link;
+	ssc.end_show = ss_end_show;
+
+	sw->show = try_start_slideshow(sw->p, ssc, sw);
 }
 
 

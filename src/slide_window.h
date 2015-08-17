@@ -1,7 +1,7 @@
 /*
  * slide_window.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -33,14 +33,6 @@ extern SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 extern void change_edit_slide(SlideWindow *sw, struct slide *np);
 extern void update_titlebar(struct presentation *p);
 
-extern void change_slide_first(SlideWindow *sw);
-extern void change_slide_backwards(SlideWindow *sw);
-extern void change_slide_forwards(SlideWindow *sw);
-extern void change_slide_last(SlideWindow *sw);
-
-extern struct slide *slidewindow_get_slide(SlideWindow *sw);
-extern void slidewindow_redraw(SlideWindow *sw);
-extern void slidewindow_slideshow_ended(SlideWindow *sw);
 extern void slidewindow_notes_closed(SlideWindow *sw);
 
 #endif	/* SLIDEWINDOW_H */

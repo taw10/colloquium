@@ -32,7 +32,6 @@
 #include <gdk/gdkkeysyms.h>
 
 #include "presentation.h"
-#include "slide_window.h"
 #include "render.h"
 #include "pr_clock.h"
 #include "inhibit_screensaver.h"
@@ -41,7 +40,8 @@
 struct _slideshow
 {
 	struct presentation *p;
-	SlideWindow         *slide_window;  /* Slide window controlling us */
+	struct sscontrolfuncs ssc;
+	void                *vp;  /* Controller's private word */
 	struct slide        *cur_slide;
 	GtkWidget           *window;
 	GtkWidget           *drawingarea;
@@ -93,8 +93,7 @@ void slideshow_rerender(SlideShow *ss)
 static gint ss_destroy_sig(GtkWidget *widget, SlideShow *ss)
 {
 	g_object_unref(ss->blank_cursor);
-	slidewindow_slideshow_ended(ss->slide_window);
-	slidewindow_redraw(ss->slide_window);
+	ss->ssc.end_show(ss, ss->vp);
 	if ( ss->surface != NULL ) {
 		cairo_surface_destroy(ss->surface);
 	}
@@ -152,14 +151,14 @@ void change_proj_slide(SlideShow *ss, struct slide *np)
 
 static gint prev_slide_sig(GtkWidget *widget, SlideShow *ss)
 {
-	change_slide_backwards(ss->slide_window);
+	ss->ssc.prev_slide(ss, ss->vp);
 	return FALSE;
 }
 
 
 static gint next_slide_sig(GtkWidget *widget, SlideShow *ss)
 {
-	change_slide_forwards(ss->slide_window);
+	ss->ssc.next_slide(ss, ss->vp);
 	return FALSE;
 }
 
@@ -176,9 +175,9 @@ void toggle_slideshow_link(SlideShow *ss)
 {
 	ss->linked = 1 - ss->linked;
 	if ( ss->linked ) {
-		change_proj_slide(ss, slidewindow_get_slide(ss->slide_window));
+		change_proj_slide(ss, ss->ssc.current_slide(ss, ss->vp));
 	}
-	slidewindow_redraw(ss->slide_window);
+	ss->ssc.changed_link(ss, ss->vp);
 }
 
 
@@ -249,7 +248,8 @@ struct slide *slideshow_slide(SlideShow *ss)
 }
 
 
-SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p)
+SlideShow *try_start_slideshow(struct presentation *p,
+                               struct sscontrolfuncs ssc, void *vp)
 {
 	GdkScreen *screen;
 	int n_monitors;
@@ -257,13 +257,15 @@ SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p)
 	SlideShow *ss;
 	double slide_width = 1024.0; /* Logical slide size */
 	double slide_height = 768.0; /* FIXME: Should come from slide */
+
 	ss = calloc(1, sizeof(SlideShow));
 	if ( ss == NULL ) return NULL;
 
-	ss->slide_window = sw;
+	ss->ssc = ssc;
+	ss->vp = vp;
 	ss->blank = 0;
 	ss->p = p;
-	ss->cur_slide = slidewindow_get_slide(sw);
+	ss->cur_slide = ss->ssc.current_slide(ss, vp);
 
 	if ( ss->inhibit == NULL ) {
 		ss->inhibit = inhibit_prepare();

@@ -1,7 +1,7 @@
 /*
  * slideshow.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -27,12 +27,30 @@
 #include <config.h>
 #endif
 
-#include "slide_window.h"
-
 /* Opaque data structure representing a slideshow */
 typedef struct _slideshow SlideShow;
 
-extern SlideShow *try_start_slideshow(SlideWindow *sw, struct presentation *p);
+struct sscontrolfuncs
+{
+	/* Controller should switch slide forwards or backwards */
+	void (*next_slide)(SlideShow *ss, void *vp);
+	void (*prev_slide)(SlideShow *ss, void *vp);
+
+	/* Controller should return what it thinks is the current slide
+	 * (this might not be what is on the screen, e.g. if the display
+	 * is unlinked) */
+	struct slide *(*current_slide)(SlideShow *ss, void *vp);
+
+	/* Controller should update whatever visual representation of
+	 * whether or not the display is linked */
+	void (*changed_link)(SlideShow *ss, void *vp);
+
+	/* Slideshow ended (including if you called end_slideshow) */
+	void (*end_show)(SlideShow *ss, void *vp);
+};
+
+extern SlideShow *try_start_slideshow(struct presentation *p,
+                                      struct sscontrolfuncs ssc, void *vp);
 extern void end_slideshow(SlideShow *ss);
 
 extern void change_proj_slide(SlideShow *ss, struct slide *np);

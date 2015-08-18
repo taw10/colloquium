@@ -144,16 +144,24 @@ static UNUSED void debug_log_attrs(size_t len_chars, const char *text,
                                    PangoLogAttr *log_attrs)
 {
 	int i;
+	const gchar *p = text;
+
+	if ( !g_utf8_validate(text, -1, NULL) ) {
+		fprintf(stderr, "Invalid UTF8!\n");
+		return;
+	}
 
 	for ( i=0; i<len_chars; i++ ) {
-		if ( text[i] == '\n' ) {
+		gunichar c = g_utf8_get_char(p);
+		p = g_utf8_next_char(p);
+		if ( c == '\n' ) {
 			printf("`");
 		} else {
-			printf("%c", text[i]);
+			printf("%lc", c);
 		}
 	}
 	printf("\n");
-	for ( i=0; i<len_chars; i++ ) {
+	for ( i=0; i<=len_chars; i++ ) {
 		if ( log_attrs[i].is_line_break ) {
 			if ( log_attrs[i].is_mandatory_break ) {
 				printf("n");

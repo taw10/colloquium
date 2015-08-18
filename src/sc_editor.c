@@ -199,6 +199,9 @@ void advance_cursor(SCEditor *e)
 	cb = e->cursor_box;
 	cl = e->cursor_line;
 
+	/* FIXME: For Pango boxes, we should be counting cursor positions, not
+	 * characters */
+
 	switch ( box->type ) {
 
 		case WRAP_BOX_PANGO:

@@ -274,6 +274,7 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 	PangoLogAttr *log_attrs;
 	glong len_chars, i;
 	size_t len_bytes, start;
+	int chars_done;
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
@@ -295,6 +296,7 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 	//debug_log_attrs(len_chars, text, log_attrs);
 
 	start = 0;
+	chars_done = 0;
 	for ( i=0; i<len_chars; i++ ) {
 
 		if ( log_attrs[i].is_line_break ) {
@@ -327,13 +329,14 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = offs;
+			chars_done = i;
 
 		}
 
 	}
 
 	/* Add the stuff left over at the end */
-	if ( i > start ) {
+	if ( i > chars_done ) {
 
 		size_t l = strlen(text+start);
 

@@ -878,9 +878,10 @@ static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
 static void run_macro_contents(SCInterpreter *scin)
 {
 	struct sc_state *st = &scin->state[scin->j];
+	SCBlock *contents = st->macro_contents;
 
 	sc_interp_save(scin);
-	sc_interp_add_blocks(scin, st->macro_contents);
+	sc_interp_add_blocks(scin, contents);
 	sc_interp_restore(scin);
 }
 

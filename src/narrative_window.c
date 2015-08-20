@@ -326,6 +326,31 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
+static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
+                              NarrativeWindow *nw)
+{
+	switch ( event->keyval ) {
+
+		case GDK_KEY_Page_Up :
+		if ( nw->show != NULL) {
+			ss_prev_slide(nw->show, nw);
+			return TRUE;
+		}
+		break;
+
+		case GDK_KEY_Page_Down :
+		if ( nw->show != NULL) {
+			ss_next_slide(nw->show, nw);
+			return TRUE;
+		}
+		break;
+
+	}
+
+	return FALSE;
+}
+
+
 static void nw_update_titlebar(NarrativeWindow *nw)
 {
 	get_titlebar_string(nw->p);
@@ -507,6 +532,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 
 	g_signal_connect(G_OBJECT(nw->sceditor), "button-press-event",
 	                 G_CALLBACK(button_press_sig), nw);
+	g_signal_connect(G_OBJECT(nw->sceditor), "key-press-event",
+			 G_CALLBACK(key_press_sig), nw);
 
 	g_signal_connect(G_OBJECT(nw->sceditor), "configure-event",
 	                 G_CALLBACK(resize_sig), nw);

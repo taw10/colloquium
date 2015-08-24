@@ -1,7 +1,7 @@
 /*
  * sc_editor.h
  *
- * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -165,5 +165,6 @@ extern void sc_editor_set_top_frame_editable(SCEditor *e,
 extern void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl);
 extern void insert_scblock(SCBlock *scblock, SCEditor *e);
 extern void sc_editor_delete_selected_frame(SCEditor *e);
+extern void sc_editor_remove_cursor(SCEditor *e);
 
 #endif	/* SC_EDITOR_H */

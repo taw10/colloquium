@@ -66,6 +66,15 @@ void sc_editor_set_background(SCEditor *e, double r, double g, double b)
 }
 
 
+void sc_editor_remove_cursor(SCEditor *e)
+{
+	e->cursor_frame = NULL;
+	e->cursor_line = 0;
+	e->cursor_pos = 0;
+	e->selection = NULL;
+}
+
+
 /* (Re-)run the entire rendering pipeline.
  * NB "full" means "full".  All frame, line and box handles will become
  * invalid.  The cursor position will be unset. */
@@ -1087,7 +1096,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 	switch ( event->keyval ) {
 
 		case GDK_KEY_Escape :
-		e->selection = NULL;
+		sc_editor_remove_cursor(e);
 		sc_editor_redraw(e);
 		claim = 1;
 		break;

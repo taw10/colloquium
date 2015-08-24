@@ -41,6 +41,7 @@
 struct _narrative_window
 {
 	GtkWidget *window;
+	GtkWidget *sb;
 	GtkToolItem         *bfirst;
 	GtkToolItem         *bprev;
 	GtkToolItem         *bnext;
@@ -326,13 +327,32 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
+static void scroll_down(NarrativeWindow *nw)
+{
+	GtkAdjustment *adj;
+	gdouble inc, val;
+	adj = gtk_range_get_adjustment(GTK_RANGE(nw->sb));
+	inc = gtk_adjustment_get_step_increment(GTK_ADJUSTMENT(adj));
+	val = gtk_adjustment_get_value(GTK_ADJUSTMENT(adj));
+	gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), inc+val);
+}
+
+
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               NarrativeWindow *nw)
 {
 	switch ( event->keyval ) {
 
+		case GDK_KEY_B :
+		case GDK_KEY_b :
+		if ( nw->show != NULL ) {
+			scroll_down(nw);
+			return TRUE;
+		}
+		break;
+
 		case GDK_KEY_Page_Up :
-		if ( nw->show != NULL) {
+		if ( nw->show != NULL ) {
 			ss_prev_slide(nw->show, nw);
 			return TRUE;
 		}
@@ -521,8 +541,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scroll),
-	                                      GTK_WIDGET(nw->sceditor));
+	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(nw->sceditor));
+	nw->sb = gtk_scrolled_window_get_vscrollbar(GTK_SCROLLED_WINDOW(scroll));
 
 	sc_editor_set_size(nw->sceditor, 640, 12000);
 	sc_editor_set_logical_size(nw->sceditor, 640.0, 12000);

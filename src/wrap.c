@@ -873,6 +873,7 @@ int wrap_contents(struct frame *fr)
 	int i, eop = 0;
 	//const double rho = 2.0;
 	const double wrap_w = fr->w - fr->pad_l - fr->pad_r;
+	int max_para = 64;
 
 	/* Clear lines */
 	fr->n_lines = 0;
@@ -883,22 +884,35 @@ int wrap_contents(struct frame *fr)
 
 	/* Split text into paragraphs */
 	i = 0;
+	fr->n_paragraphs = 0;
+	fr->paragraphs = malloc(max_para * sizeof(struct wrap_line *));
+	if ( fr->paragraphs == NULL ) {
+		fprintf(stderr, "Failed to allocate paragraphs\n");
+		return 1;
+	}
 	do {
-
 		para = split_paragraph(fr->boxes, &i, &eop);
-
-		/* Split paragraphs into lines */
 		if ( para != NULL ) {
-
-			//knuth_suboptimal_fit(para, wrap_w, fr, rho);
-			first_fit(para, wrap_w, fr);
-
-			free(para->boxes);
-			free(para);
-
+			fr->paragraphs[fr->n_paragraphs++] = para;
 		}
-
+		if ( fr->n_paragraphs == max_para ) {
+			max_para += 64;
+			fr->paragraphs = realloc(fr->paragraphs,
+			                   max_para*sizeof(struct wrap_line *));
+			if ( fr->paragraphs == NULL ) {
+				fprintf(stderr, "Failed to allocate space"
+				                " for paragraphs\n");
+				return 1;
+			}
+		}
 	} while ( para != NULL );
+
+	/* Split paragraphs into lines */
+	for ( i=0; i<fr->n_paragraphs; i++ ) {
+		/* Choose wrapping algorithm here */
+		//knuth_suboptimal_fit(para, wrap_w, fr, rho);
+		first_fit(fr->paragraphs[i], wrap_w, fr);
+	}
 
 	/* If the last paragraph ended with an EOP, add an extra line */
 	if ( eop || (fr->n_lines == 0) ) {

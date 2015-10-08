@@ -90,6 +90,14 @@ void frame_free(struct frame *fr)
 	}
 	free(fr->lines);
 
+	/* Free paragraphs */
+	if ( fr->paragraphs != NULL ) {
+		for ( i=0; i<fr->n_paragraphs; i++ ) {
+			free(fr->paragraphs[i]->boxes);
+			free(fr->paragraphs[i]);
+		}
+		free(fr->paragraphs);
+	}
 	/* Free unwrapped boxes */
 	if ( fr->boxes != NULL ) {
 		free(fr->boxes->boxes);

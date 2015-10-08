@@ -62,6 +62,9 @@ struct frame
 	int                       max_lines;
 	struct wrap_line         *lines;
 
+	int                       n_paragraphs;
+	struct wrap_line        **paragraphs;
+
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;
 	double                    y;

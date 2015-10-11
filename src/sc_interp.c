@@ -785,13 +785,11 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 {
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
-	const char *contents = sc_block_contents(bl);
 	SCBlock *child = sc_block_child(bl);
 
 	if ( name == NULL ) {
 		split_words(sc_interp_get_frame(scin)->boxes,
-		            scin->pc, bl, contents, scin->lang, 1,
-		            scin);
+		            scin->pc, bl, scin->lang, 1, scin);
 
 	} else if ( strcmp(name, "image")==0 ) {
 		double w, h;

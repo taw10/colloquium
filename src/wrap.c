@@ -146,9 +146,8 @@ void get_cursor_pos(struct wrap_box *box, int pos,
 		box_text = g_utf8_offset_to_pointer(block_text, box->offs_char);
 		/* cast because this function is not const-clean */
 		pango_glyph_string_index_to_x(box->glyphs, (char *)box_text,
-		                              box->item->length,
-			                      &box->item->analysis, pos,
-			                      FALSE, &p);
+		                              box->len_bytes, &box->analysis,
+			                      pos, FALSE, &p);
 		*xposd += pango_units_to_double(p);
 		break;
 
@@ -279,7 +278,7 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 			pango_glyph_string_x_to_index(b->glyphs,
 			                              (char *)box_text,
 			                              strlen(box_text),
-			                              &b->item->analysis,
+			                              &b->analysis,
 			                              x_pos_i, &idx, &trail);
 			offs = idx + trail;
 			/* FIXME: Bug in Pango? */
@@ -778,7 +777,6 @@ void wrap_line_free(struct wrap_line *l)
 
 			case WRAP_BOX_PANGO :
 			pango_glyph_string_free(l->boxes[i].glyphs);
-			pango_item_free(l->boxes[i].item);
 			break;
 
 			case WRAP_BOX_IMAGE :

@@ -76,9 +76,10 @@ struct wrap_box
 
 	/* For type == WRAP_BOX_PANGO */
 	PangoGlyphString *glyphs;
-	PangoItem *item;
 	PangoFont *font;
 	double col[4];  /* rgba colour */
+	size_t len_bytes;
+	PangoAnalysis analysis;
 	int len_chars;
 
 	/* For type == WRAP_BOX_IMAGE */

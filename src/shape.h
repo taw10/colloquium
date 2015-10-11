@@ -1,7 +1,7 @@
 /*
  * shape.h
  *
- * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -31,8 +31,10 @@
 
 #include "wrap.h"
 
+extern void shape_box(struct wrap_box *box);
+
 extern int split_words(struct wrap_line *boxes, PangoContext *pc,
-                       SCBlock *bl, const char *text, PangoLanguage *lang,
+                       SCBlock *bl, PangoLanguage *lang,
                        int editable, SCInterpreter *scin);
 
 extern void add_image_box(struct wrap_line *line, const char *filename,

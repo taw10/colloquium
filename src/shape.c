@@ -50,11 +50,14 @@ void shape_box(struct wrap_box *box)
 {
 	PangoRectangle rect;
 	const char *tp;
+	const char *ep;
 
 	tp = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
 	                              box->offs_char);
+	ep = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
+	                              box->offs_char+box->len_chars);
 
-	pango_shape(tp, box->len_bytes, &box->analysis, box->glyphs);
+	pango_shape(tp, ep-tp, &box->analysis, box->glyphs);
 
 	pango_glyph_string_extents(box->glyphs, box->font, NULL, &rect);
 
@@ -98,7 +101,6 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box->scblock = bas->bl;
 	box->offs_char = g_utf8_pointer_to_offset(tp, tp+offs_bytes);
 	box->len_chars = g_utf8_strlen(tp+offs_bytes, item->length);
-	box->len_bytes = item->length;
 
 	col = sc_interp_get_fgcol(bas->scin);
 	box->col[0] = col[0];  /* Red */

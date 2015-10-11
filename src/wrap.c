@@ -125,6 +125,7 @@ void get_cursor_pos(struct wrap_box *box, int pos,
 	int p;
 	const char *block_text;
 	const char *box_text;
+	const char *ep;
 
 	*xposd = 0.0;
 	*yposd = 0.0;
@@ -144,9 +145,9 @@ void get_cursor_pos(struct wrap_box *box, int pos,
 		case WRAP_BOX_PANGO :
 		block_text = sc_block_contents(box->scblock);
 		box_text = g_utf8_offset_to_pointer(block_text, box->offs_char);
-		/* cast because this function is not const-clean */
+		ep = g_utf8_offset_to_pointer(box_text, box->len_chars);
 		pango_glyph_string_index_to_x(box->glyphs, (char *)box_text,
-		                              box->len_bytes, &box->analysis,
+		                              ep - box_text, &box->analysis,
 			                      pos, FALSE, &p);
 		*xposd += pango_units_to_double(p);
 		break;

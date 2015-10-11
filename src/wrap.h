@@ -78,7 +78,6 @@ struct wrap_box
 	PangoGlyphString *glyphs;
 	PangoFont *font;
 	double col[4];  /* rgba colour */
-	size_t len_bytes;
 	PangoAnalysis analysis;
 	int len_chars;
 

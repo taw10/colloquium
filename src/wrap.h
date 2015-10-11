@@ -65,6 +65,7 @@ struct wrap_box
 
 	SCBlock *scblock;
 	int offs_char;  /* offset (in characters, not bytes) into scblock */
+	struct wrap_box *cf;  /* Copied from */
 
 	/* Pango units */
 	int width;

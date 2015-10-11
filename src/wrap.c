@@ -756,7 +756,10 @@ static void first_fit(struct wrap_line *boxes, double line_length,
 			line = new_line(fr);
 			len = boxes->boxes[j].width;
 		}
-		line->boxes[line->n_boxes++] = boxes->boxes[j++];
+		line->boxes[line->n_boxes] = boxes->boxes[j];
+		line->boxes[line->n_boxes].cf = &boxes->boxes[j];
+		line->n_boxes++;
+		j++;
 
 		if ( (j > 0) && (boxes->boxes[j-1].type != WRAP_BOX_SENTINEL) )
 		{
@@ -827,6 +830,7 @@ static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n,
 		alloc_boxes(para);
 		for ( i=start; i<end; i++ ) {
 			para->boxes[i-start] = boxes->boxes[i];
+			para->boxes[i-start].cf = &boxes->boxes[i];
 		}
 		return para;
 	}

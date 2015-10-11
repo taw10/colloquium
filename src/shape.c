@@ -94,6 +94,7 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box->editable = bas->editable;
 	box->ascent = sc_interp_get_ascent(bas->scin);
 	box->height = sc_interp_get_height(bas->scin);
+	box->cf = NULL;
 
 	/* Link to the actual text */
 	tp = sc_block_contents(bas->bl);

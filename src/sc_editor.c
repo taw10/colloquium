@@ -579,6 +579,13 @@ static void insert_text(char *t, SCEditor *e)
 	printf("sps=%i, offs_char=%i\n", sps, sbox->offs_char);
 	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
 
+	/* Update the length of the box in the unwrapped and un-paragraph-split
+	 * string of wrap boxes */
+	sbox->cf->cf->len_chars += 1;
+
+	/* ... and also in the paragraph split but unwrapped box */
+	sbox->cf->len_chars += 1;
+
 	fr->empty = 0;
 
 	full_rerender(e); /* FIXME: No need for full */

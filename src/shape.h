@@ -43,6 +43,4 @@ extern void add_image_box(struct wrap_line *line, const char *filename,
 extern void add_callback_box(struct wrap_line *line, double w, double h,
                              SCCallbackDrawFunc func, void *bvp, void *vp);
 
-extern void reshape_box(struct wrap_box *box);
-
 #endif	/* SHAPE_H */

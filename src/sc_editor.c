@@ -43,6 +43,7 @@
 #include "sc_interp.h"
 #include "sc_editor.h"
 #include "slideshow.h"
+#include "shape.h"
 
 
 G_DEFINE_TYPE(SCEditor, sc_editor, GTK_TYPE_DRAWING_AREA);
@@ -559,6 +560,31 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 }
 
 
+/* The StoryCode for this box on this line in this frame has changed.
+ * Update the boxes from the StoryCode */
+static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
+{
+	struct wrap_box *box = &fr->lines[line].boxes[bn];
+	cairo_t *cr;
+
+	/* Shape the box again */
+	shape_box(box);
+
+	/* Wrap the paragraph again */
+	wrap_contents(fr);  /* FIXME: Only the current paragraph */
+
+	/* Render the lines again */
+	if ( e->surface != NULL ) {
+		cairo_surface_destroy(e->surface);
+	}
+	e->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, e->w, e->h);
+	cr = cairo_create(e->surface);
+	cairo_scale(cr, e->w/e->log_w, e->h/e->log_h);
+	recursive_draw(e->top, cr, e->is, ISZ_EDITOR);
+	cairo_destroy(cr);
+}
+
+
 static void insert_text(char *t, SCEditor *e)
 {
 	int sln, sbx, sps;
@@ -588,11 +614,13 @@ static void insert_text(char *t, SCEditor *e)
 
 	fr->empty = 0;
 
-	full_rerender(e); /* FIXME: No need for full */
+	update_local(e, fr, sln, sbx);
 
-	//fixup_cursor(e);
-	//advance_cursor(e);
-	//sc_editor_redraw(e);
+	/* ... by doing this properly */
+	fixup_cursor(e);
+	advance_cursor(e);
+
+	sc_editor_redraw(e);
 }
 
 

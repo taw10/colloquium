@@ -1,7 +1,7 @@
 /*
  * render.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -381,22 +381,33 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 }
 
 
-static int recursive_wrap_and_draw(struct frame *fr, cairo_t *cr,
-                                   ImageStore *is, enum is_size isz)
+int recursive_draw(struct frame *fr, cairo_t *cr,
+                   ImageStore *is, enum is_size isz)
+{
+	int i;
+
+	draw_frame(cr, fr, is, isz);
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		cairo_save(cr);
+		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
+		recursive_draw(fr->children[i], cr, is, isz);
+		cairo_restore(cr);
+	}
+
+	return 0;
+}
+
+
+static int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz)
 {
 	int i;
 
 	/* Wrap boxes -> wrap lines */
 	wrap_contents(fr);
 
-	/* Actually draw the lines */
-	draw_frame(cr, fr, is, isz);
-
 	for ( i=0; i<fr->num_children; i++ ) {
-		cairo_save(cr);
-		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
-		recursive_wrap_and_draw(fr->children[i], cr, is, isz);
-		cairo_restore(cr);
+		recursive_wrap(fr->children[i], is, isz);
 	}
 
 	return 0;
@@ -460,7 +471,8 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 		}
 	}
 	sc_interp_add_blocks(scin, scblocks);
-	recursive_wrap_and_draw(top, cr, is, isz);
+	recursive_wrap(top, is, isz);
+	recursive_draw(top, cr, is, isz);
 
 	sc_interp_destroy(scin);
 	cairo_font_options_destroy(fopts);

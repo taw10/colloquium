@@ -40,4 +40,7 @@ extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 
 extern int export_pdf(struct presentation *p, const char *filename);
 
+extern int recursive_draw(struct frame *fr, cairo_t *cr,
+                          ImageStore *is, enum is_size isz);
+
 #endif	/* RENDER_H */

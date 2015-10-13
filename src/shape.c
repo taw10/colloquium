@@ -57,11 +57,15 @@ void shape_box(struct wrap_box *box)
 	ep = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
 	                              box->offs_char+box->len_chars);
 
+	if ( box->glyphs != NULL ) {
+		pango_glyph_string_free(box->glyphs);
+	}
+	box->glyphs = pango_glyph_string_new();
 	pango_shape(tp, ep-tp, &box->analysis, box->glyphs);
 
 	pango_glyph_string_extents(box->glyphs, box->font, NULL, &rect);
 
-	box->width += rect.width;
+	box->width = rect.width;
 	if ( rect.height > box->height ) {
 		box->height = rect.height;
 	}
@@ -108,7 +112,7 @@ static void add_wrap_box(gpointer vi, gpointer vb)
 	box->col[1] = col[1];  /* Green */
 	box->col[2] = col[2];  /* Blue */
 	box->col[3] = col[3];  /* Alpha */
-	box->glyphs = pango_glyph_string_new();
+	box->glyphs = NULL;
 	box->analysis = item->analysis;
 
 	bas->line->n_boxes++;

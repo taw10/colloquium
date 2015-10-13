@@ -568,7 +568,9 @@ static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 	cairo_t *cr;
 
 	/* Shape the box again */
-	shape_box(box);
+	shape_box(box->cf->cf);
+	box->glyphs = box->cf->cf->glyphs;
+	box->cf->glyphs = box->cf->cf->glyphs;
 
 	/* Wrap the paragraph again */
 	wrap_contents(fr);  /* FIXME: Only the current paragraph */
@@ -582,6 +584,26 @@ static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 	cairo_scale(cr, e->w/e->log_w, e->h/e->log_h);
 	recursive_draw(e->top, cr, e->is, ISZ_EDITOR);
 	cairo_destroy(cr);
+}
+
+
+static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
+{
+	int i;
+	int sn = 0;
+
+	for ( i=0; i<fr->boxes->n_boxes; i++ ) {
+		if ( &fr->boxes->boxes[i] == box ) {
+			sn = i+1;
+			break;
+		}
+	}
+
+	assert(sn > 0);  /* Lowest it can possibly be is 1 */
+
+	for ( i=sn; i<fr->boxes->n_boxes; i++ ) {
+		fr->boxes->boxes[i].offs_char += n;
+	}
 }
 
 
@@ -612,11 +634,13 @@ static void insert_text(char *t, SCEditor *e)
 	/* ... and also in the paragraph split but unwrapped box */
 	sbox->cf->len_chars += 1;
 
+	/* Tweak the offsets of all the subsequent boxes */
+	shift_box_offsets(fr, sbox->cf->cf, 1);
+
 	fr->empty = 0;
 
 	update_local(e, fr, sln, sbx);
 
-	/* ... by doing this properly */
 	fixup_cursor(e);
 	advance_cursor(e);
 

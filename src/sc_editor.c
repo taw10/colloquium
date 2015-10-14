@@ -684,9 +684,20 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 //		scbl = sc_block_next(scbl);
 //	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
-	full_rerender(e); /* FIXME: No need for full */
-	//fixup_cursor(e);
-	//sc_editor_redraw(e);
+	/* Update the length of the box in the unwrapped and un-paragraph-split
+	 * string of wrap boxes */
+	sbox->cf->cf->len_chars -= 1;
+
+	/* ... and also in the paragraph split but unwrapped box */
+	sbox->cf->len_chars -= 1;
+
+	/* Tweak the offsets of all the subsequent boxes */
+	shift_box_offsets(fr, sbox->cf->cf, -1);
+
+	update_local(e, fr, sln, sbx);
+
+	fixup_cursor(e);
+	sc_editor_redraw(e);
 }
 
 

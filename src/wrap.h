@@ -3,7 +3,7 @@
  *
  * Text wrapping, hyphenation, justification and shaping
  *
- * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -116,7 +116,7 @@ extern void get_cursor_pos(struct wrap_box *box, int pos,
 extern void find_cursor(struct frame *fr, double xposd, double yposd,
                         int *line, int *box, int *pos);
 
-extern void alloc_boxes(struct wrap_line *l);
+extern int alloc_boxes(struct wrap_line *l);
 extern void initialise_line(struct wrap_line *l);
 
 extern void wrap_line_free(struct wrap_line *l);

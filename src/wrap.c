@@ -55,17 +55,18 @@ static void alloc_lines(struct frame *fr)
 }
 
 
-void alloc_boxes(struct wrap_line *l)
+int alloc_boxes(struct wrap_line *l)
 {
 	struct wrap_box *boxes_new;
 
 	boxes_new = realloc(l->boxes, l->max_boxes * sizeof(struct wrap_box));
 	if ( boxes_new == NULL ) {
 		fprintf(stderr, "Couldn't allocate memory for boxes!\n");
-		return;
+		return 1;
 	}
 
 	l->boxes = boxes_new;
+	return 0;
 }
 
 
@@ -734,6 +735,15 @@ static struct wrap_line *new_line(struct frame *fr)
 }
 
 
+static int maybe_extend_line(struct wrap_line *l)
+{
+	if ( l->n_boxes < l->max_boxes ) return 0;
+
+	l->max_boxes += 32;
+	return alloc_boxes(l);
+}
+
+
 static void first_fit(struct wrap_line *boxes, double line_length,
                       struct frame *fr)
 {
@@ -759,6 +769,7 @@ static void first_fit(struct wrap_line *boxes, double line_length,
 		line->boxes[line->n_boxes] = boxes->boxes[j];
 		line->boxes[line->n_boxes].cf = &boxes->boxes[j];
 		line->n_boxes++;
+		if ( maybe_extend_line(line) ) return;
 		j++;
 
 		if ( (j > 0) && (boxes->boxes[j-1].type != WRAP_BOX_SENTINEL) )

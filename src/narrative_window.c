@@ -36,6 +36,7 @@
 #include "sc_parse.h"
 #include "render.h"
 #include "testcard.h"
+#include "pr_clock.h"
 
 
 struct _narrative_window
@@ -286,6 +287,8 @@ static void open_notes_sig(GSimpleAction *action, GVariant *parameter, gpointer 
 
 static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
+	NarrativeWindow *nw = vp;
+	open_clock(nw->p);
 }
 
 

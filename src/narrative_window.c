@@ -221,30 +221,30 @@ static void ss_prev_slide(SlideShow *ss, void *vp)
 static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	NarrativeWindow *nw = vp;
+	//NarrativeWindow *nw = vp;
 }
 
 
 static void prev_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	NarrativeWindow *nw = vp;
-	ss_prev_slide(NULL, vp);
+	//NarrativeWindow *nw = vp;
+	//ss_prev_slide(NULL, vp);
 }
 
 
 static void next_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	NarrativeWindow *nw = vp;
-	ss_next_slide(NULL, vp);
+	//NarrativeWindow *nw = vp;
+	//ss_next_slide(NULL, vp);
 }
 
 
 static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	NarrativeWindow *nw = vp;
+	//NarrativeWindow *nw = vp;
 }
 
 

@@ -1023,3 +1023,18 @@ int wrap_contents(struct frame *fr)
 
 	return 0;
 }
+
+
+double total_height(struct frame *fr)
+{
+	int i;
+	double tot = 0.0;
+
+	if ( fr == NULL ) return 0.0;
+
+	for ( i=0; i<fr->n_lines; i++ ) {
+		tot += fr->lines[i].height;
+	}
+
+	return pango_units_to_double(tot);
+}

@@ -879,6 +879,34 @@ void show_boxes(struct wrap_line *boxes)
 }
 
 
+static int wrap_everything(struct frame *fr, double wrap_w)
+{
+	int i;
+
+	fr->paragraph_start_lines = malloc(fr->n_paragraphs*sizeof(int));
+	if ( fr->paragraph_start_lines == NULL ) {
+		fprintf(stderr, "Failed to allocate paragraph start lines\n");
+		return 1;
+	}
+
+	/* Split paragraphs into lines */
+	fr->paragraph_start_lines[0] = 0;
+	for ( i=0; i<fr->n_paragraphs; i++ ) {
+
+		//int n;
+
+		/* Choose wrapping algorithm here */
+		//knuth_suboptimal_fit(para, wrap_w, fr, rho);
+		first_fit(fr->paragraphs[i], wrap_w, fr);
+
+		//fr->paragraph_start_lines = n;
+
+	}
+
+	return 0;
+}
+
+
 /* Wrap the StoryCode inside "fr->sc" so that it fits within width "fr->w",
  * and generate fr->lines */
 int wrap_contents(struct frame *fr)
@@ -921,11 +949,11 @@ int wrap_contents(struct frame *fr)
 		}
 	} while ( para != NULL );
 
-	/* Split paragraphs into lines */
-	for ( i=0; i<fr->n_paragraphs; i++ ) {
-		/* Choose wrapping algorithm here */
-		//knuth_suboptimal_fit(para, wrap_w, fr, rho);
-		first_fit(fr->paragraphs[i], wrap_w, fr);
+	if ( fr->n_paragraphs > 0 ) {
+		if ( wrap_everything(fr, wrap_w) ) return 1;
+	} else {
+		fr->paragraph_start_lines = NULL;
+		return 0;
 	}
 
 	/* If the last paragraph ended with an EOP, add an extra line */

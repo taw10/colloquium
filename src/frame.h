@@ -64,6 +64,7 @@ struct frame
 
 	int                       n_paragraphs;
 	struct wrap_line        **paragraphs;
+	int                      *paragraph_start_lines;
 
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;

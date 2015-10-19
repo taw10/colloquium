@@ -1127,6 +1127,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
 		                     e->drag_corner_x - e->start_corner_x,
 		                     e->drag_corner_y - e->start_corner_y);
+		/* FIXME: Select the new frame, avoid full rerender */
 		full_rerender(e);
 		break;
 

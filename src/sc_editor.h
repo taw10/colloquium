@@ -98,6 +98,16 @@ struct _sceditor
 	SCCallbackList      *cbl;
 	struct frame        *top;
 
+	/* Redraw/scroll stuff */
+	GtkScrollablePolicy  hpol;
+	GtkScrollablePolicy  vpol;
+	GtkAdjustment       *hadj;
+	GtkAdjustment       *vadj;
+	double               scroll_pos;
+	int                  visible_height;
+	int                  flow;
+	int                  need_draw;
+
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;
 	int                 top_editable;
@@ -156,6 +166,7 @@ extern GtkWidget *sc_editor_get_widget(SCEditor *e);
 extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets);
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
+extern void sc_editor_set_flow(SCEditor *e, int flow);
 extern void sc_editor_redraw(SCEditor *e);
 extern void sc_editor_set_background(SCEditor *e, double r, double g, double b);
 extern void sc_editor_set_slidenum(SCEditor *e, int slidenum);

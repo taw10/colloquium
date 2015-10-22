@@ -46,16 +46,194 @@
 #include "shape.h"
 
 
-G_DEFINE_TYPE(SCEditor, sc_editor, GTK_TYPE_DRAWING_AREA);
-
-
-static void sc_editor_class_init(SCEditorClass *klass)
+static void scroll_interface_init(GtkScrollable *iface)
 {
 }
 
 
-static void sc_editor_init(SCEditor *self)
+enum
 {
+	SCEDITOR_0,
+	SCEDITOR_VADJ,
+	SCEDITOR_HADJ,
+	SCEDITOR_VPOL,
+	SCEDITOR_HPOL,
+};
+
+
+G_DEFINE_TYPE_WITH_CODE(SCEditor, sc_editor, GTK_TYPE_DRAWING_AREA,
+                        G_IMPLEMENT_INTERFACE(GTK_TYPE_SCROLLABLE,
+                                              scroll_interface_init))
+
+
+static void vertical_adjust(GtkAdjustment *adj, SCEditor *e)
+{
+	e->scroll_pos = gtk_adjustment_get_value(adj);
+	sc_editor_redraw(e);
+}
+
+
+static void set_vertical_params(SCEditor *e)
+{
+	if ( e->vadj == NULL ) return;
+	gtk_adjustment_configure(e->vadj, e->scroll_pos, 0, e->h, 100,
+	                         e->visible_height, e->visible_height);
+	printf("set scrollbar for height %i, ac %i\n", e->visible_height, e->h);
+}
+
+
+static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
+                           SCEditor *e)
+{
+	e->visible_height = event->height;
+
+	/* Interpret and shape, if not already done */
+	if ( e->top == NULL ) {
+		cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
+		e->top = interp_and_shape(e->scblocks, e->stylesheets, NULL,
+		                          e->is, ISZ_EDITOR, 0, cr);
+		cairo_destroy(cr);
+	}
+
+	/* Wrap using current width */
+	e->top->w = event->width;
+	wrap_contents(e->top); /* Only the top level needs to be wrapped */
+	e->need_draw = 1;
+
+	e->w = e->top->w;
+	e->h = total_height(e->top);
+	e->log_w = e->w;
+	e->log_h = e->h;
+	printf("set %i %i %f %f\n", e->w, e->h, e->log_w, e->log_h);
+	set_vertical_params(e);
+	return FALSE;
+}
+
+
+void sc_editor_set_flow(SCEditor *e, int flow)
+{
+	e->flow = flow;
+}
+
+
+static void sc_editor_set_property(GObject *obj, guint id, const GValue *val,
+                                   GParamSpec *spec)
+{
+	SCEditor *e = SC_EDITOR(obj);
+
+	switch ( id ) {
+
+		case SCEDITOR_VPOL :
+		e->vpol = g_value_get_enum(val);
+		break;
+
+		case SCEDITOR_HPOL :
+		e->hpol = g_value_get_enum(val);
+		break;
+
+		case SCEDITOR_VADJ :
+		e->vadj = g_value_get_object(val);
+		set_vertical_params(e);
+		if ( e->vadj != NULL ) {
+			g_signal_connect(G_OBJECT(e->vadj), "value-changed",
+			                 G_CALLBACK(vertical_adjust), e);
+		}
+		break;
+
+		case SCEDITOR_HADJ :
+		e->hadj = g_value_get_object(val);
+		break;
+
+		default :
+		printf("setting %i\n", id);
+		break;
+
+	}
+}
+
+
+static void sc_editor_get_property(GObject *obj, guint id, GValue *val,
+                                   GParamSpec *spec)
+{
+	SCEditor *e = SC_EDITOR(obj);
+
+	switch ( id ) {
+
+		case SCEDITOR_VADJ :
+		g_value_set_object(val, e->vadj);
+		break;
+
+		case SCEDITOR_HADJ :
+		g_value_set_object(val, e->hadj);
+		break;
+
+		case SCEDITOR_VPOL :
+		g_value_set_enum(val, e->vpol);
+		break;
+
+		case SCEDITOR_HPOL :
+		g_value_set_enum(val, e->hpol);
+		break;
+
+		default :
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, id, spec);
+		break;
+
+	}
+}
+
+
+static GtkSizeRequestMode get_request_mode(GtkWidget *widget)
+{
+	return GTK_SIZE_REQUEST_HEIGHT_FOR_WIDTH;
+}
+
+
+static void get_preferred_width(GtkWidget *widget, gint *min, gint *natural)
+{
+	*min = 100;
+	*natural = 640;
+}
+
+
+static void get_preferred_height(GtkWidget *widget, gint *min, gint *natural)
+{
+	*min = 1000;
+	*natural = 1000;
+}
+
+
+static void hforw(GtkWidget *widget, gint width, gint *min, gint *natural)
+{
+	printf("height for width = %i\n", width);
+	*min = 10000;
+	*natural = 10000;
+}
+
+
+static void sc_editor_class_init(SCEditorClass *klass)
+{
+	GObjectClass *goc = G_OBJECT_CLASS(klass);
+	goc->set_property = sc_editor_set_property;
+	goc->get_property = sc_editor_get_property;
+	g_object_class_override_property(goc, SCEDITOR_VADJ, "vadjustment");
+	g_object_class_override_property(goc, SCEDITOR_HADJ, "hadjustment");
+	g_object_class_override_property(goc, SCEDITOR_VPOL, "vscroll-policy");
+	g_object_class_override_property(goc, SCEDITOR_HPOL, "hscroll-policy");
+
+	GTK_WIDGET_CLASS(klass)->get_request_mode = get_request_mode;
+	GTK_WIDGET_CLASS(klass)->get_preferred_width = get_preferred_width;
+	GTK_WIDGET_CLASS(klass)->get_preferred_height = get_preferred_height;
+	GTK_WIDGET_CLASS(klass)->get_preferred_height_for_width = hforw;
+}
+
+
+static void sc_editor_init(SCEditor *e)
+{
+	e->vpol = GTK_SCROLL_NATURAL;
+	e->hpol = GTK_SCROLL_NATURAL;
+	e->vadj = gtk_adjustment_new(0, 0, 100, 1, 10, 10);
+	e->hadj = gtk_adjustment_new(0, 0, 100, 1, 10, 10);
 }
 
 
@@ -439,41 +617,23 @@ static void tile_pixbuf(cairo_t *cr, GdkPixbuf *pb, int width, int height)
 }
 
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr,
-                         SCEditor *e)
+static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 {
 	int width, height;
 
+	/* Overall background */
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
-
-	/* Overall background */
-	tile_pixbuf(cr, e->bg_pixbuf, width, height);
-	cairo_set_source_rgba(cr, e->bgcol[0], e->bgcol[1], e->bgcol[2], 0.5);
+	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
 	cairo_rectangle(cr, 0.0, 0.0, width, height);
 	cairo_fill(cr);
 
-	/* Get the overall size */
-	e->border_offs_x = rint((width - e->w)/2.0);
-	e->border_offs_y = rint((height - e->h)/2.0);
-	if ( e->border_offs_x < e->min_border ) {
-		e->border_offs_x = e->min_border;
-	}
-	if ( e->border_offs_y < e->min_border ) {
-		e->border_offs_y = e->min_border;
-	}
-
-	/* Draw the slide from the cache */
-	if ( e->surface != NULL ) {
-		cairo_set_source_surface(cr, e->surface,
-		                         rint(e->border_offs_x),
-		                         rint(e->border_offs_y));
-		cairo_paint(cr);
-	} else {
-		fprintf(stderr, "Current slide not rendered yet!\n");
-	}
-
+	/* Contents */
+	cairo_translate(cr, 0.0, -e->scroll_pos);
 	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
+	recursive_draw(e->top, cr, e->is, ISZ_EDITOR);
+
+	/* Editing overlay */
 	draw_overlay(cr, e);
 
 	return FALSE;
@@ -1471,7 +1631,6 @@ static gint realise_sig(GtkWidget *da, SCEditor *e)
 
 	/* FIXME: Can do this "properly" by setting up a separate font map */
 	e->pc = gtk_widget_get_pango_context(GTK_WIDGET(e));
-	full_rerender(e);
 
 	return FALSE;
 }
@@ -1578,6 +1737,9 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	sceditor->min_border = 0.0;
 	sceditor->top_editable = 0;
 	sceditor->cbl = NULL;
+	sceditor->scroll_pos = 0;
+	sceditor->flow = 0;
+	sceditor->need_draw = 1;
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 
@@ -1601,6 +1763,8 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	                 G_CALLBACK(button_release_sig), sceditor);
 	g_signal_connect(G_OBJECT(sceditor), "motion-notify-event",
 	                 G_CALLBACK(motion_sig), sceditor);
+	g_signal_connect(G_OBJECT(sceditor), "configure-event",
+	                 G_CALLBACK(resize_sig), sceditor);
 
 	/* Drag and drop */
 	targets[0].target = "text/uri-list";

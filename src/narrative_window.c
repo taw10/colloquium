@@ -42,7 +42,7 @@
 struct _narrative_window
 {
 	GtkWidget *window;
-	GtkWidget *sb;
+	GtkAdjustment *vadj;
 	GtkToolItem         *bfirst;
 	GtkToolItem         *bprev;
 	GtkToolItem         *bnext;
@@ -332,12 +332,13 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 static void scroll_down(NarrativeWindow *nw)
 {
-	GtkAdjustment *adj;
+/* FIXME: Implement via SCEditor */
+#if 0
 	gdouble inc, val;
-	adj = gtk_range_get_adjustment(GTK_RANGE(nw->sb));
-	inc = gtk_adjustment_get_step_increment(GTK_ADJUSTMENT(adj));
-	val = gtk_adjustment_get_value(GTK_ADJUSTMENT(adj));
-	gtk_adjustment_set_value(GTK_ADJUSTMENT(adj), inc+val);
+	inc = gtk_adjustment_get_step_increment(GTK_ADJUSTMENT(nw->vadj));
+	val = gtk_adjustment_get_value(GTK_ADJUSTMENT(nw->vadj));
+	gtk_adjustment_set_value(GTK_ADJUSTMENT(nw->vadj), inc+val);
+#endif
 }
 
 
@@ -429,15 +430,6 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	frame_free(top);
 
 	return surf;
-}
-
-
-static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
-                           NarrativeWindow *nw)
-{
-	sc_editor_set_size(nw->sceditor, event->width, 12000);
-	sc_editor_set_logical_size(nw->sceditor, event->width, 12000);
-	return FALSE;
 }
 
 
@@ -545,10 +537,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
 	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(nw->sceditor));
-	nw->sb = gtk_scrolled_window_get_vscrollbar(GTK_SCROLLED_WINDOW(scroll));
 
-	sc_editor_set_size(nw->sceditor, 640, 12000);
-	sc_editor_set_logical_size(nw->sceditor, 640.0, 12000);
+	sc_editor_set_flow(nw->sceditor, 1);
 	sc_editor_set_background(nw->sceditor, 0.9, 0.9, 0.9);
 	sc_editor_set_min_border(nw->sceditor, 0.0);
 	sc_editor_set_top_frame_editable(nw->sceditor, 1);
@@ -558,8 +548,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	g_signal_connect(G_OBJECT(nw->sceditor), "key-press-event",
 			 G_CALLBACK(key_press_sig), nw);
 
-	g_signal_connect(G_OBJECT(nw->sceditor), "configure-event",
-	                 G_CALLBACK(resize_sig), nw);
 	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 

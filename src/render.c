@@ -399,7 +399,7 @@ int recursive_draw(struct frame *fr, cairo_t *cr,
 }
 
 
-static int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz)
+int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz)
 {
 	int i;
 
@@ -414,23 +414,18 @@ static int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz)
 }
 
 
-static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
-                                 cairo_t *cr, double log_w, double log_h,
-                                 SCBlock **stylesheets, SCCallbackList *cbl,
-                                 ImageStore *is, enum is_size isz,
-                                 int slide_number)
+struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
+                               SCCallbackList *cbl, ImageStore *is,
+                               enum is_size isz, int slide_number,
+			       cairo_t *cr)
 {
+	cairo_font_options_t *fopts;
 	PangoFontMap *fontmap;
 	PangoContext *pc;
 	SCInterpreter *scin;
 	char snum[64];
 	struct frame *top;
 
-	cairo_rectangle(cr, 0.0, 0.0, log_w, log_h);
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-	cairo_fill(cr);
-
-	cairo_font_options_t *fopts;
 	fopts = cairo_font_options_create();
 	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_FULL);
 	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_DEFAULT);
@@ -446,8 +441,8 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 	top->resizable = 0;
 	top->x = 0.0;
 	top->y = 0.0;
-	top->w = log_w;
-	top->h = log_h;
+	top->w = 0.0; /* not needed yet */
+	top->h = 0.0; /* not needed yet */
 
 	scin = sc_interp_new(pc, top);
 	if ( scin == NULL ) {
@@ -461,8 +456,6 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 	snprintf(snum, 63, "%i", slide_number);
 	add_macro(scin, "slidenumber", snum);
 
-	/* "The rendering pipeline" */
-
 	if ( stylesheets != NULL ) {
 		int i = 0;
 		while ( stylesheets[i] != NULL ) {
@@ -471,12 +464,35 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 		}
 	}
 	sc_interp_add_blocks(scin, scblocks);
-	recursive_wrap(top, is, isz);
-	recursive_draw(top, cr, is, isz);
 
 	sc_interp_destroy(scin);
 	cairo_font_options_destroy(fopts);
 	g_object_unref(pc);
+
+	return top;
+}
+
+
+static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
+                                 cairo_t *cr, double log_w, double log_h,
+                                 SCBlock **stylesheets, SCCallbackList *cbl,
+                                 ImageStore *is, enum is_size isz,
+                                 int slide_number)
+{
+	struct frame *top;
+
+	cairo_rectangle(cr, 0.0, 0.0, log_w, log_h);
+	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	cairo_fill(cr);
+
+	top = interp_and_shape(scblocks, stylesheets, cbl, is, isz,
+	                       slide_number, cr);
+
+	top->w = log_w;
+	top->h = log_h;
+	recursive_wrap(top, is, isz);
+
+	recursive_draw(top, cr, is, isz);
 
 	return top;
 }

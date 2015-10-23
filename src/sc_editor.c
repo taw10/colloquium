@@ -259,19 +259,15 @@ void sc_editor_remove_cursor(SCEditor *e)
  * invalid.  The cursor position will be unset. */
 static void full_rerender(SCEditor *e)
 {
-	if ( e->surface != NULL ) {
-		cairo_surface_destroy(e->surface);
-	}
-
 	frame_free(e->top);
 	e->cursor_frame = NULL;
 	e->cursor_line = 0;
 	e->cursor_pos = 0;
 	e->selection = NULL;
 
-	e->surface = render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
-	                       e->stylesheets, e->cbl, e->is, ISZ_EDITOR,
-	                       e->slidenum, &e->top);
+	render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
+	          e->stylesheets, e->cbl, e->is, ISZ_EDITOR,
+	          e->slidenum, &e->top);
 
 	sc_editor_redraw(e);
 }
@@ -447,9 +443,6 @@ void advance_cursor(SCEditor *e)
 
 static gint destroy_sig(GtkWidget *window, SCEditor *e)
 {
-	if ( e->surface != NULL ) {
-		cairo_surface_destroy(e->surface);
-	}
 	return 0;
 }
 
@@ -725,7 +718,6 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 {
 	struct wrap_box *box = &fr->lines[line].boxes[bn];
-	cairo_t *cr;
 
 	/* Shape the box again */
 	shape_box(box->cf->cf);
@@ -735,15 +727,7 @@ static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 	/* Wrap the paragraph again */
 	wrap_contents(fr);  /* FIXME: Only the current paragraph */
 
-	/* Render the lines again */
-	if ( e->surface != NULL ) {
-		cairo_surface_destroy(e->surface);
-	}
-	e->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, e->w, e->h);
-	cr = cairo_create(e->surface);
-	cairo_scale(cr, e->w/e->log_w, e->h/e->log_h);
-	recursive_draw(e->top, cr, e->is, ISZ_EDITOR);
-	cairo_destroy(cr);
+	sc_editor_redraw(e);
 }
 
 
@@ -1727,7 +1711,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	sceditor = g_object_new(SC_TYPE_EDITOR, NULL);
 
 	sceditor->scblocks = scblocks;
-	sceditor->surface = NULL;
 	sceditor->w = 100;
 	sceditor->h = 100;
 	sceditor->log_w = 100;

@@ -92,7 +92,6 @@ struct _sceditor
 	double               log_w;  /* Size of surface in "SC units" */
 	double               log_h;
 	SCBlock             *scblocks;
-	cairo_surface_t     *surface;
 	SCBlock             **stylesheets;
 	ImageStore          *is;
 	SCCallbackList      *cbl;

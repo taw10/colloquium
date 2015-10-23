@@ -363,6 +363,7 @@ static void do_background(cairo_t *cr, struct frame *fr)
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                      enum is_size isz)
 {
+	cairo_save(cr);
 	do_background(cr, fr);
 
 	if ( fr->trouble ) {
@@ -376,6 +377,7 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	/* Actually render the lines */
 	cairo_translate(cr, fr->pad_l, fr->pad_t);
 	render_lines(fr, cr, is, isz);
+	cairo_restore(cr);
 
 	return 0;
 }

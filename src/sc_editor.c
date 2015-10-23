@@ -88,6 +88,7 @@ static void update_size(SCEditor *e)
 	e->h = total_height(e->top);
 	e->log_w = e->w;
 	e->log_h = e->h;
+	e->top->h = e->h;
 	printf("set %i %i %f %f\n", e->w, e->h, e->log_w, e->log_h);
 	set_vertical_params(e);
 }
@@ -108,6 +109,9 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 
 	/* Wrap using current width */
 	e->top->w = event->width;
+	e->top->h = 0.0;  /* To be updated in a moment */
+	e->top->x = 0.0;
+	e->top->y = 0.0;
 	wrap_contents(e->top); /* Only the top level needs to be wrapped */
 	update_size(e);
 	e->need_draw = 1;
@@ -276,7 +280,10 @@ static void full_rerender(SCEditor *e)
 	                          e->is, ISZ_EDITOR, 0, cr);
 	cairo_destroy(cr);
 
+	e->top->x = 0.0;
+	e->top->y = 0.0;
 	e->top->w = e->w;
+	e->top->h = 0.0;  /* To be updated in a moment */
 
 	recursive_wrap(e->top, e->is, ISZ_EDITOR);
 	update_size(e);
@@ -554,7 +561,6 @@ static void draw_resize_handle(cairo_t *cr, double x, double y)
 static void draw_overlay(cairo_t *cr, SCEditor *e)
 {
 	double x, y, w, h;
-
 
 	if ( e->selection != NULL ) {
 
@@ -1057,7 +1063,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	struct frame *clicked;
 
 	x = event->x - e->border_offs_x;
-	y = event->y - e->border_offs_y;
+	y = event->y - e->border_offs_y + e->scroll_pos;
 
 	if ( within_frame(e->selection, x, y) ) {
 		clicked = e->selection;
@@ -1728,6 +1734,8 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	sceditor->h = 100;
 	sceditor->log_w = 100;
 	sceditor->log_h = 100;
+	sceditor->border_offs_x = 0;
+	sceditor->border_offs_y = 0;
 	sceditor->is = imagestore_new();
 	sceditor->slidenum = 0;
 	sceditor->min_border = 0.0;

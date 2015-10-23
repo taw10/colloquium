@@ -103,7 +103,8 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	if ( e->top == NULL ) {
 		cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-		                          e->is, ISZ_EDITOR, 0, cr);
+		                          e->is, ISZ_EDITOR, 0, cr,
+					  event->width, 0.0);
 		cairo_destroy(cr);
 	}
 
@@ -277,7 +278,7 @@ static void full_rerender(SCEditor *e)
 
 	cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(e)));
 	e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-	                          e->is, ISZ_EDITOR, 0, cr);
+	                          e->is, ISZ_EDITOR, 0, cr, e->w, 0.0);
 	cairo_destroy(cr);
 
 	e->top->x = 0.0;

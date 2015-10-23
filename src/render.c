@@ -419,7 +419,7 @@ int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz)
 struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                SCCallbackList *cbl, ImageStore *is,
                                enum is_size isz, int slide_number,
-			       cairo_t *cr)
+			       cairo_t *cr, double w, double h)
 {
 	cairo_font_options_t *fopts;
 	PangoFontMap *fontmap;
@@ -443,8 +443,8 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	top->resizable = 0;
 	top->x = 0.0;
 	top->y = 0.0;
-	top->w = 0.0; /* not needed yet */
-	top->h = 0.0; /* not needed yet */
+	top->w = w;
+	top->h = h;
 
 	scin = sc_interp_new(pc, top);
 	if ( scin == NULL ) {
@@ -488,10 +488,8 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 	cairo_fill(cr);
 
 	top = interp_and_shape(scblocks, stylesheets, cbl, is, isz,
-	                       slide_number, cr);
+	                       slide_number, cr, log_w, log_h);
 
-	top->w = log_w;
-	top->h = log_h;
 	recursive_wrap(top, is, isz);
 
 	recursive_draw(top, cr, is, isz);

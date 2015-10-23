@@ -745,6 +745,7 @@ static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 
 	/* Wrap the paragraph again */
 	wrap_contents(fr);  /* FIXME: Only the current paragraph */
+	update_size(e);
 
 	sc_editor_redraw(e);
 }

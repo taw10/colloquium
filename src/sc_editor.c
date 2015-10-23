@@ -82,6 +82,17 @@ static void set_vertical_params(SCEditor *e)
 }
 
 
+static void update_size(SCEditor *e)
+{
+	e->w = e->top->w;
+	e->h = total_height(e->top);
+	e->log_w = e->w;
+	e->log_h = e->h;
+	printf("set %i %i %f %f\n", e->w, e->h, e->log_w, e->log_h);
+	set_vertical_params(e);
+}
+
+
 static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            SCEditor *e)
 {
@@ -98,14 +109,9 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	/* Wrap using current width */
 	e->top->w = event->width;
 	wrap_contents(e->top); /* Only the top level needs to be wrapped */
+	update_size(e);
 	e->need_draw = 1;
 
-	e->w = e->top->w;
-	e->h = total_height(e->top);
-	e->log_w = e->w;
-	e->log_h = e->h;
-	printf("set %i %i %f %f\n", e->w, e->h, e->log_w, e->log_h);
-	set_vertical_params(e);
 	return FALSE;
 }
 
@@ -265,10 +271,17 @@ static void full_rerender(SCEditor *e)
 	e->cursor_pos = 0;
 	e->selection = NULL;
 
-	render_sc(e->scblocks, e->w, e->h, e->log_w, e->log_h,
-	          e->stylesheets, e->cbl, e->is, ISZ_EDITOR,
-	          e->slidenum, &e->top);
+	cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(e)));
+	e->top = interp_and_shape(e->scblocks, e->stylesheets, NULL,
+	                          e->is, ISZ_EDITOR, 0, cr);
+	cairo_destroy(cr);
 
+	e->top->w = e->w;
+
+	recursive_wrap(e->top, e->is, ISZ_EDITOR);
+	update_size(e);
+
+	e->need_draw = 1;
 	sc_editor_redraw(e);
 }
 

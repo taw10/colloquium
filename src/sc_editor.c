@@ -642,7 +642,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 	/* Contents */
 	cairo_translate(cr, 0.0, -e->scroll_pos);
 	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
-	recursive_draw(e->top, cr, e->is, ISZ_EDITOR);
+	recursive_draw(e->top, cr, e->is, ISZ_EDITOR,
+	               e->scroll_pos, e->scroll_pos + e->visible_height);
 
 	/* Editing overlay */
 	draw_overlay(cr, e);

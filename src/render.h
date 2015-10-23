@@ -54,6 +54,7 @@ extern int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz);
 extern int export_pdf(struct presentation *p, const char *filename);
 
 extern int recursive_draw(struct frame *fr, cairo_t *cr,
-                          ImageStore *is, enum is_size isz);
+                          ImageStore *is, enum is_size isz,
+                          double min_y, double max_y);
 
 #endif	/* RENDER_H */

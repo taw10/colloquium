@@ -258,13 +258,23 @@ static void draw_underfull_marker(cairo_t *cr, struct frame *fr, int i)
 
 
 static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
-                         enum is_size isz)
+                         enum is_size isz, double min_y, double max_y)
 {
 	int i;
 	double y_pos = 0.0;
 	const int debug = 0;
 
 	for ( i=0; i<fr->n_lines; i++ ) {
+
+		/* FIXME: Line spacing */
+		double lh = pango_units_to_double(fr->lines[i].height);
+
+		if ( y_pos+lh < min_y ) {
+			y_pos += lh;
+			continue;
+		}
+
+		if ( y_pos > max_y ) break;
 
 		cairo_save(cr);
 
@@ -304,8 +314,7 @@ static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
 			draw_underfull_marker(cr, fr, i);
 		}
 
-		/* FIXME: line spacing */
-		y_pos += pango_units_to_double(fr->lines[i].height);
+		y_pos += lh;
 
 		cairo_restore(cr);
 
@@ -361,7 +370,7 @@ static void do_background(cairo_t *cr, struct frame *fr)
 
 
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
-                     enum is_size isz)
+                     enum is_size isz, double min_y, double max_y)
 {
 	cairo_save(cr);
 	do_background(cr, fr);
@@ -376,7 +385,7 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 
 	/* Actually render the lines */
 	cairo_translate(cr, fr->pad_l, fr->pad_t);
-	render_lines(fr, cr, is, isz);
+	render_lines(fr, cr, is, isz, min_y, max_y);
 	cairo_restore(cr);
 
 	return 0;
@@ -384,16 +393,19 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 
 
 int recursive_draw(struct frame *fr, cairo_t *cr,
-                   ImageStore *is, enum is_size isz)
+                   ImageStore *is, enum is_size isz,
+                   double min_y, double max_y)
 {
 	int i;
 
-	draw_frame(cr, fr, is, isz);
+	draw_frame(cr, fr, is, isz, min_y, max_y);
 
 	for ( i=0; i<fr->num_children; i++ ) {
 		cairo_save(cr);
 		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
-		recursive_draw(fr->children[i], cr, is, isz);
+		recursive_draw(fr->children[i], cr, is, isz,
+		               min_y - fr->children[i]->y,
+		               max_y - fr->children[i]->y);
 		cairo_restore(cr);
 	}
 
@@ -492,7 +504,7 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 
 	recursive_wrap(top, is, isz);
 
-	recursive_draw(top, cr, is, isz);
+	recursive_draw(top, cr, is, isz, 0.0, log_h);
 
 	return top;
 }

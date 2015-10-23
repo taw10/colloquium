@@ -105,7 +105,6 @@ struct _sceditor
 	double               scroll_pos;
 	int                  visible_height;
 	int                  flow;
-	int                  need_draw;
 
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;

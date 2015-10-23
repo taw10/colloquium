@@ -115,7 +115,6 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	e->top->y = 0.0;
 	wrap_contents(e->top); /* Only the top level needs to be wrapped */
 	update_size(e);
-	e->need_draw = 1;
 
 	return FALSE;
 }
@@ -289,7 +288,6 @@ static void full_rerender(SCEditor *e)
 	recursive_wrap(e->top, e->is, ISZ_EDITOR);
 	update_size(e);
 
-	e->need_draw = 1;
 	sc_editor_redraw(e);
 }
 
@@ -1745,7 +1743,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	sceditor->cbl = NULL;
 	sceditor->scroll_pos = 0;
 	sceditor->flow = 0;
-	sceditor->need_draw = 1;
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 

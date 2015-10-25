@@ -78,7 +78,6 @@ static void set_vertical_params(SCEditor *e)
 	if ( e->vadj == NULL ) return;
 	gtk_adjustment_configure(e->vadj, e->scroll_pos, 0, e->h, 100,
 	                         e->visible_height, e->visible_height);
-	printf("set scrollbar for height %i, ac %i\n", e->visible_height, e->h);
 }
 
 

@@ -1,7 +1,7 @@
 /*
  * sc_editor.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -88,7 +88,6 @@ static void update_size(SCEditor *e)
 	e->log_w = e->w;
 	e->log_h = e->h;
 	e->top->h = e->h;
-	printf("set %i %i %f %f\n", e->w, e->h, e->log_w, e->log_h);
 	set_vertical_params(e);
 }
 
@@ -194,27 +193,45 @@ static void sc_editor_get_property(GObject *obj, guint id, GValue *val,
 
 static GtkSizeRequestMode get_request_mode(GtkWidget *widget)
 {
-	return GTK_SIZE_REQUEST_HEIGHT_FOR_WIDTH;
+	if ( SC_EDITOR(widget)->flow ) {
+		return GTK_SIZE_REQUEST_HEIGHT_FOR_WIDTH;
+	}
+
+	return GTK_SIZE_REQUEST_CONSTANT_SIZE;
 }
 
 
 static void get_preferred_width(GtkWidget *widget, gint *min, gint *natural)
 {
-	*min = 100;
-	*natural = 640;
+	SCEditor *e = SC_EDITOR(widget);
+	if ( e->flow ) {
+		*min = 100;
+		*natural = 640;
+	}
+
+	*min = e->w;
+	*natural = e->w;
 }
 
 
 static void get_preferred_height(GtkWidget *widget, gint *min, gint *natural)
 {
-	*min = 1000;
-	*natural = 1000;
+	SCEditor *e = SC_EDITOR(widget);
+	if ( e->flow ) {
+		*min = 1000;
+		*natural = 1000;
+	}
+
+	*min = e->h;
+	*natural = e->h;
 }
 
 
 static void hforw(GtkWidget *widget, gint width, gint *min, gint *natural)
 {
-	printf("height for width = %i\n", width);
+	if ( !SC_EDITOR(widget)->flow ) {
+		fprintf(stderr, "Warning: height for width call!\n");
+	}
 	*min = 10000;
 	*natural = 10000;
 }

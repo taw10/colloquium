@@ -103,6 +103,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
 		                          e->is, ISZ_EDITOR, 0, cr,
 					  event->width, 0.0);
+		recursive_wrap(e->top, e->is, ISZ_EDITOR);
 		cairo_destroy(cr);
 	}
 

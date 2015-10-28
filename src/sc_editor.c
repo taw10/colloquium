@@ -194,10 +194,6 @@ static void sc_editor_get_property(GObject *obj, guint id, GValue *val,
 
 static GtkSizeRequestMode get_request_mode(GtkWidget *widget)
 {
-	if ( SC_EDITOR(widget)->flow ) {
-		return GTK_SIZE_REQUEST_HEIGHT_FOR_WIDTH;
-	}
-
 	return GTK_SIZE_REQUEST_CONSTANT_SIZE;
 }
 
@@ -228,16 +224,6 @@ static void get_preferred_height(GtkWidget *widget, gint *min, gint *natural)
 }
 
 
-static void hforw(GtkWidget *widget, gint width, gint *min, gint *natural)
-{
-	if ( !SC_EDITOR(widget)->flow ) {
-		fprintf(stderr, "Warning: height for width call!\n");
-	}
-	*min = 10000;
-	*natural = 10000;
-}
-
-
 static void sc_editor_class_init(SCEditorClass *klass)
 {
 	GObjectClass *goc = G_OBJECT_CLASS(klass);
@@ -251,7 +237,7 @@ static void sc_editor_class_init(SCEditorClass *klass)
 	GTK_WIDGET_CLASS(klass)->get_request_mode = get_request_mode;
 	GTK_WIDGET_CLASS(klass)->get_preferred_width = get_preferred_width;
 	GTK_WIDGET_CLASS(klass)->get_preferred_height = get_preferred_height;
-	GTK_WIDGET_CLASS(klass)->get_preferred_height_for_width = hforw;
+	GTK_WIDGET_CLASS(klass)->get_preferred_height_for_width = NULL;
 }
 
 

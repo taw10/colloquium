@@ -42,7 +42,6 @@
 struct _narrative_window
 {
 	GtkWidget *window;
-	GtkAdjustment *vadj;
 	GtkToolItem         *bfirst;
 	GtkToolItem         *bprev;
 	GtkToolItem         *bnext;
@@ -332,13 +331,13 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 static void scroll_down(NarrativeWindow *nw)
 {
-/* FIXME: Implement via SCEditor */
-#if 0
 	gdouble inc, val;
-	inc = gtk_adjustment_get_step_increment(GTK_ADJUSTMENT(nw->vadj));
-	val = gtk_adjustment_get_value(GTK_ADJUSTMENT(nw->vadj));
-	gtk_adjustment_set_value(GTK_ADJUSTMENT(nw->vadj), inc+val);
-#endif
+	GtkAdjustment *vadj;
+
+	vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(nw->sceditor));
+	inc = gtk_adjustment_get_step_increment(GTK_ADJUSTMENT(vadj));
+	val = gtk_adjustment_get_value(GTK_ADJUSTMENT(vadj));
+	gtk_adjustment_set_value(GTK_ADJUSTMENT(vadj), inc+val);
 }
 
 

@@ -83,11 +83,17 @@ static void set_vertical_params(SCEditor *e)
 
 static void update_size(SCEditor *e)
 {
-	e->w = e->top->w;
-	e->h = total_height(e->top);
-	e->log_w = e->w;
-	e->log_h = e->h;
-	e->top->h = e->h;
+	if ( e->flow ) {
+		e->w = e->top->w;
+		e->h = total_height(e->top);
+		e->log_w = e->w;
+		e->log_h = e->h;
+		e->top->h = e->h;
+	} else {
+		e->top->w = e->log_w;
+		e->top->h = e->log_h;
+	}
+
 	set_vertical_params(e);
 }
 
@@ -100,19 +106,29 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	/* Interpret and shape, if not already done */
 	if ( e->top == NULL ) {
 		cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
+		double w, h;
+		if ( e->flow ) {
+			w = event->width;
+			h = 0.0;
+		} else {
+			w = e->log_w;
+			h = e->log_h;
+		}
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-		                          e->is, ISZ_EDITOR, 0, cr,
-					  event->width, 0.0);
+		                          e->is, ISZ_EDITOR, 0, cr, w, h);
 		recursive_wrap(e->top, e->is, ISZ_EDITOR);
 		cairo_destroy(cr);
 	}
 
-	/* Wrap using current width */
-	e->top->w = event->width;
-	e->top->h = 0.0;  /* To be updated in a moment */
-	e->top->x = 0.0;
-	e->top->y = 0.0;
-	wrap_contents(e->top); /* Only the top level needs to be wrapped */
+	if ( e->flow ) {
+		/* Wrap using current width */
+		e->top->w = event->width;
+		e->top->h = 0.0;  /* To be updated in a moment */
+		e->top->x = 0.0;
+		e->top->y = 0.0;
+		wrap_contents(e->top); /* Only the top level needs to be wrapped */
+	}
+
 	update_size(e);
 
 	return FALSE;
@@ -204,10 +220,10 @@ static void get_preferred_width(GtkWidget *widget, gint *min, gint *natural)
 	if ( e->flow ) {
 		*min = 100;
 		*natural = 640;
+	} else {
+		*min = e->w;
+		*natural = e->w;
 	}
-
-	*min = e->w;
-	*natural = e->w;
 }
 
 
@@ -217,10 +233,10 @@ static void get_preferred_height(GtkWidget *widget, gint *min, gint *natural)
 	if ( e->flow ) {
 		*min = 1000;
 		*natural = 1000;
+	} else {
+		*min = e->h;
+		*natural = e->h;
 	}
-
-	*min = e->h;
-	*natural = e->h;
 }
 
 

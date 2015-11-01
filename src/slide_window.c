@@ -647,10 +647,10 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	sc_editor_set_size(sw->sceditor, 1024, 768);
 	sc_editor_set_logical_size(sw->sceditor, 1024.0, 768.0);
 
-	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(scroll), TRUE, TRUE, 0);
 
 	/* Default size */
-	gtk_window_set_default_size(GTK_WINDOW(sw->window), 1024+100, 768+150);
+	gtk_window_set_default_size(GTK_WINDOW(sw->window), 1024, 768);
 	gtk_window_set_resizable(GTK_WINDOW(sw->window), TRUE);
 
 	/* Initial background colour */

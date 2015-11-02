@@ -66,6 +66,21 @@ G_DEFINE_TYPE_WITH_CODE(SCEditor, sc_editor, GTK_TYPE_DRAWING_AREA,
                                               scroll_interface_init))
 
 
+static void horizontal_adjust(GtkAdjustment *adj, SCEditor *e)
+{
+	e->h_scroll_pos = gtk_adjustment_get_value(adj);
+	sc_editor_redraw(e);
+}
+
+
+static void set_horizontal_params(SCEditor *e)
+{
+	if ( e->hadj == NULL ) return;
+	gtk_adjustment_configure(e->hadj, e->h_scroll_pos, 0, e->w, 100,
+	                         e->visible_width, e->visible_width);
+}
+
+
 static void vertical_adjust(GtkAdjustment *adj, SCEditor *e)
 {
 	e->scroll_pos = gtk_adjustment_get_value(adj);
@@ -95,6 +110,7 @@ static void update_size(SCEditor *e)
 	}
 
 	set_vertical_params(e);
+	set_horizontal_params(e);
 }
 
 
@@ -102,6 +118,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            SCEditor *e)
 {
 	e->visible_height = event->height;
+	e->visible_width = event->width;
 
 	/* Interpret and shape, if not already done */
 	if ( e->top == NULL ) {
@@ -167,6 +184,11 @@ static void sc_editor_set_property(GObject *obj, guint id, const GValue *val,
 
 		case SCEDITOR_HADJ :
 		e->hadj = g_value_get_object(val);
+		set_horizontal_params(e);
+		if ( e->hadj != NULL ) {
+			g_signal_connect(G_OBJECT(e->hadj), "value-changed",
+			                 G_CALLBACK(horizontal_adjust), e);
+		}
 		break;
 
 		default :
@@ -659,7 +681,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 	cairo_fill(cr);
 
 	/* Contents */
-	cairo_translate(cr, 0.0, -e->scroll_pos);
+	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);
 	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
 	recursive_draw(e->top, cr, e->is, ISZ_EDITOR,
 	               e->scroll_pos, e->scroll_pos + e->visible_height);

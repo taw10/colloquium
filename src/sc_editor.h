@@ -103,7 +103,9 @@ struct _sceditor
 	GtkAdjustment       *hadj;
 	GtkAdjustment       *vadj;
 	double               scroll_pos;
+	double               h_scroll_pos;
 	int                  visible_height;
+	int                  visible_width;
 	int                  flow;
 
 	/* Pointers to the frame currently being edited */

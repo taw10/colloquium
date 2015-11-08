@@ -778,6 +778,28 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 {
 	struct wrap_box *box = &fr->lines[line].boxes[bn];
+	const char *text;
+	size_t len_bytes;
+	int len_chars;
+	PangoLogAttr *log_attrs;
+	int offs;
+
+	text = sc_block_contents(box->scblock);
+	len_bytes = strlen(text);
+	len_chars = g_utf8_strlen(text, -1);
+
+	log_attrs = malloc((len_chars+1)*sizeof(PangoLogAttr));
+	if ( log_attrs == NULL ) return;
+	pango_get_log_attrs(text, len_bytes, -1, e->lang,
+	                    log_attrs, len_chars+1);
+
+	offs = box->offs_char + e->cursor_pos;
+
+	if ( log_attrs[offs].is_line_break ) {
+		printf("Just typed a break!\n");
+	}
+
+	free(log_attrs);
 
 	/* Shape the box again */
 	shape_box(box->cf->cf);

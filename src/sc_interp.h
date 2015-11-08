@@ -38,7 +38,8 @@ typedef int (*SCCallbackBoxFunc)(SCInterpreter *scin, SCBlock *bl,
                                   double *w, double *h, void **, void *);
 typedef cairo_surface_t *(*SCCallbackDrawFunc)(int w, int h, void *, void *);
 
-extern SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top);
+extern SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
+                                    struct frame *top);
 extern void sc_interp_destroy(SCInterpreter *scin);
 
 extern void sc_interp_save(SCInterpreter *scin);

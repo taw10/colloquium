@@ -431,7 +431,8 @@ int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz)
 struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                SCCallbackList *cbl, ImageStore *is,
                                enum is_size isz, int slide_number,
-			       cairo_t *cr, double w, double h)
+                               cairo_t *cr, double w, double h,
+                               PangoLanguage *lang)
 {
 	cairo_font_options_t *fopts;
 	PangoFontMap *fontmap;
@@ -458,7 +459,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	top->w = w;
 	top->h = h;
 
-	scin = sc_interp_new(pc, top);
+	scin = sc_interp_new(pc, lang, top);
 	if ( scin == NULL ) {
 		fprintf(stderr, "Failed to set up interpreter.\n");
 		frame_free(top);

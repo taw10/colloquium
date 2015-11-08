@@ -483,7 +483,8 @@ static void set_frame(SCInterpreter *scin, struct frame *fr)
 }
 
 
-SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
+SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
+                             struct frame *top)
 {
 	SCInterpreter *scin;
 	struct sc_state *st;
@@ -515,8 +516,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, struct frame *top)
 	}
 	st->macro_contents = NULL;
 
-	/* FIXME: Determine proper language (somehow...) */
-	scin->lang = pango_language_from_string("en_GB");
+	scin->lang = lang;
 
 	/* The "ultimate" default font */
 	set_font(scin, "Sans 12");

@@ -84,6 +84,7 @@ enum drag_status
 struct _sceditor
 {
 	GtkDrawingArea       parent_instance;
+	PangoLanguage        *lang;
 
 	/*< private >*/
 	GtkIMContext        *im_context;

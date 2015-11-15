@@ -86,7 +86,7 @@ void slideshow_rerender(SlideShow *ss)
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
 	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n,
-	                        &ss->top);
+	                        &ss->top, ss->p->lang);
 }
 
 

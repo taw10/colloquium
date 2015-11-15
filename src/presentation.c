@@ -226,6 +226,9 @@ struct presentation *new_presentation()
 	new->stylesheet = NULL;
 	new->is = imagestore_new();
 
+	/* FIXME: Hardcoded */
+	new->lang = pango_language_from_string("en_GB");
+
 	return new;
 }
 
@@ -343,6 +346,9 @@ int load_presentation(struct presentation *p, const char *filename)
 
 	p->scblocks = sc_parse(everything);
 	free(everything);
+
+	/* FIXME: Hardcoded */
+	p->lang = pango_language_from_string("en_GB");
 
 	if ( p->scblocks == NULL ) r = 1;
 

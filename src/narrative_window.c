@@ -426,7 +426,7 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	stylesheets[1] = NULL;
 	/* FIXME: Cache like crazy here */
 	surf = render_sc(scblocks, w, h, 1024.0, 768.0, stylesheets, NULL,
-	                 p->is, ISZ_THUMBNAIL, 0, &top);
+	                 p->is, ISZ_THUMBNAIL, 0, &top, p->lang);
 	frame_free(top);
 
 	return surf;
@@ -469,7 +469,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = narrative_stylesheet();
 	stylesheets[2] = NULL;
-	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets);
+	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang);
 	cbl = sc_callback_list_new();
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
 	                              render_thumbnail, p);

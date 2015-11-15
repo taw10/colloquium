@@ -127,7 +127,7 @@ static void UNUSED update_style_menus(SlideWindow *sw)
 	free(sw->style_menu);
 
 	/* Get the list of styles from the style sheet */
-	scin = sc_interp_new(NULL, NULL);
+	scin = sc_interp_new(NULL, sw->p->lang, NULL);
 	if ( scin == NULL ) {
 		fprintf(stderr, "Failed to set up interpreter.\n");
 		return;
@@ -631,7 +631,8 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
-	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, stylesheets);
+	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, stylesheets,
+	                             p->lang);
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,

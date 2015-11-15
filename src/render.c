@@ -492,7 +492,7 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
                                  cairo_t *cr, double log_w, double log_h,
                                  SCBlock **stylesheets, SCCallbackList *cbl,
                                  ImageStore *is, enum is_size isz,
-                                 int slide_number)
+                                 int slide_number, PangoLanguage *lang)
 {
 	struct frame *top;
 
@@ -501,7 +501,7 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 	cairo_fill(cr);
 
 	top = interp_and_shape(scblocks, stylesheets, cbl, is, isz,
-	                       slide_number, cr, log_w, log_h);
+	                       slide_number, cr, log_w, log_h, lang);
 
 	recursive_wrap(top, is, isz);
 
@@ -515,7 +515,8 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                            double log_w, double log_h,
                            SCBlock **stylesheets, SCCallbackList *cbl,
                            ImageStore *is, enum is_size isz,
-                           int slide_number, struct frame **ptop)
+                           int slide_number, struct frame **ptop,
+                           PangoLanguage *lang)
 {
 	cairo_surface_t *surf;
 	cairo_t *cr;
@@ -525,7 +526,8 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	cr = cairo_create(surf);
 	cairo_scale(cr, w/log_w, h/log_h);
 	top = render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
-	                           stylesheets, cbl, is, isz,slide_number);
+	                           stylesheets, cbl, is, isz,slide_number,
+	                           lang);
 	cairo_destroy(cr);
 
 	*ptop = top;
@@ -573,7 +575,7 @@ int export_pdf(struct presentation *p, const char *filename)
 
 		render_sc_to_surface(s->scblocks, surf, cr, p->slide_width,
 		                     p->slide_height, stylesheets, NULL,
-		                     p->is, ISZ_SLIDESHOW, i);
+		                     p->is, ISZ_SLIDESHOW, i, p->lang);
 
 		cairo_restore(cr);
 

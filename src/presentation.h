@@ -1,7 +1,7 @@
 /*
  * presentation.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -55,6 +55,7 @@ struct presentation
 	char             *filename;
 	char             *titlebar;  /* basename(filename) or "(untitled)" */
 	int               completely_empty;
+	PangoLanguage    *lang;
 
 	ImageStore       *is;
 

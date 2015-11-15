@@ -132,7 +132,8 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 			h = e->log_h;
 		}
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-		                          e->is, ISZ_EDITOR, 0, cr, w, h);
+		                          e->is, ISZ_EDITOR, 0, cr, w, h,
+		                          e->lang);
 		recursive_wrap(e->top, e->is, ISZ_EDITOR);
 		cairo_destroy(cr);
 	}
@@ -318,7 +319,7 @@ static void full_rerender(SCEditor *e)
 
 	cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(e)));
 	e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-	                          e->is, ISZ_EDITOR, 0, cr, e->w, 0.0);
+	                          e->is, ISZ_EDITOR, 0, cr, e->w, 0.0, e->lang);
 	cairo_destroy(cr);
 
 	e->top->x = 0.0;
@@ -1785,7 +1786,8 @@ void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl)
 }
 
 
-SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
+SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
+                        PangoLanguage *lang)
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
@@ -1807,6 +1809,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets)
 	sceditor->cbl = NULL;
 	sceditor->scroll_pos = 0;
 	sceditor->flow = 0;
+	sceditor->lang = lang;
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 

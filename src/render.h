@@ -37,7 +37,8 @@ extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                                   double log_w, double log_h,
                                   SCBlock **stylesheets, SCCallbackList *cbl,
                                   ImageStore *is, enum is_size isz,
-                                  int slide_number, struct frame **ptop);
+                                  int slide_number, struct frame **ptop,
+                                  PangoLanguage *lang);
 
 /* Interpret StoryCode and measure boxes.
  * Needs to be followed by: wrap_contents() (recursively)
@@ -47,7 +48,7 @@ extern struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                       SCCallbackList *cbl,
                                       ImageStore *is, enum is_size isz,
                                       int slide_number, cairo_t *cr,
-                                      double w, double h);
+                                      double w, double h, PangoLanguage *lang);
 
 extern int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz);
 

@@ -575,7 +575,7 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 
 	toolbar = gtk_toolbar_new();
 	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);
-	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
+	//gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
 
 	/* Fullscreen */
 	image = gtk_image_new_from_icon_name("view-fullscreen",

@@ -1038,3 +1038,24 @@ double total_height(struct frame *fr)
 
 	return pango_units_to_double(tot);
 }
+
+
+/* Insert a new box, which will be at position 'pos' */
+int insert_box(struct wrap_line *l, int pos)
+{
+	int i;
+
+	if ( l->n_boxes == l->max_boxes ) {
+		l->max_boxes += 32;
+		if ( alloc_boxes(l) ) return 1;
+	}
+
+	/* Shuffle the boxes along */
+	for ( i=l->n_boxes; i>pos+1; i-- ) {
+		l->boxes[i] = l->boxes[i-1];
+	}
+
+	l->n_boxes++;
+
+	return 0;
+}

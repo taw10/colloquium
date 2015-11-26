@@ -123,4 +123,6 @@ extern void wrap_line_free(struct wrap_line *l);
 extern void show_boxes(struct wrap_line *boxes);
 extern double total_height(struct frame *fr);
 
+extern int insert_box(struct wrap_line *l, int pos);
+
 #endif	/* WRAP_H */

@@ -120,14 +120,67 @@ static struct wrap_line *get_cursor_line(struct frame *fr, size_t pos,
 }
 #endif
 
+
+int which_segment(struct wrap_box *box, int pos, int *err)
+{
+	int i = 0;
+	int ch = 0;
+
+	do {
+		if ( ch + box->segs[i].len_chars >= pos ) break;
+		ch += box->segs[i++].len_chars;
+	} while ( i < box->n_segs );
+
+	if ( i == box->n_segs ) {
+		fprintf(stderr, "Position not found in box!\n");
+		*err = 1;
+		return 0;
+	}
+
+	*err = 0;
+	return i;
+}
+
+
+/* Return the horizontal position of "pos" within "box", in cairo units */
+static double text_box_index_to_x(struct wrap_box *box, int pos)
+{
+	double x = 0.0;
+	int nseg;
+	struct text_seg *seg;
+	const char *seg_text;
+	const char *ep;
+	int p;
+	int i;
+	int err;
+
+	nseg = which_segment(box, pos, &err);
+	if ( err ) return 0.0;
+
+	for ( i=0; i<nseg; i++ ) {
+		PangoRectangle rect;
+		pango_glyph_string_extents(box->segs[i].glyphs,
+		                           box->font, NULL, &rect);
+		x += rect.width;
+	}
+
+	/* We are in "seg" inside "box" */
+	seg = &box->segs[nseg];
+	seg_text = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
+	                                    box->offs_char + seg->offs_char);
+	ep = g_utf8_offset_to_pointer(seg_text, seg->len_chars);
+
+	/* FIXME: pos should be in bytes, not chars */
+	pango_glyph_string_index_to_x(seg->glyphs, (char *)seg_text,
+	                              ep - seg_text, &seg->analysis,
+	                              pos, FALSE, &p);
+	return pango_units_to_double(x+p);
+}
+
+
 void get_cursor_pos(struct wrap_box *box, int pos,
                     double *xposd, double *yposd, double *line_height)
 {
-	int p;
-	const char *block_text;
-	const char *box_text;
-	const char *ep;
-
 	*xposd = 0.0;
 	*yposd = 0.0;
 	*line_height = 20.0;
@@ -144,13 +197,7 @@ void get_cursor_pos(struct wrap_box *box, int pos,
 	switch ( box->type ) {
 
 		case WRAP_BOX_PANGO :
-		block_text = sc_block_contents(box->scblock);
-		box_text = g_utf8_offset_to_pointer(block_text, box->offs_char);
-		ep = g_utf8_offset_to_pointer(box_text, box->len_chars);
-		pango_glyph_string_index_to_x(box->glyphs, (char *)box_text,
-		                              ep - box_text, &box->analysis,
-			                      pos, FALSE, &p);
-		*xposd += pango_units_to_double(p);
+		*xposd += text_box_index_to_x(box, pos);
 		break;
 
 		case WRAP_BOX_IMAGE :
@@ -277,10 +324,11 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 			                                    b->offs_char);
 			printf("box text '%s'\n", box_text);
 			/* cast because this function is not const-clean */
-			pango_glyph_string_x_to_index(b->glyphs,
+			/* FIXME: Assumes one segment per box! */
+			pango_glyph_string_x_to_index(b->segs[0].glyphs,
 			                              (char *)box_text,
 			                              strlen(box_text),
-			                              &b->analysis,
+			                              &b->segs[0].analysis,
 			                              x_pos_i, &idx, &trail);
 			offs = idx + trail;
 			/* FIXME: Bug in Pango? */
@@ -310,12 +358,15 @@ static void calc_line_geometry(struct wrap_line *line)
 	line->height = 0;
 
 	for ( i=0; i<line->n_boxes; i++ ) {
+
 		struct wrap_box *box = &line->boxes[i];
+
 		line->width += box->width;
 		if ( box->space == WRAP_SPACE_EOP ) box->sp = 0.0;
 		line->width += box->sp;
 		if ( box->height > line->height ) line->height = box->height;
 		if ( box->ascent > line->ascent ) line->ascent = box->ascent;
+
 	}
 
 	line->height *= 1.07;
@@ -785,13 +836,16 @@ static void first_fit(struct wrap_line *boxes, double line_length,
 
 void wrap_line_free(struct wrap_line *l)
 {
-	int i;
+	int i, j;
 	for ( i=0; i<l->n_boxes; i++ ) {
 
 		switch ( l->boxes[i].type ) {
 
 			case WRAP_BOX_PANGO :
-			pango_glyph_string_free(l->boxes[i].glyphs);
+			for ( j=0; j<l->boxes[i].n_segs; j++ ) {
+				pango_glyph_string_free(l->boxes[i].segs[j].glyphs);
+			}
+			free(l->boxes[i].segs);
 			break;
 
 			case WRAP_BOX_IMAGE :

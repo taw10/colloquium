@@ -35,18 +35,7 @@
 #include "shape.h"
 
 
-struct box_adding_stuff
-{
-	struct wrap_line *line;
-	SCInterpreter *scin;
-	int editable;
-	enum wrap_box_space space;
-	SCBlock *bl;
-	size_t offs;
-};
-
-
-void shape_box(struct wrap_box *box)
+static void shape_segment(struct wrap_box *box, struct text_seg *seg)
 {
 	PangoRectangle rect;
 	const char *tp;
@@ -57,67 +46,48 @@ void shape_box(struct wrap_box *box)
 	ep = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
 	                              box->offs_char+box->len_chars);
 
-	if ( box->glyphs != NULL ) {
-		pango_glyph_string_free(box->glyphs);
+	if ( seg->glyphs != NULL ) {
+		pango_glyph_string_free(seg->glyphs);
 	}
-	box->glyphs = pango_glyph_string_new();
-	pango_shape(tp, ep-tp, &box->analysis, box->glyphs);
+	seg->glyphs = pango_glyph_string_new();
+	pango_shape(tp, ep-tp, &seg->analysis, seg->glyphs);
 
-	pango_glyph_string_extents(box->glyphs, box->font, NULL, &rect);
+	pango_glyph_string_extents(seg->glyphs, box->font, NULL, &rect);
 
-	box->width = rect.width;
-	if ( rect.height > box->height ) {
-		box->height = rect.height;
-	}
-	if ( PANGO_ASCENT(rect) > box->ascent ) {
-		box->ascent = PANGO_ASCENT(rect);
+	seg->width = rect.width;
+	seg->height = rect.height;
+	seg->ascent = PANGO_ASCENT(rect);
+}
+
+
+static void calc_box_geometry(struct wrap_box *box)
+{
+	int i;
+
+	if ( box->type != WRAP_BOX_PANGO ) return;
+
+	box->width = 0;
+	box->height = 0;
+	box->ascent = 0;
+
+	for ( i=0; i<box->n_segs; i++ ) {
+		struct text_seg *seg = &box->segs[i];
+		box->width += seg->width;
+		if ( seg->height > box->height ) box->height = seg->height;
+		if ( seg->ascent > box->ascent ) box->ascent = seg->ascent;
 	}
 }
 
 
-static void add_wrap_box(gpointer vi, gpointer vb)
+void shape_box(struct wrap_box *box)
 {
-	struct wrap_box *box;
-	double *col;
-	PangoItem *item = vi;
-	struct box_adding_stuff *bas = vb;
-	size_t offs_bytes;
-	const char *tp;
+	int i;
 
-	if ( bas->line->n_boxes == bas->line->max_boxes ) {
-		bas->line->max_boxes += 32;
-		alloc_boxes(bas->line);
-		if ( bas->line->n_boxes == bas->line->max_boxes ) return;
+	for ( i=0; i<box->n_segs; i++ ) {
+		shape_segment(box, &box->segs[i]);
 	}
-	box = &bas->line->boxes[bas->line->n_boxes];
 
-	box->type = WRAP_BOX_PANGO;
-	box->space = bas->space;
-	box->font = sc_interp_get_font(bas->scin);
-	box->width = 0;
-	box->editable = bas->editable;
-	box->ascent = sc_interp_get_ascent(bas->scin);
-	box->height = sc_interp_get_height(bas->scin);
-	box->cf = NULL;
-
-	/* Link to the actual text */
-	tp = sc_block_contents(bas->bl);
-	offs_bytes = item->offset + bas->offs;
-	box->scblock = bas->bl;
-	box->offs_char = g_utf8_pointer_to_offset(tp, tp+offs_bytes);
-	box->len_chars = g_utf8_strlen(tp+offs_bytes, item->length);
-
-	col = sc_interp_get_fgcol(bas->scin);
-	box->col[0] = col[0];  /* Red */
-	box->col[1] = col[1];  /* Green */
-	box->col[2] = col[2];  /* Blue */
-	box->col[3] = col[3];  /* Alpha */
-	box->glyphs = NULL;
-	box->analysis = item->analysis;
-
-	bas->line->n_boxes++;
-
-	shape_box(box);
+	calc_box_geometry(box);
 }
 
 
@@ -197,40 +167,84 @@ static UNUSED void debug_log_attrs(size_t len_chars, const char *text,
 }
 
 
+static void add_seg(gpointer vi, gpointer vb)
+{
+	PangoItem *item = vi;
+	struct wrap_box *box = vb;
+
+	box->segs[box->n_segs].analysis = item->analysis;
+	box->segs[box->n_segs].glyphs = NULL;
+	box->segs[box->n_segs].offs_char = item->offset;
+	box->segs[box->n_segs].len_chars = item->num_chars;
+	shape_segment(box, &box->segs[box->n_segs++]);
+}
+
+
 /* Add "text", followed by a space of type "space", to "line" */
-static int add_wrap_boxes(struct wrap_line *line,
-                          enum wrap_box_space space, PangoContext *pc,
-                          SCInterpreter *scin, SCBlock *bl, size_t offs,
-                          size_t len, int editable)
+static int add_text_box(struct wrap_line *line,
+                        enum wrap_box_space space, PangoContext *pc,
+                        SCInterpreter *scin, SCBlock *bl, size_t offs,
+                        size_t len, int editable)
 {
 	GList *pango_items;
+	struct wrap_box *box;
 	PangoAttrList *attrs;
 	PangoAttribute *attr;
-	struct box_adding_stuff bas;
-
-	//printf("adding '%s'\n", swizzle(text+offs, len));
+	const char *tp;
+	double *col;
+	int nseg;
 
 	while ( len==0 ) {
 		add_nothing_box(line, bl, editable, space, scin, offs);
 		return 0;
 	}
 
+	/* Create the box */
+	if ( line->n_boxes == line->max_boxes ) {
+		line->max_boxes += 32;
+		alloc_boxes(line);
+		if ( line->n_boxes == line->max_boxes ) return 1;
+	}
+	box = &line->boxes[line->n_boxes];
+
+	box->type = WRAP_BOX_PANGO;
+	box->space = space;
+	box->font = sc_interp_get_font(scin);
+	box->width = 0;
+	box->editable = editable;
+	box->ascent = sc_interp_get_ascent(scin);
+	box->height = sc_interp_get_height(scin);
+	box->cf = NULL;
+
+	/* Link to the actual text */
+	box->scblock = bl;
+	tp = sc_block_contents(bl);
+	box->offs_char = g_utf8_pointer_to_offset(tp, tp+offs);
+	box->len_chars = g_utf8_strlen(tp+offs, len);
+
+	col = sc_interp_get_fgcol(scin);
+	box->col[0] = col[0];  /* Red */
+	box->col[1] = col[1];  /* Green */
+	box->col[2] = col[2];  /* Blue */
+	box->col[3] = col[3];  /* Alpha */
+
 	attrs = pango_attr_list_new();
 	attr = pango_attr_font_desc_new(sc_interp_get_fontdesc(scin));
 	pango_attr_list_insert_before(attrs, attr);
 	pango_items = pango_itemize(pc, sc_block_contents(bl)+offs,
 	                            0, len, attrs, NULL);
+	nseg = g_list_length(pango_items);
+	box->segs = malloc(nseg * sizeof(struct text_seg));
+	if ( box->segs == NULL ) return 1;
 
-	bas.line = line;
-	bas.scin = scin;
-	bas.editable = editable;
-	bas.space = space;
-	bas.bl = bl;
-	bas.offs = offs;
-
-	g_list_foreach(pango_items, add_wrap_box, &bas);
+	box->n_segs = 0;
+	g_list_foreach(pango_items, add_seg, box);
 	g_list_free(pango_items);
 	pango_attr_list_unref(attrs);
+
+	calc_box_geometry(box);
+
+	line->n_boxes++;
 
 	return 0;
 }
@@ -302,8 +316,8 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 
 	len_chars = g_utf8_strlen(text, -1);
 	if ( len_chars == 0 ) {
-		add_wrap_boxes(boxes, WRAP_SPACE_NONE, pc, scin, bl,
-		               0, 0, editable);
+		add_text_box(boxes, WRAP_SPACE_NONE, pc, scin, bl,
+		             0, 0, editable);
 		return 1;
 	}
 
@@ -345,8 +359,8 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 				type = WRAP_SPACE_NONE;
 			}
 
-			if ( add_wrap_boxes(boxes, type, pc, scin, bl,
-			                    start, len, editable) ) {
+			if ( add_text_box(boxes, type, pc, scin, bl,
+			                  start, len, editable) ) {
 				fprintf(stderr, "Failed to add wrap box.\n");
 			}
 			start = offs;
@@ -364,13 +378,13 @@ int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
 		if ( (text[start+l-1] == '\n')  ) {
 
 			/* There is a newline at the end of the SC */
-			add_wrap_boxes(boxes, WRAP_SPACE_EOP, pc, scin, bl,
-			               start, l-1, editable);
+			add_text_box(boxes, WRAP_SPACE_EOP, pc, scin, bl,
+			             start, l-1, editable);
 
 		} else {
 
-			add_wrap_boxes(boxes, WRAP_SPACE_NONE, pc, scin, bl,
-			               start, l, editable);
+			add_text_box(boxes, WRAP_SPACE_NONE, pc, scin, bl,
+			             start, l, editable);
 
 		}
 

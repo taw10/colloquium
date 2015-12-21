@@ -55,6 +55,22 @@ enum wrap_box_space
 };
 
 
+struct text_seg
+{
+	PangoGlyphString *glyphs;
+	PangoAnalysis analysis;
+
+	/* Offset of this text segment into the wrap box */
+	int offs_char;
+	int len_chars;
+
+	/* Pango units */
+	int width;
+	int height;
+	int ascent;
+};
+
+
 /* A wrap box is a run of content - could be text, an image or so one - that is
  * one logical unit as far as Colloquium is concerned.  It might consist of
  * multiple units, for example, in Pango's mind. */
@@ -76,11 +92,11 @@ struct wrap_box
 	double sp;  /* Calculated space (Pango units) after box */
 
 	/* For type == WRAP_BOX_PANGO */
-	PangoGlyphString *glyphs;
 	PangoFont *font;
 	double col[4];  /* rgba colour */
-	PangoAnalysis analysis;
 	int len_chars;
+	int n_segs;
+	struct text_seg *segs;
 
 	/* For type == WRAP_BOX_IMAGE */
 	char *filename;
@@ -124,5 +140,6 @@ extern void show_boxes(struct wrap_line *boxes);
 extern double total_height(struct frame *fr);
 
 extern int insert_box(struct wrap_line *l, int pos);
+extern int which_segment(struct wrap_box *box, int pos, int *err);
 
 #endif	/* WRAP_H */

@@ -420,7 +420,7 @@ void cur_box_diag(SCEditor *e)
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 
-	struct wrap_box *sbox = &e->cursor_frame->lines[sln].boxes[sbx];
+	struct wrap_box *sbox = &fr->lines[sln].boxes[sbx];
 
 	printf("line/box/pos: [%i of %i]/[%i of %i]/[%i of %i]\n",
 	       sln, fr->n_lines,
@@ -429,6 +429,17 @@ void cur_box_diag(SCEditor *e)
 	printf("box type is %i, space type is %i\n", sbox->type, sbox->space);
 	if ( sbox->type == WRAP_BOX_NOTHING ) {
 		printf("Warning: in a nothing box!\n");
+	}
+
+	struct wrap_line *ln = &fr->lines[sln];
+	int i;
+	for ( i=0; i<ln->n_boxes; i++ ) {
+		char pp = '[';
+		char pq = ']';
+		struct wrap_box *bx = &ln->boxes[i];
+		if ( i == sbx ) { pp = '<'; pq  = '>'; }
+		printf("%c%i %i %i%c", pp, bx->offs_char, bx->len_chars,
+		       bx->n_segs, pq);
 	}
 }
 
@@ -714,7 +725,7 @@ static void fixup_cursor(SCEditor *e)
 
 		/* We find ourselves in a box which doesn't exist */
 
-		if ( e->cursor_line > fr->n_lines-1 ) {
+		if ( e->cursor_line < fr->n_lines-1 ) {
 			/* This isn't the last line, so go to the first box of
 			 * the next line */
 			e->cursor_line++;
@@ -728,6 +739,7 @@ static void fixup_cursor(SCEditor *e)
 		}
 	}
 
+	assert(e->cursor_box < sline->n_boxes);
 	sbox = &sline->boxes[e->cursor_box];
 
 	if ( e->cursor_pos > sbox->len_chars ) {
@@ -779,10 +791,15 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 {
 	struct wrap_box *box = &fr->lines[line].boxes[bn];
-	/* Shape the box again */
+
+	/* Shape the box again FIXME: Number of segments could change */
 	shape_box(box->cf->cf);
-	box->glyphs = box->cf->cf->glyphs;
-	box->cf->glyphs = box->cf->cf->glyphs;
+
+	/* Update the segments */
+	box->segs = box->cf->cf->segs;
+	box->n_segs = box->cf->cf->n_segs;
+	box->cf->segs = box->cf->cf->segs;
+	box->cf->n_segs = box->cf->cf->n_segs;
 
 	/* Wrap the paragraph again */
 	wrap_contents(fr);  /* FIXME: Only the current paragraph */
@@ -814,7 +831,7 @@ static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
 
 static void insert_text(char *t, SCEditor *e)
 {
-	int sln, sbx, sps;
+	int sln, sbx, sps, sseg;
 	struct wrap_box *sbox;
 	struct frame *fr = e->cursor_frame;
 	const char *text;
@@ -822,6 +839,7 @@ static void insert_text(char *t, SCEditor *e)
 	int len_chars;
 	PangoLogAttr *log_attrs;
 	int offs;
+	int err = 0;
 
 	if ( fr == NULL ) return;
 
@@ -832,9 +850,16 @@ static void insert_text(char *t, SCEditor *e)
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 	sbox = &e->cursor_frame->lines[sln].boxes[sbx];
+	sseg = which_segment(sbox, sps, &err);
+	if ( err ) return;
 
 	cur_box_diag(e);
 	printf("sps=%i, offs_char=%i\n", sps, sbox->offs_char);
+	if ( sbox->type == WRAP_BOX_NOTHING ) {
+		printf("Editing a nothing box!\n");
+		return;
+	}
+
 	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
 
 	text = sc_block_contents(sbox->scblock);
@@ -868,6 +893,8 @@ static void insert_text(char *t, SCEditor *e)
 	}
 
 	free(log_attrs);
+
+	sbox->segs[sseg].len_chars += 1;
 
 	/* Update the length of the box in the unwrapped and un-paragraph-split
 	 * string of wrap boxes */

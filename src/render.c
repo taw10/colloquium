@@ -46,15 +46,20 @@
 
 static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
 {
+	int i;
+
 	cairo_new_path(cr);
 	cairo_move_to(cr, 0.0, 0.0);
-	if ( box->glyphs == NULL ) {
+	if ( box->segs == NULL ) {
 		fprintf(stderr, "Box %p has NULL pointer.\n", box);
 		return;
 	}
 	cairo_set_source_rgba(cr, box->col[0], box->col[1], box->col[2],
 	                      box->col[3]);
-	pango_cairo_show_glyph_string(cr, box->font, box->glyphs);
+	for ( i=0; i<box->n_segs; i++ ) {
+		pango_cairo_show_glyph_string(cr, box->font,
+		                              box->segs[i].glyphs);
+	}
 }
 
 

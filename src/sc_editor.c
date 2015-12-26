@@ -441,6 +441,7 @@ void cur_box_diag(SCEditor *e)
 		printf("%c%i %i %i%c", pp, bx->offs_char, bx->len_chars,
 		       bx->n_segs, pq);
 	}
+	printf("\n");
 }
 
 
@@ -792,7 +793,8 @@ static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 {
 	struct wrap_box *box = &fr->lines[line].boxes[bn];
 
-	/* Shape the box again FIXME: Number of segments could change */
+	/* Shape the box again
+	 * FIXME: Number of segments could change, need to PangoAnalyse again */
 	shape_box(box->cf->cf);
 
 	/* Update the segments */
@@ -931,6 +933,8 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	sps = e->cursor_pos;
 	struct wrap_box *sbox = &e->cursor_frame->lines[sln].boxes[sbx];
 
+	cur_box_diag(e);
+
 	move_cursor_back(e);
 
 	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
@@ -966,6 +970,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	update_local(e, fr, sln, sbx);
 
 	fixup_cursor(e);
+	cur_box_diag(e);
 	sc_editor_redraw(e);
 }
 

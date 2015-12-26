@@ -1161,6 +1161,26 @@ static void calculate_box_size(struct frame *fr, SCEditor *e,
 }
 
 
+static struct wrap_box *cbox(struct frame *fr, int ln, int bn)
+{
+	return &fr->lines[ln].boxes[bn];
+}
+
+
+static int callback_click(SCEditor *e, struct frame *fr, double x, double y)
+{
+	int ln, bn, pn;
+	struct wrap_box *bx;
+
+	find_cursor(fr, x, y, &ln, &bn, &pn);
+	bx = cbox(fr, ln, bn);
+	if ( bx->type == WRAP_BOX_CALLBACK ) {
+		return bx->click_func(x, y, bx->bvp, bx->vp);
+	}
+	return 0;
+}
+
+
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  SCEditor *e)
 {
@@ -1205,17 +1225,26 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		} else {
 
-			e->cursor_frame = clicked;
-			find_cursor(clicked, x-fr->x, y-fr->y,
-			            &e->cursor_line, &e->cursor_box,
-			            &e->cursor_pos);
+			/* If this is a callback box, check to see if the owner
+			 * is interested */
+			if ( !callback_click(e, clicked,  x, y) ) {
 
-			e->start_corner_x = event->x - e->border_offs_x;
-			e->start_corner_y = event->y - e->border_offs_y;
+				/* else position cursor and prepare for possible
+				 * drag */
 
-			if ( fr->resizable ) {
-				e->drag_status = DRAG_STATUS_COULD_DRAG;
-				e->drag_reason = DRAG_REASON_MOVE;
+				e->cursor_frame = clicked;
+				find_cursor(clicked, x-fr->x, y-fr->y,
+				            &e->cursor_line, &e->cursor_box,
+				            &e->cursor_pos);
+
+				e->start_corner_x = event->x - e->border_offs_x;
+				e->start_corner_y = event->y - e->border_offs_y;
+
+				if ( fr->resizable ) {
+					e->drag_status = DRAG_STATUS_COULD_DRAG;
+					e->drag_reason = DRAG_REASON_MOVE;
+				}
+
 			}
 
 		}

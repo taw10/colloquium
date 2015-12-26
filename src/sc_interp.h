@@ -37,6 +37,7 @@ typedef struct _sccallbacklist SCCallbackList;
 typedef int (*SCCallbackBoxFunc)(SCInterpreter *scin, SCBlock *bl,
                                   double *w, double *h, void **, void *);
 typedef cairo_surface_t *(*SCCallbackDrawFunc)(int w, int h, void *, void *);
+typedef int (*SCCallbackClickFunc)(double x, double y, void *, void *);
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
                                     struct frame *top);
@@ -59,6 +60,7 @@ extern void sc_callback_list_free(SCCallbackList *cbl);
 extern void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
                                           SCCallbackBoxFunc box_func,
                                           SCCallbackDrawFunc draw_func,
+					  SCCallbackClickFunc click_func,
                                           void *vp);
 extern void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl);
 

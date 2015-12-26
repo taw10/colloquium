@@ -251,7 +251,8 @@ static int add_text_box(struct wrap_line *line,
 
 
 void add_callback_box(struct wrap_line *line, double w, double h,
-                      SCCallbackDrawFunc func, void *bvp, void *vp)
+                      SCCallbackDrawFunc draw_func,
+                      SCCallbackClickFunc click_func, void *bvp, void *vp)
 {
 	struct wrap_box *box;
 
@@ -269,7 +270,8 @@ void add_callback_box(struct wrap_line *line, double w, double h,
 	box->width = pango_units_from_double(w);
 	box->ascent = pango_units_from_double(h);
 	box->height = pango_units_from_double(h);
-	box->draw_func = func;
+	box->draw_func = draw_func;
+	box->click_func = click_func;
 	box->bvp = bvp;
 	box->vp = vp;
 	box->editable = 0;

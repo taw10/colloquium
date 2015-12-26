@@ -538,7 +538,7 @@ GActionEntry sw_entries[] = {
 };
 
 
-SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
+SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 {
 	GtkWidget *window;
 	GtkWidget *vbox;
@@ -549,20 +549,24 @@ SlideWindow *slide_window_open(struct presentation *p, GApplication *app)
 	SCBlock *stylesheets[2];
 	GtkWidget *image;
 
-	if ( p->slidewindow != NULL ) {
-		fprintf(stderr, "Slide window is already open!\n");
-		return p->slidewindow;
-	}
-
 	sw = calloc(1, sizeof(SlideWindow));
 	if ( sw == NULL ) return NULL;
 
-	window = gtk_application_window_new(GTK_APPLICATION(app));
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);
 	sw->window = window;
 	sw->p = p;
+
+	/* FIXME: Horrible bodge. */
+	int i;
 	sw->cur_slide = p->slides[0];
+	for ( i=0; i<p->num_slides; i++ ) {
+		if ( p->slides[i]->scblocks == sc_block_child(scblocks) ) {
+			sw->cur_slide = p->slides[i];
+		}
+	}
+
 	sw->show = NULL;
 
 	update_titlebar(p);

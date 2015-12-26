@@ -321,10 +321,6 @@ GActionEntry nw_entries[] = {
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  NarrativeWindow *nw)
 {
-	if ( event->type == GDK_2BUTTON_PRESS ) {
-		nw->p->slidewindow = slide_window_open(nw->p, nw->app);
-	}
-
 	return 0;
 }
 
@@ -433,6 +429,17 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 }
 
 
+static int click_thumbnail(double x, double y, void *bvp, void *vp)
+{
+	struct presentation *p = vp;
+	SCBlock *scblocks = bvp;
+
+	slide_window_open(p, scblocks);
+
+	return 0;
+}
+
+
 NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 {
 	NarrativeWindow *nw;
@@ -472,7 +479,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang);
 	cbl = sc_callback_list_new();
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
-	                              render_thumbnail, p);
+	                              render_thumbnail, click_thumbnail, p);
 	sc_editor_set_callbacks(nw->sceditor, cbl);
 
 	toolbar = gtk_toolbar_new();

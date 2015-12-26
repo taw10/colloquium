@@ -103,6 +103,7 @@ struct wrap_box
 
 	/* For type == WRAP_BOX_CALLBACK */
 	SCCallbackDrawFunc draw_func;
+	SCCallbackClickFunc click_func;
 	void *bvp;
 	void *vp;
 };

@@ -41,6 +41,8 @@ extern void add_image_box(struct wrap_line *line, const char *filename,
                           int w, int h, int editable);
 
 extern void add_callback_box(struct wrap_line *line, double w, double h,
-                             SCCallbackDrawFunc func, void *bvp, void *vp);
+                             SCCallbackDrawFunc draw_func,
+                             SCCallbackClickFunc click_func,
+                             void *bvp, void *vp);
 
 #endif	/* SHAPE_H */

@@ -29,7 +29,7 @@
 
 typedef struct _slidewindow SlideWindow;
 
-extern SlideWindow *slide_window_open(struct presentation *p, GApplication *app);
+extern SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks);
 extern void change_edit_slide(SlideWindow *sw, struct slide *np);
 extern void update_titlebar(struct presentation *p);
 

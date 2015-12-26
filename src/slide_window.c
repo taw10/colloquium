@@ -60,19 +60,19 @@ struct _slidewindow
 	struct menu_pl      *style_menu;
 	int                  n_style_menu;
 
-	struct slide        *cur_slide;  /* FIXME: SPOT inside SCEditor */
-
 	SlideShow           *show;
 	struct notes        *notes;
 };
 
+
+#define CUR_SLIDE(sw) (sc_editor_get_scblock(sw->sceditor))
 
 
 static void update_toolbar(SlideWindow *sw)
 {
 	int cur_slide_number;
 
-	cur_slide_number = slide_number(sw->p, sw->cur_slide);
+	cur_slide_number = slide_number(sw->p, CUR_SLIDE(sw));
 	if ( cur_slide_number == 0 ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(sw->bfirst), FALSE);
 		gtk_widget_set_sensitive(GTK_WIDGET(sw->bprev), FALSE);
@@ -81,7 +81,7 @@ static void update_toolbar(SlideWindow *sw)
 		gtk_widget_set_sensitive(GTK_WIDGET(sw->bprev), TRUE);
 	}
 
-	if ( cur_slide_number == sw->p->num_slides-1 ) {
+	if ( cur_slide_number == num_slides(sw->p)-1 ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(sw->bnext), FALSE);
 		gtk_widget_set_sensitive(GTK_WIDGET(sw->blast), FALSE);
 	} else {
@@ -103,7 +103,7 @@ struct menu_pl
 
 static gint UNUSED add_furniture(GtkWidget *widget, struct menu_pl *pl)
 {
-	sc_block_append_end(pl->sw->cur_slide->scblocks,
+	sc_block_append_end(CUR_SLIDE(pl->sw),
 	                    strdup(pl->style_name), NULL, NULL);
 
 	//do_slide_update(pl->p, pl->sw->pc); FIXME
@@ -239,17 +239,9 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	SlideWindow *sw = vp;
-	struct slide *new;
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(sw->p, sw->cur_slide);
-
-	new = add_slide(sw->p, cur_slide_number+1);
-	new->scblocks = sc_block_insert_after(sw->cur_slide->scblocks,
-	                                      "slide", NULL, NULL);
-
+	SCBlock *new;
+	new = sc_block_insert_after(CUR_SLIDE(sw), "slide", NULL, NULL);
 	change_edit_slide(sw, new);
-
 }
 
 
@@ -305,14 +297,12 @@ void slidewindow_notes_closed(SlideWindow *sw)
 
 
 /* Change the editor's slide to "np" */
-void change_edit_slide(SlideWindow *sw, struct slide *np)
+void change_edit_slide(SlideWindow *sw, SCBlock *np)
 {
-	sw->cur_slide = np;
-
 	update_toolbar(sw);
 
 	sc_editor_set_slidenum(sw->sceditor, 1+slide_number(sw->p, np));
-	sc_editor_set_scblock(sw->sceditor, np->scblocks);
+	sc_editor_set_scblock(sw->sceditor, np);
 
 	if ( sw->notes != NULL ) notes_set_slide(sw->notes, np);
 
@@ -324,35 +314,31 @@ void change_edit_slide(SlideWindow *sw, struct slide *np)
 
 static void change_slide_first(SlideWindow *sw)
 {
-	change_edit_slide(sw, sw->p->slides[0]);
+	change_edit_slide(sw, first_slide(sw->p));
 }
 
 
 static void change_slide_backwards(SlideWindow *sw)
 {
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(sw->p, sw->cur_slide);
-	if ( cur_slide_number == 0 ) return;
-
-	change_edit_slide(sw, sw->p->slides[cur_slide_number-1]);
+	SCBlock *tt;
+	tt = prev_slide(sw->p, CUR_SLIDE(sw));
+	if ( tt == NULL ) return;
+	change_edit_slide(sw, tt);
 }
 
 
 static void change_slide_forwards(SlideWindow *sw)
 {
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(sw->p, sw->cur_slide);
-	if ( cur_slide_number == sw->p->num_slides-1 ) return;
-
-	change_edit_slide(sw, sw->p->slides[cur_slide_number+1]);
+	SCBlock *tt;
+	tt = next_slide(sw->p, CUR_SLIDE(sw));
+	if ( tt == NULL ) return;
+	change_edit_slide(sw, tt);
 }
 
 
 static void change_slide_last(SlideWindow *sw)
 {
-	change_edit_slide(sw, sw->p->slides[sw->p->num_slides-1]);
+	change_edit_slide(sw, last_slide(sw->p));
 }
 
 
@@ -392,7 +378,7 @@ static void open_notes_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
 	SlideWindow *sw = vp;
-	sw->notes = open_notes(sw, sw->cur_slide);
+	sw->notes = open_notes(sw, CUR_SLIDE(sw));
 }
 
 
@@ -474,10 +460,10 @@ static void ss_changed_link(SlideShow *ss, void *vp)
 }
 
 
-static struct slide *ss_cur_slide(SlideShow *ss, void *vp)
+static SCBlock *ss_cur_slide(SlideShow *ss, void *vp)
 {
 	SlideWindow *sw = vp;
-	return sw->cur_slide;
+	return CUR_SLIDE(sw);
 }
 
 
@@ -558,15 +544,6 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 	sw->window = window;
 	sw->p = p;
 
-	/* FIXME: Horrible bodge. */
-	int i;
-	sw->cur_slide = p->slides[0];
-	for ( i=0; i<p->num_slides; i++ ) {
-		if ( p->slides[i]->scblocks == sc_block_child(scblocks) ) {
-			sw->cur_slide = p->slides[i];
-		}
-	}
-
 	sw->show = NULL;
 
 	update_titlebar(p);
@@ -631,12 +608,9 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->blast));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->blast),
 	                               "win.last");
-	update_toolbar(sw);
-
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
-	sw->sceditor = sc_editor_new(sw->cur_slide->scblocks, stylesheets,
-	                             p->lang);
+	sw->sceditor = sc_editor_new(scblocks, stylesheets, p->lang);
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
 	                               GTK_POLICY_AUTOMATIC,
@@ -660,6 +634,8 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 
 	/* Initial background colour */
 	slidewindow_set_background(sw);
+
+	update_toolbar(sw);
 
 	gtk_widget_show_all(window);
 

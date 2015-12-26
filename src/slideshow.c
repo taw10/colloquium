@@ -42,7 +42,7 @@ struct _slideshow
 	struct presentation *p;
 	struct sscontrolfuncs ssc;
 	void                *vp;  /* Controller's private word */
-	struct slide        *cur_slide;
+	SCBlock             *cur_slide;
 	GtkWidget           *window;
 	GtkWidget           *drawingarea;
 	GdkCursor           *blank_cursor;
@@ -82,7 +82,7 @@ void slideshow_rerender(SlideShow *ss)
 	stylesheets[1] = NULL;
 
 	n = slide_number(ss->p, ss->cur_slide);
-	ss->surface = render_sc(ss->cur_slide->scblocks,
+	ss->surface = render_sc(ss->cur_slide,
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
 	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n,
@@ -138,7 +138,7 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SlideShow *ss)
 }
 
 
-void change_proj_slide(SlideShow *ss, struct slide *np)
+void change_proj_slide(SlideShow *ss, SCBlock *np)
 {
 	ss->cur_slide = np;
 
@@ -241,7 +241,7 @@ static gboolean ss_realize_sig(GtkWidget *w, SlideShow *ss)
 }
 
 
-struct slide *slideshow_slide(SlideShow *ss)
+SCBlock *slideshow_slide(SlideShow *ss)
 {
 	if ( ss == NULL ) return NULL;
 	return ss->cur_slide;

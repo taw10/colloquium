@@ -38,9 +38,34 @@ struct notes
 	GtkWidget *window;
 	GtkWidget *v;
 
-	struct slide *cur_slide;
+	SCBlock *bl;
 	SlideWindow *sw;
 };
+
+
+static SCBlock *find_notes_block(SCBlock *s)
+{
+	SCBlock *bl = s;
+	while ( bl != NULL ) {
+
+		const char *name = sc_block_name(bl);
+
+		if ( (name != NULL) && (strcmp(name, "notes") == 0) ) {
+			if ( sc_block_child(bl) == NULL ) {
+				sc_block_append_inside(s, NULL, NULL,
+				                       strdup(""));
+			}
+			return bl;
+		}
+
+		bl = sc_block_next(bl);
+
+	}
+
+	bl = sc_block_append_end(s, "notes", NULL, NULL);
+	sc_block_append_inside(bl, NULL, NULL, strdup(""));
+	return bl;
+}
 
 
 static void update_notes(struct notes *notes)
@@ -51,7 +76,7 @@ static void update_notes(struct notes *notes)
 
 	if ( notes == NULL ) return;
 
-	ch = sc_block_child(notes->cur_slide->notes);
+	ch = sc_block_child(notes->bl);
 	if ( ch != NULL ) {
 		ntext = sc_block_contents(ch);
 	} else {
@@ -77,7 +102,7 @@ void grab_current_notes(struct notes *n)
 	gtk_text_buffer_get_end_iter(tb, &i2);
 	text = gtk_text_buffer_get_text(tb, &i1, &i2, TRUE);
 
-	ch = sc_block_child(n->cur_slide->notes);
+	ch = sc_block_child(n->bl);
 	if ( ch != NULL ) {
 		sc_block_set_contents(ch, text);
 	} else {
@@ -86,11 +111,11 @@ void grab_current_notes(struct notes *n)
 }
 
 
-void notes_set_slide(struct notes *notes, struct slide *np)
+void notes_set_slide(struct notes *notes, SCBlock *np)
 {
 	if ( notes == NULL ) return;
 	grab_current_notes(notes);
-	notes->cur_slide = np;
+	notes->bl = find_notes_block(np);
 	update_notes(notes);
 }
 
@@ -103,7 +128,7 @@ static gint close_notes_sig(GtkWidget *w, struct notes *notes)
 }
 
 
-struct notes *open_notes(SlideWindow *sw, struct slide *slide)
+struct notes *open_notes(SlideWindow *sw, SCBlock *slide)
 {
 	struct notes *n;
 	GtkWidget *sc;
@@ -112,7 +137,6 @@ struct notes *open_notes(SlideWindow *sw, struct slide *slide)
 	n = malloc(sizeof(struct notes));
 	if ( n == NULL ) return NULL;
 	n->sw = sw;
-	n->cur_slide = slide;
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(n->window), 800, 256);
@@ -138,28 +162,3 @@ struct notes *open_notes(SlideWindow *sw, struct slide *slide)
 	return n;
 }
 
-
-void attach_notes(struct slide *s)
-{
-	SCBlock *bl = s->scblocks;
-
-	while ( bl != NULL ) {
-
-		const char *name = sc_block_name(bl);
-
-		if ( (name != NULL) && (strcmp(name, "notes") == 0) ) {
-			s->notes = bl;
-			if ( sc_block_child(bl) == NULL ) {
-				sc_block_append_inside(s->notes, NULL, NULL,
-				                       strdup(""));
-			}
-			return;
-		}
-
-		bl = sc_block_next(bl);
-
-	}
-
-	s->notes = sc_block_append_end(s->scblocks, "notes", NULL, NULL);
-	sc_block_append_inside(s->notes, NULL, NULL, strdup(""));
-}

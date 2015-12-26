@@ -39,7 +39,7 @@ struct sscontrolfuncs
 	/* Controller should return what it thinks is the current slide
 	 * (this might not be what is on the screen, e.g. if the display
 	 * is unlinked) */
-	struct slide *(*current_slide)(SlideShow *ss, void *vp);
+	SCBlock *(*current_slide)(SlideShow *ss, void *vp);
 
 	/* Controller should update whatever visual representation of
 	 * whether or not the display is linked */
@@ -53,8 +53,8 @@ extern SlideShow *try_start_slideshow(struct presentation *p,
                                       struct sscontrolfuncs ssc, void *vp);
 extern void end_slideshow(SlideShow *ss);
 
-extern void change_proj_slide(SlideShow *ss, struct slide *np);
-extern struct slide *slideshow_slide(SlideShow *ss);
+extern void change_proj_slide(SlideShow *ss, SCBlock *np);
+extern SCBlock *slideshow_slide(SlideShow *ss);
 
 extern void toggle_slideshow_link(SlideShow *ss);
 extern int slideshow_linked(SlideShow *ss);

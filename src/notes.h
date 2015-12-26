@@ -1,7 +1,7 @@
 /*
  * notes.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -29,12 +29,10 @@
 
 struct notes;
 
-extern struct notes *open_notes(SlideWindow *sw, struct slide *slide);
+extern struct notes *open_notes(SlideWindow *sw, SCBlock *slide);
 
-extern void notes_set_slide(struct notes *n, struct slide *np);
+extern void notes_set_slide(struct notes *n, SCBlock *np);
 
 extern void grab_current_notes(struct notes *n);
-
-extern void attach_notes(struct slide *s);
 
 #endif	/* NOTES_H */

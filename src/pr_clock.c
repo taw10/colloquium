@@ -200,7 +200,7 @@ static gboolean update_clock(gpointer data)
 }
 
 
-void notify_clock_slide_changed(struct presentation *p, struct slide *np)
+void notify_clock_slide_changed(struct presentation *p, SCBlock *np)
 {
 	struct pr_clock *n = p->clock;
 	int sr;
@@ -209,7 +209,7 @@ void notify_clock_slide_changed(struct presentation *p, struct slide *np)
 
 	sr = slide_number(p, np);
 	n->cur_slide = sr;
-	n->last_slide = p->num_slides;
+	n->last_slide = num_slides(p);
 
 	if ( sr > n->slide_reached ) n->slide_reached = sr;
 

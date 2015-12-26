@@ -543,12 +543,13 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 
 int export_pdf(struct presentation *p, const char *filename)
 {
-	int i;
 	double r;
 	double w = 2048.0;
 	double scale;
 	cairo_surface_t *surf;
 	cairo_t *cr;
+	SCBlock *bl;
+	int i;
 
 	r = p->slide_height / p->slide_width;
 
@@ -561,12 +562,16 @@ int export_pdf(struct presentation *p, const char *filename)
 	cr = cairo_create(surf);
 	scale = w / p->slide_width;
 
-	for ( i=0; i<p->num_slides; i++ ) {
+	i = 1;
+	while ( bl != NULL ) {
 
-		struct slide *s;
+		if ( strcmp(sc_block_name(bl), "slide") != 0 ) {
+			bl = sc_block_next(bl);
+			continue;
+		}
+
 		SCBlock *stylesheets[2];
 
-		s = p->slides[i];
 		stylesheets[0] = p->stylesheet;
 		stylesheets[1] = NULL;
 
@@ -578,13 +583,16 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
 
-		render_sc_to_surface(s->scblocks, surf, cr, p->slide_width,
+		render_sc_to_surface(sc_block_child(bl), surf, cr, p->slide_width,
 		                     p->slide_height, stylesheets, NULL,
 		                     p->is, ISZ_SLIDESHOW, i, p->lang);
 
 		cairo_restore(cr);
 
 		cairo_show_page(cr);
+
+		bl = sc_block_next(bl);
+		i++;
 
 	}
 

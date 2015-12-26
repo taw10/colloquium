@@ -50,7 +50,7 @@ struct _narrative_window
 	GApplication *app;
 	struct presentation *p;
 	SlideShow           *show;
-	struct slide        *sel_slide;
+	SCBlock             *sel_slide;
 };
 
 
@@ -67,7 +67,7 @@ static void update_toolbar(NarrativeWindow *nw)
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), TRUE);
 	}
 
-	if ( cur_slide_number == nw->p->num_slides-1 ) {
+	if ( cur_slide_number == num_slides(nw->p)-1 ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
 	} else {
@@ -151,13 +151,10 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointe
 
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-	struct slide *slide;
 	int n_slides;
 	SCBlock *block;
 	SCBlock *nsblock;
 	NarrativeWindow *nw = vp;
-
-	slide = new_slide();
 
 	/* Link it into the SC structure */
 	nsblock = sc_parse("\\slide{}");
@@ -177,8 +174,6 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer v
 next:
 		block = sc_block_next(block);
 	}
-	slide->scblocks = sc_block_child(nsblock);
-	insert_slide(nw->p, slide, n_slides);
 }
 
 
@@ -192,10 +187,11 @@ static void ss_end_show(SlideShow *ss, void *vp)
 static void ss_next_slide(SlideShow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
-	int cur_slide_number;
-	cur_slide_number = slide_number(nw->p, nw->sel_slide);
-	if ( cur_slide_number == nw->p->num_slides-1 ) return;
-	nw->sel_slide = nw->p->slides[cur_slide_number+1];
+	SCBlock *tt;
+
+	tt = next_slide(nw->p, nw->sel_slide);
+	if ( tt == NULL ) return;  /* Already on last slide */
+	nw->sel_slide = tt;
 	if ( slideshow_linked(nw->show) ) {
 		change_proj_slide(nw->show, nw->sel_slide);
 	} /* else leave the slideshow alone */
@@ -206,10 +202,11 @@ static void ss_next_slide(SlideShow *ss, void *vp)
 static void ss_prev_slide(SlideShow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
-	int cur_slide_number;
-	cur_slide_number = slide_number(nw->p, nw->sel_slide);
-	if ( cur_slide_number == 0 ) return;
-	nw->sel_slide = nw->p->slides[cur_slide_number-1];
+	SCBlock *tt;
+
+	tt = prev_slide(nw->p, nw->sel_slide);
+	if ( tt == NULL ) return;  /* Already on first slide */
+	nw->sel_slide = tt;
 	if ( slideshow_linked(nw->show) ) {
 		change_proj_slide(nw->show, nw->sel_slide);
 	} /* else leave the slideshow alone */
@@ -218,7 +215,7 @@ static void ss_prev_slide(SlideShow *ss, void *vp)
 
 
 static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
+                            gpointer vp)
 {
 	//NarrativeWindow *nw = vp;
 }
@@ -252,7 +249,7 @@ static void ss_changed_link(SlideShow *ss, void *vp)
 }
 
 
-static struct slide *ss_cur_slide(SlideShow *ss, void *vp)
+static SCBlock *ss_cur_slide(SlideShow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
 	return nw->sel_slide;
@@ -265,7 +262,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 	NarrativeWindow *nw = vp;
 	struct sscontrolfuncs ssc;
 
-	if ( nw->p->num_slides == 0 ) return;
+	if ( num_slides(nw->p) == 0 ) return;
 
 	ssc.next_slide = ss_next_slide;
 	ssc.prev_slide = ss_prev_slide;
@@ -273,7 +270,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 	ssc.changed_link = ss_changed_link;
 	ssc.end_show = ss_end_show;
 
-	nw->sel_slide = nw->p->slides[0];
+	nw->sel_slide = first_slide(nw->p);
 
 	nw->show = try_start_slideshow(nw->p, ssc, nw);
 }
@@ -537,7 +534,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
 	                               "win.last");
 
-	nw->sel_slide = nw->p->slides[0];
+	nw->sel_slide = NULL;
 	update_toolbar(nw);
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);

@@ -1,7 +1,7 @@
 /*
  * pr_clock.h
  * 
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -32,7 +32,7 @@ struct pr_clock;
 extern void open_clock(struct presentation *p);
 
 extern void notify_clock_slide_changed(struct presentation *p,
-                                       struct slide *np);
+                                       SCBlock *np);
 
 
 #endif	/* CLOCK_H */

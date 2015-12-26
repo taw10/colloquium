@@ -39,15 +39,6 @@ struct slide;
 #include "narrative_window.h"
 #include "slide_window.h"
 
-struct slide
-{
-	struct presentation *parent;
-	struct slide_template *st;
-
-	SCBlock *scblocks;
-	SCBlock *notes;
-};
-
 struct menu_pl;
 
 struct presentation
@@ -71,9 +62,6 @@ struct presentation
 	double            slide_width;
 	double            slide_height;
 
-	unsigned int      num_slides;
-	struct slide    **slides;
-
 	SCBlock          *stylesheet;
 	SCBlock          *scblocks;
 
@@ -85,13 +73,12 @@ extern void free_presentation(struct presentation *p);
 
 extern char *get_titlebar_string(struct presentation *p);
 
-extern struct slide *new_slide(void);
-extern struct slide *add_slide(struct presentation *p, int pos);
-extern int insert_slide(struct presentation *p, struct slide *s, int pos);
-extern void free_slide(struct slide *s);
-extern void delete_slide(struct presentation *p, struct slide *s);
-
-extern int slide_number(struct presentation *p, struct slide *s);
+extern int slide_number(struct presentation *p, SCBlock *sl);
+extern int num_slides(struct presentation *p);
+extern SCBlock *first_slide(struct presentation *p);
+extern SCBlock *last_slide(struct presentation *p);
+extern SCBlock *next_slide(struct presentation *p, SCBlock *sl);
+extern SCBlock *prev_slide(struct presentation *p, SCBlock *sl);
 
 extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);

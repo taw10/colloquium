@@ -852,6 +852,12 @@ static void insert_text(char *t, SCEditor *e)
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 	sbox = &e->cursor_frame->lines[sln].boxes[sbx];
+
+	if ( sbox->type == WRAP_BOX_NOTHING ) {
+		printf("Upgrading nothing box to Pango box\n");
+		return;
+	}
+
 	sseg = which_segment(sbox, sps, &err);
 	if ( err ) return;
 

@@ -114,6 +114,8 @@ static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
 	box->height = sc_interp_get_height(scin);
 	box->filename = NULL;
 	box->editable = editable;
+	box->segs = NULL;
+	box->n_segs = 0;
 	line->n_boxes++;
 }
 

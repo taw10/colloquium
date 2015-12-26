@@ -126,6 +126,12 @@ int which_segment(struct wrap_box *box, int pos, int *err)
 	int i = 0;
 	int ch = 0;
 
+	if ( box->type != WRAP_BOX_PANGO ) {
+		fprintf(stderr, "which_segment() called on wrong box type.\n");
+		*err = 1;
+		return 0;
+	}
+
 	do {
 		if ( ch + box->segs[i].len_chars >= pos ) break;
 		ch += box->segs[i++].len_chars;

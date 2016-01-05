@@ -239,6 +239,24 @@ int num_slides(struct presentation *p)
 }
 
 
+/* Warning: isn't very clever and assumes the block we want is at the top
+ * level */
+static SCBlock *parent_block(struct presentation *p, SCBlock *findme)
+{
+	SCBlock *bl;
+
+	bl = p->scblocks;
+
+	while ( bl != NULL ) {
+		if ( sc_block_child(bl) == findme ) return bl;
+		bl = sc_block_next(bl);
+	}
+
+	printf("Whoops, couldn't find parent!\n");
+	return bl;
+}
+
+
 SCBlock *first_slide(struct presentation *p)
 {
 	SCBlock *bl = p->scblocks;
@@ -276,15 +294,16 @@ SCBlock *last_slide(struct presentation *p)
 
 SCBlock *next_slide(struct presentation *p, SCBlock *sl)
 {
-	SCBlock *bl = p->scblocks;
+	SCBlock *pp = parent_block(p, sl);
+	SCBlock *bl = pp;
 	int found = 0;
 
 	while ( bl != NULL ) {
 		if ( safe_strcmp(sc_block_name(bl), "slide") == 0 ) {
-			if ( found ) return bl;
-			if ( bl == sl ) {
-				found = 1;
-			}
+			if ( found ) return sc_block_child(bl);
+		}
+		if ( bl == pp ) {
+			found = 1;
 		}
 		bl = sc_block_next(bl);
 	}
@@ -296,14 +315,15 @@ SCBlock *next_slide(struct presentation *p, SCBlock *sl)
 
 SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 {
-	SCBlock *bl = p->scblocks;
+	SCBlock *pp = parent_block(p, sl);
+	SCBlock *bl = pp;
 	SCBlock *l = NULL;
 
 	while ( bl != NULL ) {
 		if ( safe_strcmp(sc_block_name(bl), "slide") == 0 ) {
-			if ( bl == sl ) return l;
 			l = bl;
 		}
+		if ( bl == pp ) return l;
 		bl = sc_block_next(bl);
 	}
 

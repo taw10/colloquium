@@ -217,30 +217,46 @@ static void ss_prev_slide(SlideShow *ss, void *vp)
 static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
                             gpointer vp)
 {
-	//NarrativeWindow *nw = vp;
+	NarrativeWindow *nw = vp;
+	SCBlock *tt;
+
+	tt = first_slide(nw->p);
+	if ( tt == NULL ) return;  /* Fail */
+	nw->sel_slide = tt;
+	if ( slideshow_linked(nw->show) ) {
+		change_proj_slide(nw->show, nw->sel_slide);
+	} /* else leave the slideshow alone */
+	update_toolbar(nw);
 }
 
 
 static void prev_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	//NarrativeWindow *nw = vp;
-	//ss_prev_slide(NULL, vp);
+	ss_prev_slide(NULL, vp);
 }
 
 
 static void next_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	//NarrativeWindow *nw = vp;
-	//ss_next_slide(NULL, vp);
+	ss_next_slide(NULL, vp);
 }
 
 
 static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	//NarrativeWindow *nw = vp;
+	NarrativeWindow *nw = vp;
+	SCBlock *tt;
+
+	tt = last_slide(nw->p);
+	if ( tt == NULL ) return;  /* Fail */
+	nw->sel_slide = tt;
+	if ( slideshow_linked(nw->show) ) {
+		change_proj_slide(nw->show, nw->sel_slide);
+	} /* else leave the slideshow alone */
+	update_toolbar(nw);
 }
 
 

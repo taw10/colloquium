@@ -263,7 +263,7 @@ SCBlock *first_slide(struct presentation *p)
 
 	while ( bl != NULL ) {
 		if ( safe_strcmp(sc_block_name(bl), "slide") == 0 ) {
-			return bl;
+			return sc_block_child(bl);
 		}
 		bl = sc_block_next(bl);
 	}
@@ -288,7 +288,7 @@ SCBlock *last_slide(struct presentation *p)
 	if ( l == NULL ) {
 		fprintf(stderr, "Couldn't find last slide!\n");
 	}
-	return l;
+	return sc_block_child(l);
 }
 
 

@@ -316,20 +316,21 @@ SCBlock *next_slide(struct presentation *p, SCBlock *sl)
 SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 {
 	SCBlock *pp = parent_block(p, sl);
-	SCBlock *bl = pp;
+	SCBlock *bl = p->scblocks;
 	SCBlock *l = NULL;
 
 	while ( bl != NULL ) {
+		if ( bl == pp ) {
+			if ( l == NULL ) return sl; /* Already on first slide */
+			return sc_block_child(l);
+		}
 		if ( safe_strcmp(sc_block_name(bl), "slide") == 0 ) {
 			l = bl;
 		}
-		if ( bl == pp ) return l;
 		bl = sc_block_next(bl);
 	}
 
-	if ( l == NULL ) {
-		fprintf(stderr, "Couldn't find previous slide!\n");
-	}
+	fprintf(stderr, "Couldn't find prev slide!\n");
 	return NULL;
 }
 

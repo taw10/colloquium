@@ -855,7 +855,17 @@ static void insert_text(char *t, SCEditor *e)
 
 	if ( sbox->type == WRAP_BOX_NOTHING ) {
 		printf("Upgrading nothing box to Pango box\n");
-		return;
+		sbox->type = WRAP_BOX_PANGO;
+		sbox->col[0] = 0.0;
+		sbox->col[1] = 0.0;
+		sbox->col[2] = 0.0;
+		sbox->col[3] = 0.0;
+		sbox->n_segs = 1;
+		sbox->segs = malloc(sizeof(struct text_seg));
+		sbox->len_chars = 0;
+		sbox->segs[0].glyphs = NULL;
+		sbox->segs[0].offs_char = sbox->offs_char;
+		sbox->segs[0].len_chars = 0;
 	}
 
 	sseg = which_segment(sbox, sps, &err);
@@ -884,6 +894,8 @@ static void insert_text(char *t, SCEditor *e)
 	if ( log_attrs[offs+1].is_line_break ) {
 
 		struct wrap_box *nbox;
+
+		printf("Adding line break\n");
 
 		/* Add a new box containing the text after the break */
 		insert_box(&e->cursor_frame->lines[sln], sbx);

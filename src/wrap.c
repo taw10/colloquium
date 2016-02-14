@@ -3,7 +3,7 @@
  *
  * Text wrapping, hyphenation, justification etc
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -39,6 +39,7 @@
 #include "wrap.h"
 #include "frame.h"
 #include "presentation.h"
+#include "boxvec.h"
 
 
 static void alloc_lines(struct frame *fr)
@@ -55,32 +56,14 @@ static void alloc_lines(struct frame *fr)
 }
 
 
-int alloc_boxes(struct wrap_line *l)
-{
-	struct wrap_box *boxes_new;
-
-	boxes_new = realloc(l->boxes, l->max_boxes * sizeof(struct wrap_box));
-	if ( boxes_new == NULL ) {
-		fprintf(stderr, "Couldn't allocate memory for boxes!\n");
-		return 1;
-	}
-
-	l->boxes = boxes_new;
-	return 0;
-}
-
-
 void initialise_line(struct wrap_line *l)
 {
-	l->n_boxes = 0;
-	l->max_boxes = 32;
-	l->boxes = NULL;
 	l->width = 0;
 	l->height = 0;
 	l->ascent = 0;
 	l->last_line = 0;
 	l->overfull = 0;
-	alloc_boxes(l);
+	l->boxes = bv_new();
 }
 
 
@@ -255,9 +238,9 @@ static int find_cursor_box(struct frame *fr, struct wrap_line *l,
 
 	*end = 0;
 
-	for ( i=0; i<l->n_boxes; i++ ) {
-		double width = pango_units_to_double(l->boxes[i].width);
-		width += pango_units_to_double(l->boxes[i].sp);
+	for ( i=0; i<l->boxes->n_boxes; i++ ) {
+		double width = pango_units_to_double(bv_box(l->boxes, i)->width);
+		width += pango_units_to_double(bv_box(l->boxes, i)->sp);
 		if ( xposd < x + width ) {
 			*x_pos = xposd - x;
 			return i;
@@ -267,7 +250,7 @@ static int find_cursor_box(struct frame *fr, struct wrap_line *l,
 
 	*end = 1;
 	*x_pos = x;
-	return l->n_boxes-1;
+	return bv_len(l->boxes)-1;
 }
 
 
@@ -297,11 +280,11 @@ void find_cursor(struct frame *fr, double xposd, double yposd,
 	*line = ln;
 
 	if ( end ) {
-		bn = l->n_boxes-1;
+		bn = l->boxes->n_boxes-1;
 	} else {
 		bn = find_cursor_box(fr, l, xposd, &x_pos, &end);
 	}
-	b = &l->boxes[bn];
+	b = bv_box(l->boxes, bn);
 	*box = bn;
 	if ( end ) {
 		*pos = b->len_chars;
@@ -363,9 +346,9 @@ static void calc_line_geometry(struct wrap_line *line)
 	line->ascent = 0;
 	line->height = 0;
 
-	for ( i=0; i<line->n_boxes; i++ ) {
+	for ( i=0; i<line->boxes->n_boxes; i++ ) {
 
-		struct wrap_box *box = &line->boxes[i];
+		struct wrap_box *box = bv_box(line->boxes, i);
 
 		line->width += box->width;
 		if ( box->space == WRAP_SPACE_EOP ) box->sp = 0.0;
@@ -476,19 +459,19 @@ static void consider_break(double sigma_prime, double sigma_prime_max,
 }
 
 
-static double width(struct wrap_line *boxes, int i)
+static double width(struct boxvec *boxes, int i)
 {
 	/* Indices in Knuth paper go from 1...n.  Indices in array go
 	 * from 0...n-1 */
-	return boxes->boxes[i-1].width;
+	return bv_box(boxes, i-1)->width;
 }
 
 
-static enum wrap_box_space space(struct wrap_line *boxes, int i)
+static enum wrap_box_space space(struct boxvec *boxes, int i)
 {
 	/* Indices in Knuth paper go from 1...n.  Indices in array go
 	 * from 0...n-1 */
-	return boxes->boxes[i-1].space;
+	return bv_box(boxes, i-1)->space;
 }
 
 
@@ -503,13 +486,13 @@ static void UNUSED distribute_spaces(struct wrap_line *line, double l,
 	l = pango_units_from_double(l);
 
 	L = 0.0;  Y = 0.0;  Z = 0.0;
-	for ( i=0; i<line->n_boxes-1; i++ ) {
-		L += line->boxes[i].width;
-		L += sp_x(line->boxes[i].space);
-		Y += sp_y(line->boxes[i].space);
-		Z += sp_z(line->boxes[i].space);
+	for ( i=0; i<bv_len(line->boxes); i++ ) {
+		L += bv_box(line->boxes, i)->width;
+		L += sp_x(bv_box(line->boxes, i)->space);
+		Y += sp_y(bv_box(line->boxes, i)->space);
+		Z += sp_z(bv_box(line->boxes, i)->space);
 	}
-	L += line->boxes[line->n_boxes-1].width;
+	L += bv_last(line->boxes)->width;
 
 	if ( L < l ) {
 		r = (l - L)/Y;
@@ -520,24 +503,24 @@ static void UNUSED distribute_spaces(struct wrap_line *line, double l,
 	}
 
 	if ( r >= 0.0 ) {
-		for ( i=0; i<line->n_boxes-1; i++ ) {
-			line->boxes[i].sp = sp_x(line->boxes[i].space);
-			line->boxes[i].sp += r*sp_y(line->boxes[i].space);
+		for ( i=0; i<bv_len(line->boxes)-1; i++ ) {
+			bv_box(line->boxes, i)->sp = sp_x(bv_box(line->boxes, i)->space);
+			bv_box(line->boxes, i)->sp += r*sp_y(bv_box(line->boxes, i)->space);
 		}
 	} else {
-		for ( i=0; i<line->n_boxes-1; i++ ) {
-			line->boxes[i].sp = sp_x(line->boxes[i].space);
-			line->boxes[i].sp += r*sp_z(line->boxes[i].space);
+		for ( i=0; bv_len(line->boxes)-1; i++ ) {
+			bv_box(line->boxes, i)->sp = sp_x(bv_box(line->boxes, i)->space);
+			bv_box(line->boxes, i)->sp += r*sp_z(bv_box(line->boxes, i)->space);
 		}
 	}
 
-	line->boxes[line->n_boxes-1].sp = 0.0;
+	bv_box(line->boxes, bv_len(line->boxes)-1)->sp = 0.0;
 	line->overfull = overfull;
 	line->underfull = underfull;
 }
 
 
-static void output_line(int q, int s, struct frame *fr, struct wrap_line *boxes)
+static void output_line(int q, int s, struct frame *fr, struct boxvec *boxes)
 {
 	struct wrap_line *l;
 	int j;
@@ -546,16 +529,14 @@ static void output_line(int q, int s, struct frame *fr, struct wrap_line *boxes)
 	fr->n_lines++;
 	initialise_line(l);
 
-	l->max_boxes = s-q;
-	alloc_boxes(l);
+	bv_ensure_space(l->boxes, s-q);
 	for ( j=q; j<s; j++ ) {
-		l->boxes[l->n_boxes++] = boxes->boxes[j];
+		bv_add(l->boxes, bv_box(boxes, j));
 	}
 }
 
 
-static void output(int a, int i, int *p, struct frame *fr,
-                   struct wrap_line *boxes)
+static void output(int a, int i, int *p, struct frame *fr, struct boxvec *boxes)
 {
 	int q = i;
 	int r;
@@ -590,7 +571,7 @@ static void output(int a, int i, int *p, struct frame *fr,
  * Practice and Experience 11 (1981) p1119-1184.  Despite the name, it's
  * supposed to work as well as the full TeX algorithm in almost all of the cases
  * that we care about here. */
-static void UNUSED knuth_suboptimal_fit(struct wrap_line *boxes,
+static void UNUSED knuth_suboptimal_fit(struct boxvec *boxes,
                                         double line_length, struct frame *fr,
                                         double rho)
 {
@@ -607,15 +588,14 @@ static void UNUSED knuth_suboptimal_fit(struct wrap_line *boxes,
 	n = boxes->n_boxes;
 
 	/* Set the space for the last box to be "end of paragraph" */
-	boxes->boxes[boxes->n_boxes-1].space = WRAP_SPACE_EOP;
+	bv_last(boxes)->space = WRAP_SPACE_EOP;
 
 	/* Add empty zero-width box at end */
-	if ( boxes->n_boxes == boxes->max_boxes ) {
-		boxes->max_boxes += 32;
-		alloc_boxes(boxes);
-		if ( boxes->n_boxes == boxes->max_boxes ) return;
+	box = malloc(sizeof(struct wrap_box));
+	if ( box== NULL ) {
+		fprintf(stderr, "Couldn't allocate sentinel box\n");
+		return;
 	}
-	box = &boxes->boxes[boxes->n_boxes];
 	box->type = WRAP_BOX_SENTINEL;
 	box->space = WRAP_SPACE_NONE;
 	box->font = NULL;
@@ -625,15 +605,15 @@ static void UNUSED knuth_suboptimal_fit(struct wrap_line *boxes,
 	box->editable = 1;
 	box->scblock = NULL;
 	box->offs_char = 0;
-	boxes->n_boxes++;
+	bv_add(boxes, box);
 
 	line_length *= PANGO_SCALE;
 
 	reject = 0;
-	for ( j=0; j<boxes->n_boxes; j++ ) {
-		if ( boxes->boxes[j].width > line_length ) {
+	for ( j=0; j<bv_len(boxes); j++ ) {
+		if ( bv_box(boxes, j)->width > line_length ) {
 			fprintf(stderr, "ERROR: Box %i too long (%i %f)\n", j,
-			                boxes->boxes[j].width, line_length);
+			                bv_box(boxes, j)->width, line_length);
 			fr->trouble = 1;
 			reject = 1;
 		}
@@ -772,6 +752,7 @@ static void UNUSED knuth_suboptimal_fit(struct wrap_line *boxes,
 
 	free(p);
 	free(s);
+	free(box);  /* The sentinel box */
 }
 
 
@@ -792,16 +773,7 @@ static struct wrap_line *new_line(struct frame *fr)
 }
 
 
-static int maybe_extend_line(struct wrap_line *l)
-{
-	if ( l->n_boxes < l->max_boxes ) return 0;
-
-	l->max_boxes += 32;
-	return alloc_boxes(l);
-}
-
-
-static void first_fit(struct wrap_line *boxes, double line_length,
+static void first_fit(struct boxvec *boxes, double line_length,
                       struct frame *fr)
 {
 	struct wrap_line *line;
@@ -815,23 +787,20 @@ static void first_fit(struct wrap_line *boxes, double line_length,
 
 	do {
 
-		boxes->boxes[j].sp = sp_x(boxes->boxes[j].space);
+		bv_box(boxes, j)->sp = sp_x(bv_box(boxes, j)->space);
 
-		len += boxes->boxes[j].width;
+		len += bv_box(boxes, j)->width;
 
 		if ( len > line_length ) {
 			line = new_line(fr);
-			len = boxes->boxes[j].width;
+			len = bv_box(boxes, j)->width;
 		}
-		line->boxes[line->n_boxes] = boxes->boxes[j];
-		line->boxes[line->n_boxes].cf = &boxes->boxes[j];
-		line->n_boxes++;
-		if ( maybe_extend_line(line) ) return;
+		bv_add(line->boxes, bv_box(boxes, j));
 		j++;
 
-		if ( (j > 0) && (boxes->boxes[j-1].type != WRAP_BOX_SENTINEL) )
+		if ( (j > 0) && (bv_box(boxes, j-1)->type != WRAP_BOX_SENTINEL) )
 		{
-			len += sp_x(boxes->boxes[j-1].space);
+			len += sp_x(bv_box(boxes, j-1)->space);
 		}
 
 	} while ( j < boxes->n_boxes );
@@ -842,66 +811,35 @@ static void first_fit(struct wrap_line *boxes, double line_length,
 
 void wrap_line_free(struct wrap_line *l)
 {
-	int i, j;
-	for ( i=0; i<l->n_boxes; i++ ) {
-
-		switch ( l->boxes[i].type ) {
-
-			case WRAP_BOX_PANGO :
-			for ( j=0; j<l->boxes[i].n_segs; j++ ) {
-				pango_glyph_string_free(l->boxes[i].segs[j].glyphs);
-			}
-			free(l->boxes[i].segs);
-			break;
-
-			case WRAP_BOX_IMAGE :
-			break;
-
-			case WRAP_BOX_CALLBACK :
-			break;
-
-			case WRAP_BOX_NOTHING :
-			case WRAP_BOX_SENTINEL :
-			break;
-
-		}
-
-	}
-
+	bv_free(l->boxes);
 	free(l->boxes);
 }
 
 
-static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n,
-                                         int *eop)
+static struct boxvec *split_paragraph(struct boxvec *boxes, int *n, int *eop)
 {
 	int i;
 	int start = *n;
 	int end;
 
-	if ( start >= boxes->n_boxes ) return NULL;
+	if ( start >= bv_len(boxes) ) return NULL;
 
 	*eop = 0;
-	for ( i=start; i<boxes->n_boxes; i++ ) {
-		if ( boxes->boxes[i].space == WRAP_SPACE_EOP ) {
+	for ( i=start; i<bv_len(boxes); i++ ) {
+		if ( bv_box(boxes, i)->space == WRAP_SPACE_EOP ) {
 			*eop = 1;
 			break;
 		}
 	}
 	end = i + 1;
 	*n = end;
-	if ( i == boxes->n_boxes ) end--;
+	if ( i == bv_len(boxes) ) end--;
 
 	if ( end-start > 0 ) {
-		struct wrap_line *para;
-		para = malloc(sizeof(struct wrap_line));
-		para->boxes = NULL;
-		para->max_boxes = end-start;
-		para->n_boxes = end-start;
-		alloc_boxes(para);
+		struct boxvec *para = bv_new();
+		bv_ensure_space(para, end-start);
 		for ( i=start; i<end; i++ ) {
-			para->boxes[i-start] = boxes->boxes[i];
-			para->boxes[i-start].cf = &boxes->boxes[i];
+			bv_add(para, bv_box(boxes, i));
 		}
 		return para;
 	}
@@ -910,7 +848,7 @@ static struct wrap_line *split_paragraph(struct wrap_line *boxes, int *n,
 }
 
 
-void show_boxes(struct wrap_line *boxes)
+void show_boxes(struct boxvec *boxes)
 {
 	int i;
 
@@ -919,8 +857,8 @@ void show_boxes(struct wrap_line *boxes)
 		return;
 	}
 
-	for ( i=0; i<boxes->n_boxes; i++ ) {
-		struct wrap_box *box = &boxes->boxes[i];
+	for ( i=0; i<bv_len(boxes); i++ ) {
+		struct wrap_box *box = bv_box(boxes, i);
 		char *box_text;
 		printf("%3i", i);
 		if ( box->scblock != NULL ) {
@@ -971,7 +909,7 @@ static int wrap_everything(struct frame *fr, double wrap_w)
  * and generate fr->lines */
 int wrap_contents(struct frame *fr)
 {
-	struct wrap_line *para;
+	struct boxvec *para;
 	int i, eop = 0;
 	//const double rho = 2.0;
 	const double wrap_w = fr->w - fr->pad_l - fr->pad_r;
@@ -1016,54 +954,6 @@ int wrap_contents(struct frame *fr)
 		return 0;
 	}
 
-	/* If the last paragraph ended with an EOP, add an extra line */
-	if ( eop || (fr->n_lines == 0) ) {
-
-		struct wrap_line *l;
-		struct wrap_box *last_box;
-
-		if ( fr->n_lines > 0 ) {
-			l = &fr->lines[fr->n_lines-1];
-			last_box = &l->boxes[l->n_boxes-1];
-		} else {
-			last_box = NULL;
-		}
-
-		if ( fr->n_lines + 1 > fr->max_lines ) {
-			fr->max_lines += 32;
-			alloc_lines(fr);
-			if ( fr->n_lines == fr->max_lines ) return 1;
-		}
-
-		l = &fr->lines[fr->n_lines];
-		fr->n_lines++;
-		initialise_line(l);
-
-		l->max_boxes = 1;
-		alloc_boxes(l);
-		l->n_boxes = 1;
-		l->boxes[0].type = WRAP_BOX_NOTHING;
-		l->boxes[0].editable = 1;
-		l->boxes[0].space = WRAP_SPACE_NONE;
-
-		if ( last_box != NULL ) {
-			l->boxes[0].scblock = last_box->scblock;
-			l->boxes[0].offs_char = last_box->len_chars
-			                        + last_box->offs_char;
-			l->boxes[0].ascent = last_box->ascent;
-			l->boxes[0].height = last_box->height;
-			l->boxes[0].width = 0;
-			/* FIXME: Get ascent and descent from font metrics for
-			 * whichever font will be used in this box */
-		} else {
-			l->boxes[0].scblock = find_last_child(fr->scblocks);
-			l->boxes[0].offs_char = 0;
-			l->boxes[0].ascent = 10000;
-			l->boxes[0].height = 10000;
-			l->boxes[0].width = 0;
-		}
-	}
-
 	for ( i=0; i<fr->n_lines; i++ ) {
 
 		struct wrap_line *line = &fr->lines[i];
@@ -1071,8 +961,8 @@ int wrap_contents(struct frame *fr)
 		//distribute_spaces(line, wrap_w, rho);
 
 		/* Strip any sentinel boxes added by the wrapping algorithm */
-		if ( line->boxes[line->n_boxes-1].type == WRAP_BOX_SENTINEL ) {
-			line->n_boxes--;
+		if ( bv_last(line->boxes)->type == WRAP_BOX_SENTINEL ) {
+			line->boxes->n_boxes--;
 		}
 
 	}
@@ -1105,6 +995,8 @@ int insert_box(struct wrap_line *l, int pos)
 {
 	int i;
 
+/* FIXME ! */
+#if 0
 	if ( l->n_boxes == l->max_boxes ) {
 		l->max_boxes += 32;
 		if ( alloc_boxes(l) ) return 1;
@@ -1116,6 +1008,8 @@ int insert_box(struct wrap_line *l, int pos)
 	}
 
 	l->n_boxes++;
+#endif
+return 1;
 
 	return 0;
 }

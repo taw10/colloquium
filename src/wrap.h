@@ -3,7 +3,7 @@
  *
  * Text wrapping, hyphenation, justification and shaping
  *
- * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -81,7 +81,6 @@ struct wrap_box
 
 	SCBlock *scblock;
 	int offs_char;  /* offset (in characters, not bytes) into scblock */
-	struct wrap_box *cf;  /* Copied from */
 
 	/* Pango units */
 	int width;
@@ -109,21 +108,19 @@ struct wrap_box
 };
 
 
+/* An actual wrap line, with geometry etc */
 struct wrap_line
 {
+	struct boxvec *boxes;
+
 	int width;   /* Pango units */
 	int height;  /* Pango units */
 	int ascent;  /* Pango units */
-
-	int n_boxes;
-	int max_boxes;
-	struct wrap_box *boxes;
 
 	int overfull;
 	int underfull;
 	int last_line;
 };
-
 
 extern int wrap_contents(struct frame *fr);
 
@@ -137,7 +134,7 @@ extern int alloc_boxes(struct wrap_line *l);
 extern void initialise_line(struct wrap_line *l);
 
 extern void wrap_line_free(struct wrap_line *l);
-extern void show_boxes(struct wrap_line *boxes);
+extern void show_boxes(struct boxvec *boxes);
 extern double total_height(struct frame *fr);
 
 extern int insert_box(struct wrap_line *l, int pos);

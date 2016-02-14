@@ -33,6 +33,7 @@
 #include "wrap.h"
 #include "sc_interp.h"
 #include "shape.h"
+#include "boxvec.h"
 
 
 static void shape_segment(struct wrap_box *box, struct text_seg *seg)
@@ -93,19 +94,17 @@ void shape_box(struct wrap_box *box)
 }
 
 
-static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
+static void add_nothing_box(struct boxvec *boxes, SCBlock *scblock,
                             int editable, enum wrap_box_space sp,
                             SCInterpreter *scin, size_t offs)
 {
 	struct wrap_box *box;
 
-	if ( line->n_boxes == line->max_boxes ) {
-		line->max_boxes += 32;
-		alloc_boxes(line);
-		if ( line->n_boxes == line->max_boxes ) return;
+	box = calloc(1, sizeof(struct wrap_box));
+	if ( box == NULL ) {
+		fprintf(stderr, "Failed to allocate a nothing box.\n");
+		return;
 	}
-
-	box = &line->boxes[line->n_boxes];
 	box->type = WRAP_BOX_NOTHING;
 	box->scblock = scblock;
 	box->offs_char = offs;
@@ -118,7 +117,7 @@ static void add_nothing_box(struct wrap_line *line, SCBlock *scblock,
 	box->editable = editable;
 	box->segs = NULL;
 	box->n_segs = 0;
-	line->n_boxes++;
+	bv_add(boxes, box);
 }
 
 
@@ -185,7 +184,7 @@ static void add_seg(gpointer vi, gpointer vb)
 
 
 /* Add "text", followed by a space of type "space", to "line" */
-static int add_text_box(struct wrap_line *line,
+static int add_text_box(struct boxvec *boxes,
                         enum wrap_box_space space, PangoContext *pc,
                         SCInterpreter *scin, SCBlock *bl, size_t offs,
                         size_t len, int editable)
@@ -199,17 +198,16 @@ static int add_text_box(struct wrap_line *line,
 	int nseg;
 
 	while ( len==0 ) {
-		add_nothing_box(line, bl, editable, space, scin, offs);
+		add_nothing_box(boxes, bl, editable, space, scin, offs);
 		return 0;
 	}
 
 	/* Create the box */
-	if ( line->n_boxes == line->max_boxes ) {
-		line->max_boxes += 32;
-		alloc_boxes(line);
-		if ( line->n_boxes == line->max_boxes ) return 1;
+	box = calloc(1, sizeof(struct wrap_box));
+	if ( box == NULL ) {
+		fprintf(stderr, "Failed to allocate a text box.\n");
+		return 1;
 	}
-	box = &line->boxes[line->n_boxes];
 
 	box->type = WRAP_BOX_PANGO;
 	box->space = space;
@@ -218,7 +216,6 @@ static int add_text_box(struct wrap_line *line,
 	box->editable = editable;
 	box->ascent = sc_interp_get_ascent(scin);
 	box->height = sc_interp_get_height(scin);
-	box->cf = NULL;
 
 	/* Link to the actual text */
 	box->scblock = bl;
@@ -248,24 +245,23 @@ static int add_text_box(struct wrap_line *line,
 
 	calc_box_geometry(box);
 
-	line->n_boxes++;
+	bv_add(boxes, box);
 
 	return 0;
 }
 
 
-void add_callback_box(struct wrap_line *line, double w, double h,
+void add_callback_box(struct boxvec *boxes, double w, double h,
                       SCCallbackDrawFunc draw_func,
                       SCCallbackClickFunc click_func, void *bvp, void *vp)
 {
 	struct wrap_box *box;
 
-	if ( line->n_boxes == line->max_boxes ) {
-		line->max_boxes += 32;
-		alloc_boxes(line);
-		if ( line->n_boxes == line->max_boxes ) return;
+	box = calloc(1, sizeof(struct wrap_box));
+	if ( box == NULL ) {
+		fprintf(stderr, "Failed to allocate a callback box.\n");
+		return;
 	}
-	box = &line->boxes[line->n_boxes];
 
 	box->type = WRAP_BOX_CALLBACK;
 	box->scblock = NULL;
@@ -279,22 +275,21 @@ void add_callback_box(struct wrap_line *line, double w, double h,
 	box->bvp = bvp;
 	box->vp = vp;
 	box->editable = 0;
-	line->n_boxes++;
+	bv_add(boxes, box);
 }
 
 
-void add_image_box(struct wrap_line *line, const char *filename,
+void add_image_box(struct boxvec *boxes, const char *filename,
                    int w, int h, int editable)
 {
 	struct wrap_box *box;
 
-	if ( line->n_boxes == line->max_boxes ) {
-		line->max_boxes += 32;
-		alloc_boxes(line);
-		if ( line->n_boxes == line->max_boxes ) return;
+	box = calloc(1, sizeof(struct wrap_box));
+	if ( box == NULL ) {
+		fprintf(stderr, "Failed to allocate a callback box.\n");
+		return;
 	}
 
-	box = &line->boxes[line->n_boxes];
 	box->type = WRAP_BOX_IMAGE;
 	box->scblock = NULL;
 	box->offs_char = 0;
@@ -304,11 +299,11 @@ void add_image_box(struct wrap_line *line, const char *filename,
 	box->height = pango_units_from_double(h);
 	box->filename = strdup(filename);
 	box->editable = editable;
-	line->n_boxes++;
+	bv_add(boxes, box);
 }
 
 
-int split_words(struct wrap_line *boxes, PangoContext *pc, SCBlock *bl,
+int split_words(struct boxvec *boxes, PangoContext *pc, SCBlock *bl,
                 PangoLanguage *lang, int editable, SCInterpreter *scin)
 {
 	PangoLogAttr *log_attrs;

@@ -1,7 +1,7 @@
 /*
  * sc_editor.c
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -44,6 +44,7 @@
 #include "sc_editor.h"
 #include "slideshow.h"
 #include "shape.h"
+#include "boxvec.h"
 
 
 static void scroll_interface_init(GtkScrollable *iface)
@@ -364,7 +365,7 @@ static void move_cursor_back(SCEditor *e)
 	cl = e->cursor_line;
 
 	line = &e->cursor_frame->lines[e->cursor_line];
-	box = &line->boxes[e->cursor_box];
+	box = bv_box(line->boxes, e->cursor_box);
 	if ( box->type == WRAP_BOX_PANGO ) {
 
 		if ( cp == 0 ) {
@@ -389,13 +390,13 @@ static void move_cursor_back(SCEditor *e)
 				if ( cl < 0 ) return;
 				e->cursor_line = cl;
 				line = &e->cursor_frame->lines[cl];
-				cb = line->n_boxes - 1;
+				cb = bv_len(line->boxes) - 1;
 			}
 
-		} while ( !line->boxes[cb].editable );
+		} while ( !bv_box(line->boxes, cb)->editable );
 
 		e->cursor_box = cb;
-		box = &line->boxes[cb];
+		box = bv_box(line->boxes, cb);
 		if ( box->type == WRAP_BOX_PANGO ) {
 			cp = box->len_chars;
 			if ( box->space == WRAP_SPACE_NONE ) {
@@ -420,11 +421,10 @@ void cur_box_diag(SCEditor *e)
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 
-	struct wrap_box *sbox = &fr->lines[sln].boxes[sbx];
+	struct wrap_box *sbox = bv_box(fr->lines[sln].boxes, sbx);
 
 	printf("line/box/pos: [%i of %i]/[%i of %i]/[%i of %i]\n",
-	       sln, fr->n_lines,
-	       sbx, e->cursor_frame->lines[sln].n_boxes,
+	       sln, fr->n_lines, sbx, bv_len(e->cursor_frame->lines[sln].boxes),
 	       sps, sbox->len_chars);
 	printf("box type is %i, space type is %i\n", sbox->type, sbox->space);
 	if ( sbox->type == WRAP_BOX_NOTHING ) {
@@ -433,10 +433,10 @@ void cur_box_diag(SCEditor *e)
 
 	struct wrap_line *ln = &fr->lines[sln];
 	int i;
-	for ( i=0; i<ln->n_boxes; i++ ) {
+	for ( i=0; i<bv_len(ln->boxes); i++ ) {
 		char pp = '[';
 		char pq = ']';
-		struct wrap_box *bx = &ln->boxes[i];
+		struct wrap_box *bx = bv_box(ln->boxes, i);
 		if ( i == sbx ) { pp = '<'; pq  = '>'; }
 		printf("%c%i %i %i%c", pp, bx->offs_char, bx->len_chars,
 		       bx->n_segs, pq);
@@ -450,7 +450,7 @@ void advance_cursor(SCEditor *e)
 	int advance = 0;
 	signed int cp, cb, cl;
 	struct wrap_line *line = &e->cursor_frame->lines[e->cursor_line];
-	struct wrap_box *box = &line->boxes[e->cursor_box];
+	struct wrap_box *box = bv_box(line->boxes, e->cursor_box);
 
 	cp = e->cursor_pos;
 	cb = e->cursor_box;
@@ -493,7 +493,7 @@ void advance_cursor(SCEditor *e)
 				cp = 1;
 			}
 
-			if ( cb >= line->n_boxes ) {
+			if ( cb >= bv_len(line->boxes) ) {
 				cl++;
 				if ( cl >= e->cursor_frame->n_lines ) {
 					/* Give up - could not move */
@@ -504,7 +504,7 @@ void advance_cursor(SCEditor *e)
 				cp = 0;
 			}
 
-		} while ( !line->boxes[cb].editable );
+		} while ( !bv_box(line->boxes, cb)->editable );
 
 		e->cursor_line = cl;
 		e->cursor_box = cb;
@@ -564,7 +564,7 @@ static void draw_caret(cairo_t *cr, struct frame *fr,
 	if ( fr->n_lines == 0 ) return;
 
 	/* Locate the cursor in a "logical" and "geographical" sense */
-	box = &fr->lines[cursor_line].boxes[cursor_box];
+	box = bv_box(fr->lines[cursor_line].boxes, cursor_box);
 	get_cursor_pos(box, cursor_pos, &xposd, &yposd, &line_height);
 	xposd += fr->pad_l;
 	yposd += fr->pad_t;
@@ -574,8 +574,8 @@ static void draw_caret(cairo_t *cr, struct frame *fr,
 	}
 
 	for ( i=0; i<cursor_box; i++ ) {
-		int w = fr->lines[cursor_line].boxes[i].width;
-		w += fr->lines[cursor_line].boxes[i].sp;
+		int w = bv_box(fr->lines[cursor_line].boxes, i)->width;
+		w += bv_box(fr->lines[cursor_line].boxes, i)->sp;
 		xposd += pango_units_to_double(w);
 	}
 
@@ -717,12 +717,12 @@ static void fixup_cursor(SCEditor *e)
 	if ( e->cursor_line >= fr->n_lines ) {
 		/* We find ourselves on a line which doesn't exist */
 		e->cursor_line = fr->n_lines-1;
-		e->cursor_box = fr->lines[fr->n_lines-1].n_boxes-1;
+		e->cursor_box = bv_len(fr->lines[fr->n_lines-1].boxes)-1;
 	}
 
 	sline = &fr->lines[e->cursor_line];
 
-	if ( e->cursor_box >= sline->n_boxes ) {
+	if ( e->cursor_box >= bv_len(sline->boxes) ) {
 
 		/* We find ourselves in a box which doesn't exist */
 
@@ -736,12 +736,12 @@ static void fixup_cursor(SCEditor *e)
 			/* There are no more lines, so just go to the end */
 			e->cursor_line = fr->n_lines-1;
 			sline = &e->cursor_frame->lines[e->cursor_line];
-			e->cursor_box = sline->n_boxes-1;
+			e->cursor_box = bv_len(sline->boxes)-1;
 		}
 	}
 
-	assert(e->cursor_box < sline->n_boxes);
-	sbox = &sline->boxes[e->cursor_box];
+	assert(e->cursor_box < bv_len(sline->boxes));
+	sbox = bv_box(sline->boxes, e->cursor_box);
 
 	if ( e->cursor_pos > sbox->len_chars ) {
 		advance_cursor(e);
@@ -773,7 +773,7 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 	sln = e->cursor_line;
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
-	sbox = &e->cursor_frame->lines[sln].boxes[sbx];
+	sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
 
 	sc_insert_block(sbox->scblock, sps+sbox->offs_char, scblock);
 
@@ -791,17 +791,11 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
  * Update the boxes from the StoryCode */
 static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
 {
-	struct wrap_box *box = &fr->lines[line].boxes[bn];
+	struct wrap_box *box = bv_box(fr->lines[line].boxes, bn);
 
 	/* Shape the box again
 	 * FIXME: Number of segments could change, need to PangoAnalyse again */
-	shape_box(box->cf->cf);
-
-	/* Update the segments */
-	box->segs = box->cf->cf->segs;
-	box->n_segs = box->cf->cf->n_segs;
-	box->cf->segs = box->cf->cf->segs;
-	box->cf->n_segs = box->cf->cf->n_segs;
+	shape_box(box);
 
 	/* Wrap the paragraph again */
 	wrap_contents(fr);  /* FIXME: Only the current paragraph */
@@ -817,7 +811,7 @@ static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
 	int sn = 0;
 
 	for ( i=0; i<fr->boxes->n_boxes; i++ ) {
-		if ( &fr->boxes->boxes[i] == box ) {
+		if ( bv_box(fr->boxes, i) == box ) {
 			sn = i+1;
 			break;
 		}
@@ -826,7 +820,7 @@ static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
 	assert(sn > 0);  /* Lowest it can possibly be is 1 */
 
 	for ( i=sn; i<fr->boxes->n_boxes; i++ ) {
-		fr->boxes->boxes[i].offs_char += n;
+		bv_box(fr->boxes, i)->offs_char += n;
 	}
 }
 
@@ -851,10 +845,10 @@ static void insert_text(char *t, SCEditor *e)
 	sln = e->cursor_line;
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
-	sbox = &e->cursor_frame->lines[sln].boxes[sbx];
+	sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
 
 	if ( sbox->type == WRAP_BOX_NOTHING ) {
-		printf("Upgrading nothing box to Pango box\n");
+		printf("Upgrading nothing box %p to Pango box\n", sbox);
 		sbox->type = WRAP_BOX_PANGO;
 		sbox->col[0] = 0.0;
 		sbox->col[1] = 0.0;
@@ -899,7 +893,7 @@ static void insert_text(char *t, SCEditor *e)
 
 		/* Add a new box containing the text after the break */
 		insert_box(&e->cursor_frame->lines[sln], sbx);
-		nbox = &e->cursor_frame->lines[sln].boxes[sbx];
+		nbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
 		nbox->type = WRAP_BOX_PANGO;
 		nbox->space = WRAP_SPACE_INTERWORD;
 		nbox->len_chars = e->cursor_pos;
@@ -916,15 +910,8 @@ static void insert_text(char *t, SCEditor *e)
 
 	sbox->segs[sseg].len_chars += 1;
 
-	/* Update the length of the box in the unwrapped and un-paragraph-split
-	 * string of wrap boxes */
-	sbox->cf->cf->len_chars += 1;
-
-	/* ... and also in the paragraph split but unwrapped box */
-	sbox->cf->len_chars += 1;
-
 	/* Tweak the offsets of all the subsequent boxes */
-	shift_box_offsets(fr, sbox->cf->cf, 1);
+	shift_box_offsets(fr, sbox, 1);
 
 	fr->empty = 0;
 
@@ -949,7 +936,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	sln = e->cursor_line;
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
-	struct wrap_box *sbox = &e->cursor_frame->lines[sln].boxes[sbx];
+	struct wrap_box *sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
 
 	cur_box_diag(e);
 
@@ -957,7 +944,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 
 	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
 	struct wrap_line *fline = &e->cursor_frame->lines[e->cursor_line];
-	struct wrap_box *fbox = &fline->boxes[e->cursor_box];
+	struct wrap_box *fbox = bv_box(fline->boxes, e->cursor_box);
 
 //	SCBlock *scbl = sbox->scblock;
 //	do {
@@ -975,15 +962,8 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 //		scbl = sc_block_next(scbl);
 //	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
 
-	/* Update the length of the box in the unwrapped and un-paragraph-split
-	 * string of wrap boxes */
-	sbox->cf->cf->len_chars -= 1;
-
-	/* ... and also in the paragraph split but unwrapped box */
-	sbox->cf->len_chars -= 1;
-
 	/* Tweak the offsets of all the subsequent boxes */
-	shift_box_offsets(fr, sbox->cf->cf, -1);
+	shift_box_offsets(fr, sbox, -1);
 
 	update_local(e, fr, sln, sbx);
 
@@ -1186,7 +1166,7 @@ static void calculate_box_size(struct frame *fr, SCEditor *e,
 
 static struct wrap_box *cbox(struct frame *fr, int ln, int bn)
 {
-	return &fr->lines[ln].boxes[bn];
+	return bv_box(fr->lines[ln].boxes, bn);;
 }
 
 

@@ -55,16 +55,16 @@ struct frame
 	int                       max_children;
 
 	SCBlock                  *scblocks;
-	struct wrap_line         *boxes;  /* The unwrapped boxes */
+	struct boxvec            *boxes;  /* The unwrapped boxes */
 	int                       visited;
+
+	int                       n_paragraphs;
+	struct boxvec           **paragraphs;
+	int                      *paragraph_start_lines;
 
 	int                       n_lines;
 	int                       max_lines;
 	struct wrap_line         *lines;
-
-	int                       n_paragraphs;
-	struct wrap_line        **paragraphs;
-	int                      *paragraph_start_lines;
 
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;

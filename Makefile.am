@@ -17,7 +17,7 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/imagestore.c src/notes.c src/pr_clock.c \
                          src/inhibit_screensaver.c \
                          src/shape.c src/sc_editor.c src/narrative_window.c \
-                         src/slide_window.c src/testcard.c
+                         src/slide_window.c src/testcard.c src/boxvec.c
 
 INCLUDES = -Iharfatum/src
 
@@ -25,7 +25,8 @@ EXTRA_DIST += src/presentation.h src/render.h src/wrap.h \
               src/slideshow.h src/sc_parse.h src/sc_interp.h \
               src/imagestore.h src/notes.h src/pr_clock.h \
               src/inhibit_screensaver.h src/shape.h \
-              src/sc_editor.h src/slide_window.h src/narrative_window.c
+              src/sc_editor.h src/slide_window.h src/narrative_window.h \
+	      src/boxvec.h
 
 src/default_stylesheet.o: src/default_stylesheet.sty
 	ld -r -b binary -o src/default_stylesheet.o src/default_stylesheet.sty
@@ -49,8 +50,9 @@ tests_storycode_test_SOURCES = tests/storycode_test.c src/sc_parse.c
 
 tests_render_test_SOURCES = tests/render_test.c src/render.c src/frame.c \
                             src/wrap.c src/sc_parse.c src/imagestore.c \
-                            src/sc_interp.c src/shape.c
+                            src/sc_interp.c src/shape.c src/boxvec.c
 
 tests_render_test_sc1_SOURCES = tests/render_test_sc1.c src/sc_parse.c \
                                 src/render.c src/frame.c src/wrap.c \
-                                src/imagestore.c src/sc_interp.c src/shape.c
+                                src/imagestore.c src/sc_interp.c src/shape.c \
+                                src/boxvec.c

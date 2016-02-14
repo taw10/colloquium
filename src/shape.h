@@ -33,14 +33,14 @@
 
 extern void shape_box(struct wrap_box *box);
 
-extern int split_words(struct wrap_line *boxes, PangoContext *pc,
+extern int split_words(struct boxvec *boxes, PangoContext *pc,
                        SCBlock *bl, PangoLanguage *lang,
                        int editable, SCInterpreter *scin);
 
-extern void add_image_box(struct wrap_line *line, const char *filename,
+extern void add_image_box(struct boxvec *line, const char *filename,
                           int w, int h, int editable);
 
-extern void add_callback_box(struct wrap_line *line, double w, double h,
+extern void add_callback_box(struct boxvec *boxes, double w, double h,
                              SCCallbackDrawFunc draw_func,
                              SCCallbackClickFunc click_func,
                              void *bvp, void *vp);

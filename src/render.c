@@ -1,7 +1,7 @@
 /*
  * render.c
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -42,6 +42,7 @@
 #include "render.h"
 #include "wrap.h"
 #include "imagestore.h"
+#include "boxvec.h"
 
 
 static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
@@ -197,18 +198,18 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 	int j;
 	double x_pos = 0.0;
 
-	for ( j=0; j<line->n_boxes; j++ ) {
+	for ( j=0; j<bv_len(line->boxes); j++ ) {
 
 		struct wrap_box *box;
 
 		cairo_save(cr);
 
-		box = &line->boxes[j];
+		box = bv_box(line->boxes, j);
 		cairo_translate(cr, x_pos, 0.0);
 
 		//draw_outline(cr, box);
 
-		switch ( line->boxes[j].type ) {
+		switch ( box->type ) {
 
 			case WRAP_BOX_PANGO :
 			render_glyph_box(cr, box);
@@ -231,8 +232,8 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 
 		}
 
-		x_pos += pango_units_to_double(line->boxes[j].width);
-		x_pos += pango_units_to_double(line->boxes[j].sp);
+		x_pos += pango_units_to_double(box->width);
+		x_pos += pango_units_to_double(box->sp);
 
 		cairo_restore(cr);
 

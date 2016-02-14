@@ -42,13 +42,15 @@ static void shape_segment(struct wrap_box *box, struct text_seg *seg)
 	const char *ep;
 
 	tp = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
-	                              box->offs_char);
+	                              box->offs_char + seg->offs_char);
 	ep = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
-	                              box->offs_char+box->len_chars);
+	                              box->offs_char + seg->offs_char
+	                               + seg->len_chars);
 
 	if ( seg->glyphs != NULL ) {
 		pango_glyph_string_free(seg->glyphs);
 	}
+	printf("shaping '%s' (%i chars)\n", tp, seg->len_chars);
 	seg->glyphs = pango_glyph_string_new();
 	pango_shape(tp, ep-tp, &seg->analysis, seg->glyphs);
 

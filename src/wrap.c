@@ -925,7 +925,7 @@ int wrap_contents(struct frame *fr)
 	/* Split text into paragraphs */
 	i = 0;
 	fr->n_paragraphs = 0;
-	fr->paragraphs = malloc(max_para * sizeof(struct wrap_line *));
+	fr->paragraphs = malloc(max_para * sizeof(struct boxvec *));
 	if ( fr->paragraphs == NULL ) {
 		fprintf(stderr, "Failed to allocate paragraphs\n");
 		return 1;
@@ -938,7 +938,7 @@ int wrap_contents(struct frame *fr)
 		if ( fr->n_paragraphs == max_para ) {
 			max_para += 64;
 			fr->paragraphs = realloc(fr->paragraphs,
-			                   max_para*sizeof(struct wrap_line *));
+			                   max_para*sizeof(struct boxvec *));
 			if ( fr->paragraphs == NULL ) {
 				fprintf(stderr, "Failed to allocate space"
 				                " for paragraphs\n");

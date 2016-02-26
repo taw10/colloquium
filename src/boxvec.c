@@ -47,7 +47,7 @@ extern struct boxvec *bv_new()
 	n->max_boxes = 0;
 	n->boxes = NULL;
 
-	return NULL;
+	return n;
 }
 
 

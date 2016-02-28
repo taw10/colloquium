@@ -812,7 +812,6 @@ static void first_fit(struct boxvec *boxes, double line_length,
 void wrap_line_free(struct wrap_line *l)
 {
 	bv_free(l->boxes);
-	free(l->boxes);
 }
 
 

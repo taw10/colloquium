@@ -960,7 +960,9 @@ int wrap_contents(struct frame *fr)
 		//distribute_spaces(line, wrap_w, rho);
 
 		/* Strip any sentinel boxes added by the wrapping algorithm */
-		if ( bv_last(line->boxes)->type == WRAP_BOX_SENTINEL ) {
+		if ( (bv_last(line->boxes) != NULL)
+		  && (bv_last(line->boxes)->type == WRAP_BOX_SENTINEL) )
+		{
 			line->boxes->n_boxes--;
 		}
 

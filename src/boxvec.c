@@ -85,6 +85,8 @@ struct wrap_box *bv_box(struct boxvec *vec, int i)
 
 struct wrap_box *bv_last(struct boxvec *vec)
 {
+	if ( vec == NULL ) return NULL;
+	if ( vec->boxes == NULL ) return NULL;
 	return vec->boxes[vec->n_boxes-1];
 }
 

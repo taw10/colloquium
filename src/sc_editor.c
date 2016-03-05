@@ -837,6 +837,8 @@ static void insert_text(char *t, SCEditor *e)
 	int offs;
 	int err = 0;
 
+	printf("insert! --------------------------------------------------------\n");
+
 	if ( fr == NULL ) return;
 
 	/* If this is, say, the top level frame, do nothing */
@@ -919,6 +921,8 @@ static void insert_text(char *t, SCEditor *e)
 	update_local(e, fr, sln, sbx);
 
 	fixup_cursor(e);
+	printf("done! --------------------------------------------------------\n");
+
 	advance_cursor(e);
 
 	sc_editor_redraw(e);

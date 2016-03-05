@@ -51,7 +51,7 @@ static void shape_segment(struct wrap_box *box, struct text_seg *seg)
 	if ( seg->glyphs != NULL ) {
 		pango_glyph_string_free(seg->glyphs);
 	}
-	printf("shaping '%s' (%i chars)\n", tp, seg->len_chars);
+	//printf("shaping '%s' (%i chars)\n", tp, seg->len_chars);
 	seg->glyphs = pango_glyph_string_new();
 	pango_shape(tp, ep-tp, &seg->analysis, seg->glyphs);
 
@@ -85,6 +85,7 @@ static void calc_box_geometry(struct wrap_box *box)
 void shape_box(struct wrap_box *box)
 {
 	int i;
+	printf("shaping box %p! n_segs=%i\n", box, box->n_segs);
 
 	for ( i=0; i<box->n_segs; i++ ) {
 		shape_segment(box, &box->segs[i]);

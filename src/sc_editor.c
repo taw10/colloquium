@@ -909,6 +909,7 @@ static void insert_text(char *t, SCEditor *e)
 	free(log_attrs);
 
 	sbox->segs[sseg].len_chars += 1;
+	sbox->len_chars += 1;
 
 	/* Tweak the offsets of all the subsequent boxes */
 	shift_box_offsets(fr, sbox, 1);
@@ -926,7 +927,8 @@ static void insert_text(char *t, SCEditor *e)
 
 static void do_backspace(struct frame *fr, SCEditor *e)
 {
-	int sln, sbx, sps;
+	int sln, sbx, sps, sseg;
+	int err = 0;
 
 	if ( fr == NULL ) return;
 
@@ -937,6 +939,8 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 	struct wrap_box *sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
+	sseg = which_segment(sbox, sps, &err);
+	if ( err ) return;
 
 	cur_box_diag(e);
 
@@ -946,24 +950,14 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	struct wrap_line *fline = &e->cursor_frame->lines[e->cursor_line];
 	struct wrap_box *fbox = bv_box(fline->boxes, e->cursor_box);
 
-//	SCBlock *scbl = sbox->scblock;
-//	do {
-//		show_sc_blocks(scbl);
-//		scbl = sc_block_next(scbl);
-//	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
-
 	if ( (fbox->scblock == NULL) || (sbox->scblock == NULL) ) return;
 	sc_delete_text(fbox->scblock, e->cursor_pos+fbox->offs_char,
 	               sbox->scblock, sps+sbox->offs_char);
 
-//	scbl = sbox->scblock;
-//	do {
-//		show_sc_blocks(scbl);
-//		scbl = sc_block_next(scbl);
-//	} while ( (scbl != fbox->scblock) && (scbl != NULL) );
-
 	/* Tweak the offsets of all the subsequent boxes */
 	shift_box_offsets(fr, sbox, -1);
+	sbox->len_chars -= 1;
+	sbox->segs[sseg].len_chars -= 1;
 
 	update_local(e, fr, sln, sbx);
 
@@ -1428,8 +1422,13 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
 		                     e->drag_corner_x - e->start_corner_x,
 		                     e->drag_corner_y - e->start_corner_y);
-		/* FIXME: Select the new frame, avoid full rerender */
 		full_rerender(e);
+		e->selection = fr;
+		e->cursor_frame = fr;
+		e->cursor_line = 0;
+		e->cursor_box = 0;
+		e->cursor_pos = 0;
+		sc_editor_redraw(e);
 		break;
 
 		case DRAG_REASON_IMPORT :

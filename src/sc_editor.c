@@ -421,6 +421,11 @@ void cur_box_diag(SCEditor *e)
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 
+	if ( fr->lines == NULL ) {
+		printf("Current frame has no lines!\n");
+		return;
+	}
+
 	struct wrap_box *sbox = bv_box(fr->lines[sln].boxes, sbx);
 
 	printf("line/box/pos: [%i of %i]/[%i of %i]/[%i of %i]\n",
@@ -562,6 +567,8 @@ static void draw_caret(cairo_t *cr, struct frame *fr,
 
 	if ( fr == NULL ) return;
 	if ( fr->n_lines == 0 ) return;
+	if ( fr->lines == NULL ) return;
+	if ( fr->lines[cursor_line].boxes == NULL ) return;
 
 	/* Locate the cursor in a "logical" and "geographical" sense */
 	box = bv_box(fr->lines[cursor_line].boxes, cursor_box);
@@ -887,7 +894,7 @@ static void insert_text(char *t, SCEditor *e)
 
 	offs = sbox->offs_char + e->cursor_pos;
 
-	if ( log_attrs[offs+1].is_line_break ) {
+	if ( (len_chars > 0) && log_attrs[offs+1].is_line_break ) {
 
 		struct wrap_box *nbox;
 
@@ -1174,6 +1181,9 @@ static int callback_click(SCEditor *e, struct frame *fr, double x, double y)
 	struct wrap_box *bx;
 
 	find_cursor(fr, x, y, &ln, &bn, &pn);
+	if ( (ln==0) && (bn==0) && (pn==0) ) return 0;
+	/* FIXME: The above might be the case in a non-error situation.
+	 * find_cursor() needs a better way of returning an error */
 	bx = cbox(fr, ln, bn);
 	if ( bx->type == WRAP_BOX_CALLBACK ) {
 		return bx->click_func(x, y, bx->bvp, bx->vp);
@@ -1365,6 +1375,9 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	fr->empty = 1;
 	fr->resizable = 1;
 
+	fr->n_lines = 0;
+	fr->lines = NULL;
+
 	update_geom(fr);
 
 	return fr;
@@ -1426,13 +1439,11 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
 		                     e->drag_corner_x - e->start_corner_x,
 		                     e->drag_corner_y - e->start_corner_y);
-		full_rerender(e);
 		e->selection = fr;
 		e->cursor_frame = fr;
 		e->cursor_line = 0;
 		e->cursor_box = 0;
 		e->cursor_pos = 0;
-		sc_editor_redraw(e);
 		break;
 
 		case DRAG_REASON_IMPORT :

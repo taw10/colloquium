@@ -539,6 +539,7 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 	if ( sw == NULL ) return NULL;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_role(GTK_WINDOW(window), "slide");
 	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);
 	sw->window = window;

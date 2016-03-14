@@ -911,7 +911,7 @@ static void insert_text(char *t, SCEditor *e)
 
 		struct wrap_box *nbox;
 
-		printf("Adding line break\n");
+		printf("Adding line break (new box)\n");
 
 		/* Add a new box containing the text after the break */
 		insert_box(&e->cursor_frame->lines[sln], sbx);

@@ -37,6 +37,8 @@ extern int split_words(struct boxvec *boxes, PangoContext *pc,
                        SCBlock *bl, PangoLanguage *lang,
                        int editable, SCInterpreter *scin);
 
+extern int itemize_and_shape(struct wrap_box *box, PangoContext *pc);
+
 extern void add_image_box(struct boxvec *line, const char *filename,
                           int w, int h, int editable);
 

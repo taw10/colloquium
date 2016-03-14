@@ -195,3 +195,18 @@ void delete_subframe(struct frame *top, struct frame *fr)
 
 	parent->num_children--;
 }
+
+struct frame *find_frame_with_scblocks(struct frame *fr, SCBlock *scblocks)
+{
+	int i;
+
+	if ( fr->scblocks == scblocks ) return fr;
+
+	for ( i=0; i<fr->num_children; i++ ) {
+		struct frame *tt;
+		tt = find_frame_with_scblocks(fr->children[i], scblocks);
+		if ( tt != NULL ) return tt;
+	}
+
+	return NULL;
+}

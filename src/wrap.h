@@ -92,6 +92,7 @@ struct wrap_box
 
 	/* For type == WRAP_BOX_PANGO */
 	PangoFont *font;
+	PangoFontDescription *fontdesc;
 	double col[4];  /* rgba colour */
 	int len_chars;
 	int n_segs;

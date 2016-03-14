@@ -876,6 +876,7 @@ static void insert_text(char *t, SCEditor *e)
 		sbox->col[1] = 0.0;
 		sbox->col[2] = 0.0;
 		sbox->col[3] = 0.0;
+		sbox->fontdesc = fr->fontdesc;
 		sbox->n_segs = 1;
 		sbox->segs = malloc(sizeof(struct text_seg));
 		sbox->len_chars = 0;
@@ -896,6 +897,10 @@ static void insert_text(char *t, SCEditor *e)
 
 	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
 
+	/* The box must be analysed by Pango again, because the segments
+	 * might have changed */
+	itemize_and_shape(sbox, e->pc);
+
 	text = sc_block_contents(sbox->scblock);
 	len_bytes = strlen(text);
 	len_chars = g_utf8_strlen(text, -1);
@@ -907,7 +912,7 @@ static void insert_text(char *t, SCEditor *e)
 
 	offs = sbox->offs_char + e->cursor_pos;
 
-	if ( (len_chars > 0) && log_attrs[offs+1].is_line_break ) {
+	if ( (len_chars > 1) && log_attrs[offs+1].is_line_break ) {
 
 		struct wrap_box *nbox;
 
@@ -1360,6 +1365,7 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 {
 	struct frame *parent;
 	struct frame *fr;
+	SCBlock *scblocks;
 
 	parent = e->top;
 
@@ -1373,12 +1379,13 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 		h = -h;
 	}
 
+	/* Add to frame structure */
 	fr = add_subframe(parent);
 
 	/* Add to SC */
-	fr->scblocks = sc_block_append_end(e->scblocks,
-	                                   "f", NULL, NULL);
-	sc_block_append_inside(fr->scblocks, NULL, NULL, strdup(""));
+	scblocks = sc_block_append_end(e->scblocks, "f", NULL, NULL);
+	fr->scblocks = scblocks;
+	sc_block_append_inside(scblocks, NULL, NULL, strdup(""));
 
 	fr->x = x;
 	fr->y = y;
@@ -1388,12 +1395,10 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	fr->empty = 1;
 	fr->resizable = 1;
 
-	fr->n_lines = 0;
-	fr->lines = NULL;
-
 	update_geom(fr);
 
-	return fr;
+	full_rerender(e);
+	return find_frame_with_scblocks(e->top, scblocks);
 }
 
 

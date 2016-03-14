@@ -66,6 +66,9 @@ struct frame
 	int                       max_lines;
 	struct wrap_line         *lines;
 
+	/* The font which will be used by default for this frame */
+	PangoFontDescription     *fontdesc;
+
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;
 	double                    y;
@@ -101,5 +104,7 @@ extern void frame_free(struct frame *fr);
 extern struct frame *add_subframe(struct frame *fr);
 extern void show_hierarchy(struct frame *fr, const char *t);
 extern void delete_subframe(struct frame *top, struct frame *fr);
+extern struct frame *find_frame_with_scblocks(struct frame *top,
+                                              SCBlock *scblocks);
 
 #endif	/* FRAME_H */

@@ -556,6 +556,10 @@ SCBlock *find_last_child(SCBlock *bl)
 
 void sc_insert_text(SCBlock *b1, int o1, const char *t)
 {
+	if ( b1->contents == NULL ) {
+		b1->contents = strdup(t);
+		return;
+	}
 	size_t len = strlen(b1->contents)+1+strlen(t);
 	char *cnew = realloc(b1->contents, len);
 	char *tmp = malloc(len);

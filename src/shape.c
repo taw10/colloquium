@@ -42,6 +42,11 @@ static void shape_segment(struct wrap_box *box, struct text_seg *seg)
 	const char *tp;
 	const char *ep;
 
+	if ( seg->len_chars == 0 ) {
+		fprintf(stderr, "Shaping a zero-length segment\n");
+		return;
+	}
+
 	tp = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
 	                              box->offs_char + seg->offs_char);
 	ep = g_utf8_offset_to_pointer(sc_block_contents(box->scblock),
@@ -184,19 +189,52 @@ static void add_seg(gpointer vi, gpointer vb)
 }
 
 
+int itemize_and_shape(struct wrap_box *box, PangoContext *pc)
+{
+	GList *pango_items;
+	PangoAttrList *attrs;
+	PangoAttribute *attr;
+	char *tptr;
+	char *eptr;
+	const char *text;
+	int nseg;
+
+	text = sc_block_contents(box->scblock);
+	tptr = g_utf8_offset_to_pointer(text, box->offs_char);
+	eptr = g_utf8_offset_to_pointer(tptr, box->len_chars);
+
+	/* Fill in the font, needed later for rendering */
+	box->font = pango_font_map_load_font(pango_context_get_font_map(pc),
+	                                     pc, box->fontdesc);
+
+	attrs = pango_attr_list_new();
+	attr = pango_attr_font_desc_new(box->fontdesc);
+	pango_attr_list_insert_before(attrs, attr);
+	pango_items = pango_itemize(pc, tptr, 0, eptr-tptr, attrs, NULL);
+	nseg = g_list_length(pango_items);
+	box->segs = malloc(nseg * sizeof(struct text_seg));
+	if ( box->segs == NULL ) return 1;
+
+	box->n_segs = 0;
+	g_list_foreach(pango_items, add_seg, box);
+	g_list_free(pango_items);
+	pango_attr_list_unref(attrs);
+
+	calc_box_geometry(box);
+
+	return 0;
+}
+
+
 /* Add "text", followed by a space of type "space", to "line" */
 static int add_text_box(struct boxvec *boxes,
                         enum wrap_box_space space, PangoContext *pc,
                         SCInterpreter *scin, SCBlock *bl, size_t offs,
                         size_t len, int editable)
 {
-	GList *pango_items;
 	struct wrap_box *box;
-	PangoAttrList *attrs;
-	PangoAttribute *attr;
 	const char *tp;
 	double *col;
-	int nseg;
 
 	while ( len==0 ) {
 		add_nothing_box(boxes, bl, editable, space, scin, offs);
@@ -212,7 +250,7 @@ static int add_text_box(struct boxvec *boxes,
 
 	box->type = WRAP_BOX_PANGO;
 	box->space = space;
-	box->font = sc_interp_get_font(scin);
+	box->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
 	box->width = 0;
 	box->editable = editable;
 	box->ascent = sc_interp_get_ascent(scin);
@@ -230,23 +268,12 @@ static int add_text_box(struct boxvec *boxes,
 	box->col[2] = col[2];  /* Blue */
 	box->col[3] = col[3];  /* Alpha */
 
-	attrs = pango_attr_list_new();
-	attr = pango_attr_font_desc_new(sc_interp_get_fontdesc(scin));
-	pango_attr_list_insert_before(attrs, attr);
-	pango_items = pango_itemize(pc, sc_block_contents(bl)+offs,
-	                            0, len, attrs, NULL);
-	nseg = g_list_length(pango_items);
-	box->segs = malloc(nseg * sizeof(struct text_seg));
-	if ( box->segs == NULL ) return 1;
-
-	box->n_segs = 0;
-	g_list_foreach(pango_items, add_seg, box);
-	g_list_free(pango_items);
-	pango_attr_list_unref(attrs);
-
-	calc_box_geometry(box);
-
-	bv_add(boxes, box);
+	if ( itemize_and_shape(box, pc) == 0 ) {
+		bv_add(boxes, box);
+	} else {
+		fprintf(stderr, "Shaping error!\n");
+		return 1;
+	}
 
 	return 0;
 }

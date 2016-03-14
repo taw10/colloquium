@@ -834,6 +834,8 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			return 1;
 		}
 
+		fr->fontdesc = sc_interp_get_fontdesc(scin);
+
 		parse_frame_options(fr, sc_interp_get_frame(scin),
 			            options);
 

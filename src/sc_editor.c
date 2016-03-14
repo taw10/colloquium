@@ -426,7 +426,20 @@ void cur_box_diag(SCEditor *e)
 		return;
 	}
 
+	if ( fr->lines[sln].boxes == NULL ) {
+		printf("line %i of %i, but it has no boxes\n",
+		       sln, fr->n_lines);
+		return;
+	}
+
 	struct wrap_box *sbox = bv_box(fr->lines[sln].boxes, sbx);
+
+	if ( sbox == NULL ) {
+		printf("line/box: [%i of %i]/[%i of %i]/NULL box\n",
+		       sln, fr->n_lines, sbx,
+		       bv_len(e->cursor_frame->lines[sln].boxes));
+	       return;
+	}
 
 	printf("line/box/pos: [%i of %i]/[%i of %i]/[%i of %i]\n",
 	       sln, fr->n_lines, sbx, bv_len(e->cursor_frame->lines[sln].boxes),

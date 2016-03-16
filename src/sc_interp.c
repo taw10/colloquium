@@ -834,7 +834,11 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			return 1;
 		}
 
-		fr->fontdesc = sc_interp_get_fontdesc(scin);
+		fr->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
+		fr->col[0] = sc_interp_get_fgcol(scin)[0];
+		fr->col[1] = sc_interp_get_fgcol(scin)[1];
+		fr->col[2] = sc_interp_get_fgcol(scin)[2];
+		fr->col[3] = sc_interp_get_fgcol(scin)[3];
 
 		parse_frame_options(fr, sc_interp_get_frame(scin),
 			            options);

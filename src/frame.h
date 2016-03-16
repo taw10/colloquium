@@ -68,6 +68,7 @@ struct frame
 
 	/* The font which will be used by default for this frame */
 	PangoFontDescription     *fontdesc;
+	double                    col[4];
 
 	/* The rectangle allocated to this frame, determined by the renderer */
 	double                    x;

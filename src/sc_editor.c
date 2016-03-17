@@ -1547,6 +1547,10 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		}
 		break;
 
+		case GDK_KEY_F5 :
+		full_rerender(e);
+		break;
+
 	}
 
 	if ( claim ) return TRUE;

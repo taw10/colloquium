@@ -342,6 +342,24 @@ static void set_bold(SCInterpreter *scin)
 }
 
 
+static void set_oblique(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	copy_top_fontdesc(scin);
+	pango_font_description_set_style(st->fontdesc, PANGO_STYLE_OBLIQUE);
+	update_font(scin);
+}
+
+
+static void set_italic(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	copy_top_fontdesc(scin);
+	pango_font_description_set_style(st->fontdesc, PANGO_STYLE_ITALIC);
+	update_font(scin);
+}
+
+
 /* This sets the colour for the font at the top of the stack */
 static void set_colour(SCInterpreter *scin, const char *colour)
 {
@@ -940,6 +958,16 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "bold") == 0 ) {
 			maybe_recurse_before(scin, child);
 			set_bold(scin);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "oblique") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_oblique(scin);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "italic") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_italic(scin);
 			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {

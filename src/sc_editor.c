@@ -684,7 +684,7 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 }
 
 
-static void tile_pixbuf(cairo_t *cr, GdkPixbuf *pb, int width, int height)
+static void UNUSED tile_pixbuf(cairo_t *cr, GdkPixbuf *pb, int width, int height)
 {
 	int nx, ny, ix, iy, bgw, bgh;
 

@@ -807,22 +807,6 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 }
 
 
-/* The StoryCode for this box on this line in this frame has changed.
- * Update the boxes from the StoryCode */
-static void update_local(SCEditor *e, struct frame *fr, int line, int bn)
-{
-	struct wrap_box *box = bv_box(fr->lines[line].boxes, bn);
-
-	shape_box(box);
-
-	/* Wrap the paragraph again */
-	wrap_contents(fr);  /* FIXME: Only the current paragraph */
-	update_size(e);
-
-	sc_editor_redraw(e);
-}
-
-
 static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
 {
 	int i;
@@ -893,7 +877,6 @@ static void insert_text(char *t, SCEditor *e)
 	int sln, sbx, sps;
 	struct wrap_box *sbox;
 	struct frame *fr = e->cursor_frame;
-	int err = 0;
 
 	printf("insert! --------------------------------------------------------\n");
 
@@ -940,10 +923,10 @@ static void insert_text(char *t, SCEditor *e)
 
 	fr->empty = 0;
 
-	update_local(e, fr, sln, sbx);
-
+	wrap_contents(e->cursor_frame);
+	update_size(e);
 	fixup_cursor(e);
-	printf("done! --------------------------------------------------------\n");
+	printf("done! -----------------------------------------------------\n");
 
 	advance_cursor(e);
 
@@ -953,8 +936,7 @@ static void insert_text(char *t, SCEditor *e)
 
 static void do_backspace(struct frame *fr, SCEditor *e)
 {
-	int sln, sbx, sps, sseg;
-	int err = 0;
+	int sln, sbx, sps;
 
 	if ( fr == NULL ) return;
 
@@ -965,10 +947,6 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 	struct wrap_box *sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
-	sseg = which_segment(sbox, sps, &err);
-	if ( err ) return;
-
-	cur_box_diag(e);
 
 	move_cursor_back(e);
 
@@ -980,13 +958,58 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	sc_delete_text(fbox->scblock, e->cursor_pos+fbox->offs_char,
 	               sbox->scblock, sps+sbox->offs_char);
 
-	/* Tweak the offsets of all the subsequent boxes */
-	shift_box_offsets(fr, sbox, -1);
-	sbox->len_chars -= 1;
-	sbox->segs[sseg].len_chars -= 1;
+	if ( (sps == 0) && (fbox->space == WRAP_SPACE_INTERWORD) ) {
 
-	update_local(e, fr, sln, sbx);
+		/* We are deleting an interword space.
+		 * It's enough just to change the space type, and leave two
+		 * boxes butted up with no space. */
+		fbox->space = WRAP_SPACE_NONE;
+		shift_box_offsets(fr, fbox, -1);
+		itemize_and_shape(fbox, e->pc);
 
+	} else if ( (sps == 0) && (fbox->space == WRAP_SPACE_NONE) ) {
+
+		/* We are deleting across a box boundary, but there is no
+		 * space to delete */
+		if ( fbox->len_chars == 0 ) {
+			printf("Deleting a zero-length box\n");
+		} else {
+			fbox->len_chars -= 1;
+			shift_box_offsets(fr, fbox, -1);
+			itemize_and_shape(fbox, e->pc);
+		}
+
+	} else if ( (sps == 0) && (fbox->space == WRAP_SPACE_EOP) ) {
+
+		/* We are deleting the newline between paragraphs */
+		fbox->space = WRAP_SPACE_NONE;
+		shift_box_offsets(fr, fbox, -1);
+		itemize_and_shape(fbox, e->pc);
+
+	} else {
+
+		sbox->len_chars -= 1;
+		shift_box_offsets(fr, sbox, -1);
+		if ( sbox->len_chars == 0 ) {
+
+			if ( sbox->space == WRAP_SPACE_NONE ) {
+				printf("deleting box.\n");
+				bv_del(e->cursor_frame->boxes, sbox);
+				free(sbox);
+			} else {
+				printf("downgrading box.\n");
+				sbox->type = WRAP_BOX_NOTHING;
+				sbox->width = 0;
+			}
+
+		} else {
+			itemize_and_shape(sbox, e->pc);
+		}
+
+	}
+
+	wrap_contents(e->cursor_frame);
+	update_size(e);
 	fixup_cursor(e);
 	cur_box_diag(e);
 	sc_editor_redraw(e);

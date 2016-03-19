@@ -921,6 +921,15 @@ int wrap_contents(struct frame *fr)
 	fr->trouble = 0;
 	alloc_lines(fr);
 
+	for ( i=0; i<fr->n_paragraphs; i++ ) {
+		bv_free(fr->paragraphs[i]);
+	}
+	free(fr->paragraphs);
+	free(fr->paragraph_start_lines);
+	for ( i=0; i<fr->n_lines; i++ ) {
+		wrap_line_free(&fr->lines[i]);
+	}
+
 	/* Split text into paragraphs */
 	i = 0;
 	fr->n_paragraphs = 0;

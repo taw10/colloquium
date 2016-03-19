@@ -26,6 +26,7 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -72,6 +73,30 @@ int bv_add(struct boxvec *vec, struct wrap_box *bx)
 	if ( bv_ensure_space(vec, vec->n_boxes+1) ) return 1;
 	vec->boxes[vec->n_boxes++] = bx;
 	return 0;
+}
+
+
+static int find_box(struct boxvec *vec, struct wrap_box *bx)
+{
+	int i = 0;
+	while ( (i<vec->n_boxes) && (vec->boxes[i] != bx) ) i++;
+	return i;
+}
+
+
+void bv_del(struct boxvec *vec, struct wrap_box *bx)
+{
+	int n = find_box(vec, bx);
+	if ( n == vec->n_boxes ) {
+		fprintf(stderr, "Couldn't find box to delete it!\n");
+		return;
+	}
+	assert(vec->boxes[n] == bx);
+	if ( n < vec->n_boxes-1 ) {
+		memmove(&vec->boxes[n], &vec->boxes[n+1],
+		        (vec->n_boxes-n-1)*sizeof(struct wrap_box *));
+	}
+	vec->n_boxes--;
 }
 
 

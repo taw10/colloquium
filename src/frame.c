@@ -66,6 +66,11 @@ struct frame *frame_new()
 	n->num_children = 0;
 
 	n->scblocks = NULL;
+	n->n_paragraphs = 0;
+	n->paragraphs = NULL;
+	n->paragraph_start_lines = NULL;
+	n->lines = NULL;
+	n->n_lines = 0;
 
 	n->boxes = bv_new();
 

@@ -100,6 +100,30 @@ void bv_del(struct boxvec *vec, struct wrap_box *bx)
 }
 
 
+int bv_add_after(struct boxvec *vec, struct wrap_box *bx, struct wrap_box *add)
+{
+	int n = find_box(vec, bx);
+	if ( n == vec->n_boxes ) {
+		fprintf(stderr, "Couldn't find box to add after!\n");
+		return 1;
+	}
+	assert(vec->boxes[n] == bx);
+
+	n++;
+	bv_ensure_space(vec, vec->n_boxes+1);
+
+	if ( n < vec->n_boxes-1 ) {
+		memmove(&vec->boxes[n+1], &vec->boxes[n],
+		        (vec->n_boxes-n)*sizeof(struct wrap_box *));
+	} /* otherwise there's nothing to move */
+
+	vec->boxes[n] = add;
+	vec->n_boxes++;
+
+	return 0;
+}
+
+
 struct wrap_box *bv_box(struct boxvec *vec, int i)
 {
 	assert(vec != NULL);

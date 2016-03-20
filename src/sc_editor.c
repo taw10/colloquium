@@ -827,44 +827,76 @@ static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
 }
 
 
-static void fixup_line_breaks(struct wrap_box *sbox, struct wrap_line *line,
-                              int sbx, int cursor_pos, PangoLanguage *lang)
+static void fixup_line_breaks(struct wrap_box *sbox, struct boxvec *boxes,
+                              int cursor_pos, PangoLanguage *lang,
+                              PangoContext *pc)
 {
 	const char *text;
 	size_t len_bytes;
 	int len_chars;
 	PangoLogAttr *log_attrs;
 	int offs;
-	return; /* FIXME ! */
 
+	/* Run pango_get_log_attrs on the entire SCBlock, to get good context */
 	text = sc_block_contents(sbox->scblock);
 	len_bytes = strlen(text);
 	len_chars = g_utf8_strlen(text, -1);
+	if ( len_chars <= 1 ) return;
 	log_attrs = malloc((len_chars+1)*sizeof(PangoLogAttr));
 	if ( log_attrs == NULL ) return;
 	pango_get_log_attrs(text, len_bytes, -1, lang,
 	                    log_attrs, len_chars+1);
 
+	/* Take a peek at the situation near where we just typed */
 	offs = sbox->offs_char + cursor_pos;
-
-	if ( (len_chars > 1) && log_attrs[offs+1].is_line_break ) {
+	if ( log_attrs[offs+1].is_line_break ) {
 
 		struct wrap_box *nbox;
 
-		printf("Adding line break (new box)\n");
+		printf("Adding line break (new box) at pos %i\n", offs);
+		printf("offset %i into box\n", cursor_pos);
 
 		/* Add a new box containing the text after the break */
-		insert_box(line, sbx);
-		nbox = bv_box(line->boxes, sbx);
+		nbox = calloc(1, sizeof(struct wrap_box));
+		if ( nbox == NULL ) {
+			fprintf(stderr, "Failed to allocate a text box.\n");
+			return;
+		}
+		bv_add_after(boxes, sbox, nbox);
 		nbox->type = WRAP_BOX_PANGO;
-		nbox->space = WRAP_SPACE_INTERWORD;
-		nbox->len_chars = cursor_pos;
+		nbox->space = sbox->space;
+		nbox->len_chars = sbox->len_chars - cursor_pos;
+		nbox->offs_char = sbox->offs_char + cursor_pos;
+		nbox->scblock = sbox->scblock;
+		nbox->fontdesc = pango_font_description_copy(sbox->fontdesc);
+		nbox->col[0] = sbox->col[0];
+		nbox->col[1] = sbox->col[1];
+		nbox->col[2] = sbox->col[2];
+		nbox->col[3] = sbox->col[3];
+		nbox->editable = sbox->editable;
 
 		/* Shorten the text in the first box */
-		sbox->len_chars -= cursor_pos;
+		sbox->len_chars = cursor_pos;
+		if ( log_attrs[offs].is_expandable_space ) {
+			sbox->space = WRAP_SPACE_INTERWORD;
+			nbox->len_chars--;
+			nbox->offs_char++;
+		} else if ( log_attrs[offs+1].is_mandatory_break ) {
+			sbox->space = WRAP_SPACE_EOP;
+			printf("New paragraph!\n");
+			nbox->offs_char++;
+			nbox->len_chars--;
+		} else {
+			sbox->space = WRAP_SPACE_NONE;
+			printf("two boxes.\n");
+		}
 
-		shape_box(sbox);
-		//shape_box(nbox);
+		printf("boxes: <%i %i %i>[%i %i %i]\n",
+		       sbox->offs_char, sbox->len_chars, sbox->n_segs,
+		       nbox->offs_char, nbox->len_chars, nbox->n_segs);
+
+		itemize_and_shape(nbox, pc);
+		/* sbox will get done in just a moment */
 
 	}
 
@@ -914,12 +946,12 @@ static void insert_text(char *t, SCEditor *e)
 	/* Tweak the offsets of all the subsequent boxes */
 	shift_box_offsets(fr, sbox, 1);
 
+	fixup_line_breaks(sbox, e->cursor_frame->boxes, e->cursor_pos,
+	                  e->lang, e->pc);
+
 	/* The box must be analysed by Pango again, because the segments
 	 * might have changed */
 	itemize_and_shape(sbox, e->pc);
-
-	fixup_line_breaks(sbox, &e->cursor_frame->lines[sln], sbx,
-	                  e->cursor_pos, e->lang);
 
 	fr->empty = 0;
 

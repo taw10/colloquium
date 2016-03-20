@@ -56,6 +56,10 @@ extern int bv_add(struct boxvec *vec, struct wrap_box *bx);
 /* (Find and then) delete a box from a boxvec */
 extern void bv_del(struct boxvec *vec, struct wrap_box *bx);
 
+/* Add a new box after the specified one */
+extern int bv_add_after(struct boxvec *vec, struct wrap_box *bx,
+                        struct wrap_box *add);
+
 /* Get a box from a boxvec or bxvec */
 extern struct wrap_box *bv_box(struct boxvec *vec, int i);
 extern struct wrap_box *bv_last(struct boxvec *vec);

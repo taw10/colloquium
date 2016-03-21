@@ -376,7 +376,6 @@ int split_words(struct boxvec *boxes, PangoContext *pc, SCBlock *bl,
 			/* Stuff up to (but not including) sc[i] forms a
 			 * wrap box */
 			len = offs - start;
-			/* FIXME: Ugh */
 			if ( log_attrs[i].is_mandatory_break ) {
 				type = WRAP_SPACE_EOP;
 				if ( (i>0) && (g_utf8_prev_char(ptr)[0]=='\n') ) len--;

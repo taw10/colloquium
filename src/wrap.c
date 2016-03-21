@@ -142,6 +142,7 @@ static double text_box_index_to_x(struct wrap_box *box, int pos)
 	int p;
 	int i;
 	int err;
+	ptrdiff_t offs_p;
 
 	nseg = which_segment(box, pos, &err);
 	if ( err ) return 0.0;
@@ -159,10 +160,16 @@ static double text_box_index_to_x(struct wrap_box *box, int pos)
 	                                    box->offs_char + seg->offs_char);
 	ep = g_utf8_offset_to_pointer(seg_text, seg->len_chars);
 
-	/* FIXME: pos should be in bytes, not chars */
+	/* Make character position relative to segment start (not box start) */
+	pos -= seg->offs_char;
+
+	/* Convert the character position to a byte offset */
+	offs_p = g_utf8_offset_to_pointer(seg_text, pos) - seg_text;
+
 	pango_glyph_string_index_to_x(seg->glyphs, (char *)seg_text,
 	                              ep - seg_text, &seg->analysis,
-	                              pos, FALSE, &p);
+	                              offs_p, FALSE, &p);
+
 	return pango_units_to_double(x+p);
 }
 

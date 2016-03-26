@@ -827,6 +827,74 @@ static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
 }
 
 
+static void maybe_downgrade_box(struct wrap_box *box)
+{
+	if ( box->len_chars == 0 ) {
+
+		printf("Downgrading box.\n");
+		box->type = WRAP_BOX_NOTHING;
+	}
+}
+
+
+static void split_boxes(struct wrap_box *sbox, PangoLogAttr *log_attrs,
+                        int offs, int cursor_pos, struct boxvec *boxes,
+                        PangoContext *pc)
+{
+	struct wrap_box *nbox;
+
+	printf("Adding line break (new box) at pos %i\n", offs);
+	printf("offset %i into box\n", cursor_pos);
+
+	/* Add a new box containing the text after the break */
+	nbox = calloc(1, sizeof(struct wrap_box));
+	if ( nbox == NULL ) {
+		fprintf(stderr, "Failed to allocate a text box.\n");
+		return;
+	}
+	bv_add_after(boxes, sbox, nbox);
+	nbox->type = WRAP_BOX_PANGO;
+	nbox->space = sbox->space;
+	nbox->len_chars = sbox->len_chars - cursor_pos;
+	if ( nbox->len_chars == 0 ) {
+		printf("WARNING! Zero-length box!\n");
+	}
+	nbox->offs_char = sbox->offs_char + cursor_pos;
+	nbox->scblock = sbox->scblock;
+	nbox->fontdesc = pango_font_description_copy(sbox->fontdesc);
+	nbox->col[0] = sbox->col[0];
+	nbox->col[1] = sbox->col[1];
+	nbox->col[2] = sbox->col[2];
+	nbox->col[3] = sbox->col[3];
+	nbox->editable = sbox->editable;
+
+	/* Shorten the text in the first box */
+	sbox->len_chars = cursor_pos;
+	if ( log_attrs[offs].is_expandable_space ) {
+		sbox->space = WRAP_SPACE_INTERWORD;
+		nbox->len_chars--;
+		nbox->offs_char++;
+		maybe_downgrade_box(nbox);
+	} else if ( log_attrs[offs+1].is_mandatory_break ) {
+		sbox->space = WRAP_SPACE_EOP;
+		printf("New paragraph!\n");
+		nbox->offs_char++;
+		nbox->len_chars--;
+		maybe_downgrade_box(nbox);
+	} else {
+		sbox->space = WRAP_SPACE_NONE;
+		printf("two boxes.\n");
+	}
+
+	printf("boxes: <%i %i %i>[%i %i %i]\n",
+	       sbox->offs_char, sbox->len_chars, sbox->n_segs,
+	       nbox->offs_char, nbox->len_chars, nbox->n_segs);
+
+	itemize_and_shape(nbox, pc);
+	/* sbox will get done in just a moment */
+}
+
+
 static void fixup_line_breaks(struct wrap_box *sbox, struct boxvec *boxes,
                               int cursor_pos, PangoLanguage *lang,
                               PangoContext *pc)
@@ -851,52 +919,26 @@ static void fixup_line_breaks(struct wrap_box *sbox, struct boxvec *boxes,
 	offs = sbox->offs_char + cursor_pos;
 	if ( log_attrs[offs+1].is_line_break ) {
 
-		struct wrap_box *nbox;
-
-		printf("Adding line break (new box) at pos %i\n", offs);
-		printf("offset %i into box\n", cursor_pos);
-
-		/* Add a new box containing the text after the break */
-		nbox = calloc(1, sizeof(struct wrap_box));
-		if ( nbox == NULL ) {
-			fprintf(stderr, "Failed to allocate a text box.\n");
-			return;
-		}
-		bv_add_after(boxes, sbox, nbox);
-		nbox->type = WRAP_BOX_PANGO;
-		nbox->space = sbox->space;
-		nbox->len_chars = sbox->len_chars - cursor_pos;
-		nbox->offs_char = sbox->offs_char + cursor_pos;
-		nbox->scblock = sbox->scblock;
-		nbox->fontdesc = pango_font_description_copy(sbox->fontdesc);
-		nbox->col[0] = sbox->col[0];
-		nbox->col[1] = sbox->col[1];
-		nbox->col[2] = sbox->col[2];
-		nbox->col[3] = sbox->col[3];
-		nbox->editable = sbox->editable;
-
-		/* Shorten the text in the first box */
-		sbox->len_chars = cursor_pos;
-		if ( log_attrs[offs].is_expandable_space ) {
-			sbox->space = WRAP_SPACE_INTERWORD;
-			nbox->len_chars--;
-			nbox->offs_char++;
-		} else if ( log_attrs[offs+1].is_mandatory_break ) {
-			sbox->space = WRAP_SPACE_EOP;
-			printf("New paragraph!\n");
-			nbox->offs_char++;
-			nbox->len_chars--;
+		/* If there just happens to be two boxes without a space
+		 * between them, just tweak the space. */
+		if ( (cursor_pos == sbox->len_chars-1)
+		  && (sbox->space == WRAP_SPACE_NONE) )
+		{
+			printf("Easy case! :D\n");
+			if ( log_attrs[offs].is_expandable_space ) {
+				sbox->space = WRAP_SPACE_INTERWORD;
+				sbox->len_chars--;
+			} else if ( log_attrs[offs+1].is_mandatory_break ) {
+				sbox->space = WRAP_SPACE_EOP;
+				sbox->len_chars--;
+			} else {
+				printf("WTF space type?\n");
+			}
 		} else {
-			sbox->space = WRAP_SPACE_NONE;
-			printf("two boxes.\n");
+			split_boxes(sbox, log_attrs, offs, cursor_pos,
+			            boxes, pc);
 		}
 
-		printf("boxes: <%i %i %i>[%i %i %i]\n",
-		       sbox->offs_char, sbox->len_chars, sbox->n_segs,
-		       nbox->offs_char, nbox->len_chars, nbox->n_segs);
-
-		itemize_and_shape(nbox, pc);
-		/* sbox will get done in just a moment */
 
 	}
 

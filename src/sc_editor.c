@@ -940,6 +940,13 @@ static void fixup_line_breaks(struct wrap_box *sbox, struct boxvec *boxes,
 		}
 
 
+	} else {
+		if ( log_attrs[offs].is_expandable_space ) {
+			printf("Space at end!\n");
+			if ( sbox->space == WRAP_SPACE_NONE ) {
+				sbox->space = WRAP_SPACE_INTERWORD;
+			}
+		}
 	}
 
 	free(log_attrs);
@@ -952,7 +959,7 @@ static void insert_text(char *t, SCEditor *e)
 	struct wrap_box *sbox;
 	struct frame *fr = e->cursor_frame;
 
-	printf("insert! --------------------------------------------------------\n");
+	printf("insert! ---------------------------------------------------\n");
 
 	if ( fr == NULL ) return;
 
@@ -1017,12 +1024,17 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	/* If this is, say, the top level frame, do nothing */
 	if ( fr->n_lines == 0 ) return;
 
+	printf("Backspace! ------------------------------------------------\n");
+	printf("sbox:\n");
+	cur_box_diag(e);
 	sln = e->cursor_line;
 	sbx = e->cursor_box;
 	sps = e->cursor_pos;
 	struct wrap_box *sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
 
 	move_cursor_back(e);
+	printf("fbox:\n");
+	cur_box_diag(e);
 
 	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
 	struct wrap_line *fline = &e->cursor_frame->lines[e->cursor_line];
@@ -1047,6 +1059,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 		 * space to delete */
 		if ( fbox->len_chars == 0 ) {
 			printf("Deleting a zero-length box\n");
+
 		} else {
 			fbox->len_chars -= 1;
 			shift_box_offsets(fr, fbox, -1);
@@ -1086,6 +1099,8 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	update_size(e);
 	fixup_cursor(e);
 	cur_box_diag(e);
+	printf("done! -----------------------------------------------------\n");
+
 	sc_editor_redraw(e);
 }
 
@@ -1556,6 +1571,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		e->cursor_line = 0;
 		e->cursor_box = 0;
 		e->cursor_pos = 0;
+		cur_box_diag(e);
 		break;
 
 		case DRAG_REASON_IMPORT :
@@ -1647,6 +1663,9 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_F5 :
 		full_rerender(e);
 		break;
+
+		case GDK_KEY_F6 :
+		cur_box_diag(e);
 
 	}
 

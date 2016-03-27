@@ -207,7 +207,7 @@ static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
 		box = bv_box(line->boxes, j);
 		cairo_translate(cr, x_pos, 0.0);
 
-		//draw_outline(cr, box);
+		draw_outline(cr, box);
 
 		switch ( box->type ) {
 

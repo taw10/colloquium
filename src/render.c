@@ -205,7 +205,7 @@ static void render_paragraph(cairo_t *cr, Paragraph *para)
 
 
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
-                     enum is_size isz, double min_y, double max_y)
+                      enum is_size isz, double min_y, double max_y)
 {
 	int i;
 	double hpos = 0.0;
@@ -287,23 +287,12 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                cairo_t *cr, double w, double h,
                                PangoLanguage *lang)
 {
-	cairo_font_options_t *fopts;
-	PangoFontMap *fontmap;
 	PangoContext *pc;
 	SCInterpreter *scin;
 	char snum[64];
 	struct frame *top;
 
-	fopts = cairo_font_options_create();
-	cairo_font_options_set_hint_style(fopts, CAIRO_HINT_STYLE_FULL);
-	cairo_font_options_set_hint_metrics(fopts, CAIRO_HINT_METRICS_DEFAULT);
-	cairo_font_options_set_antialias(fopts, CAIRO_ANTIALIAS_GRAY);
-	cairo_set_font_options(cr, fopts);
-
-	/* Find and load font */
-	fontmap = pango_cairo_font_map_get_default();
-	pc = pango_font_map_create_context(fontmap);
-	pango_cairo_update_context(cr, pc);
+	pc = pango_cairo_create_context(cr);
 
 	top = frame_new();
 	top->resizable = 0;
@@ -334,7 +323,6 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	sc_interp_add_blocks(scin, scblocks);
 
 	sc_interp_destroy(scin);
-	cairo_font_options_destroy(fopts);
 	g_object_unref(pc);
 
 	return top;
@@ -384,6 +372,7 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	top = render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
 	                           stylesheets, cbl, is, isz,slide_number,
 	                           lang, pc);
+	g_object_unref(pc);
 	cairo_destroy(cr);
 
 	*ptop = top;

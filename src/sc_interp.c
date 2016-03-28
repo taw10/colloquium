@@ -845,11 +845,12 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 
 		if ( text[start] == '\n' ) {
 			close_last_paragraph(fr);
+			start += 1;
 		} else  {
 			Paragraph *para = last_open_para(fr);
 			add_run(para, bl, start, len, fontdesc, 0);
+			start += len;
 		}
-		start += len + 1;
 
 	} while ( start < len_bytes );
 

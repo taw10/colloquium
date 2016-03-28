@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "sc_parse.h"
 #include "frame.h"
@@ -53,17 +54,26 @@ enum para_type
 struct _paragraph
 {
 	enum para_type   type;
+	double           height;
 
+	/* For PARA_TYPE_TEXT */
 	int              n_runs;
 	struct text_run *runs;
 	int              open;
 	PangoLayout     *layout;
 
+	/* For PARA_TYPE_IMAGE */
 	char            *filename;
 	double           image_w;
 	double           image_h;
 
-	double           height;
+	/* For PARA_TYPE_CALLBACK */
+	double                cb_w;
+	double                cb_h;
+	SCCallbackDrawFunc    draw_func;
+	SCCallbackClickFunc   click_func;
+	void                 *bvp;
+	void                 *vp;
 };
 
 
@@ -267,6 +277,8 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 	PangoRectangle rect;
 	size_t pos = 0;
 
+	if ( para->type != PARA_TYPE_TEXT ) return;
+
 	for ( i=0; i<para->n_runs; i++ ) {
 		total_len += para->runs[i].len_bytes;
 	}
@@ -377,7 +389,23 @@ void add_callback_para(struct frame *fr, double w, double h,
                        SCCallbackClickFunc click_func, void *bvp,
                        void *vp)
 {
-	/* FIXME */
+	Paragraph *pnew;
+
+	pnew = create_paragraph(fr);
+	if ( pnew == NULL ) {
+		fprintf(stderr, "Failed to add callback paragraph\n");
+		return;
+	}
+
+	pnew->type = PARA_TYPE_CALLBACK;
+	pnew->cb_w = w;
+	pnew->cb_h = h;
+	pnew->draw_func = draw_func;
+	pnew->click_func = click_func;
+	pnew->bvp = bvp;
+	pnew->vp = vp;
+	pnew->height = h;
+	pnew->open = 0;
 }
 
 
@@ -387,11 +415,17 @@ void add_image_para(struct frame *fr, const char *filename,
 	Paragraph *pnew;
 
 	pnew = create_paragraph(fr);
+	if ( pnew == NULL ) {
+		fprintf(stderr, "Failed to add image paragraph\n");
+		return;
+	}
 
 	pnew->type = PARA_TYPE_IMAGE;
 	pnew->filename = strdup(filename);
 	pnew->image_w = w;
 	pnew->image_h = h;
+	pnew->height = h;
+	pnew->open = 0;
 }
 
 
@@ -436,6 +470,31 @@ void close_last_paragraph(struct frame *fr)
 }
 
 
+static void render_from_surf(cairo_surface_t *surf, cairo_t *cr,
+                             double w, double h, int border)
+{
+	double x, y;
+
+	x = 0.0;  y = 0.0;
+	cairo_user_to_device(cr, &x, &y);
+	x = rint(x);  y = rint(y);
+	cairo_device_to_user(cr, &x, &y);
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x, y, w, h);
+	cairo_set_source_surface(cr, surf, 0.0, 0.0);
+	cairo_fill(cr);
+
+	if ( border ) {
+		cairo_new_path(cr);
+		cairo_rectangle(cr, x+0.5, y+0.5, w, h);
+		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
+	}
+}
+
+
 void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
                       enum is_size isz)
 {
@@ -451,11 +510,15 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
 		break;
 
 		case PARA_TYPE_IMAGE :
-		cairo_new_path(cr);
-		cairo_rectangle(cr, 0.0, 0.0, para->image_w, para->image_h);
 		surf = lookup_image(is, para->filename, para->image_w, isz);
-		cairo_set_source_surface(cr, surf, 0.0, 0.0);
-		cairo_fill(cr);
+		render_from_surf(surf, cr, para->image_w, para->image_h, 0);
+		break;
+
+		case PARA_TYPE_CALLBACK :
+		surf = para->draw_func(para->cb_w, para->cb_h,
+		                       para->bvp, para->vp);
+		render_from_surf(surf, cr, para->cb_w, para->cb_h, 1);
+		cairo_surface_destroy(surf);  /* FIXME: Cache like crazy */
 		break;
 
 	}

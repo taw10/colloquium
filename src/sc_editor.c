@@ -362,27 +362,6 @@ void sc_editor_delete_selected_frame(SCEditor *e)
 }
 
 
-static int find_cursor(struct frame *fr, double x, double y,
-                       int *ppara, int *ppos)
-{
-	*ppara = 0;
-	*ppos = 0;
-	return 0;
-}
-
-
-static void move_cursor_back(SCEditor *e)
-{
-	/* FIXME */
-}
-
-
-void advance_cursor(SCEditor *e)
-{
-	/* FIXME */
-}
-
-
 static gint destroy_sig(GtkWidget *window, SCEditor *e)
 {
 	return 0;
@@ -420,23 +399,19 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 }
 
 
-static void draw_caret(cairo_t *cr, struct frame *fr)
+static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
+                       size_t cursor_pos, int cursor_trail)
 {
-#if 0
-	double xposd, yposd, cx;
-	double clow, chigh;
-	PangoRectangle pos;
+	double cx, clow, chigh, h;
 	const double t = 1.8;
 
-	pango_layout_get_cursor_pos(o->layout,
-	                            o->insertion_point+o->insertion_trail,
-	                            &pos, NULL);
+	if ( get_cursor_pos(fr, cursor_para, cursor_pos+cursor_trail,
+	                    &cx, &clow, &h) )
+	{
+		return;
+	}
 
-	xposd = pos.x/PANGO_SCALE;
-	cx = o->base.x - o->offs_x + xposd;
-	yposd = pos.y/PANGO_SCALE;
-	clow = o->base.y - o->offs_y + yposd;
-	chigh = clow + (pos.height/PANGO_SCALE);
+	chigh = clow + h;
 
 	cairo_move_to(cr, cx, clow);
 	cairo_line_to(cr, cx, chigh);
@@ -454,7 +429,6 @@ static void draw_caret(cairo_t *cr, struct frame *fr)
 	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
-#endif
 }
 
 
@@ -488,7 +462,8 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 			draw_resize_handle(cr, x+w-20.0, y+h-20.0);
 		}
 
-		draw_caret(cr, e->cursor_frame);
+		draw_caret(cr, e->cursor_frame, e->cursor_para, e->cursor_pos,
+		           e->cursor_trail);
 
 	}
 
@@ -558,16 +533,6 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 	draw_overlay(cr, e);
 
 	return FALSE;
-}
-
-
-static void move_cursor(SCEditor *e, signed int x, signed int y)
-{
-	if ( x > 0 ) {
-		advance_cursor(e);
-	} else {
-		move_cursor_back(e);
-	}
 }
 
 
@@ -881,7 +846,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 				e->cursor_frame = clicked;
 				find_cursor(clicked, x-fr->x, y-fr->y,
-				            &e->cursor_para, &e->cursor_pos);
+				            &e->cursor_para, &e->cursor_pos,
+				            &e->cursor_trail);
 
 				e->start_corner_x = event->x - e->border_offs_x;
 				e->start_corner_y = event->y - e->border_offs_y;
@@ -914,7 +880,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		e->selection = clicked;
 		e->cursor_frame = clicked;
 		find_cursor(clicked, x-clicked->x, y-clicked->y,
-		            &e->cursor_para, &e->cursor_pos);
+		            &e->cursor_para, &e->cursor_pos, &e->cursor_trail);
 
 	}
 
@@ -1122,7 +1088,8 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Left :
 		if ( e->selection != NULL ) {
-			move_cursor(e, -1, 0);
+			cursor_moveh(e->cursor_frame, &e->cursor_para,
+			            &e->cursor_pos, &e->cursor_trail, -1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;
@@ -1130,7 +1097,8 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Right :
 		if ( e->selection != NULL ) {
-			move_cursor(e, +1, 0);
+			cursor_moveh(e->cursor_frame, &e->cursor_para,
+			            &e->cursor_pos, &e->cursor_trail, +1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;
@@ -1138,7 +1106,8 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Up :
 		if ( e->selection != NULL ) {
-			move_cursor(e, 0, -1);
+			cursor_movev(e->cursor_frame, &e->cursor_para,
+			            &e->cursor_pos, &e->cursor_trail, -1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;
@@ -1146,7 +1115,8 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Down :
 		if ( e->selection != NULL ) {
-			move_cursor(e, 0, +1);
+			cursor_movev(e->cursor_frame, &e->cursor_para,
+			            &e->cursor_pos, &e->cursor_trail, +1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;

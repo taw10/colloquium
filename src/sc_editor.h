@@ -119,6 +119,7 @@ struct _sceditor
 	struct frame        *cursor_frame;
 	int                  cursor_para; /* paragraph index */
 	int                  cursor_pos;  /* character offset into paragraph */
+	int                  cursor_trail;
 
 	/* Border surrounding actual slide within drawingarea */
 	double               border_offs_x;

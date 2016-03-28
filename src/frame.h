@@ -125,4 +125,18 @@ extern void add_image_para(struct frame *fr, const char *filename,
 
 extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w);
 
+extern size_t end_offset_of_para(struct frame *fr, int pn);
+
+extern int find_cursor(struct frame *fr, double x, double y,
+                       int *ppara, int *ppos, int *ptrail);
+
+extern int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
+                          double *cx, double *cy, double *ch);
+
+extern void cursor_moveh(struct frame *fr, int *cpara, int *cpos, int *ctrail,
+                         signed int dir);
+
+extern void cursor_movev(struct frame *fr, int *cpara, int *cpos, int *ctrail,
+                         signed int dir);
+
 #endif	/* FRAME_H */

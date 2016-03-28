@@ -523,3 +523,121 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
 
 	}
 }
+
+
+size_t end_offset_of_para(struct frame *fr, int pn)
+{
+	int i;
+	size_t total = 0;
+	for ( i=0; i<fr->paras[pn]->n_runs; i++ ) {
+		total += fr->paras[pn]->runs[i].len_bytes;
+	}
+	return total;
+}
+
+
+/* Local x,y in paragraph -> text offset */
+static int text_para_pos(Paragraph *para, double x, double y, int *ptrail)
+{
+	int idx;
+	pango_layout_xy_to_index(para->layout, pango_units_from_double(x),
+	                         pango_units_from_double(y), &idx, ptrail);
+	return idx;
+}
+
+
+int find_cursor(struct frame *fr, double x, double y,
+                int *ppara, int *ppos, int *ptrail)
+{
+	double pos = fr->pad_t;
+	int i;
+
+	for ( i=0; i<fr->n_paras; i++ ) {
+		double npos = pos + fr->paras[i]->height;
+		if ( npos > y ) {
+			*ppara = i;
+			if ( fr->paras[i]->type == PARA_TYPE_TEXT ) {
+				*ppos = text_para_pos(fr->paras[i], x-fr->pad_l,
+				                      y-pos, ptrail);
+			} else {
+				*ppos = 0;
+			}
+			return 0;
+		}
+		pos = npos;
+	}
+
+	/* Pretend it's in the last paragraph */
+	pos -= fr->paras[fr->n_paras-1]->height;
+	*ppara = fr->n_paras - 1;
+	*ppos = text_para_pos(fr->paras[i], x - fr->pad_l, y - pos, ptrail);
+	return 0;
+}
+
+
+int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
+                   double *cx, double *cy, double *ch)
+{
+	Paragraph *para;
+	PangoRectangle rect;
+	int i;
+	double py = 0.0;
+
+	if ( cursor_para > fr->n_paras ) {
+		fprintf(stderr, "Cursor paragraph number is too high!\n");
+		return 1;
+	}
+
+	para = fr->paras[cursor_para];
+
+	if ( para->type != PARA_TYPE_TEXT ) return 1;
+
+	pango_layout_get_cursor_pos(para->layout, cursor_pos, &rect, NULL);
+
+	for ( i=0; i<cursor_para; i++ ) {
+		py += fr->paras[i]->height;
+	}
+	*cx = pango_units_to_double(rect.x) + fr->pad_l;
+	*cy = pango_units_to_double(rect.y) + fr->pad_t + py;
+	*ch = pango_units_to_double(rect.height);
+	return 0;
+}
+
+
+void cursor_moveh(struct frame *fr, int *cpara, int *cpos, int *ctrail,
+                  signed int dir)
+{
+	Paragraph *para = fr->paras[*cpara];
+
+	if ( (*cpos+*ctrail == end_offset_of_para(fr, *cpara)) && (dir > 0) ) {
+		if ( *cpara < fr->n_paras-1 ) {
+			(*cpara)++;
+			*cpos = 0;
+			*ctrail = 0;
+			return;
+		} else {
+			/* Can't move any further */
+			return;
+		}
+	}
+
+	if ( (*cpos+*ctrail == 0) && (dir < 0) ) {
+		if ( *cpara > 0 ) {
+			(*cpara)--;
+			*cpos = end_offset_of_para(fr, *cpara) - 1;
+			*ctrail = 1;
+			return;
+		} else {
+			/* Can't move any further */
+			return;
+		}
+	}
+	pango_layout_move_cursor_visually(para->layout, 1, *cpos, *ctrail,
+	                                  dir, cpos, ctrail);
+}
+
+
+void cursor_movev(struct frame *fr, int *cpara, int *cpos, int *ctrail,
+                  signed int dir)
+{
+}

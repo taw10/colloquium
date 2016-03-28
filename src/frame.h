@@ -139,4 +139,6 @@ extern void cursor_moveh(struct frame *fr, int *cpara, int *cpos, int *ctrail,
 extern void cursor_movev(struct frame *fr, int *cpara, int *cpos, int *ctrail,
                          signed int dir);
 
+extern void check_callback_click(struct frame *fr, int para);
+
 #endif	/* FRAME_H */

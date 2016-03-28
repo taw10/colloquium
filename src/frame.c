@@ -641,3 +641,12 @@ void cursor_movev(struct frame *fr, int *cpara, int *cpos, int *ctrail,
                   signed int dir)
 {
 }
+
+
+void check_callback_click(struct frame *fr, int para)
+{
+	Paragraph *p = fr->paras[para];
+	if ( p->type == PARA_TYPE_CALLBACK ) {
+		p->click_func(0.0, 0.0, p->bvp, p->vp);
+	}
+}

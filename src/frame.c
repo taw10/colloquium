@@ -570,7 +570,8 @@ int find_cursor(struct frame *fr, double x, double y,
 	/* Pretend it's in the last paragraph */
 	pos -= fr->paras[fr->n_paras-1]->height;
 	*ppara = fr->n_paras - 1;
-	*ppos = text_para_pos(fr->paras[i], x - fr->pad_l, y - pos, ptrail);
+	*ppos = text_para_pos(fr->paras[fr->n_paras-1],
+	                      x - fr->pad_l, y - pos, ptrail);
 	return 0;
 }
 

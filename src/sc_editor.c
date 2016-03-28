@@ -411,6 +411,8 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
 		return;
 	}
 
+	cx += fr->x;
+	clow += fr->y;
 	chigh = clow + h;
 
 	cairo_move_to(cr, cx, clow);

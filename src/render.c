@@ -40,30 +40,10 @@
 #include "presentation.h"
 #include "frame.h"
 #include "render.h"
-#include "wrap.h"
 #include "imagestore.h"
-#include "boxvec.h"
 
 
-static void render_glyph_box(cairo_t *cr, struct wrap_box *box)
-{
-	int i;
-
-	cairo_new_path(cr);
-	cairo_move_to(cr, 0.0, 0.0);
-	if ( box->segs == NULL ) {
-		fprintf(stderr, "Box %p has NULL pointer.\n", box);
-		return;
-	}
-	cairo_set_source_rgba(cr, box->col[0], box->col[1], box->col[2],
-	                      box->col[3]);
-	for ( i=0; i<box->n_segs; i++ ) {
-		pango_cairo_show_glyph_string(cr, box->font,
-		                              box->segs[i].glyphs);
-	}
-}
-
-
+#if 0
 static void render_callback_box(cairo_t *cr, struct wrap_box *box)
 {
 	double ascd;
@@ -112,8 +92,10 @@ static void render_callback_box(cairo_t *cr, struct wrap_box *box)
 
 	cairo_surface_destroy(surf);
 }
+#endif
 
 
+#if 0
 static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
                              enum is_size isz)
 {
@@ -160,172 +142,9 @@ static void render_image_box(cairo_t *cr, struct wrap_box *box, ImageStore *is,
 	cairo_fill(cr);
 	cairo_restore(cr);
 }
+#endif
 
 
-static void UNUSED draw_outline(cairo_t *cr, struct wrap_box *box)
-{
-	double asc, desc;
-
-	if ( box->type == WRAP_BOX_SENTINEL ) return;
-
-	asc = pango_units_to_double(box->ascent);
-	desc = pango_units_to_double(box->height) - asc;
-
-	cairo_rectangle(cr, 0.0, -asc, pango_units_to_double(box->width),
-			         asc + desc);
-	if ( box->type == WRAP_BOX_NOTHING ) {
-		cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-		cairo_set_line_width(cr, 0.1);
-	} else if ( box->type == WRAP_BOX_SENTINEL ) {
-		cairo_set_source_rgb(cr, 1.0, 0.0, 1.0);
-		cairo_set_line_width(cr, 0.5);
-	} else {
-		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-	cairo_set_line_width(cr, 0.1);
-	}
-	cairo_stroke(cr);
-
-	cairo_rectangle(cr, pango_units_to_double(box->width), -asc,
-			pango_units_to_double(box->sp), asc + desc);
-	cairo_set_source_rgba(cr, 0.7, 0.4, 0.7, 0.2);
-	cairo_fill(cr);
-}
-
-
-static void render_boxes(struct wrap_line *line, cairo_t *cr, ImageStore *is,
-                         enum is_size isz)
-{
-	int j;
-	double x_pos = 0.0;
-
-	for ( j=0; j<bv_len(line->boxes); j++ ) {
-
-		struct wrap_box *box;
-
-		cairo_save(cr);
-
-		box = bv_box(line->boxes, j);
-		cairo_translate(cr, x_pos, 0.0);
-
-		draw_outline(cr, box);
-
-		switch ( box->type ) {
-
-			case WRAP_BOX_PANGO :
-			render_glyph_box(cr, box);
-			break;
-
-			case WRAP_BOX_IMAGE :
-			render_image_box(cr, box, is, isz);
-			break;
-
-			case WRAP_BOX_CALLBACK:
-			render_callback_box(cr, box);
-			break;
-
-			case WRAP_BOX_NOTHING :
-			break;
-
-			case WRAP_BOX_SENTINEL :
-			/* Do nothing */
-			break;
-
-		}
-
-		x_pos += pango_units_to_double(box->width);
-		x_pos += pango_units_to_double(box->sp);
-
-		cairo_restore(cr);
-
-	}
-}
-
-
-static void draw_overfull_marker(cairo_t *cr, struct frame *fr, int i)
-{
-	cairo_move_to(cr, fr->w - fr->pad_l- fr->pad_r, 0.0);
-	cairo_line_to(cr, fr->w - fr->pad_l - fr->pad_r,
-	                  pango_units_to_double(fr->lines[i].height));
-	cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-	cairo_set_line_width(cr, 4.0);
-	cairo_stroke(cr);
-}
-
-
-static void draw_underfull_marker(cairo_t *cr, struct frame *fr, int i)
-{
-	cairo_move_to(cr, fr->w - fr->pad_l- fr->pad_r, 0.0);
-	cairo_line_to(cr, fr->w - fr->pad_l - fr->pad_r,
-	                  pango_units_to_double(fr->lines[i].height));
-	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-	cairo_set_line_width(cr, 4.0);
-	cairo_stroke(cr);
-}
-
-
-static void render_lines(struct frame *fr, cairo_t *cr, ImageStore *is,
-                         enum is_size isz, double min_y, double max_y)
-{
-	int i;
-	double y_pos = 0.0;
-	const int debug = 0;
-
-	for ( i=0; i<fr->n_lines; i++ ) {
-
-		/* FIXME: Line spacing */
-		double lh = pango_units_to_double(fr->lines[i].height);
-
-		if ( y_pos+lh < min_y ) {
-			y_pos += lh;
-			continue;
-		}
-
-		if ( y_pos > max_y ) break;
-
-		cairo_save(cr);
-
-		/* Move to beginning of the line */
-		cairo_translate(cr, 0.0, y_pos);
-
-		if ( debug ) {
-			cairo_move_to(cr,
-			        0.0,
-				0.5+pango_units_to_double(fr->lines[i].ascent));
-			cairo_line_to(cr,
-			        pango_units_to_double(fr->lines[i].width),
-				0.5+pango_units_to_double(fr->lines[i].ascent));
-			cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-			cairo_set_line_width(cr, 1.0);
-			cairo_stroke(cr);
-
-			cairo_move_to(cr, 0.0, 0.0);
-			cairo_line_to(cr, 0.0,
-			            pango_units_to_double(fr->lines[i].height));
-			cairo_set_line_width(cr, 3.0);
-			cairo_set_source_rgb(cr, 0.0, 1.0, 0.0);
-			cairo_stroke(cr);
-		}
-
-		/* Render the line */
-		cairo_save(cr);
-		cairo_translate(cr, 0.0,
-		                    pango_units_to_double(fr->lines[i].ascent));
-		render_boxes(&fr->lines[i], cr, is, isz);
-		cairo_restore(cr);
-
-		if ( debug && fr->lines[i].overfull ) {
-			draw_overfull_marker(cr, fr, i);
-		}
-		if ( debug && fr->lines[i].underfull ) {
-			draw_underfull_marker(cr, fr, i);
-		}
-
-		y_pos += lh;
-
-		cairo_restore(cr);
-
-	}
-}
 
 
 static void do_background(cairo_t *cr, struct frame *fr)
@@ -375,23 +194,34 @@ static void do_background(cairo_t *cr, struct frame *fr)
 }
 
 
+static void render_paragraph(cairo_t *cr, Paragraph *para)
+{
+	PangoLayout *layout = paragraph_layout(para);
+	cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+	pango_cairo_update_layout(cr, layout);
+	pango_cairo_show_layout(cr, layout);
+	cairo_fill(cr);
+}
+
+
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                      enum is_size isz, double min_y, double max_y)
 {
+	int i;
+	double hpos = 0.0;
+
 	cairo_save(cr);
 	do_background(cr, fr);
 
-	if ( fr->trouble ) {
-		cairo_new_path(cr);
-		cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
-		cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-		cairo_set_line_width(cr, 2.0);
-		cairo_stroke(cr);
-	}
-
-	/* Actually render the lines */
+	/* Actually render the contents */
 	cairo_translate(cr, fr->pad_l, fr->pad_t);
-	render_lines(fr, cr, is, isz, min_y, max_y);
+	for ( i=0; i<fr->n_paras; i++ ) {
+		cairo_save(cr);
+		cairo_translate(cr, 0.0, hpos);
+		render_paragraph(cr, fr->paras[i]);
+		hpos += paragraph_height(fr->paras[i]) + 20.0;
+		cairo_restore(cr);
+	}
 	cairo_restore(cr);
 
 	return 0;
@@ -419,15 +249,24 @@ int recursive_draw(struct frame *fr, cairo_t *cr,
 }
 
 
-int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz)
+void wrap_frame(struct frame *fr, PangoContext *pc)
 {
 	int i;
 
-	/* Wrap boxes -> wrap lines */
-	wrap_contents(fr);
+	for ( i=0; i<fr->n_paras; i++ ) {
+		wrap_paragraph(fr->paras[i], pc, fr->w - fr->pad_l - fr->pad_r);
+	}
+}
+
+
+int recursive_wrap(struct frame *fr, PangoContext *pc)
+{
+	int i;
+
+	wrap_frame(fr, pc);
 
 	for ( i=0; i<fr->num_children; i++ ) {
-		recursive_wrap(fr->children[i], is, isz);
+		recursive_wrap(fr->children[i], pc);
 	}
 
 	return 0;
@@ -498,7 +337,8 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
                                  cairo_t *cr, double log_w, double log_h,
                                  SCBlock **stylesheets, SCCallbackList *cbl,
                                  ImageStore *is, enum is_size isz,
-                                 int slide_number, PangoLanguage *lang)
+                                 int slide_number, PangoLanguage *lang,
+				 PangoContext *pc)
 {
 	struct frame *top;
 
@@ -509,7 +349,7 @@ static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *su
 	top = interp_and_shape(scblocks, stylesheets, cbl, is, isz,
 	                       slide_number, cr, log_w, log_h, lang);
 
-	recursive_wrap(top, is, isz);
+	recursive_wrap(top, pc);
 
 	recursive_draw(top, cr, is, isz, 0.0, log_h);
 
@@ -527,13 +367,15 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	cairo_surface_t *surf;
 	cairo_t *cr;
 	struct frame *top;
+	PangoContext *pc;
 
 	surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	cr = cairo_create(surf);
+	pc = pango_cairo_create_context(cr);
 	cairo_scale(cr, w/log_w, h/log_h);
 	top = render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
 	                           stylesheets, cbl, is, isz,slide_number,
-	                           lang);
+	                           lang, pc);
 	cairo_destroy(cr);
 
 	*ptop = top;
@@ -551,6 +393,7 @@ int export_pdf(struct presentation *p, const char *filename)
 	cairo_t *cr;
 	SCBlock *bl;
 	int i;
+	PangoContext *pc;
 
 	r = p->slide_height / p->slide_width;
 
@@ -562,6 +405,7 @@ int export_pdf(struct presentation *p, const char *filename)
 
 	cr = cairo_create(surf);
 	scale = w / p->slide_width;
+	pc = pango_cairo_create_context(cr);
 
 	i = 1;
 	while ( bl != NULL ) {
@@ -586,7 +430,7 @@ int export_pdf(struct presentation *p, const char *filename)
 
 		render_sc_to_surface(sc_block_child(bl), surf, cr, p->slide_width,
 		                     p->slide_height, stylesheets, NULL,
-		                     p->is, ISZ_SLIDESHOW, i, p->lang);
+		                     p->is, ISZ_SLIDESHOW, i, p->lang, pc);
 
 		cairo_restore(cr);
 
@@ -597,6 +441,7 @@ int export_pdf(struct presentation *p, const char *filename)
 
 	}
 
+	g_object_unref(pc);
 	cairo_surface_finish(surf);
 	cairo_destroy(cr);
 

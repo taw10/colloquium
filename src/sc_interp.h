@@ -1,7 +1,7 @@
 /*
  * sc_interp.h
  *
- * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -29,7 +29,7 @@
 
 #include <pango/pangocairo.h>
 
-#include "frame.h"
+struct frame;
 
 struct presentation;
 typedef struct _scinterp SCInterpreter;
@@ -38,6 +38,8 @@ typedef int (*SCCallbackBoxFunc)(SCInterpreter *scin, SCBlock *bl,
                                   double *w, double *h, void **, void *);
 typedef cairo_surface_t *(*SCCallbackDrawFunc)(int w, int h, void *, void *);
 typedef int (*SCCallbackClickFunc)(double x, double y, void *, void *);
+
+#include "frame.h"
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
                                     struct frame *top);

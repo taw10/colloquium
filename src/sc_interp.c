@@ -33,8 +33,7 @@
 
 #include "sc_parse.h"
 #include "sc_interp.h"
-#include "shape.h"
-#include "wrap.h"
+#include "presentation.h"
 
 
 struct macro
@@ -217,9 +216,9 @@ static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
 		if ( !r ) return;
-		add_callback_box(sc_interp_get_frame(scin)->boxes, w, h,
-		                 cbl->draw_funcs[i], cbl->click_funcs[i],
-		                 bvp, cbl->vps[i]);
+		add_callback_para(sc_interp_get_frame(scin), w, h,
+		                  cbl->draw_funcs[i], cbl->click_funcs[i],
+		                  bvp, cbl->vps[i]);
 
 		return;
 	}
@@ -812,6 +811,52 @@ static int in_macro(SCInterpreter *scin)
 }
 
 
+/* Add the SCBlock to the text in 'frame', at the end */
+static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
+                    PangoLanguage *lang, int editable, SCInterpreter *scin)
+{
+	glong len_chars;
+	const char *text = sc_block_contents(bl);
+	size_t start, len_bytes;
+	PangoFontDescription *fontdesc;
+
+	/* Empty block? */
+	if ( text == NULL ) return 1;
+
+	/* Zero-length block? */
+	len_chars = g_utf8_strlen(text, -1);
+	if ( len_chars == 0 ) return 1;
+
+	fontdesc = sc_interp_get_fontdesc(scin);
+
+	len_bytes = strlen(text);
+	start = 0;
+	do {
+
+		char *para_end;
+		size_t len;
+
+		para_end = strchr(text+start, '\n');
+		if ( para_end == NULL ) {
+			len = strlen(text+start);
+		} else {
+			len = para_end - (text+start);
+		}
+
+		if ( text[start] == '\n' ) {
+			close_last_paragraph(fr);
+		} else  {
+			Paragraph *para = last_open_para(fr);
+			add_run(para, bl, start, len, fontdesc, 0);
+		}
+		start += len + 1;
+
+	} while ( start < len_bytes );
+
+	return 0;
+}
+
+
 static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 {
 	const char *name = sc_block_name(bl);
@@ -819,8 +864,8 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 	SCBlock *child = sc_block_child(bl);
 
 	if ( name == NULL ) {
-		split_words(sc_interp_get_frame(scin)->boxes,
-		            scin->pc, bl, scin->lang, 1, scin);
+		add_text(sc_interp_get_frame(scin),
+		         scin->pc, bl, scin->lang, 1, scin);
 
 	} else if ( strcmp(name, "image")==0 ) {
 		double w, h;
@@ -828,8 +873,8 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		if ( parse_image_options(options, sc_interp_get_frame(scin),
 		                         &w, &h, &filename) == 0 )
 		{
-			add_image_box(sc_interp_get_frame(scin)->boxes,
-			              filename, w, h, 1);
+			add_image_para(sc_interp_get_frame(scin),
+			               filename, w, h, 1);
 			free(filename);
 		} else {
 			fprintf(stderr, "Invalid image options '%s'\n",

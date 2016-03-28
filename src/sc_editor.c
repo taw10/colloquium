@@ -38,13 +38,10 @@
 #include "slide_window.h"
 #include "render.h"
 #include "frame.h"
-#include "wrap.h"
 #include "sc_parse.h"
 #include "sc_interp.h"
 #include "sc_editor.h"
 #include "slideshow.h"
-#include "shape.h"
-#include "boxvec.h"
 
 
 static void scroll_interface_init(GtkScrollable *iface)
@@ -118,12 +115,17 @@ static void update_size(SCEditor *e)
 static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            SCEditor *e)
 {
+	PangoContext *pc;
+	cairo_t *cr;
+
+	cr = gdk_cairo_create(gtk_widget_get_window(widget));
+	pc = pango_cairo_create_context(cr);
+
 	e->visible_height = event->height;
 	e->visible_width = event->width;
 
 	/* Interpret and shape, if not already done */
 	if ( e->top == NULL ) {
-		cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(widget));
 		double w, h;
 		if ( e->flow ) {
 			w = event->width;
@@ -135,8 +137,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
 		                          e->is, ISZ_EDITOR, 0, cr, w, h,
 		                          e->lang);
-		recursive_wrap(e->top, e->is, ISZ_EDITOR);
-		cairo_destroy(cr);
+		recursive_wrap(e->top, pc);
 	}
 
 	if ( e->flow ) {
@@ -145,10 +146,14 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 		e->top->h = 0.0;  /* To be updated in a moment */
 		e->top->x = 0.0;
 		e->top->y = 0.0;
-		wrap_contents(e->top); /* Only the top level needs to be wrapped */
+		/* Only the top level needs to be wrapped */
+		wrap_frame(e->top, pc);
 	}
 
 	update_size(e);
+
+	g_object_unref(pc);
+	cairo_destroy(cr);
 
 	return FALSE;
 }
@@ -301,7 +306,7 @@ void sc_editor_set_background(SCEditor *e, double r, double g, double b)
 void sc_editor_remove_cursor(SCEditor *e)
 {
 	e->cursor_frame = NULL;
-	e->cursor_line = 0;
+	e->cursor_para = 0;
 	e->cursor_pos = 0;
 	e->selection = NULL;
 }
@@ -312,26 +317,30 @@ void sc_editor_remove_cursor(SCEditor *e)
  * invalid.  The cursor position will be unset. */
 static void full_rerender(SCEditor *e)
 {
-	frame_free(e->top);
-	e->cursor_frame = NULL;
-	e->cursor_line = 0;
-	e->cursor_pos = 0;
-	e->selection = NULL;
+	cairo_t *cr;
+	PangoContext *pc;
 
-	cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(e)));
+	frame_free(e->top);
+	sc_editor_remove_cursor(e);
+
+	cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(e)));
+	pc = pango_cairo_create_context(cr);
+
 	e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
 	                          e->is, ISZ_EDITOR, 0, cr, e->w, 0.0, e->lang);
-	cairo_destroy(cr);
 
 	e->top->x = 0.0;
 	e->top->y = 0.0;
 	e->top->w = e->w;
 	e->top->h = 0.0;  /* To be updated in a moment */
 
-	recursive_wrap(e->top, e->is, ISZ_EDITOR);
+	recursive_wrap(e->top, pc);
 	update_size(e);
 
 	sc_editor_redraw(e);
+
+	g_object_unref(pc);
+	cairo_destroy(cr);
 }
 
 
@@ -353,182 +362,24 @@ void sc_editor_delete_selected_frame(SCEditor *e)
 }
 
 
-static void move_cursor_back(SCEditor *e)
+static int find_cursor(struct frame *fr, double x, double y,
+                       int *ppara, int *ppos)
 {
-	int retreat = 0;
-	signed int cp, cb, cl;
-	struct wrap_line *line;
-	struct wrap_box *box;
-
-	cp = e->cursor_pos;
-	cb = e->cursor_box;
-	cl = e->cursor_line;
-
-	line = &e->cursor_frame->lines[e->cursor_line];
-	box = bv_box(line->boxes, e->cursor_box);
-	if ( box->type == WRAP_BOX_PANGO ) {
-
-		if ( cp == 0 ) {
-			retreat = 1;
-		} else {
-			cp--;
-		}
-
-	} else {
-		cp--;
-		if ( cp < 0 ) retreat = 1;
-	}
-
-	if ( retreat ) {
-
-		do {
-
-			cb--;
-
-			if ( cb < 0 ) {
-				cl--;
-				if ( cl < 0 ) return;
-				e->cursor_line = cl;
-				line = &e->cursor_frame->lines[cl];
-				cb = bv_len(line->boxes) - 1;
-			}
-
-		} while ( !bv_box(line->boxes, cb)->editable );
-
-		e->cursor_box = cb;
-		box = bv_box(line->boxes, cb);
-		if ( box->type == WRAP_BOX_PANGO ) {
-			cp = box->len_chars;
-			if ( box->space == WRAP_SPACE_NONE ) {
-				cp--;
-			}
-		} else {
-			cp = 0;
-		}
-
-	}
-	e->cursor_pos = cp;
+	*ppara = 0;
+	*ppos = 0;
+	return 0;
 }
 
 
-void cur_box_diag(SCEditor *e)
+static void move_cursor_back(SCEditor *e)
 {
-	int sln, sbx, sps;
-	struct frame *fr;
-
-	fr = e->cursor_frame;
-	sln = e->cursor_line;
-	sbx = e->cursor_box;
-	sps = e->cursor_pos;
-
-	if ( fr->lines == NULL ) {
-		printf("Current frame has no lines!\n");
-		return;
-	}
-
-	if ( fr->lines[sln].boxes == NULL ) {
-		printf("line %i of %i, but it has no boxes\n",
-		       sln, fr->n_lines);
-		return;
-	}
-
-	struct wrap_box *sbox = bv_box(fr->lines[sln].boxes, sbx);
-
-	if ( sbox == NULL ) {
-		printf("line/box: [%i of %i]/[%i of %i]/NULL box\n",
-		       sln, fr->n_lines, sbx,
-		       bv_len(e->cursor_frame->lines[sln].boxes));
-	       return;
-	}
-
-	printf("line/box/pos: [%i of %i]/[%i of %i]/[%i of %i]\n",
-	       sln, fr->n_lines, sbx, bv_len(e->cursor_frame->lines[sln].boxes),
-	       sps, sbox->len_chars);
-	printf("box type is %i, space type is %i\n", sbox->type, sbox->space);
-	if ( sbox->type == WRAP_BOX_NOTHING ) {
-		printf("Warning: in a nothing box!\n");
-	}
-
-	struct wrap_line *ln = &fr->lines[sln];
-	int i;
-	for ( i=0; i<bv_len(ln->boxes); i++ ) {
-		char pp = '[';
-		char pq = ']';
-		struct wrap_box *bx = bv_box(ln->boxes, i);
-		if ( i == sbx ) { pp = '<'; pq  = '>'; }
-		printf("%c%i %i %i%c", pp, bx->offs_char, bx->len_chars,
-		       bx->n_segs, pq);
-	}
-	printf("\n");
+	/* FIXME */
 }
 
 
 void advance_cursor(SCEditor *e)
 {
-	int advance = 0;
-	signed int cp, cb, cl;
-	struct wrap_line *line = &e->cursor_frame->lines[e->cursor_line];
-	struct wrap_box *box = bv_box(line->boxes, e->cursor_box);
-
-	cp = e->cursor_pos;
-	cb = e->cursor_box;
-	cl = e->cursor_line;
-
-	/* FIXME: For Pango boxes, we should be counting cursor positions, not
-	 * characters */
-
-	switch ( box->type ) {
-
-		case WRAP_BOX_PANGO:
-		if ( cp+1 > box->len_chars ) {
-			advance = 1;
-		} else {
-			cp++;
-		}
-		break;
-
-		case WRAP_BOX_NOTHING:
-		case WRAP_BOX_SENTINEL:
-		advance = 1;
-		break;
-
-		case WRAP_BOX_IMAGE:
-		case WRAP_BOX_CALLBACK:
-		cp++;
-		if ( cp > 1 ) advance = 1;
-		break;
-
-	}
-
-	if ( advance ) {
-
-		do {
-
-			cb++;
-			cp = 0;
-
-			if ( box->space == WRAP_SPACE_NONE ) {
-				cp = 1;
-			}
-
-			if ( cb >= bv_len(line->boxes) ) {
-				cl++;
-				if ( cl >= e->cursor_frame->n_lines ) {
-					/* Give up - could not move */
-					return;
-				}
-				line = &e->cursor_frame->lines[cl];
-				cb = 0;
-				cp = 0;
-			}
-
-		} while ( !bv_box(line->boxes, cb)->editable );
-
-		e->cursor_line = cl;
-		e->cursor_box = cb;
-
-	}
-	e->cursor_pos = cp;
+	/* FIXME */
 }
 
 
@@ -569,39 +420,23 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 }
 
 
-static void draw_caret(cairo_t *cr, struct frame *fr,
-                       int cursor_line, int cursor_box, int cursor_pos)
+static void draw_caret(cairo_t *cr, struct frame *fr)
 {
-	double xposd, yposd, line_height;
-	double cx, clow, chigh;
+#if 0
+	double xposd, yposd, cx;
+	double clow, chigh;
+	PangoRectangle pos;
 	const double t = 1.8;
-	struct wrap_box *box;
-	int i;
 
-	if ( fr == NULL ) return;
-	if ( fr->n_lines == 0 ) return;
-	if ( fr->lines == NULL ) return;
-	if ( fr->lines[cursor_line].boxes == NULL ) return;
+	pango_layout_get_cursor_pos(o->layout,
+	                            o->insertion_point+o->insertion_trail,
+	                            &pos, NULL);
 
-	/* Locate the cursor in a "logical" and "geographical" sense */
-	box = bv_box(fr->lines[cursor_line].boxes, cursor_box);
-	get_cursor_pos(box, cursor_pos, &xposd, &yposd, &line_height);
-	xposd += fr->pad_l;
-	yposd += fr->pad_t;
-
-	for ( i=0; i<cursor_line; i++ ) {
-		yposd += pango_units_to_double(fr->lines[i].height);
-	}
-
-	for ( i=0; i<cursor_box; i++ ) {
-		int w = bv_box(fr->lines[cursor_line].boxes, i)->width;
-		w += bv_box(fr->lines[cursor_line].boxes, i)->sp;
-		xposd += pango_units_to_double(w);
-	}
-
-	cx = fr->x + xposd;
-	clow = fr->y + yposd;
-	chigh = clow + line_height;
+	xposd = pos.x/PANGO_SCALE;
+	cx = o->base.x - o->offs_x + xposd;
+	yposd = pos.y/PANGO_SCALE;
+	clow = o->base.y - o->offs_y + yposd;
+	chigh = clow + (pos.height/PANGO_SCALE);
 
 	cairo_move_to(cr, cx, clow);
 	cairo_line_to(cr, cx, chigh);
@@ -619,6 +454,7 @@ static void draw_caret(cairo_t *cr, struct frame *fr,
 	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
+#endif
 }
 
 
@@ -652,8 +488,7 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 			draw_resize_handle(cr, x+w-20.0, y+h-20.0);
 		}
 
-		draw_caret(cr, e->cursor_frame, e->cursor_line, e->cursor_box,
-		               e->cursor_pos);
+		draw_caret(cr, e->cursor_frame);
 
 	}
 
@@ -726,49 +561,6 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 }
 
 
-static void fixup_cursor(SCEditor *e)
-{
-	struct frame *fr;
-	struct wrap_line *sline;
-	struct wrap_box *sbox;
-
-	fr = e->cursor_frame;
-
-	if ( e->cursor_line >= fr->n_lines ) {
-		/* We find ourselves on a line which doesn't exist */
-		e->cursor_line = fr->n_lines-1;
-		e->cursor_box = bv_len(fr->lines[fr->n_lines-1].boxes)-1;
-	}
-
-	sline = &fr->lines[e->cursor_line];
-
-	if ( e->cursor_box >= bv_len(sline->boxes) ) {
-
-		/* We find ourselves in a box which doesn't exist */
-
-		if ( e->cursor_line < fr->n_lines-1 ) {
-			/* This isn't the last line, so go to the first box of
-			 * the next line */
-			e->cursor_line++;
-			e->cursor_box = 0;
-			sline = &e->cursor_frame->lines[e->cursor_line];
-		} else {
-			/* There are no more lines, so just go to the end */
-			e->cursor_line = fr->n_lines-1;
-			sline = &e->cursor_frame->lines[e->cursor_line];
-			e->cursor_box = bv_len(sline->boxes)-1;
-		}
-	}
-
-	assert(e->cursor_box < bv_len(sline->boxes));
-	sbox = bv_box(sline->boxes, e->cursor_box);
-
-	if ( e->cursor_pos > sbox->len_chars ) {
-		advance_cursor(e);
-	}
-}
-
-
 static void move_cursor(SCEditor *e, signed int x, signed int y)
 {
 	if ( x > 0 ) {
@@ -781,6 +573,8 @@ static void move_cursor(SCEditor *e, signed int x, signed int y)
 
 void insert_scblock(SCBlock *scblock, SCEditor *e)
 {
+#if 0
+	/* FIXME: Insert "scblock" at the cursor */
 	int sln, sbx, sps;
 	struct wrap_box *sbox;
 	struct frame *fr = e->cursor_frame;
@@ -804,303 +598,21 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 	//fixup_cursor(e);
 	//advance_cursor(e);
 	//sc_editor_redraw(e);
+#endif
 }
 
-
-static void shift_box_offsets(struct frame *fr, struct wrap_box *box, int n)
-{
-	int i;
-	int sn = 0;
-
-	for ( i=0; i<fr->boxes->n_boxes; i++ ) {
-		if ( bv_box(fr->boxes, i) == box ) {
-			sn = i+1;
-			break;
-		}
-	}
-
-	assert(sn > 0);  /* Lowest it can possibly be is 1 */
-
-	for ( i=sn; i<fr->boxes->n_boxes; i++ ) {
-		bv_box(fr->boxes, i)->offs_char += n;
-	}
-}
-
-
-static void maybe_downgrade_box(struct wrap_box *box)
-{
-	if ( box->len_chars == 0 ) {
-
-		printf("Downgrading box.\n");
-		box->type = WRAP_BOX_NOTHING;
-	}
-}
-
-
-static void split_boxes(struct wrap_box *sbox, PangoLogAttr *log_attrs,
-                        int offs, int cursor_pos, struct boxvec *boxes,
-                        PangoContext *pc)
-{
-	struct wrap_box *nbox;
-
-	printf("Adding line break (new box) at pos %i\n", offs);
-	printf("offset %i into box\n", cursor_pos);
-
-	/* Add a new box containing the text after the break */
-	nbox = calloc(1, sizeof(struct wrap_box));
-	if ( nbox == NULL ) {
-		fprintf(stderr, "Failed to allocate a text box.\n");
-		return;
-	}
-	bv_add_after(boxes, sbox, nbox);
-	nbox->type = WRAP_BOX_PANGO;
-	nbox->space = sbox->space;
-	nbox->len_chars = sbox->len_chars - cursor_pos;
-	if ( nbox->len_chars == 0 ) {
-		printf("WARNING! Zero-length box!\n");
-	}
-	nbox->offs_char = sbox->offs_char + cursor_pos;
-	nbox->scblock = sbox->scblock;
-	nbox->fontdesc = pango_font_description_copy(sbox->fontdesc);
-	nbox->col[0] = sbox->col[0];
-	nbox->col[1] = sbox->col[1];
-	nbox->col[2] = sbox->col[2];
-	nbox->col[3] = sbox->col[3];
-	nbox->editable = sbox->editable;
-
-	/* Shorten the text in the first box */
-	sbox->len_chars = cursor_pos;
-	if ( log_attrs[offs].is_expandable_space ) {
-		sbox->space = WRAP_SPACE_INTERWORD;
-		nbox->len_chars--;
-		nbox->offs_char++;
-		maybe_downgrade_box(nbox);
-	} else if ( log_attrs[offs+1].is_mandatory_break ) {
-		sbox->space = WRAP_SPACE_EOP;
-		printf("New paragraph!\n");
-		nbox->offs_char++;
-		nbox->len_chars--;
-		maybe_downgrade_box(nbox);
-	} else {
-		sbox->space = WRAP_SPACE_NONE;
-		printf("two boxes.\n");
-	}
-
-	printf("boxes: <%i %i %i>[%i %i %i]\n",
-	       sbox->offs_char, sbox->len_chars, sbox->n_segs,
-	       nbox->offs_char, nbox->len_chars, nbox->n_segs);
-
-	itemize_and_shape(nbox, pc);
-	/* sbox will get done in just a moment */
-}
-
-
-static void fixup_line_breaks(struct wrap_box *sbox, struct boxvec *boxes,
-                              int cursor_pos, PangoLanguage *lang,
-                              PangoContext *pc)
-{
-	const char *text;
-	size_t len_bytes;
-	int len_chars;
-	PangoLogAttr *log_attrs;
-	int offs;
-
-	/* Run pango_get_log_attrs on the entire SCBlock, to get good context */
-	text = sc_block_contents(sbox->scblock);
-	len_bytes = strlen(text);
-	len_chars = g_utf8_strlen(text, -1);
-	if ( len_chars <= 1 ) return;
-	log_attrs = malloc((len_chars+1)*sizeof(PangoLogAttr));
-	if ( log_attrs == NULL ) return;
-	pango_get_log_attrs(text, len_bytes, -1, lang,
-	                    log_attrs, len_chars+1);
-
-	/* Take a peek at the situation near where we just typed */
-	offs = sbox->offs_char + cursor_pos;
-	if ( log_attrs[offs+1].is_line_break ) {
-
-		/* If there just happens to be two boxes without a space
-		 * between them, just tweak the space. */
-		if ( (cursor_pos == sbox->len_chars-1)
-		  && (sbox->space == WRAP_SPACE_NONE) )
-		{
-			printf("Easy case! :D\n");
-			if ( log_attrs[offs].is_expandable_space ) {
-				sbox->space = WRAP_SPACE_INTERWORD;
-				sbox->len_chars--;
-			} else if ( log_attrs[offs+1].is_mandatory_break ) {
-				sbox->space = WRAP_SPACE_EOP;
-				sbox->len_chars--;
-			} else {
-				printf("WTF space type?\n");
-			}
-		} else {
-			split_boxes(sbox, log_attrs, offs, cursor_pos,
-			            boxes, pc);
-		}
-
-
-	} else {
-		if ( log_attrs[offs].is_expandable_space ) {
-			printf("Space at end!\n");
-			if ( sbox->space == WRAP_SPACE_NONE ) {
-				sbox->space = WRAP_SPACE_INTERWORD;
-			}
-		}
-	}
-
-	free(log_attrs);
-}
 
 
 static void insert_text(char *t, SCEditor *e)
 {
-	int sln, sbx, sps;
-	struct wrap_box *sbox;
-	struct frame *fr = e->cursor_frame;
-
-	printf("insert! ---------------------------------------------------\n");
-
-	if ( fr == NULL ) return;
-
-	/* If this is, say, the top level frame, do nothing */
-	if ( fr->boxes == NULL ) return;
-
-	sln = e->cursor_line;
-	sbx = e->cursor_box;
-	sps = e->cursor_pos;
-	sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
-
-	if ( sbox->type == WRAP_BOX_NOTHING ) {
-		printf("Upgrading nothing box %p to Pango box\n", sbox);
-		sbox->type = WRAP_BOX_PANGO;
-		sbox->col[0] = fr->col[0];
-		sbox->col[1] = fr->col[1];
-		sbox->col[2] = fr->col[2];
-		sbox->col[3] = fr->col[3];
-		sbox->fontdesc = pango_font_description_copy(fr->fontdesc);
-		sbox->segs = NULL;
-	}
-
-	cur_box_diag(e);
-	printf("sps=%i, offs_char=%i\n", sps, sbox->offs_char);
-	if ( sbox->type == WRAP_BOX_NOTHING ) {
-		printf("Editing a nothing box!\n");
-		return;
-	}
-
-	sc_insert_text(sbox->scblock, sps+sbox->offs_char, t);
-	sbox->len_chars += 1;
-
-	/* Tweak the offsets of all the subsequent boxes */
-	shift_box_offsets(fr, sbox, 1);
-
-	fixup_line_breaks(sbox, e->cursor_frame->boxes, e->cursor_pos,
-	                  e->lang, e->pc);
-
-	/* The box must be analysed by Pango again, because the segments
-	 * might have changed */
-	itemize_and_shape(sbox, e->pc);
-
-	fr->empty = 0;
-
-	wrap_contents(e->cursor_frame);
-	update_size(e);
-	fixup_cursor(e);
-	printf("done! -----------------------------------------------------\n");
-
-	advance_cursor(e);
-
+	/* FIXME: Insert "t" at the cursor */
 	sc_editor_redraw(e);
 }
 
 
 static void do_backspace(struct frame *fr, SCEditor *e)
 {
-	int sln, sbx, sps;
-
-	if ( fr == NULL ) return;
-
-	/* If this is, say, the top level frame, do nothing */
-	if ( fr->n_lines == 0 ) return;
-
-	printf("Backspace! ------------------------------------------------\n");
-	printf("sbox:\n");
-	cur_box_diag(e);
-	sln = e->cursor_line;
-	sbx = e->cursor_box;
-	sps = e->cursor_pos;
-	struct wrap_box *sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
-
-	move_cursor_back(e);
-	printf("fbox:\n");
-	cur_box_diag(e);
-
-	/* Delete may cross wrap boxes and maybe SCBlock boundaries */
-	struct wrap_line *fline = &e->cursor_frame->lines[e->cursor_line];
-	struct wrap_box *fbox = bv_box(fline->boxes, e->cursor_box);
-
-	if ( (fbox->scblock == NULL) || (sbox->scblock == NULL) ) return;
-	sc_delete_text(fbox->scblock, e->cursor_pos+fbox->offs_char,
-	               sbox->scblock, sps+sbox->offs_char);
-
-	if ( (sps == 0) && (fbox->space == WRAP_SPACE_INTERWORD) ) {
-
-		/* We are deleting an interword space.
-		 * It's enough just to change the space type, and leave two
-		 * boxes butted up with no space. */
-		fbox->space = WRAP_SPACE_NONE;
-		shift_box_offsets(fr, fbox, -1);
-		itemize_and_shape(fbox, e->pc);
-
-	} else if ( (sps == 0) && (fbox->space == WRAP_SPACE_NONE) ) {
-
-		/* We are deleting across a box boundary, but there is no
-		 * space to delete */
-		if ( fbox->len_chars == 0 ) {
-			printf("Deleting a zero-length box\n");
-
-		} else {
-			fbox->len_chars -= 1;
-			shift_box_offsets(fr, fbox, -1);
-			itemize_and_shape(fbox, e->pc);
-		}
-
-	} else if ( (sps == 0) && (fbox->space == WRAP_SPACE_EOP) ) {
-
-		/* We are deleting the newline between paragraphs */
-		fbox->space = WRAP_SPACE_NONE;
-		shift_box_offsets(fr, fbox, -1);
-		itemize_and_shape(fbox, e->pc);
-
-	} else {
-
-		sbox->len_chars -= 1;
-		shift_box_offsets(fr, sbox, -1);
-		if ( sbox->len_chars == 0 ) {
-
-			if ( sbox->space == WRAP_SPACE_NONE ) {
-				printf("deleting box.\n");
-				bv_del(e->cursor_frame->boxes, sbox);
-				free(sbox);
-			} else {
-				printf("downgrading box.\n");
-				sbox->type = WRAP_BOX_NOTHING;
-				sbox->width = 0;
-			}
-
-		} else {
-			itemize_and_shape(sbox, e->pc);
-		}
-
-	}
-
-	wrap_contents(e->cursor_frame);
-	update_size(e);
-	fixup_cursor(e);
-	cur_box_diag(e);
-	printf("done! -----------------------------------------------------\n");
-
+	/* FIXME: Delete at the cursor */
 	sc_editor_redraw(e);
 }
 
@@ -1296,14 +808,10 @@ static void calculate_box_size(struct frame *fr, SCEditor *e,
 }
 
 
-static struct wrap_box *cbox(struct frame *fr, int ln, int bn)
-{
-	return bv_box(fr->lines[ln].boxes, bn);;
-}
-
-
 static int callback_click(SCEditor *e, struct frame *fr, double x, double y)
 {
+#if 0
+/* FIXME */
 	int ln, bn, pn;
 	struct wrap_box *bx;
 
@@ -1315,6 +823,7 @@ static int callback_click(SCEditor *e, struct frame *fr, double x, double y)
 	if ( bx->type == WRAP_BOX_CALLBACK ) {
 		return bx->click_func(x, y, bx->bvp, bx->vp);
 	}
+#endif
 	return 0;
 }
 
@@ -1372,8 +881,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 				e->cursor_frame = clicked;
 				find_cursor(clicked, x-fr->x, y-fr->y,
-				            &e->cursor_line, &e->cursor_box,
-				            &e->cursor_pos);
+				            &e->cursor_para, &e->cursor_pos);
 
 				e->start_corner_x = event->x - e->border_offs_x;
 				e->start_corner_y = event->y - e->border_offs_y;
@@ -1406,8 +914,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		e->selection = clicked;
 		e->cursor_frame = clicked;
 		find_cursor(clicked, x-clicked->x, y-clicked->y,
-		            &e->cursor_line, &e->cursor_box,
-		            &e->cursor_pos);
+		            &e->cursor_para, &e->cursor_pos);
 
 	}
 
@@ -1568,10 +1075,8 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		                     e->drag_corner_y - e->start_corner_y);
 		e->selection = fr;
 		e->cursor_frame = fr;
-		e->cursor_line = 0;
-		e->cursor_box = 0;
+		e->cursor_para = 0;
 		e->cursor_pos = 0;
-		cur_box_diag(e);
 		break;
 
 		case DRAG_REASON_IMPORT :
@@ -1663,9 +1168,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_F5 :
 		full_rerender(e);
 		break;
-
-		case GDK_KEY_F6 :
-		cur_box_diag(e);
 
 	}
 

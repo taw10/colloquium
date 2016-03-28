@@ -1,7 +1,7 @@
 /*
  * render.h
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -50,7 +50,8 @@ extern struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                       int slide_number, cairo_t *cr,
                                       double w, double h, PangoLanguage *lang);
 
-extern int recursive_wrap(struct frame *fr, ImageStore *is, enum is_size isz);
+extern void wrap_frame(struct frame *fr, PangoContext *pc);
+extern int recursive_wrap(struct frame *fr, PangoContext *pc);
 
 extern int export_pdf(struct presentation *p, const char *filename);
 

@@ -1,7 +1,7 @@
 /*
  * frame.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -31,8 +31,38 @@
 
 #include "sc_parse.h"
 #include "frame.h"
-#include "wrap.h"
-#include "boxvec.h"
+
+
+struct text_run
+{
+	SCBlock              *scblock;
+	size_t                offs_bytes;
+	size_t                len_bytes;
+	PangoFontDescription *fontdesc;
+};
+
+
+struct _paragraph
+{
+	int              n_runs;
+	struct text_run *runs;
+	int              open;
+
+	PangoLayout     *layout;
+	double           height;
+};
+
+
+PangoLayout *paragraph_layout(Paragraph *para)
+{
+	return para->layout;
+}
+
+
+double paragraph_height(Paragraph *para)
+{
+	return para->height;
+}
 
 
 static int alloc_ro(struct frame *fr)
@@ -66,15 +96,23 @@ struct frame *frame_new()
 	n->num_children = 0;
 
 	n->scblocks = NULL;
-	n->n_paragraphs = 0;
-	n->paragraphs = NULL;
-	n->paragraph_start_lines = NULL;
-	n->lines = NULL;
-	n->n_lines = 0;
-
-	n->boxes = bv_new();
+	n->n_paras = 0;
+	n->paras = NULL;
 
 	return n;
+}
+
+
+static void free_paragraph(Paragraph *para)
+{
+	int i;
+
+	for ( i=0; i<para->n_runs; i++ ) {
+		pango_font_description_free(para->runs[i].fontdesc);
+	}
+	free(para->runs);
+	if ( para->layout != NULL ) g_object_unref(para->layout);
+	free(para);
 }
 
 
@@ -84,24 +122,12 @@ void frame_free(struct frame *fr)
 
 	if ( fr == NULL ) return;
 
-	/* Free all lines */
-	for ( i=0; i<fr->n_lines; i++ ) {
-		wrap_line_free(&fr->lines[i]);
-	}
-	free(fr->lines);
-
 	/* Free paragraphs */
-	if ( fr->paragraphs != NULL ) {
-		for ( i=0; i<fr->n_paragraphs; i++ ) {
-			free(fr->paragraphs[i]->boxes);
-			free(fr->paragraphs[i]);
+	if ( fr->paras != NULL ) {
+		for ( i=0; i<fr->n_paras; i++ ) {
+			free_paragraph(fr->paras[i]);
 		}
-		free(fr->paragraphs);
-	}
-	/* Free unwrapped boxes */
-	if ( fr->boxes != NULL ) {
-		free(fr->boxes->boxes);
-		free(fr->boxes);
+		free(fr->paras);
 	}
 
 	/* Free all children */
@@ -201,6 +227,7 @@ void delete_subframe(struct frame *top, struct frame *fr)
 	parent->num_children--;
 }
 
+
 struct frame *find_frame_with_scblocks(struct frame *fr, SCBlock *scblocks)
 {
 	int i;
@@ -214,4 +241,152 @@ struct frame *find_frame_with_scblocks(struct frame *fr, SCBlock *scblocks)
 	}
 
 	return NULL;
+}
+
+
+void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
+{
+	size_t total_len = 0;
+	int i;
+	char *text;
+	PangoAttrList *attrs;
+	PangoRectangle rect;
+	size_t pos = 0;
+
+	for ( i=0; i<para->n_runs; i++ ) {
+		total_len += para->runs[i].len_bytes;
+	}
+
+	/* Allocate the complete text */
+	text = malloc(total_len+1);
+	if ( text == NULL ) {
+		fprintf(stderr, "Couldn't allocate combined text\n");
+		return;
+	}
+
+	/* Allocate the attributes */
+	attrs = pango_attr_list_new();
+
+	/* Put all of the text together */
+	text[0] = '\0';
+	for ( i=0; i<para->n_runs; i++ ) {
+
+		PangoAttribute *attr;
+		const char *run_text;
+
+		run_text = sc_block_contents(para->runs[i].scblock)
+		           + para->runs[i].offs_bytes;
+
+		attr = pango_attr_font_desc_new(para->runs[i].fontdesc);
+		attr->start_index = pos;
+		attr->end_index = pos + para->runs[i].len_bytes;
+		pos += para->runs[i].len_bytes;
+
+		strncat(text, run_text, para->runs[i].len_bytes);
+		pango_attr_list_insert(attrs, attr);
+
+	}
+
+	if ( para->layout == NULL ) {
+		para->layout = pango_layout_new(pc);
+	}
+	pango_layout_set_width(para->layout, pango_units_from_double(w));
+	pango_layout_set_text(para->layout, text, total_len);
+	pango_layout_set_attributes(para->layout, attrs);
+	free(text);
+	pango_attr_list_unref(attrs);
+
+	pango_layout_get_extents(para->layout, NULL, &rect);
+	para->height = pango_units_to_double(rect.height);
+}
+
+
+void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
+             size_t len_bytes, PangoFontDescription *fdesc, int eop)
+{
+	struct text_run *runs_new;
+
+	if ( !para->open ) {
+		fprintf(stderr, "Adding a run to a closed paragraph!\n");
+		return;
+	}
+
+	runs_new = realloc(para->runs,
+	                   (para->n_runs+1)*sizeof(struct text_run));
+	if ( runs_new == NULL ) {
+		fprintf(stderr, "Failed to add run.\n");
+		return;
+	}
+
+	para->runs = runs_new;
+	para->runs[para->n_runs].scblock = scblock;
+	para->runs[para->n_runs].offs_bytes = offs_bytes;
+	para->runs[para->n_runs].len_bytes = len_bytes;
+	para->runs[para->n_runs].fontdesc = pango_font_description_copy(fdesc);
+	para->n_runs++;
+
+	if ( eop ) para->open = 0;
+}
+
+
+void add_callback_para(struct frame *fr, double w, double h,
+                       SCCallbackDrawFunc draw_func,
+                       SCCallbackClickFunc click_func, void *bvp,
+                       void *vp)
+{
+	/* FIXME */
+}
+
+
+void add_image_para(struct frame *fr, const char *filename,
+                    double w, double h, int editable)
+{
+	/* FIXME */
+}
+
+
+double total_height(struct frame *fr)
+{
+	int i;
+	double t = 0.0;
+	for ( i=0; i<fr->n_paras; i++ ) {
+		t += fr->paras[i]->height + 20.0;
+	}
+	return t;
+}
+
+
+Paragraph *last_open_para(struct frame *fr)
+{
+	Paragraph **paras_new;
+	Paragraph *pnew;
+
+	if ( (fr->paras != NULL) && (fr->paras[fr->n_paras-1]->open) ) {
+		return fr->paras[fr->n_paras-1];
+	}
+
+	/* No open paragraph found, create a new one */
+	paras_new = realloc(fr->paras, (fr->n_paras+1)*sizeof(Paragraph *));
+	if ( paras_new == NULL ) return NULL;
+
+	pnew = calloc(1, sizeof(struct _paragraph));
+	if ( pnew == NULL ) return NULL;
+
+	fr->paras = paras_new;
+	fr->paras[fr->n_paras++] = pnew;
+
+	pnew->open = 1;
+	pnew->n_runs = 0;
+	pnew->runs = NULL;
+	pnew->layout = NULL;
+	pnew->height = 0.0;
+
+	return pnew;
+}
+
+
+void close_last_paragraph(struct frame *fr)
+{
+	if ( fr->paras == NULL ) return;
+	fr->paras[fr->n_paras-1]->open = 0;
 }

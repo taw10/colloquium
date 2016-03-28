@@ -1,7 +1,7 @@
 /*
  * frame.h
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -31,6 +31,7 @@
 #include <cairo.h>
 
 #include "sc_parse.h"
+#include "sc_interp.h"
 
 
 typedef enum
@@ -47,6 +48,7 @@ typedef enum
 	GRAD_VERT
 } GradientType;
 
+typedef struct _paragraph Paragraph;
 
 struct frame
 {
@@ -55,16 +57,10 @@ struct frame
 	int                       max_children;
 
 	SCBlock                  *scblocks;
-	struct boxvec            *boxes;  /* The unwrapped boxes */
-	int                       visited;
 
-	int                       n_paragraphs;
-	struct boxvec           **paragraphs;
-	int                      *paragraph_start_lines;
-
-	int                       n_lines;
-	int                       max_lines;
-	struct wrap_line         *lines;
+	Paragraph               **paras;
+	int                       n_paras;
+	int                       max_paras;
 
 	/* The font which will be used by default for this frame */
 	PangoFontDescription     *fontdesc;
@@ -94,9 +90,6 @@ struct frame
 
 	/* True if this frame can be resized and moved */
 	int                       resizable;
-
-	/* True if wrapping failed for this frame */
-	int                       trouble;
 };
 
 
@@ -107,5 +100,26 @@ extern void show_hierarchy(struct frame *fr, const char *t);
 extern void delete_subframe(struct frame *top, struct frame *fr);
 extern struct frame *find_frame_with_scblocks(struct frame *top,
                                               SCBlock *scblocks);
+
+extern double total_height(struct frame *fr);
+
+extern Paragraph *last_open_para(struct frame *fr);
+extern void close_last_paragraph(struct frame *fr);
+
+extern PangoLayout *paragraph_layout(Paragraph *para);
+extern double paragraph_height(Paragraph *para);
+
+extern void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
+                    size_t len_bytes, PangoFontDescription *fdesc, int eop);
+
+extern void add_callback_para(struct frame *fr, double w, double h,
+                              SCCallbackDrawFunc draw_func,
+                              SCCallbackClickFunc click_func, void *bvp,
+                              void *vp);
+
+extern void add_image_para(struct frame *fr, const char *filename,
+                           double w, double h, int editable);
+
+extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w);
 
 #endif	/* FRAME_H */

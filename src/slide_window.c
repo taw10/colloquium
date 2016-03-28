@@ -38,7 +38,6 @@
 #include "render.h"
 #include "frame.h"
 #include "slideshow.h"
-#include "wrap.h"
 #include "notes.h"
 #include "pr_clock.h"
 #include "sc_parse.h"

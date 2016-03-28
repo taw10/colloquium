@@ -110,7 +110,8 @@ extern PangoLayout *paragraph_layout(Paragraph *para);
 extern double paragraph_height(Paragraph *para);
 
 extern void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
-                    size_t len_bytes, PangoFontDescription *fdesc, int eop);
+                    size_t len_bytes, PangoFontDescription *fdesc,
+                    double col[4]);
 
 extern void add_callback_para(struct frame *fr, double w, double h,
                               SCCallbackDrawFunc draw_func,

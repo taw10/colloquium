@@ -39,6 +39,7 @@ struct text_run
 	size_t                offs_bytes;
 	size_t                len_bytes;
 	PangoFontDescription *fontdesc;
+	double                col[4];
 };
 
 
@@ -273,6 +274,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 
 		PangoAttribute *attr;
 		const char *run_text;
+		guint16 r, g, b;
 
 		run_text = sc_block_contents(para->runs[i].scblock)
 		           + para->runs[i].offs_bytes;
@@ -280,10 +282,18 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 		attr = pango_attr_font_desc_new(para->runs[i].fontdesc);
 		attr->start_index = pos;
 		attr->end_index = pos + para->runs[i].len_bytes;
-		pos += para->runs[i].len_bytes;
-
-		strncat(text, run_text, para->runs[i].len_bytes);
 		pango_attr_list_insert(attrs, attr);
+
+		r = para->runs[i].col[0] * 65535;
+		g = para->runs[i].col[1] * 65535;
+		b = para->runs[i].col[2] * 65535;
+		attr = pango_attr_foreground_new(r, g, b);
+		attr->start_index = pos;
+		attr->end_index = pos + para->runs[i].len_bytes;
+		pango_attr_list_insert(attrs, attr);
+
+		pos += para->runs[i].len_bytes;
+		strncat(text, run_text, para->runs[i].len_bytes);
 
 	}
 
@@ -302,7 +312,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 
 
 void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
-             size_t len_bytes, PangoFontDescription *fdesc, int eop)
+             size_t len_bytes, PangoFontDescription *fdesc, double col[4])
 {
 	struct text_run *runs_new;
 
@@ -323,9 +333,11 @@ void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
 	para->runs[para->n_runs].offs_bytes = offs_bytes;
 	para->runs[para->n_runs].len_bytes = len_bytes;
 	para->runs[para->n_runs].fontdesc = pango_font_description_copy(fdesc);
+	para->runs[para->n_runs].col[0] = col[0];
+	para->runs[para->n_runs].col[1] = col[1];
+	para->runs[para->n_runs].col[2] = col[2];
+	para->runs[para->n_runs].col[3] = col[3];
 	para->n_runs++;
-
-	if ( eop ) para->open = 0;
 }
 
 

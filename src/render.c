@@ -217,7 +217,7 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 	cairo_translate(cr, fr->pad_l, fr->pad_t);
 	for ( i=0; i<fr->n_paras; i++ ) {
 
-		double cur_h = paragraph_height(fr->paras[i]) + 20.0;
+		double cur_h = paragraph_height(fr->paras[i]);
 
 		cairo_save(cr);
 		cairo_translate(cr, 0.0, hpos);
@@ -226,7 +226,7 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 			render_paragraph(cr, fr->paras[i]);
 		} /* else paragraph is not visible */
 
-		hpos += cur_h + 20.0;
+		hpos += cur_h;
 		cairo_restore(cr);
 
 	}

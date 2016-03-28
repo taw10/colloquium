@@ -98,7 +98,7 @@ static void update_size(SCEditor *e)
 {
 	if ( e->flow ) {
 		e->w = e->top->w;
-		e->h = total_height(e->top);
+		e->h = total_height(e->top) + e->top->pad_t + e->top->pad_b;
 		e->log_w = e->w;
 		e->log_h = e->h;
 		e->top->h = e->h;

@@ -350,7 +350,7 @@ double total_height(struct frame *fr)
 	int i;
 	double t = 0.0;
 	for ( i=0; i<fr->n_paras; i++ ) {
-		t += fr->paras[i]->height + 20.0;
+		t += fr->paras[i]->height;
 	}
 	return t;
 }

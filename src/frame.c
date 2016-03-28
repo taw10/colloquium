@@ -31,6 +31,7 @@
 
 #include "sc_parse.h"
 #include "frame.h"
+#include "imagestore.h"
 
 
 struct text_run
@@ -42,14 +43,26 @@ struct text_run
 	double                col[4];
 };
 
+enum para_type
+{
+	PARA_TYPE_TEXT,
+	PARA_TYPE_IMAGE,
+	PARA_TYPE_CALLBACK
+};
 
 struct _paragraph
 {
+	enum para_type   type;
+
 	int              n_runs;
 	struct text_run *runs;
 	int              open;
-
 	PangoLayout     *layout;
+
+	char            *filename;
+	double           image_w;
+	double           image_h;
+
 	double           height;
 };
 
@@ -341,6 +354,24 @@ void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
 }
 
 
+static Paragraph *create_paragraph(struct frame *fr)
+{
+	Paragraph **paras_new;
+	Paragraph *pnew;
+
+	paras_new = realloc(fr->paras, (fr->n_paras+1)*sizeof(Paragraph *));
+	if ( paras_new == NULL ) return NULL;
+
+	pnew = calloc(1, sizeof(struct _paragraph));
+	if ( pnew == NULL ) return NULL;
+
+	fr->paras = paras_new;
+	fr->paras[fr->n_paras++] = pnew;
+
+	return pnew;
+}
+
+
 void add_callback_para(struct frame *fr, double w, double h,
                        SCCallbackDrawFunc draw_func,
                        SCCallbackClickFunc click_func, void *bvp,
@@ -353,7 +384,14 @@ void add_callback_para(struct frame *fr, double w, double h,
 void add_image_para(struct frame *fr, const char *filename,
                     double w, double h, int editable)
 {
-	/* FIXME */
+	Paragraph *pnew;
+
+	pnew = create_paragraph(fr);
+
+	pnew->type = PARA_TYPE_IMAGE;
+	pnew->filename = strdup(filename);
+	pnew->image_w = w;
+	pnew->image_h = h;
 }
 
 
@@ -370,7 +408,6 @@ double total_height(struct frame *fr)
 
 Paragraph *last_open_para(struct frame *fr)
 {
-	Paragraph **paras_new;
 	Paragraph *pnew;
 
 	if ( (fr->paras != NULL) && (fr->paras[fr->n_paras-1]->open) ) {
@@ -378,15 +415,10 @@ Paragraph *last_open_para(struct frame *fr)
 	}
 
 	/* No open paragraph found, create a new one */
-	paras_new = realloc(fr->paras, (fr->n_paras+1)*sizeof(Paragraph *));
-	if ( paras_new == NULL ) return NULL;
-
-	pnew = calloc(1, sizeof(struct _paragraph));
+	pnew = create_paragraph(fr);
 	if ( pnew == NULL ) return NULL;
 
-	fr->paras = paras_new;
-	fr->paras[fr->n_paras++] = pnew;
-
+	pnew->type = PARA_TYPE_TEXT;
 	pnew->open = 1;
 	pnew->n_runs = 0;
 	pnew->runs = NULL;
@@ -401,4 +433,30 @@ void close_last_paragraph(struct frame *fr)
 {
 	if ( fr->paras == NULL ) return;
 	fr->paras[fr->n_paras-1]->open = 0;
+}
+
+
+void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
+                      enum is_size isz)
+{
+	cairo_surface_t *surf;
+
+	switch ( para->type ) {
+
+		case PARA_TYPE_TEXT :
+		cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+		pango_cairo_update_layout(cr, para->layout);
+		pango_cairo_show_layout(cr, para->layout);
+		cairo_fill(cr);
+		break;
+
+		case PARA_TYPE_IMAGE :
+		cairo_new_path(cr);
+		cairo_rectangle(cr, 0.0, 0.0, para->image_w, para->image_h);
+		surf = lookup_image(is, para->filename, para->image_w, isz);
+		cairo_set_source_surface(cr, surf, 0.0, 0.0);
+		cairo_fill(cr);
+		break;
+
+	}
 }

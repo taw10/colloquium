@@ -32,6 +32,7 @@
 
 #include "sc_parse.h"
 #include "sc_interp.h"
+#include "imagestore.h"
 
 
 typedef enum
@@ -106,8 +107,9 @@ extern double total_height(struct frame *fr);
 extern Paragraph *last_open_para(struct frame *fr);
 extern void close_last_paragraph(struct frame *fr);
 
-extern PangoLayout *paragraph_layout(Paragraph *para);
 extern double paragraph_height(Paragraph *para);
+extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
+                             enum is_size isz);
 
 extern void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
                     size_t len_bytes, PangoFontDescription *fdesc,

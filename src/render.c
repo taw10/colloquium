@@ -194,16 +194,6 @@ static void do_background(cairo_t *cr, struct frame *fr)
 }
 
 
-static void render_paragraph(cairo_t *cr, Paragraph *para)
-{
-	PangoLayout *layout = paragraph_layout(para);
-	cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
-	pango_cairo_update_layout(cr, layout);
-	pango_cairo_show_layout(cr, layout);
-	cairo_fill(cr);
-}
-
-
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
                       enum is_size isz, double min_y, double max_y)
 {
@@ -223,7 +213,7 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 		cairo_translate(cr, 0.0, hpos);
 
 		if ( (hpos + cur_h > min_y) && (hpos < max_y) ) {
-			render_paragraph(cr, fr->paras[i]);
+			render_paragraph(cr, fr->paras[i], is, isz);
 		} /* else paragraph is not visible */
 
 		hpos += cur_h;

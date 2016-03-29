@@ -144,4 +144,7 @@ extern void cursor_movev(struct frame *fr, int *cpara, int *cpos, int *ctrail,
 
 extern void check_callback_click(struct frame *fr, int para);
 
+extern void insert_text_in_paragraph(Paragraph *para, size_t offs,
+                                     const char *t);
+
 #endif	/* FRAME_H */

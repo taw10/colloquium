@@ -38,7 +38,8 @@
 struct text_run
 {
 	SCBlock              *scblock;
-	size_t                offs_bytes;
+	size_t                scblock_offs_bytes;
+	size_t                para_offs_bytes;
 	size_t                len_bytes;
 	PangoFontDescription *fontdesc;
 	double                col[4];
@@ -61,6 +62,7 @@ struct _paragraph
 	struct text_run *runs;
 	int              open;
 	PangoLayout     *layout;
+	size_t           offset_last;
 
 	/* For PARA_TYPE_IMAGE */
 	char            *filename;
@@ -302,7 +304,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 		guint16 r, g, b;
 
 		run_text = sc_block_contents(para->runs[i].scblock)
-		           + para->runs[i].offs_bytes;
+		           + para->runs[i].scblock_offs_bytes;
 
 		attr = pango_attr_font_desc_new(para->runs[i].fontdesc);
 		attr->start_index = pos;
@@ -355,7 +357,9 @@ void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
 
 	para->runs = runs_new;
 	para->runs[para->n_runs].scblock = scblock;
-	para->runs[para->n_runs].offs_bytes = offs_bytes;
+	para->runs[para->n_runs].scblock_offs_bytes = offs_bytes;
+	para->runs[para->n_runs].para_offs_bytes = para->offset_last;
+	para->offset_last += len_bytes;
 	para->runs[para->n_runs].len_bytes = len_bytes;
 	para->runs[para->n_runs].fontdesc = pango_font_description_copy(fdesc);
 	para->runs[para->n_runs].col[0] = col[0];
@@ -458,6 +462,7 @@ Paragraph *last_open_para(struct frame *fr)
 	pnew->runs = NULL;
 	pnew->layout = NULL;
 	pnew->height = 0.0;
+	pnew->offset_last = 0;
 
 	return pnew;
 }
@@ -676,5 +681,55 @@ void check_callback_click(struct frame *fr, int para)
 	Paragraph *p = fr->paras[para];
 	if ( p->type == PARA_TYPE_CALLBACK ) {
 		p->click_func(0.0, 0.0, p->bvp, p->vp);
+	}
+}
+
+
+static int which_run(Paragraph *para, size_t offs)
+{
+	int i;
+
+	for ( i=0; i<para->n_runs; i++ ) {
+		struct text_run *run = &para->runs[i];
+		if ( (offs >= run->para_offs_bytes)
+		  && (offs < run->para_offs_bytes + run->len_bytes) )
+		{
+			return i;
+		}
+	}
+	return para->n_runs;
+}
+
+
+void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
+{
+	int nrun;
+	int i;
+	struct text_run *run;
+	size_t run_offs, scblock_offs, ins_len;
+
+	/* Find which run we are in */
+	nrun = which_run(para, offs);
+	if ( nrun == para->n_runs ) {
+		fprintf(stderr, "Couldn't find run to insert into.\n");
+		return;
+	}
+	run = &para->runs[nrun];
+
+	/* Translate paragraph offset for insertion into SCBlock offset */
+	run_offs = offs - run->para_offs_bytes;
+	scblock_offs = run_offs + run->scblock_offs_bytes;
+	sc_insert_text(run->scblock, scblock_offs, t);
+
+	/* Update length of this run */
+	ins_len = strlen(t);
+	run->len_bytes += ins_len;
+
+	/* Update offsets of subsequent runs */
+	for ( i=nrun+1; i<para->n_runs; i++ ) {
+		if ( para->runs[i].scblock == run->scblock ) {
+			para->runs[i].scblock_offs_bytes += ins_len;
+		}
+		para->runs[i].para_offs_bytes += ins_len;
 	}
 }

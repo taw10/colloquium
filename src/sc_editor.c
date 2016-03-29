@@ -581,7 +581,19 @@ void insert_scblock(SCBlock *scblock, SCEditor *e)
 
 static void insert_text(char *t, SCEditor *e)
 {
-	/* FIXME: Insert "t" at the cursor */
+	Paragraph *para;
+
+	if ( e->cursor_para >= e->cursor_frame->n_paras ) {
+		fprintf(stderr, "Cursor paragraph number is too high!\n");
+		return;
+	}
+
+	para = e->cursor_frame->paras[e->cursor_para];
+	insert_text_in_paragraph(para, e->cursor_pos+e->cursor_trail, t);
+	wrap_paragraph(para, NULL, e->cursor_frame->w - e->cursor_frame->pad_l
+	                            - e->cursor_frame->pad_r);
+	cursor_moveh(e->cursor_frame, &e->cursor_para,
+	             &e->cursor_pos, &e->cursor_trail, +1);
 	sc_editor_redraw(e);
 }
 

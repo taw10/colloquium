@@ -408,7 +408,7 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
 
 	if ( get_para_highlight(fr, cursor_para, &cx, &cy, &w, &h) == 0 ) {
 		cairo_new_path(cr);
-		cairo_rectangle(cr, cx, cy, w, h);
+		cairo_rectangle(cr, cx+fr->x, cy+fr->y, w, h);
 		cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
 		cairo_set_line_width(cr, 5.0);
 		cairo_stroke(cr);

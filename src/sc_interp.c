@@ -820,6 +820,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	size_t start, len_bytes;
 	PangoFontDescription *fontdesc;
 	double *col;
+	int just_closed = 0;
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
@@ -846,12 +847,18 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 		}
 
 		if ( text[start] == '\n' ) {
+			if ( just_closed ) {
+				Paragraph *para = last_open_para(fr);
+				add_run(para, bl, start, 0, fontdesc, col);
+			}
 			close_last_paragraph(fr);
 			start += 1;
+			just_closed = 1;
 		} else  {
 			Paragraph *para = last_open_para(fr);
 			add_run(para, bl, start, len, fontdesc, col);
 			start += len;
+			just_closed = 0;
 		}
 
 	} while ( start < len_bytes );

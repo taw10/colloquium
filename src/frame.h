@@ -130,6 +130,9 @@ extern size_t end_offset_of_para(struct frame *fr, int pn);
 extern int find_cursor(struct frame *fr, double x, double y,
                        int *ppara, int *ppos, int *ptrail);
 
+extern int get_para_highlight(struct frame *fr, int cursor_para,
+                              double *cx, double *cy, double *cw, double *ch);
+
 extern int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
                           double *cx, double *cy, double *ch);
 

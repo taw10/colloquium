@@ -576,6 +576,31 @@ int find_cursor(struct frame *fr, double x, double y,
 }
 
 
+int get_para_highlight(struct frame *fr, int cursor_para,
+                       double *cx, double *cy, double *cw, double *ch)
+{
+	Paragraph *para;
+	int i;
+	double py = 0.0;
+
+	if ( cursor_para > fr->n_paras ) {
+		fprintf(stderr, "Cursor paragraph number is too high!\n");
+		return 1;
+	}
+
+	para = fr->paras[cursor_para];
+	for ( i=0; i<cursor_para; i++ ) {
+		py += fr->paras[i]->height;
+	}
+
+	*cx = fr->pad_l;
+	*cy = fr->pad_t + py;
+	*cw = fr->w - fr->pad_l - fr->pad_r;
+	*ch = para->height;
+	return 0;
+}
+
+
 int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
                    double *cx, double *cy, double *ch)
 {
@@ -590,14 +615,16 @@ int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 	}
 
 	para = fr->paras[cursor_para];
-
-	if ( para->type != PARA_TYPE_TEXT ) return 1;
-
-	pango_layout_get_cursor_pos(para->layout, cursor_pos, &rect, NULL);
-
 	for ( i=0; i<cursor_para; i++ ) {
 		py += fr->paras[i]->height;
 	}
+
+	if ( para->type != PARA_TYPE_TEXT ) {
+		return 1;
+	}
+
+	pango_layout_get_cursor_pos(para->layout, cursor_pos, &rect, NULL);
+
 	*cx = pango_units_to_double(rect.x) + fr->pad_l;
 	*cy = pango_units_to_double(rect.y) + fr->pad_t + py;
 	*ch = pango_units_to_double(rect.height);

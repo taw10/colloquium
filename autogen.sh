@@ -5,7 +5,3 @@ libtoolize --force --copy \
 && autoheader --force \
 && automake --add-missing --copy --force \
 && autoconf --force
-
-pushd harfatum
-./autogen.sh
-popd

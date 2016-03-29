@@ -77,5 +77,4 @@ LIBS="$LIBS $GDK_pixbuf_2_LIBS $DBUS_LIBS $LDFLAGS"
 
 
 AC_CONFIG_FILES(Makefile lib/Makefile)
-AC_CONFIG_FILES(harfatum/Makefile harfatum/lib/Makefile)
 AC_OUTPUT

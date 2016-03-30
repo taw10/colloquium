@@ -692,7 +692,7 @@ static int which_run(Paragraph *para, size_t offs)
 	for ( i=0; i<para->n_runs; i++ ) {
 		struct text_run *run = &para->runs[i];
 		if ( (offs >= run->para_offs_bytes)
-		  && (offs < run->para_offs_bytes + run->len_bytes) )
+		  && (offs <= run->para_offs_bytes + run->len_bytes) )
 		{
 			return i;
 		}

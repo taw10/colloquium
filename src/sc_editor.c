@@ -583,6 +583,11 @@ static void insert_text(char *t, SCEditor *e)
 {
 	Paragraph *para;
 
+	if ( e->cursor_frame == NULL ) {
+		fprintf(stderr, "Inserting text into no frame.\n");
+	        return;
+	}
+
 	if ( e->cursor_para >= e->cursor_frame->n_paras ) {
 		fprintf(stderr, "Cursor paragraph number is too high!\n");
 		return;

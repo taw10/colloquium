@@ -557,6 +557,11 @@ int find_cursor(struct frame *fr, double x, double y,
 	double pos = fr->pad_t;
 	int i;
 
+	if ( fr == NULL ) {
+		fprintf(stderr, "Cursor frame is NULL.\n");
+		return 1;
+	}
+
 	for ( i=0; i<fr->n_paras; i++ ) {
 		double npos = pos + fr->paras[i]->height;
 		if ( npos > y ) {
@@ -571,6 +576,8 @@ int find_cursor(struct frame *fr, double x, double y,
 		}
 		pos = npos;
 	}
+
+	if ( fr->n_paras == 0 ) return 1;
 
 	/* Pretend it's in the last paragraph */
 	pos -= fr->paras[fr->n_paras-1]->height;
@@ -588,7 +595,12 @@ int get_para_highlight(struct frame *fr, int cursor_para,
 	int i;
 	double py = 0.0;
 
-	if ( cursor_para > fr->n_paras ) {
+	if ( fr == NULL ) {
+		fprintf(stderr, "Cursor frame is NULL.\n");
+		return 1;
+	}
+
+	if ( cursor_para >= fr->n_paras ) {
 		fprintf(stderr, "Cursor paragraph number is too high!\n");
 		return 1;
 	}
@@ -614,7 +626,12 @@ int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 	int i;
 	double py = 0.0;
 
-	if ( cursor_para > fr->n_paras ) {
+	if ( fr == NULL ) {
+		fprintf(stderr, "Cursor frame is NULL.\n");
+		return 1;
+	}
+
+	if ( cursor_para >= fr->n_paras ) {
 		fprintf(stderr, "Cursor paragraph number is too high!\n");
 		return 1;
 	}

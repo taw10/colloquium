@@ -750,3 +750,43 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 		para->runs[i].para_offs_bytes += ins_len;
 	}
 }
+
+
+void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
+{
+	int nrun1, nrun2;
+	int i;
+	struct text_run *run1;
+	struct text_run *run2;
+	size_t scblock_offs1, scblock_offs2;
+
+	/* Find which run we are in */
+	nrun1 = which_run(para, offs1);
+	nrun2 = which_run(para, offs2);
+	if ( (nrun1 == para->n_runs) || (nrun2 == para->n_runs) ) {
+		fprintf(stderr, "Couldn't find run to delete from.\n");
+		return;
+	}
+	run1 = &para->runs[nrun1];
+	run2 = &para->runs[nrun2];
+
+	/* Translate paragraph offsets into SCBlock offsets */
+	scblock_offs1 = offs1 - run1->para_offs_bytes + run1->scblock_offs_bytes;
+	scblock_offs2 = offs2 - run2->para_offs_bytes + run2->scblock_offs_bytes;
+	sc_delete_text(run1->scblock, scblock_offs1,
+	               run2->scblock, scblock_offs2);
+
+	if ( nrun1 == nrun2 ) {
+		size_t del_len = offs2 - offs1;
+		run1->len_bytes -= del_len;
+		for ( i=nrun1+1; i<para->n_runs; i++ ) {
+			if ( para->runs[i].scblock == run1->scblock ) {
+				para->runs[i].scblock_offs_bytes -= del_len;
+			}
+			para->runs[i].para_offs_bytes -= del_len;
+		}
+	} else {
+		/* FIXME: Implement this case */
+		printf("Multi-run delete!\n");
+	}
+}

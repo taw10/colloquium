@@ -825,6 +825,20 @@ static void calculate_box_size(struct frame *fr, SCEditor *e,
 }
 
 
+static void check_paragraph(struct frame *fr, PangoContext *pc)
+{
+	if ( fr->n_paras > 0 ) return;
+
+	printf("Adding dummy run.\n");
+	show_sc_block(fr->scblocks, ">");
+	printf("----\n");
+	Paragraph *para = last_open_para(fr);
+	add_run(para, sc_block_child(fr->scblocks), 0, 0,
+	        fr->fontdesc, fr->col);
+	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r);
+}
+
+
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  SCEditor *e)
 {
@@ -871,6 +885,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 			/* Position cursor and prepare for possible drag */
 			e->cursor_frame = clicked;
+			check_paragraph(e->cursor_frame, e->pc);
 			find_cursor(clicked, x-fr->x, y-fr->y,
 			            &e->cursor_para, &e->cursor_pos,
 			            &e->cursor_trail);
@@ -1068,6 +1083,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
 		                     e->drag_corner_x - e->start_corner_x,
 		                     e->drag_corner_y - e->start_corner_y);
+		check_paragraph(fr, e->pc);
 		e->selection = fr;
 		e->cursor_frame = fr;
 		e->cursor_para = 0;
@@ -1379,6 +1395,8 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			sc_block_append_inside(fr->scblocks, "image", opts, "");
 			full_rerender(e); /* FIXME: No need for full */
 			e->selection = fr;
+			e->cursor_para = 0;
+			e->cursor_pos = 0;
 			sc_editor_redraw(e);
 			free(filename);
 

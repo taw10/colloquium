@@ -186,6 +186,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	top->y = 0.0;
 	top->w = w;
 	top->h = h;
+	top->scblocks = scblocks;
 
 	scin = sc_interp_new(pc, lang, top);
 	if ( scin == NULL ) {
@@ -206,6 +207,13 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 			i++;
 		}
 	}
+
+	top->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
+	top->col[0] = sc_interp_get_fgcol(scin)[0];
+	top->col[1] = sc_interp_get_fgcol(scin)[1];
+	top->col[2] = sc_interp_get_fgcol(scin)[2];
+	top->col[3] = sc_interp_get_fgcol(scin)[3];
+
 	sc_interp_add_blocks(scin, scblocks);
 
 	sc_interp_destroy(scin);

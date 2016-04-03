@@ -604,7 +604,7 @@ int get_para_highlight(struct frame *fr, int cursor_para,
 	}
 
 	if ( cursor_para >= fr->n_paras ) {
-		fprintf(stderr, "Cursor paragraph number is too high!\n");
+		fprintf(stderr, "Highlight paragraph number is too high!\n");
 		return 1;
 	}
 

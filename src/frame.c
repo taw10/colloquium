@@ -577,7 +577,10 @@ int find_cursor(struct frame *fr, double x, double y,
 		pos = npos;
 	}
 
-	if ( fr->n_paras == 0 ) return 1;
+	if ( fr->n_paras == 0 ) {
+		printf("No paragraphs in frame.\n");
+		return 1;
+	}
 
 	/* Pretend it's in the last paragraph */
 	pos -= fr->paras[fr->n_paras-1]->height;

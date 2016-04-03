@@ -1088,6 +1088,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		e->cursor_frame = fr;
 		e->cursor_para = 0;
 		e->cursor_pos = 0;
+		e->cursor_trail = 0;
 		break;
 
 		case DRAG_REASON_IMPORT :

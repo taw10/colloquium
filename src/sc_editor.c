@@ -555,34 +555,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 }
 
 
-void insert_scblock(SCBlock *scblock, SCEditor *e)
+void split_paragraph_at_cursor(SCEditor *e)
 {
-#if 0
-	/* FIXME: Insert "scblock" at the cursor */
-	int sln, sbx, sps;
-	struct wrap_box *sbox;
-	struct frame *fr = e->cursor_frame;
-
-	if ( fr == NULL ) return;
-
-	/* If this is, say, the top level frame, do nothing */
-	if ( fr->boxes == NULL ) return;
-
-	sln = e->cursor_line;
-	sbx = e->cursor_box;
-	sps = e->cursor_pos;
-	sbox = bv_box(e->cursor_frame->lines[sln].boxes, sbx);
-
-	sc_insert_block(sbox->scblock, sps+sbox->offs_char, scblock);
-
-	fr->empty = 0;
-
-	full_rerender(e); /* FIXME: No need for full */
-
-	//fixup_cursor(e);
-	//advance_cursor(e);
-	//sc_editor_redraw(e);
-#endif
+	split_paragraph(e->cursor_frame, e->cursor_para, e->cursor_pos, e->pc);
 }
 
 
@@ -923,12 +898,18 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 	} else {
 
-		/* Selected top new frame, no immediate dragging */
+		/* Clicked an existing frame, no immediate dragging */
 		e->drag_status = DRAG_STATUS_NONE;
 		e->drag_reason = DRAG_REASON_NONE;
 		e->selection = clicked;
 		e->cursor_frame = clicked;
-		check_paragraph(e->cursor_frame, e->pc, e->scblocks);
+		if ( clicked == e->top ) {
+			show_sc_block(clicked->scblocks, ")>");
+			check_paragraph(e->cursor_frame, e->pc, clicked->scblocks);
+		} else {
+			check_paragraph(e->cursor_frame, e->pc,
+			                sc_block_child(clicked->scblocks));
+		}
 		find_cursor(clicked, x-clicked->x, y-clicked->y,
 		            &e->cursor_para, &e->cursor_pos, &e->cursor_trail);
 

@@ -139,41 +139,37 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter,
+                                 gpointer vp)
 {
 }
 
 
-static void delete_frame_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
+                             gpointer vp)
 {
 }
 
 
-static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
 {
 	int n_slides;
 	SCBlock *block;
 	SCBlock *nsblock;
 	NarrativeWindow *nw = vp;
 
-	/* Link it into the SC structure */
+	/* Create the SCBlock for the new slide */
 	nsblock = sc_parse("\\slide{}");
-	insert_scblock(nsblock, nw->sceditor);
 
-	/* Iterate over blocks of presentation, counting \slides, until
-	 * we reach the block we just added */
-	block = nw->p->scblocks;
-	n_slides = 0;
-	while ( block != NULL ) {
-		const char *n = sc_block_name(block);
-		if ( n == NULL ) goto next;
-		if ( strcmp(n, "slide") == 0 ) {
-			if ( block == nsblock ) break;
-			n_slides++;
-		}
-next:
-		block = sc_block_next(block);
-	}
+	/* Split the current paragraph */
+	split_paragraph_at_cursor(nw->sceditor);
+
+	/* Link the new SCBlock in */
+
+	/* Create a new paragraph for the slide */
+
+	sc_editor_redraw(nw->sceditor);
 }
 
 

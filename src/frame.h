@@ -150,4 +150,7 @@ extern void insert_text_in_paragraph(Paragraph *para, size_t offs,
 extern void delete_text_in_paragraph(Paragraph *para,
                                      size_t offs1, size_t offs2);
 
+extern void split_paragraph(struct frame *fr, int pn, int pos,
+                            PangoContext *pc);
+
 #endif	/* FRAME_H */

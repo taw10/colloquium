@@ -388,6 +388,36 @@ static Paragraph *create_paragraph(struct frame *fr)
 }
 
 
+/* Create a new paragraph in 'fr' just after paragraph 'pos' */
+static Paragraph *insert_paragraph(struct frame *fr, int pos)
+{
+	Paragraph **paras_new;
+	Paragraph *pnew;
+	int i;
+
+	if ( pos >= fr->n_paras ) {
+		fprintf(stderr, "insert_paragraph(): pos too high!\n");
+		return NULL;
+	}
+
+	paras_new = realloc(fr->paras, (fr->n_paras+1)*sizeof(Paragraph *));
+	if ( paras_new == NULL ) return NULL;
+
+	pnew = calloc(1, sizeof(struct _paragraph));
+	if ( pnew == NULL ) return NULL;
+
+	fr->paras = paras_new;
+	fr->n_paras ++;
+
+	for ( i=fr->n_paras-1; i>pos; i-- ) {
+		fr->paras[i] = fr->paras[i-1];
+	}
+	fr->paras[pos+1] = pnew;
+
+	return pnew;
+}
+
+
 void add_callback_para(struct frame *fr, double w, double h,
                        SCCallbackDrawFunc draw_func,
                        SCCallbackClickFunc click_func, void *bvp,

@@ -613,12 +613,12 @@ static void insert_text(char *t, SCEditor *e)
 
 static void do_backspace(struct frame *fr, SCEditor *e)
 {
-	int old_pos = e->cursor_pos;
+	size_t old_pos = e->cursor_pos;
 	int old_para = e->cursor_para;
 	int old_trail = e->cursor_trail;
 
 	int new_para = old_para;
-	int new_pos = old_pos;
+	size_t new_pos = old_pos;
 	int new_trail = old_trail;
 
 	Paragraph *para = e->cursor_frame->paras[old_para];

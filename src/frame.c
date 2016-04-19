@@ -542,7 +542,7 @@ size_t end_offset_of_para(struct frame *fr, int pn)
 
 
 /* Local x,y in paragraph -> text offset */
-static int text_para_pos(Paragraph *para, double x, double y, int *ptrail)
+static size_t text_para_pos(Paragraph *para, double x, double y, int *ptrail)
 {
 	int idx;
 	pango_layout_xy_to_index(para->layout, pango_units_from_double(x),
@@ -552,7 +552,7 @@ static int text_para_pos(Paragraph *para, double x, double y, int *ptrail)
 
 
 int find_cursor(struct frame *fr, double x, double y,
-                int *ppara, int *ppos, int *ptrail)
+                int *ppara, size_t *ppos, int *ptrail)
 {
 	double pos = fr->pad_t;
 	int i;
@@ -657,12 +657,27 @@ int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 }
 
 
-void cursor_moveh(struct frame *fr, int *cpara, int *cpos, int *ctrail,
+void cursor_moveh(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
                   signed int dir)
 {
 	Paragraph *para = fr->paras[*cpara];
+	int np = *cpos;
 
-	if ( (*cpos+*ctrail == end_offset_of_para(fr, *cpara)) && (dir > 0) ) {
+	pango_layout_move_cursor_visually(para->layout, 1, *cpos, *ctrail,
+	                                  dir, &np, ctrail);
+	if ( np == -1 ) {
+		if ( *cpara > 0 ) {
+			(*cpara)--;
+			*cpos = end_offset_of_para(fr, *cpara) - 1;
+			*ctrail = 1;
+			return;
+		} else {
+			/* Can't move any further */
+			return;
+		}
+	}
+
+	if ( np == G_MAXINT ) {
 		if ( *cpara < fr->n_paras-1 ) {
 			(*cpara)++;
 			*cpos = 0;
@@ -674,23 +689,11 @@ void cursor_moveh(struct frame *fr, int *cpara, int *cpos, int *ctrail,
 		}
 	}
 
-	if ( (*cpos+*ctrail == 0) && (dir < 0) ) {
-		if ( *cpara > 0 ) {
-			(*cpara)--;
-			*cpos = end_offset_of_para(fr, *cpara) - 1;
-			*ctrail = 1;
-			return;
-		} else {
-			/* Can't move any further */
-			return;
-		}
-	}
-	pango_layout_move_cursor_visually(para->layout, 1, *cpos, *ctrail,
-	                                  dir, cpos, ctrail);
+	*cpos = np;
 }
 
 
-void cursor_movev(struct frame *fr, int *cpara, int *cpos, int *ctrail,
+void cursor_movev(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
                   signed int dir)
 {
 }
@@ -791,5 +794,61 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
 	} else {
 		/* FIXME: Implement this case */
 		printf("Multi-run delete!\n");
+	}
+}
+
+
+static void split_text_paragraph(struct frame *fr, int pn, int pos,
+                                 PangoContext *pc)
+{
+	Paragraph *pnew;
+	int i, j;
+	int run;
+	Paragraph *para = fr->paras[pn];
+
+	pnew = insert_paragraph(fr, pn);
+	if ( pnew == NULL ) {
+		fprintf(stderr, "Failed to insert paragraph\n");
+		return;
+	}
+
+	/* Determine which run the cursor is in */
+	run = which_run(para, pos);
+
+	pnew->type = PARA_TYPE_TEXT;
+	pnew->open = para->open;
+	pnew->n_runs = para->n_runs - run;
+	pnew->runs = malloc(pnew->n_runs * sizeof(struct text_run));
+	if ( pnew->runs == NULL ) {
+		fprintf(stderr, "Failed to allocate runs.\n");
+		return; /* Badness is coming */
+	}
+
+	/* If the position is right at the start of a run, the whole run
+	 * gets moved to the next paragraph */
+	if ( para->runs[run].para_offs_bytes ) {
+	}
+
+	j = 0;
+	for ( i=run; i<para->n_runs; i++ ) {
+		pnew->runs[j++] = para->runs[i];
+	}
+
+	para->open = 0;
+	para->n_runs = run+1;
+
+	wrap_paragraph(para, pc, fr->w);
+	wrap_paragraph(pnew, pc, fr->w);
+}
+
+
+void split_paragraph(struct frame *fr, int pn, int pos, PangoContext *pc)
+{
+	Paragraph *para = fr->paras[pn];
+
+	if ( para->type == PARA_TYPE_TEXT ) {
+		split_text_paragraph(fr, pn, pos, pc);
+	} else {
+		/* Other types can't be split */
 	}
 }

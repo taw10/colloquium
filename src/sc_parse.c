@@ -41,7 +41,6 @@ struct _scblock
 	char *contents;
 
 	SCBlock *next;
-	SCBlock *prev;
 	SCBlock *child;
 };
 
@@ -103,11 +102,8 @@ SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
 	bln->child = NULL;
 	bln->next = NULL;
 
-	if ( bl == NULL ) {
-		bln->prev = NULL;
-	} else {
+	if ( bl != NULL ) {
 		bl->next = bln;
-		bln->prev = bl;
 	}
 
 	if ( (blfp != NULL) && (*blfp == NULL) ) {
@@ -162,11 +158,6 @@ SCBlock *sc_block_append_inside(SCBlock *parent,
 	bln->child = NULL;
 	bln->next = NULL;
 
-	if ( bl == NULL ) {
-		bln->prev = NULL;
-	} else {
-		bln->prev = bl;
-	}
 	*ptr = bln;
 
 	return bln;

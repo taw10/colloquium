@@ -288,7 +288,8 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 	/* Allocate the complete text */
 	text = malloc(total_len+1);
 	if ( text == NULL ) {
-		fprintf(stderr, "Couldn't allocate combined text\n");
+		fprintf(stderr, "Couldn't allocate combined text (%lli)\n",
+		       (long long int)total_len);
 		return;
 	}
 

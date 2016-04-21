@@ -557,9 +557,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 
 void split_paragraph_at_cursor(SCEditor *e)
 {
-	split_paragraph(e->cursor_frame, e->cursor_para, e->cursor_pos, e->pc);
+	split_paragraph(e->cursor_frame, e->cursor_para,
+	                e->cursor_pos+e->cursor_trail, e->pc);
 }
-
 
 
 static void insert_text(char *t, SCEditor *e)

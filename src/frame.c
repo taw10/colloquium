@@ -829,13 +829,38 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
 }
 
 
-static void split_text_paragraph(struct frame *fr, int pn, int pos,
+static __attribute__((unused)) void show_para(Paragraph *p)
+{
+	int i;
+	printf("Paragraph %p\n", p);
+	printf("%i runs:\n", p->n_runs);
+	for ( i=0; i<p->n_runs; i++ ) {
+		printf("  Run %2i: para offs %lli, SCBlock %p offs %lli, len "
+		       "%lli %s\n", i, (long long int)p->runs[i].para_offs_bytes,
+		       p->runs[i].scblock,
+		       (long long int)p->runs[i].scblock_offs_bytes,
+		       (long long int)p->runs[i].len_bytes,
+		       pango_font_description_to_string(p->runs[i].fontdesc));
+	}
+}
+
+
+static char *s_strdup(const char *a)
+{
+	if ( a == NULL ) return NULL;
+	return strdup(a);
+}
+
+
+static void split_text_paragraph(struct frame *fr, int pn, size_t pos,
                                  PangoContext *pc)
 {
 	Paragraph *pnew;
-	int i, j;
+	int i;
+	size_t offs, run_offs;
 	int run;
 	Paragraph *para = fr->paras[pn];
+	struct text_run *rr;
 
 	pnew = insert_paragraph(fr, pn);
 	if ( pnew == NULL ) {
@@ -855,25 +880,55 @@ static void split_text_paragraph(struct frame *fr, int pn, int pos,
 		return; /* Badness is coming */
 	}
 
-	/* If the position is right at the start of a run, the whole run
-	 * gets moved to the next paragraph */
-	if ( para->runs[run].para_offs_bytes ) {
+	/* First run of the new paragraph contains the leftover text */
+	rr = &para->runs[run];
+	pnew->runs[0].scblock = rr->scblock;
+	run_offs = pos - rr->para_offs_bytes;
+	pnew->runs[0].scblock_offs_bytes = rr->scblock_offs_bytes + run_offs;
+	pnew->runs[0].para_offs_bytes = 0;
+	pnew->runs[0].len_bytes = rr->len_bytes - run_offs;
+	pnew->runs[0].col[0] = rr->col[0];
+	pnew->runs[0].col[1] = rr->col[1];
+	pnew->runs[0].col[2] = rr->col[2];
+	pnew->runs[0].col[3] = rr->col[3];
+	pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
+	pnew->n_runs = 1;
+
+	/* All later runs just get moved to the new paragraph */
+	offs = pnew->runs[0].len_bytes;
+	for ( i=run+1; i<para->n_runs; i++ ) {
+		pnew->runs[pnew->n_runs] = para->runs[i];
+		pnew->runs[pnew->n_runs].para_offs_bytes = offs;
+		pnew->n_runs++;
+		offs += rr->len_bytes;
 	}
 
-	j = 0;
-	for ( i=run; i<para->n_runs; i++ ) {
-		pnew->runs[j++] = para->runs[i];
-	}
-
-	para->open = 0;
+	/* Truncate the first paragraph at the appropriate position */
+	rr->len_bytes = run_offs;
 	para->n_runs = run+1;
+
+	/* If the first and second paragraphs have the same SCBlock, split it */
+	if ( rr->scblock == pnew->runs[0].scblock ) {
+		size_t sc_offs;
+		sc_offs = rr->scblock_offs_bytes + run_offs;
+		pnew->runs[0].scblock = sc_block_split(rr->scblock, sc_offs);
+		pnew->runs[0].scblock_offs_bytes = 0;
+	}
+
+	/* Add a newline after the end of the first paragraph's SC */
+	sc_block_append(rr->scblock, s_strdup(sc_block_name(rr->scblock)),
+	                             s_strdup(sc_block_options(rr->scblock)),
+	                             strdup("\n"), NULL);
+
+	pnew->open = para->open;
+	para->open = 0;
 
 	wrap_paragraph(para, pc, fr->w);
 	wrap_paragraph(pnew, pc, fr->w);
 }
 
 
-void split_paragraph(struct frame *fr, int pn, int pos, PangoContext *pc)
+void split_paragraph(struct frame *fr, int pn, size_t pos, PangoContext *pc)
 {
 	Paragraph *para = fr->paras[pn];
 

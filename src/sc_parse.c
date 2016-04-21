@@ -103,6 +103,7 @@ SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
 	bln->next = NULL;
 
 	if ( bl != NULL ) {
+		bln->next = bl->next;
 		bl->next = bln;
 	}
 
@@ -124,6 +125,7 @@ SCBlock *sc_block_append_end(SCBlock *bl, char *name, char *opt, char *contents)
 	if ( bln == NULL ) return NULL;
 
 	while ( bl->next != NULL ) {
+		bln->next = bl->next;
 		bl = bl->next;
 	};
 
@@ -658,4 +660,35 @@ SCBlock *sc_block_copy(const SCBlock *bl)
 	} while ( bl != NULL );
 
 	return first_copy;
+}
+
+
+static char *s_strdup(const char *a)
+{
+	if ( a == NULL ) return NULL;
+	return strdup(a);
+}
+
+
+SCBlock *sc_block_split(SCBlock *bl, size_t pos)
+{
+	SCBlock *n = sc_block_new();
+
+	if ( bl->child != NULL ) {
+		fprintf(stderr, "Splitting a block with a child!\n");
+		return NULL;
+	}
+
+	/* Second block */
+	n->name = s_strdup(bl->name);
+	n->options = s_strdup(bl->options);
+	n->contents = strdup(bl->contents+pos);
+
+	/* Truncate the first block */
+	bl->contents[pos] = '\0';
+
+	n->next = bl->next;
+	bl->next = n;
+
+	return n;
 }

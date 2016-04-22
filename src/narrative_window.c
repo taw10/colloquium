@@ -154,22 +154,21 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
-	int n_slides;
-	SCBlock *block;
 	SCBlock *nsblock;
 	NarrativeWindow *nw = vp;
 
-	/* Create the SCBlock for the new slide */
-	nsblock = sc_parse("\\slide{}");
-
 	/* Split the current paragraph */
-	split_paragraph_at_cursor(nw->sceditor);
+	nsblock = split_paragraph_at_cursor(nw->sceditor);
 
 	/* Link the new SCBlock in */
+	if ( nsblock != NULL ) {
+		sc_block_append(nsblock, "slide", NULL, NULL, NULL);
+	} else {
+		fprintf(stderr, "Failed to split paragraph\n");
+	}
 
-	/* Create a new paragraph for the slide */
-
-	sc_editor_redraw(nw->sceditor);
+	sc_editor_set_scblock(nw->sceditor,
+	                      sc_editor_get_scblock(nw->sceditor));
 }
 
 

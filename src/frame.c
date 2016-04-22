@@ -857,8 +857,8 @@ static char *s_strdup(const char *a)
 }
 
 
-static void split_text_paragraph(struct frame *fr, int pn, size_t pos,
-                                 PangoContext *pc)
+static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
+                                     PangoContext *pc)
 {
 	Paragraph *pnew;
 	int i;
@@ -870,7 +870,7 @@ static void split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	pnew = insert_paragraph(fr, pn);
 	if ( pnew == NULL ) {
 		fprintf(stderr, "Failed to insert paragraph\n");
-		return;
+		return NULL;
 	}
 
 	/* Determine which run the cursor is in */
@@ -882,7 +882,7 @@ static void split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	pnew->runs = malloc(pnew->n_runs * sizeof(struct text_run));
 	if ( pnew->runs == NULL ) {
 		fprintf(stderr, "Failed to allocate runs.\n");
-		return; /* Badness is coming */
+		return NULL; /* Badness is coming */
 	}
 
 	/* First run of the new paragraph contains the leftover text */
@@ -930,16 +930,19 @@ static void split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 	wrap_paragraph(para, pc, fr->w);
 	wrap_paragraph(pnew, pc, fr->w);
+
+	return sc_block_next(rr->scblock);
 }
 
 
-void split_paragraph(struct frame *fr, int pn, size_t pos, PangoContext *pc)
+SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos, PangoContext *pc)
 {
 	Paragraph *para = fr->paras[pn];
 
 	if ( para->type == PARA_TYPE_TEXT ) {
-		split_text_paragraph(fr, pn, pos, pc);
+		return split_text_paragraph(fr, pn, pos, pc);
 	} else {
 		/* Other types can't be split */
+		return NULL;
 	}
 }

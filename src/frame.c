@@ -64,6 +64,9 @@ struct _paragraph
 	PangoLayout     *layout;
 	size_t           offset_last;
 
+	/* For anything other than PARA_TYPE_TEXT */
+	SCBlock         *scblock;
+
 	/* For PARA_TYPE_IMAGE */
 	char            *filename;
 	double           image_w;
@@ -419,7 +422,7 @@ static Paragraph *insert_paragraph(struct frame *fr, int pos)
 }
 
 
-void add_callback_para(struct frame *fr, double w, double h,
+void add_callback_para(struct frame *fr, SCBlock *bl, double w, double h,
                        SCCallbackDrawFunc draw_func,
                        SCCallbackClickFunc click_func, void *bvp,
                        void *vp)
@@ -433,6 +436,7 @@ void add_callback_para(struct frame *fr, double w, double h,
 	}
 
 	pnew->type = PARA_TYPE_CALLBACK;
+	pnew->scblock = bl;
 	pnew->cb_w = w;
 	pnew->cb_h = h;
 	pnew->draw_func = draw_func;
@@ -444,7 +448,7 @@ void add_callback_para(struct frame *fr, double w, double h,
 }
 
 
-void add_image_para(struct frame *fr, const char *filename,
+void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
                     double w, double h, int editable)
 {
 	Paragraph *pnew;
@@ -456,6 +460,7 @@ void add_image_para(struct frame *fr, const char *filename,
 	}
 
 	pnew->type = PARA_TYPE_IMAGE;
+	pnew->scblock = scblock;
 	pnew->filename = strdup(filename);
 	pnew->image_w = w;
 	pnew->image_h = h;

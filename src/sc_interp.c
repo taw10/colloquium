@@ -262,6 +262,21 @@ int sc_interp_get_height(SCInterpreter *scin)
 }
 
 
+static void set_frame_default_style(struct frame *fr, SCInterpreter *scin)
+{
+	if ( fr == NULL ) return;
+
+	if ( fr->fontdesc != NULL ) {
+		pango_font_description_free(fr->fontdesc);
+	}
+	fr->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
+	fr->col[0] = sc_interp_get_fgcol(scin)[0];
+	fr->col[1] = sc_interp_get_fgcol(scin)[1];
+	fr->col[2] = sc_interp_get_fgcol(scin)[2];
+	fr->col[3] = sc_interp_get_fgcol(scin)[3];
+}
+
+
 static void update_font(SCInterpreter *scin)
 {
 	PangoFontMetrics *metrics;
@@ -279,6 +294,7 @@ static void update_font(SCInterpreter *scin)
 	st->ascent = pango_font_metrics_get_ascent(metrics);
 	st->height = st->ascent + pango_font_metrics_get_descent(metrics);
 	pango_font_metrics_unref(metrics);
+	set_frame_default_style(sc_interp_get_frame(scin), scin);
 }
 
 
@@ -380,6 +396,7 @@ static void set_colour(SCInterpreter *scin, const char *colour)
 	st->col[1] = col.green;
 	st->col[2] = col.blue;
 	st->col[3] = col.alpha;
+	set_frame_default_style(sc_interp_get_frame(scin), scin);
 }
 
 
@@ -545,6 +562,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 		return NULL;
 	}
 	st->macro_contents = NULL;
+	st->fr = NULL;
 
 	scin->lang = lang;
 
@@ -907,11 +925,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			return 1;
 		}
 
-		fr->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
-		fr->col[0] = sc_interp_get_fgcol(scin)[0];
-		fr->col[1] = sc_interp_get_fgcol(scin)[1];
-		fr->col[2] = sc_interp_get_fgcol(scin)[2];
-		fr->col[3] = sc_interp_get_fgcol(scin)[3];
+		set_frame_default_style(fr, scin);
 
 		parse_frame_options(fr, sc_interp_get_frame(scin),
 			            options);

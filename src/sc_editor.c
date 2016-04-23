@@ -813,6 +813,13 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
 {
 	if ( fr->n_paras > 0 ) return;
 	Paragraph *para = last_open_para(fr);
+
+	/* We are creating the first paragraph.  It uses the last SCBlock
+	 * in the chain */
+	while ( sc_block_next(scblocks) != NULL ) {
+		scblocks = sc_block_next(scblocks);
+	}
+
 	add_run(para, scblocks, 0, 0, fr->fontdesc, fr->col);
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r);
 }

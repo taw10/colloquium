@@ -481,9 +481,14 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	stylesheets[0] = p->stylesheet;
-	stylesheets[1] = narrative_stylesheet();
-	stylesheets[2] = NULL;
+	if ( p->stylesheet != NULL ) {
+		stylesheets[0] = p->stylesheet;
+		stylesheets[1] = narrative_stylesheet();
+		stylesheets[2] = NULL;
+	} else {
+		stylesheets[0] = narrative_stylesheet();
+		stylesheets[1] = NULL;
+	}
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang);
 	cbl = sc_callback_list_new();
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,

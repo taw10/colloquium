@@ -1533,7 +1533,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
-	GError *err;
 
 	sceditor = g_object_new(SC_TYPE_EDITOR, NULL);
 
@@ -1555,12 +1554,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 
-	err = NULL;
-	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/colloquium/sky.png", &err);
-	if ( sceditor->bg_pixbuf == NULL ) {
-		fprintf(stderr, "Failed to load background: %s\n",
-		        err->message);
-	}
+	sceditor->bg_pixbuf = NULL;
 
 	gtk_widget_set_size_request(GTK_WIDGET(sceditor),
 	                            sceditor->w, sceditor->h);

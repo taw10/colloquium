@@ -115,12 +115,14 @@ extern void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
                     size_t len_bytes, PangoFontDescription *fdesc,
                     double col[4]);
 
-extern void add_callback_para(struct frame *fr, double w, double h,
+extern void add_callback_para(struct frame *fr, SCBlock *scblock,
+                              double w, double h,
                               SCCallbackDrawFunc draw_func,
                               SCCallbackClickFunc click_func, void *bvp,
                               void *vp);
 
-extern void add_image_para(struct frame *fr, const char *filename,
+extern void add_image_para(struct frame *fr, SCBlock *scblock,
+                           const char *filename,
                            double w, double h, int editable);
 
 extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w);
@@ -149,5 +151,8 @@ extern void insert_text_in_paragraph(Paragraph *para, size_t offs,
 
 extern void delete_text_in_paragraph(Paragraph *para,
                                      size_t offs1, size_t offs2);
+
+extern SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos,
+                                PangoContext *pc);
 
 #endif	/* FRAME_H */

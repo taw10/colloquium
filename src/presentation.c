@@ -164,9 +164,15 @@ static char *fgets_long(FILE *fh, size_t *lp)
 
 		r = fgetc(fh);
 		if ( r == EOF ) {
-			free(line);
-			*lp = 0;
-			return NULL;
+			if ( l == 0 ) {
+				free(line);
+				*lp = 0;
+				return NULL;
+			} else {
+				line[l++] = '\0';
+				*lp = l;
+				return line;
+			}
 		}
 
 		line[l++] = r;

@@ -100,10 +100,6 @@ static void update_size(SCEditor *e)
 
 		double total = total_height(e->top);
 
-		if ( total == 0.0 ) {
-			total = 1000.0;  /* FIXME: Height of window */
-		}
-
 		e->w = e->top->w;
 		e->h = total + e->top->pad_t + e->top->pad_b;
 
@@ -113,6 +109,10 @@ static void update_size(SCEditor *e)
 	} else {
 		e->top->w = e->log_w;
 		e->top->h = e->log_h;
+	}
+
+	if ( e->flow && (e->top->h < e->visible_height) ) {
+		e->top->h = e->visible_height;
 	}
 
 	set_vertical_params(e);

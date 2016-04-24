@@ -221,7 +221,7 @@ int slide_number(struct presentation *p, SCBlock *sl)
 	while ( bl != NULL ) {
 		if ( safe_strcmp(sc_block_name(bl), "slide") == 0 ) {
 			n++;
-			if ( sc_block_child(bl) == sl ) return n;
+			if ( bl == sl ) return n;
 		}
 		bl = sc_block_next(bl);
 	}

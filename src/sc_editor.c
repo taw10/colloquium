@@ -335,7 +335,8 @@ static void full_rerender(SCEditor *e)
 	pc = pango_cairo_create_context(cr);
 
 	e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-	                          e->is, ISZ_EDITOR, 0, cr, e->w, 0.0, e->lang);
+	                          e->is, ISZ_EDITOR, e->slidenum,
+	                          cr, e->w, 0.0, e->lang);
 
 	e->top->x = 0.0;
 	e->top->y = 0.0;

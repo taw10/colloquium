@@ -109,6 +109,8 @@ struct presentation *new_presentation()
 	new->filename = NULL;
 	new->titlebar = get_titlebar_string(new);
 
+	new->scblocks = NULL;
+
 	new->slide_width = 1024.0;
 	new->slide_height = 768.0;
 

@@ -814,6 +814,12 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
 	if ( fr->n_paras > 0 ) return;
 	Paragraph *para = last_open_para(fr);
 
+	if ( scblocks == NULL ) {
+		/* We have no SCBlocks at all!  Better create one... */
+		scblocks = sc_parse("");
+		fr->scblocks = scblocks;
+	}
+
 	/* We are creating the first paragraph.  It uses the last SCBlock
 	 * in the chain */
 	while ( sc_block_next(scblocks) != NULL ) {

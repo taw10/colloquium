@@ -296,6 +296,7 @@ static void recursive_show_sc_blocks(const char *prefix, const SCBlock *bl)
 void show_sc_block(const SCBlock *bl, const char *prefix)
 {
 	printf("%s (%p) ", prefix,  bl);
+	if ( bl == NULL ) return;
 	if ( bl->name != NULL ) printf("\\%s ", bl->name);
 	if ( bl->options != NULL ) printf("[%s] ", bl->options);
 	if ( bl->contents != NULL ) printf("{%s} ", bl->contents);

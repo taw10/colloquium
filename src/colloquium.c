@@ -47,7 +47,9 @@ G_DEFINE_TYPE(Colloquium, colloquium, GTK_TYPE_APPLICATION)
 
 static void colloquium_activate(GApplication *app)
 {
-	printf("activate!\n");
+	struct presentation *p;
+	p = new_presentation();
+	narrative_window_new(p, app);
 }
 
 

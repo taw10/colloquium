@@ -345,6 +345,13 @@ static void scroll_down(NarrativeWindow *nw)
 }
 
 
+static gboolean destroy_sig(GtkWidget *da, NarrativeWindow *nw)
+{
+	g_application_release(nw->app);
+	return FALSE;
+}
+
+
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               NarrativeWindow *nw)
 {
@@ -489,6 +496,11 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 		stylesheets[0] = narrative_stylesheet();
 		stylesheets[1] = NULL;
 	}
+
+	if ( nw->p->scblocks == NULL ) {
+		nw->p->scblocks = sc_parse("");
+	}
+
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang);
 	cbl = sc_callback_list_new();
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
@@ -567,11 +579,15 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	                 G_CALLBACK(button_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->sceditor), "key-press-event",
 			 G_CALLBACK(key_press_sig), nw);
+	g_signal_connect(G_OBJECT(nw->window), "destroy",
+			 G_CALLBACK(destroy_sig), nw);
 
 	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 
 	gtk_widget_show_all(nw->window);
+	nw->app = app;
+	g_application_hold(app);
 
 	return nw;
 }

@@ -82,7 +82,7 @@ void slideshow_rerender(SlideShow *ss)
 	stylesheets[1] = NULL;
 
 	n = slide_number(ss->p, ss->cur_slide);
-	ss->surface = render_sc(ss->cur_slide,
+	ss->surface = render_sc(sc_block_child(ss->cur_slide),
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
 	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n,

@@ -241,44 +241,88 @@ void sc_block_free(SCBlock *bl)
 }
 
 
+char *serialise_sc_block(const SCBlock *bl)
+{
+	char *a;
+	SCBlock *ch;
+	size_t len = 3;
+
+	if ( bl == NULL ) return strdup("");
+
+	if ( bl->name != NULL ) len += 1+strlen(bl->name);
+	if ( bl->options != NULL ) len += 2+strlen(bl->options);
+	if ( bl->contents != NULL ) len += 2+strlen(bl->contents);
+	a = malloc(len);
+	if ( a == NULL ) return NULL;
+	a[0] = '\0';
+
+	if ( bl->name == NULL ) {
+		strcat(a, bl->contents);
+	} else {
+
+		strcat(a, "\\");
+		strcat(a, bl->name);
+		if ( bl->options != NULL ) {
+			strcat(a, "[");
+			strcat(a, bl->options);
+			strcat(a, "]");
+		}
+		if ( (bl->contents != NULL) || (bl->child != NULL) ) {
+			strcat(a, "{");
+		}
+		if ( bl->contents != NULL ) {
+			strcat(a, bl->contents);
+		}
+
+		/* Special case to prevent "\somethingSome text" */
+		if ( (bl->name != NULL) && (bl->options == NULL)
+		  && (bl->contents == NULL) && (bl->next != NULL)
+		  && (bl->next->name == NULL) && (bl->child == NULL) )
+		{
+			strcat(a, "{}");
+		}
+
+	}
+
+	/* Add ALL child blocks of this one */
+	ch = bl->child;
+	while ( ch != NULL ) {
+
+		char *c = serialise_sc_block(ch);
+		if ( c == NULL ) {
+			free(a);
+			return NULL;
+		}
+
+		len += strlen(c);
+		a = realloc(a, len);
+		if ( a == NULL ) return NULL;
+		strcat(a, c);
+		free(c);
+
+		ch = ch->next;
+
+	}
+
+	if ( (bl->name != NULL) &&
+	     ((bl->contents != NULL) || (bl->child != NULL)) ) {
+		strcat(a, "}");
+	}
+
+	return a;
+}
+
+
 void save_sc_block(FILE *fh, const SCBlock *bl)
 {
 	while ( bl != NULL ) {
-
-		if ( bl->name == NULL ) {
-			fprintf(fh, "%s", bl->contents);
-		} else {
-
-			fprintf(fh, "\\%s", bl->name);
-			if ( bl->options != NULL ) {
-				fprintf(fh, "[%s]", bl->options);
-			}
-			if ( (bl->contents != NULL) || (bl->child != NULL) ) {
-				fprintf(fh, "{");
-			}
-			if ( bl->contents != NULL ) {
-				fprintf(fh, "%s", bl->contents);
-			}
-
-			/* Special case to prevent "\somethingSome text" */
-			if ( (bl->name != NULL) && (bl->options == NULL)
-			  && (bl->contents == NULL) && (bl->next != NULL)
-			  && (bl->next->name == NULL) && (bl->child == NULL) )
-			{
-				fprintf(fh, "{}");
-			}
-
+		char *a = serialise_sc_block(bl);
+		if ( a == NULL ) {
+			fprintf(stderr, "Failed to serialise block\n");
+			return;
 		}
-
-		if ( bl->child != NULL ) {
-			save_sc_block(fh, bl->child);
-		}
-
-		if ( (bl->name != NULL) &&
-		     ((bl->contents != NULL) || (bl->child != NULL)) ) {
-			fprintf(fh, "}");
-		}
-
+		fprintf(fh, a);
+		free(a);
 		bl = bl->next;
 	}
 }

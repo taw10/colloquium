@@ -115,7 +115,7 @@ extern void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
                     size_t len_bytes, PangoFontDescription *fdesc,
                     double col[4]);
 
-extern void add_callback_para(struct frame *fr, SCBlock *scblock,
+extern void add_callback_para(struct frame *fr, SCBlock *scblock, SCBlock *mr,
                               double w, double h,
                               SCCallbackDrawFunc draw_func,
                               SCCallbackClickFunc click_func, void *bvp,
@@ -154,5 +154,6 @@ extern void delete_text_in_paragraph(Paragraph *para,
 
 extern SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos,
                                 PangoContext *pc);
+extern SCBlock *block_at_cursor(struct frame *fr, int para, size_t pos);
 
 #endif	/* FRAME_H */

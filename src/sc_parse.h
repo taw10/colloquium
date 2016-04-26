@@ -71,6 +71,7 @@ extern SCBlock *sc_block_split(SCBlock *bl, size_t pos);
 extern void show_sc_blocks(const SCBlock *bl);
 extern void show_sc_block(const SCBlock *bl, const char *prefix);
 
+extern char *serialise_sc_block(const SCBlock *bl);
 extern void save_sc_block(FILE *fh, const SCBlock *bl);
 
 #endif	/* SC_PARSE_H */

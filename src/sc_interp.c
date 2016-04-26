@@ -212,11 +212,15 @@ static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 		double w, h;
 		int r;
 		void *bvp;
+		SCBlock *mr;
+
+		mr = sc_interp_get_macro_real_block(scin);
+		if ( mr == NULL ) mr = bl;
 
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
 		if ( !r ) return;
-		add_callback_para(sc_interp_get_frame(scin), bl, w, h,
+		add_callback_para(sc_interp_get_frame(scin), bl, mr, w, h,
 		                  cbl->draw_funcs[i], cbl->click_funcs[i],
 		                  bvp, cbl->vps[i]);
 
@@ -562,6 +566,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 		return NULL;
 	}
 	st->macro_contents = NULL;
+	st->macro_real_block = NULL;
 	st->fr = NULL;
 
 	scin->lang = lang;

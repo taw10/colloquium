@@ -1114,6 +1114,25 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
+static void copy_selection(SCEditor *e)
+{
+	GtkClipboard *cb;
+	char *storycode;
+	SCBlock *bl;
+
+	bl = block_at_cursor(e->cursor_frame, e->cursor_para,
+	                     e->cursor_pos+e->cursor_trail);
+	if ( bl == NULL ) return;
+
+	storycode = serialise_sc_block(bl);
+	printf("Got '%s'\n", storycode);
+
+	cb = gtk_clipboard_get(GDK_NONE);
+	gtk_clipboard_set_text(cb, storycode, -1);
+	free(storycode);
+}
+
+
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               SCEditor *e)
 {
@@ -1184,6 +1203,13 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_F5 :
 		full_rerender(e);
+		break;
+
+		case GDK_KEY_C :
+		case GDK_KEY_c :
+		if ( event->state == GDK_CONTROL_MASK ) {
+			copy_selection(e);
+		}
 		break;
 
 	}

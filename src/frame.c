@@ -66,6 +66,7 @@ struct _paragraph
 
 	/* For anything other than PARA_TYPE_TEXT */
 	SCBlock         *scblock;
+	SCBlock         *macro_real_scblock;
 
 	/* For PARA_TYPE_IMAGE */
 	char            *filename;
@@ -422,7 +423,8 @@ static Paragraph *insert_paragraph(struct frame *fr, int pos)
 }
 
 
-void add_callback_para(struct frame *fr, SCBlock *bl, double w, double h,
+void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *mr,
+                       double w, double h,
                        SCCallbackDrawFunc draw_func,
                        SCCallbackClickFunc click_func, void *bvp,
                        void *vp)
@@ -437,6 +439,7 @@ void add_callback_para(struct frame *fr, SCBlock *bl, double w, double h,
 
 	pnew->type = PARA_TYPE_CALLBACK;
 	pnew->scblock = bl;
+	pnew->macro_real_scblock = mr;
 	pnew->cb_w = w;
 	pnew->cb_h = h;
 	pnew->draw_func = draw_func;
@@ -945,4 +948,14 @@ SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos, PangoContext *pc)
 		/* Other types can't be split */
 		return NULL;
 	}
+}
+
+
+SCBlock *block_at_cursor(struct frame *fr, int pn, size_t pos)
+{
+	Paragraph *para = fr->paras[pn];
+
+	if ( para->type != PARA_TYPE_CALLBACK ) return NULL;
+
+	return para->macro_real_scblock;
 }

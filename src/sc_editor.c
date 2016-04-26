@@ -1125,11 +1125,34 @@ static void copy_selection(SCEditor *e)
 	if ( bl == NULL ) return;
 
 	storycode = serialise_sc_block(bl);
-	printf("Got '%s'\n", storycode);
 
 	cb = gtk_clipboard_get(GDK_NONE);
 	gtk_clipboard_set_text(cb, storycode, -1);
 	free(storycode);
+}
+
+
+static void paste_callback(GtkClipboard *cb, const gchar *text, void *vp)
+{
+	SCEditor *e = vp;
+	SCBlock *bl = sc_parse(text);
+	SCBlock *cur_bl;
+	size_t cur_sc_pos;
+
+	get_sc_pos(e->cursor_frame, e->cursor_para,
+	           e->cursor_pos+e->cursor_trail,
+	           &cur_bl, &cur_sc_pos);
+	sc_insert_block(cur_bl, cur_sc_pos, bl);
+	full_rerender(e);
+}
+
+
+static void paste_selection(SCEditor *e)
+{
+	GtkClipboard *cb;
+
+	cb = gtk_clipboard_get(GDK_NONE);
+	gtk_clipboard_request_text(cb, paste_callback, e);
 }
 
 
@@ -1211,6 +1234,14 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			copy_selection(e);
 		}
 		break;
+
+		case GDK_KEY_V :
+		case GDK_KEY_v :
+		if ( event->state == GDK_CONTROL_MASK ) {
+			paste_selection(e);
+		}
+		break;
+
 
 	}
 

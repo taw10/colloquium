@@ -156,4 +156,6 @@ extern SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos,
                                 PangoContext *pc);
 extern SCBlock *block_at_cursor(struct frame *fr, int para, size_t pos);
 
+extern int get_sc_pos(struct frame *fr, int pn, size_t pos,
+                      SCBlock **bl, size_t *ppos);
 #endif	/* FRAME_H */

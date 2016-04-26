@@ -959,3 +959,24 @@ SCBlock *block_at_cursor(struct frame *fr, int pn, size_t pos)
 
 	return para->macro_real_scblock;
 }
+
+
+int get_sc_pos(struct frame *fr, int pn, size_t pos,
+               SCBlock **bl, size_t *ppos)
+{
+	Paragraph *para = fr->paras[pn];
+	int nrun;
+	struct text_run *run;
+
+	nrun = which_run(para, pos);
+	if ( nrun == para->n_runs ) {
+		fprintf(stderr, "Couldn't find run to insert into.\n");
+		return 1;
+	}
+	run = &para->runs[nrun];
+
+	*ppos = run->scblock_offs_bytes + pos - run->para_offs_bytes;
+	*bl = run->scblock;
+
+	return 0;
+}

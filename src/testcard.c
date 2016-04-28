@@ -1,7 +1,7 @@
 /*
  * testcard.c
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -169,7 +169,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct testcard *tc)
 {
-	gtk_widget_destroy(tc->window);
+	if ( !event->is_modifier ) gtk_widget_destroy(tc->window);
 	return FALSE;
 }
 

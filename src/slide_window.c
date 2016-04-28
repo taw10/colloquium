@@ -628,6 +628,7 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 		ch = sc_block_append_inside(scblocks, NULL, NULL, "");
 	}
 	sw->sceditor = sc_editor_new(ch, stylesheets, p->lang);
+	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, scblocks));
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),

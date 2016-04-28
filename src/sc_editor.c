@@ -143,8 +143,8 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 			h = e->log_h;
 		}
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-		                          e->is, ISZ_EDITOR, 0, cr, w, h,
-		                          e->lang);
+		                          e->is, ISZ_EDITOR, e->slidenum, cr,
+		                          w, h, e->lang);
 		recursive_wrap(e->top, pc);
 	}
 

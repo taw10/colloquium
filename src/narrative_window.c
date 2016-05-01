@@ -405,7 +405,9 @@ static void nw_update_titlebar(NarrativeWindow *nw)
 
 static SCBlock *narrative_stylesheet()
 {
-	return sc_parse("\\stylesheet{\\ss[slide]{\\callback[sthumb]}}");
+	return sc_parse("\\stylesheet{"
+	                "\\ss[slide]{\\callback[sthumb]}"
+	                "}");
 }
 
 

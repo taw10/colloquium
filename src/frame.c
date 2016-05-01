@@ -56,6 +56,7 @@ struct _paragraph
 {
 	enum para_type   type;
 	double           height;
+	float            space[4];
 
 	/* For PARA_TYPE_TEXT */
 	int              n_runs;
@@ -283,6 +284,8 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 	PangoRectangle rect;
 	size_t pos = 0;
 
+	w -= para->space[0] + para->space[1];
+
 	if ( para->type != PARA_TYPE_TEXT ) return;
 
 	for ( i=0; i<para->n_runs; i++ ) {
@@ -340,6 +343,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 
 	pango_layout_get_extents(para->layout, NULL, &rect);
 	para->height = pango_units_to_double(rect.height);
+	para->height += para->space[2] + para->space[3];
 }
 
 
@@ -544,6 +548,8 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
 {
 	cairo_surface_t *surf;
 
+	cairo_translate(cr, para->space[0], para->space[2]);
+
 	switch ( para->type ) {
 
 		case PARA_TYPE_TEXT :
@@ -606,8 +612,10 @@ int find_cursor(struct frame *fr, double x, double y,
 		if ( npos > y ) {
 			*ppara = i;
 			if ( fr->paras[i]->type == PARA_TYPE_TEXT ) {
-				*ppos = text_para_pos(fr->paras[i], x-fr->pad_l,
-				                      y-pos, ptrail);
+				*ppos = text_para_pos(fr->paras[i],
+				          x - fr->pad_l - fr->paras[i]->space[0],
+				          y - pos - fr->paras[i]->space[2],
+				          ptrail);
 			} else {
 				*ppos = 0;
 			}
@@ -689,8 +697,8 @@ int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 
 	pango_layout_get_cursor_pos(para->layout, cursor_pos, &rect, NULL);
 
-	*cx = pango_units_to_double(rect.x) + fr->pad_l;
-	*cy = pango_units_to_double(rect.y) + fr->pad_t + py;
+	*cx = pango_units_to_double(rect.x) + fr->pad_l + para->space[0];
+	*cy = pango_units_to_double(rect.y) + fr->pad_t + py + para->space[2];
 	*ch = pango_units_to_double(rect.height);
 	return 0;
 }
@@ -979,4 +987,26 @@ int get_sc_pos(struct frame *fr, int pn, size_t pos,
 	*bl = run->scblock;
 
 	return 0;
+}
+
+
+void set_para_spacing(Paragraph *para, float space[4])
+{
+	if ( para == NULL ) return;
+	para->space[0] = space[0];
+	para->space[1] = space[1];
+	para->space[2] = space[2];
+	para->space[3] = space[3];
+}
+
+
+Paragraph *current_para(struct frame *fr)
+{
+	if ( fr == NULL ) return NULL;
+
+	if ( (fr->paras != NULL) && (fr->paras[fr->n_paras-1]->open) ) {
+		return fr->paras[fr->n_paras-1];
+	}
+
+	return NULL;
 }

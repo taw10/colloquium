@@ -51,6 +51,7 @@ struct sc_state
 	double col[4];
 	int ascent;
 	int height;
+	float paraspace[4];
 
 	struct frame *fr;  /* The current frame */
 
@@ -568,6 +569,10 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->macro_contents = NULL;
 	st->macro_real_block = NULL;
 	st->fr = NULL;
+	st->paraspace[0] = 0.0;
+	st->paraspace[1] = 0.0;
+	st->paraspace[2] = 0.0;
+	st->paraspace[3] = 0.0;
 
 	scin->lang = lang;
 
@@ -594,21 +599,46 @@ void sc_interp_destroy(SCInterpreter *scin)
 }
 
 
-static void set_padding(struct frame *fr, const char *opts)
+static int parse_tuple(const char *a, float v[4])
 {
 	int nn;
-	float l, r, t, b;
 
-	nn = sscanf(opts, "%f,%f,%f,%f", &l, &r, &t, &b);
+	nn = sscanf(a, "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]);
 	if ( nn != 4 ) {
-		fprintf(stderr, "Invalid padding '%s'\n", opts);
-		return;
+		fprintf(stderr, "Invalid tuple '%s'\n", a);
+		return 1;
 	}
 
-	fr->pad_l = l;
-	fr->pad_r = r;
-	fr->pad_t = t;
-	fr->pad_b = b;
+	return 0;
+}
+
+
+static void set_padding(struct frame *fr, const char *opts)
+{
+	float p[4];
+
+	if ( parse_tuple(opts, p) ) return;
+
+	fr->pad_l = p[0];
+	fr->pad_r = p[1];
+	fr->pad_t = p[2];
+	fr->pad_b = p[3];
+}
+
+
+static void set_paraspace(SCInterpreter *scin, const char *opts)
+{
+	float p[4];
+	struct sc_state *st = &scin->state[scin->j];
+
+	if ( parse_tuple(opts, p) ) return;
+
+	st->paraspace[0] = p[0];
+	st->paraspace[1] = p[1];
+	st->paraspace[2] = p[2];
+	st->paraspace[3] = p[3];
+
+	set_para_spacing(current_para(sc_interp_get_frame(scin)), p);
 }
 
 
@@ -844,6 +874,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	PangoFontDescription *fontdesc;
 	double *col;
 	int just_closed = 0;
+	struct sc_state *st = &scin->state[scin->j];
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
@@ -873,6 +904,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 			if ( just_closed ) {
 				Paragraph *para = last_open_para(fr);
 				add_run(para, bl, start, 0, fontdesc, col);
+				set_para_spacing(para, st->paraspace);
 			}
 			close_last_paragraph(fr);
 			start += 1;
@@ -880,6 +912,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 		} else  {
 			Paragraph *para = last_open_para(fr);
 			add_run(para, bl, start, len, fontdesc, col);
+			set_para_spacing(para, st->paraspace);
 			start += len;
 			just_closed = 0;
 		}
@@ -1070,6 +1103,12 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			set_frame_bggrad(sc_interp_get_frame(scin), options,
 			                 GRAD_VERT);
 
+		} else if ( strcmp(name, "paraspace") == 0 ) {
+			maybe_recurse_before(scin, child);
+			printf("Got paraspace\n");
+			set_paraspace(scin, options);
+			maybe_recurse_after(scin, child);
+
 		} else if ( strcmp(name, "callback") == 0 ) {
 			do_callback(scin, bl, options);
 
@@ -1180,6 +1219,9 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "bggradv") == 0 ) {
 			set_frame_bggrad(sc_interp_get_frame(scin), options,
 			                 GRAD_VERT);
+
+		} else if ( strcmp(name, "paraspace") == 0 ) {
+			set_paraspace(scin, options);
 
 		}
 

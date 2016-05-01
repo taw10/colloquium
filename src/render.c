@@ -146,9 +146,12 @@ int recursive_draw(struct frame *fr, cairo_t *cr,
 void wrap_frame(struct frame *fr, PangoContext *pc)
 {
 	int i;
+	double w;
+
+	w = fr->w - fr->pad_l - fr->pad_r;
 
 	for ( i=0; i<fr->n_paras; i++ ) {
-		wrap_paragraph(fr->paras[i], pc, fr->w - fr->pad_l - fr->pad_r);
+		wrap_paragraph(fr->paras[i], pc, w);
 	}
 }
 

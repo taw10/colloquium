@@ -1105,7 +1105,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "paraspace") == 0 ) {
 			maybe_recurse_before(scin, child);
-			printf("Got paraspace\n");
 			set_paraspace(scin, options);
 			maybe_recurse_after(scin, child);
 

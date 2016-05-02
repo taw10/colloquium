@@ -918,7 +918,6 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		e->selection = clicked;
 		e->cursor_frame = clicked;
 		if ( clicked == e->top ) {
-			show_sc_block(clicked->scblocks, ")>");
 			check_paragraph(e->cursor_frame, e->pc, clicked->scblocks);
 		} else {
 			check_paragraph(e->cursor_frame, e->pc,

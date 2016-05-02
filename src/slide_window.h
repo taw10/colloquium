@@ -1,7 +1,7 @@
 /*
  * slide_window.h
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -29,7 +29,8 @@
 
 typedef struct _slidewindow SlideWindow;
 
-extern SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks);
+extern SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
+                                      GApplication *app);
 extern void change_edit_slide(SlideWindow *sw, SCBlock *np);
 extern void update_titlebar(struct presentation *p);
 

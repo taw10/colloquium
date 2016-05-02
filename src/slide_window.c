@@ -1,7 +1,7 @@
 /*
  * slide_window.c
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -38,7 +38,6 @@
 #include "render.h"
 #include "frame.h"
 #include "slideshow.h"
-#include "notes.h"
 #include "pr_clock.h"
 #include "sc_parse.h"
 #include "sc_interp.h"
@@ -65,32 +64,7 @@ struct _slidewindow
 	int                  n_style_menu;
 
 	SlideShow           *show;
-	struct notes        *notes;
 };
-
-
-static void update_toolbar(SlideWindow *sw)
-{
-	int cur_slide_number;
-
-	cur_slide_number = slide_number(sw->p, sw->scblocks);
-	if ( cur_slide_number == 0 ) {
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->bfirst), FALSE);
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->bprev), FALSE);
-	} else {
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->bfirst), TRUE);
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->bprev), TRUE);
-	}
-
-	if ( cur_slide_number == num_slides(sw->p)-1 ) {
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->bnext), FALSE);
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->blast), FALSE);
-	} else {
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->bnext), TRUE);
-		gtk_widget_set_sensitive(GTK_WIDGET(sw->blast), TRUE);
-	}
-
-}
 
 
 /* Inelegance to make furniture selection menus work */
@@ -173,62 +147,6 @@ static void UNUSED update_style_menus(SlideWindow *sw)
 }
 
 
-static gint saveas_response_sig(GtkWidget *d, gint response,
-                                SlideWindow *sw)
-{
-	if ( response == GTK_RESPONSE_ACCEPT ) {
-
-		char *filename;
-
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-
-		if ( save_presentation(sw->p, filename) ) {
-			//show_error(sw, "Failed to save presentation");
-		}
-
-		g_free(filename);
-
-	}
-
-	gtk_widget_destroy(d);
-
-	return 0;
-}
-
-
-static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-	GtkWidget *d;
-	SlideWindow *sw = vp;
-
-	d = gtk_file_chooser_dialog_new("Save Presentation",
-	                                GTK_WINDOW(sw->window),
-	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                "_Cancel", GTK_RESPONSE_CANCEL,
-	                                "_Save", GTK_RESPONSE_ACCEPT,
-	                                NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
-	                                               TRUE);
-
-	g_signal_connect(G_OBJECT(d), "response",
-	                 G_CALLBACK(saveas_response_sig), sw);
-
-	gtk_widget_show_all(d);
-}
-
-
-static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-	SlideWindow *sw = vp;
-
-	if ( sw->p->filename == NULL ) {
-		return saveas_sig(NULL, NULL, sw);
-	}
-
-	save_presentation(sw->p, sw->p->filename);
-}
-
-
 static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
@@ -237,72 +155,10 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-	SlideWindow *sw = vp;
-	SCBlock *new;
-	new = sc_block_insert_after(sw->scblocks, "slide", NULL, NULL);
-	change_edit_slide(sw, new);
-}
-
-
-static gint export_pdf_response_sig(GtkWidget *d, gint response,
-                                    SlideWindow *sw)
-{
-	if ( response == GTK_RESPONSE_ACCEPT ) {
-
-		char *filename;
-
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-
-		if ( export_pdf(sw->p, filename) ) {
-			//show_error(sw, "Failed to export as PDF");
-		}
-
-		g_free(filename);
-
-	}
-
-	gtk_widget_destroy(d);
-
-	return 0;
-}
-
-
-static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
-	SlideWindow *sw = vp;
-	GtkWidget *d;
-
-	d = gtk_file_chooser_dialog_new("Export PDF",
-	                                GTK_WINDOW(sw->window),
-	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                "_Cancel", GTK_RESPONSE_CANCEL,
-	                                "_Export", GTK_RESPONSE_ACCEPT,
-	                                NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
-	                                               TRUE);
-
-	g_signal_connect(G_OBJECT(d), "response",
-	                 G_CALLBACK(export_pdf_response_sig), sw);
-
-	gtk_widget_show_all(d);
-}
-
-
-void slidewindow_notes_closed(SlideWindow *sw)
-{
-	sw->notes = NULL;
-}
-
-
 /* Change the editor's slide to "np" */
 void change_edit_slide(SlideWindow *sw, SCBlock *np)
 {
 	SCBlock *ch;
-
-	update_toolbar(sw);
 
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, np));
 
@@ -312,8 +168,6 @@ void change_edit_slide(SlideWindow *sw, SCBlock *np)
 	}
 	sc_editor_set_scblock(sw->sceditor, ch);
 	sw->scblocks = np;
-
-	if ( sw->notes != NULL ) notes_set_slide(sw->notes, np);
 
 	if ( slideshow_linked(sw->show) ) {
 		change_proj_slide(sw->show, np);
@@ -383,35 +237,8 @@ static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void open_notes_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-	SlideWindow *sw = vp;
-	sw->notes = open_notes(sw, sw->scblocks);
-}
-
-
-static void open_clock_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-	SlideWindow *sw = vp;
-	open_clock(sw->p);
-}
-
-
-static void slidewindow_set_background(SlideWindow *sw)
-{
-	if ( (sw->show != NULL) && !slideshow_linked(sw->show) ) {
-		sc_editor_set_background(sw->sceditor, 1.0, 0.3, 0.2);
-	} else {
-		sc_editor_set_background(sw->sceditor, 0.9, 0.9, 0.9);
-	}
-}
-
-
 void slidewindow_redraw(SlideWindow *sw)
 {
-	slidewindow_set_background(sw);
 	sc_editor_redraw(sw->sceditor);
 }
 
@@ -441,57 +268,6 @@ static gboolean close_sig(GtkWidget *w, SlideWindow *sw)
 }
 
 
-static void ss_end_show(SlideShow *ss, void *vp)
-{
-	SlideWindow *sw = vp;
-	sw->show = NULL;
-}
-
-
-static void ss_next_slide(SlideShow *ss, void *vp)
-{
-	SlideWindow *sw = vp;
-	change_slide_forwards(sw);
-}
-
-
-static void ss_prev_slide(SlideShow *ss, void *vp)
-{
-	SlideWindow *sw = vp;
-	change_slide_backwards(sw);
-}
-
-
-static void ss_changed_link(SlideShow *ss, void *vp)
-{
-	SlideWindow *sw = vp;
-	slidewindow_redraw(sw);
-}
-
-
-static SCBlock *ss_cur_slide(SlideShow *ss, void *vp)
-{
-	SlideWindow *sw = vp;
-	return sw->scblocks;
-}
-
-
-static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
-                                gpointer vp)
-{
-	SlideWindow *sw = vp;
-	struct sscontrolfuncs ssc;
-
-	ssc.next_slide = ss_next_slide;
-	ssc.prev_slide = ss_prev_slide;
-	ssc.current_slide = ss_cur_slide;
-	ssc.changed_link = ss_changed_link;
-	ssc.end_show = ss_end_show;
-
-	sw->show = try_start_slideshow(sw->p, ssc, sw);
-}
-
-
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               SlideWindow *sw)
 {
@@ -505,11 +281,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		change_slide_forwards(sw);
 		break;
 
-		case GDK_KEY_B :
-		case GDK_KEY_b :
-		if ( sw->show != NULL ) {
-			toggle_slideshow_link(sw->show);
-		}
 	}
 
 	return FALSE;
@@ -518,14 +289,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 GActionEntry sw_entries[] = {
 
-	{ "save", save_sig, NULL, NULL, NULL },
-	{ "saveas", saveas_sig, NULL, NULL, NULL },
-	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
-	{ "slide", add_slide_sig, NULL, NULL, NULL },
-	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
-	{ "notes", open_notes_sig, NULL, NULL, NULL },
-	{ "clock", open_clock_sig, NULL, NULL, NULL },
 	{ "first", first_slide_sig, NULL, NULL, NULL },
 	{ "prev", prev_slide_sig, NULL, NULL, NULL },
 	{ "next", next_slide_sig, NULL, NULL, NULL },
@@ -533,27 +297,25 @@ GActionEntry sw_entries[] = {
 };
 
 
-SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
+SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
+                               GApplication *app)
 {
 	GtkWidget *window;
-	GtkWidget *vbox;
 	GtkWidget *scroll;
-	GtkWidget *toolbar;
-	GtkToolItem *button;
 	SlideWindow *sw;
 	SCBlock *stylesheets[2];
-	GtkWidget *image;
 	SCBlock *ch;
 
 	sw = calloc(1, sizeof(SlideWindow));
 	if ( sw == NULL ) return NULL;
 
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	window = gtk_application_window_new(GTK_APPLICATION(app));
 	gtk_window_set_role(GTK_WINDOW(window), "slide");
-	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
-	                                G_N_ELEMENTS(sw_entries), sw);
 	sw->window = window;
 	sw->p = p;
+
+	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
+	                                G_N_ELEMENTS(sw_entries), sw);
 
 	sw->show = NULL;
 
@@ -562,63 +324,6 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 	g_signal_connect(G_OBJECT(window), "destroy",
 	                 G_CALLBACK(close_sig), sw);
 
-	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_container_add(GTK_CONTAINER(window), vbox);
-
-	toolbar = gtk_toolbar_new();
-	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);
-	//gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
-
-	/* Fullscreen */
-	image = gtk_image_new_from_icon_name("view-fullscreen",
-	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	button = gtk_tool_button_new(image, "Start slideshow");
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
-	                               "win.startslideshow");
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-
-	button = gtk_separator_tool_item_new();
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-
-	/* Add slide */
-	image = gtk_image_new_from_icon_name("add",
-	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	button = gtk_tool_button_new(image, "Add slide");
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
-	                               "win.slide");
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-
-	button = gtk_separator_tool_item_new();
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
-
-	/* Change slide.  FIXME: LTR vs RTL */
-	image = gtk_image_new_from_icon_name("gtk-goto-first-ltr",
-	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	sw->bfirst = gtk_tool_button_new(image, "First slide");
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bfirst));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bfirst),
-	                               "win.first");
-
-	image = gtk_image_new_from_icon_name("gtk-go-back-ltr",
-	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	sw->bprev = gtk_tool_button_new(image, "Previous slide");
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bprev));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bprev),
-	                               "win.prev");
-
-	image = gtk_image_new_from_icon_name("gtk-go-forward-ltr",
-	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	sw->bnext = gtk_tool_button_new(image, "Next slide");
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->bnext));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->bnext),
-	                               "win.next");
-
-	image = gtk_image_new_from_icon_name("gtk-goto-last-ltr",
-	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	sw->blast = gtk_tool_button_new(image, "Last slide");
-	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(sw->blast));
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(sw->blast),
-	                               "win.last");
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
 
@@ -640,21 +345,15 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks)
 			 G_CALLBACK(key_press_sig), sw);
 
 	/* Size of SCEditor surface in pixels */
-
 	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
 	sc_editor_set_size(sw->sceditor, 1024, 768);
 	sc_editor_set_logical_size(sw->sceditor, 1024.0, 768.0);
 
-	gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(scroll), TRUE, TRUE, 0);
+	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(scroll));
 
 	/* Default size */
 	gtk_window_set_default_size(GTK_WINDOW(sw->window), 1024, 768);
 	gtk_window_set_resizable(GTK_WINDOW(sw->window), TRUE);
-
-	/* Initial background colour */
-	slidewindow_set_background(sw);
-
-	update_toolbar(sw);
 
 	gtk_widget_show_all(window);
 

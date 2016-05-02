@@ -451,7 +451,7 @@ static int click_thumbnail(double x, double y, void *bvp, void *vp)
 	struct presentation *p = vp;
 	SCBlock *scblocks = bvp;
 
-	slide_window_open(p, scblocks);
+	slide_window_open(p, scblocks, p->narrative_window->app);
 
 	return 0;
 }

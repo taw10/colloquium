@@ -34,7 +34,6 @@
 #include "slide_window.h"
 #include "frame.h"
 #include "imagestore.h"
-#include "notes.h"
 #include "inhibit_screensaver.h"
 #include "render.h"
 #include "sc_interp.h"

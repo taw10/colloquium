@@ -663,7 +663,7 @@ int get_para_highlight(struct frame *fr, int cursor_para,
 	*cx = fr->pad_l;
 	*cy = fr->pad_t + py;
 	*cw = fr->w - fr->pad_l - fr->pad_r;
-	*ch = para->height;
+	*ch = para->height - para->space[2] - para->space[3];
 	return 0;
 }
 

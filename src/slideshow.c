@@ -1,7 +1,7 @@
 /*
  * slideshow.c
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -231,7 +231,8 @@ static gboolean ss_realize_sig(GtkWidget *w, SlideShow *ss)
 
 	win = gtk_widget_get_window(w);
 
-	ss->blank_cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+	ss->blank_cursor = gdk_cursor_new_for_display(gdk_display_get_default(),
+	                                              GDK_BLANK_CURSOR);
 	gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
 
 	gtk_window_parse_geometry(GTK_WINDOW(w), ss->geom);

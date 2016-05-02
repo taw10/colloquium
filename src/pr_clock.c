@@ -1,7 +1,7 @@
 /*
  * pr_clock.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -380,7 +380,7 @@ void open_clock(struct presentation *p)
 
 	label = gtk_label_new("Length (mins):");
 	gtk_label_set_markup(GTK_LABEL(label), "<b>Length (mins):</b>");
-	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+	g_object_set(G_OBJECT(label), "halign", GTK_ALIGN_END, NULL);
 	gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 10);
 
 	n->entry = gtk_entry_new();

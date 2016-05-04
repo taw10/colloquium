@@ -37,6 +37,7 @@
 #include "render.h"
 #include "testcard.h"
 #include "pr_clock.h"
+#include "print.h"
 
 
 struct _narrative_window
@@ -130,12 +131,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	}
 
 	save_presentation(nw->p, nw->p->filename);
-}
-
-
-static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
 }
 
 
@@ -307,11 +302,49 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static gint export_pdf_response_sig(GtkWidget *d, gint response,
+                                    struct presentation *p)
+{
+       if ( response == GTK_RESPONSE_ACCEPT ) {
+               char *filename;
+               filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+               export_pdf(p, filename);
+               g_free(filename);
+       }
+
+       gtk_widget_destroy(d);
+
+       return 0;
+}
+
+
+static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+       struct presentation *p = vp;
+       GtkWidget *d;
+
+       d = gtk_file_chooser_dialog_new("Export PDF",
+                                       NULL,
+                                       GTK_FILE_CHOOSER_ACTION_SAVE,
+                                       "_Cancel", GTK_RESPONSE_CANCEL,
+                                       "_Export", GTK_RESPONSE_ACCEPT,
+                                       NULL);
+       gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
+                                                      TRUE);
+
+       g_signal_connect(G_OBJECT(d), "response",
+                        G_CALLBACK(export_pdf_response_sig), p);
+
+       gtk_widget_show_all(d);
+}
+
+
+
 GActionEntry nw_entries[] = {
 
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
-	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
 	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
@@ -323,6 +356,12 @@ GActionEntry nw_entries[] = {
 	{ "prev", prev_slide_sig, NULL, NULL, NULL },
 	{ "next", next_slide_sig, NULL, NULL, NULL },
 	{ "last", last_slide_sig, NULL, NULL, NULL },
+};
+
+
+GActionEntry nw_entries_p[] = {
+	{ "print", print_sig, NULL, NULL, NULL  },
+	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 };
 
 
@@ -484,6 +523,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
 	                                G_N_ELEMENTS(nw_entries), nw);
+	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries_p,
+	                                G_N_ELEMENTS(nw_entries), p);
 
 	nw_update_titlebar(nw);
 

@@ -17,12 +17,12 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/imagestore.c src/pr_clock.c \
                          src/inhibit_screensaver.c \
                          src/sc_editor.c src/narrative_window.c \
-                         src/slide_window.c src/testcard.c
+                         src/slide_window.c src/testcard.c src/print.c
 
 EXTRA_DIST += src/presentation.h src/render.h \
               src/slideshow.h src/sc_parse.h src/sc_interp.h \
               src/imagestore.h src/pr_clock.h \
-              src/inhibit_screensaver.h \
+              src/inhibit_screensaver.h src/print.h \
               src/sc_editor.h src/slide_window.h src/narrative_window.h
 
 src/default_stylesheet.o: src/default_stylesheet.sty

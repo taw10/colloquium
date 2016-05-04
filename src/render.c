@@ -226,7 +226,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 }
 
 
-static struct frame *render_sc_to_surface(SCBlock *scblocks, cairo_surface_t *surf,
+static struct frame *render_sc_with_context(SCBlock *scblocks,
                                  cairo_t *cr, double log_w, double log_h,
                                  SCBlock **stylesheets, SCCallbackList *cbl,
                                  ImageStore *is, enum is_size isz,
@@ -266,7 +266,7 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	cr = cairo_create(surf);
 	pc = pango_cairo_create_context(cr);
 	cairo_scale(cr, w/log_w, h/log_h);
-	top = render_sc_to_surface(scblocks, surf, cr, log_w, log_h,
+	top = render_sc_with_context(scblocks, cr, log_w, log_h,
 	                           stylesheets, cbl, is, isz,slide_number,
 	                           lang, pc);
 	g_object_unref(pc);
@@ -275,6 +275,14 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	*ptop = top;
 
 	return surf;
+}
+
+
+static int safe_strcmp(const char *a, const char *b)
+{
+	if ( a == NULL ) return 1;
+	if ( b == NULL ) return 1;
+	return strcmp(a, b);
 }
 
 
@@ -302,9 +310,10 @@ int export_pdf(struct presentation *p, const char *filename)
 	pc = pango_cairo_create_context(cr);
 
 	i = 1;
+	bl = p->scblocks;
 	while ( bl != NULL ) {
 
-		if ( strcmp(sc_block_name(bl), "slide") != 0 ) {
+		if ( safe_strcmp(sc_block_name(bl), "slide") != 0 ) {
 			bl = sc_block_next(bl);
 			continue;
 		}
@@ -322,7 +331,7 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
 
-		render_sc_to_surface(sc_block_child(bl), surf, cr, p->slide_width,
+		render_sc_with_context(sc_block_child(bl), cr, p->slide_width,
 		                     p->slide_height, stylesheets, NULL,
 		                     p->is, ISZ_SLIDESHOW, i, p->lang, pc);
 

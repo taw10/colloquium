@@ -524,7 +524,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
 	                                G_N_ELEMENTS(nw_entries), nw);
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries_p,
-	                                G_N_ELEMENTS(nw_entries), p);
+	                                G_N_ELEMENTS(nw_entries_p), p);
 
 	nw_update_titlebar(nw);
 

@@ -1,7 +1,7 @@
 /*
  * narrative_window.c
  *
- * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *

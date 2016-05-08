@@ -171,6 +171,7 @@ static void ss_end_show(SlideShow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
 	nw->show = NULL;
+	sc_editor_set_para_highlight(nw->sceditor, 0);
 }
 
 
@@ -279,6 +280,9 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 	nw->sel_slide = first_slide(nw->p);
 
 	nw->show = try_start_slideshow(nw->p, ssc, nw);
+	if ( nw->show != NULL ) {
+		sc_editor_set_para_highlight(nw->sceditor, 1);
+	}
 }
 
 

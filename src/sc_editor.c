@@ -409,13 +409,14 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 
 
 static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
-                       size_t cursor_pos, int cursor_trail)
+                       size_t cursor_pos, int cursor_trail, int hgh)
 {
 	double cx, clow, chigh, h;
 	double cy, w;
 	const double t = 1.8;
 
-	if ( get_para_highlight(fr, cursor_para, &cx, &cy, &w, &h) == 0 ) {
+	if ( hgh && get_para_highlight(fr, cursor_para, &cx, &cy, &w, &h) == 0 )
+	{
 		cairo_new_path(cr);
 		cairo_rectangle(cr, cx+fr->x, cy+fr->y, w, h);
 		cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
@@ -483,7 +484,7 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 		}
 
 		draw_caret(cr, e->cursor_frame, e->cursor_para, e->cursor_pos,
-		           e->cursor_trail);
+		           e->cursor_trail, e->para_highlight);
 
 	}
 
@@ -1591,6 +1592,13 @@ void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl)
 }
 
 
+void sc_editor_set_para_highlight(SCEditor *e, int para_highlight)
+{
+	e->para_highlight = para_highlight;
+	sc_editor_redraw(e);
+}
+
+
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
                         PangoLanguage *lang)
 {
@@ -1614,6 +1622,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->scroll_pos = 0;
 	sceditor->flow = 0;
 	sceditor->lang = lang;
+	sceditor->para_highlight = 0;
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 

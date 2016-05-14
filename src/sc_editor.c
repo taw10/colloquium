@@ -1610,6 +1610,9 @@ int sc_editor_get_cursor_para(SCEditor *e)
 
 void sc_editor_set_cursor_para(SCEditor *e, signed int pos)
 {
+	double h;
+	int i;
+
 	if ( e->cursor_frame == NULL ) {
 		e->cursor_frame = e->top;
 		e->selection = e->top;
@@ -1623,6 +1626,15 @@ void sc_editor_set_cursor_para(SCEditor *e, signed int pos)
 		e->cursor_para = pos;
 	}
 	e->cursor_pos = 0;
+
+	h = 0;
+	for ( i=0; i<e->cursor_para; i++ ) {
+		h += paragraph_height(e->cursor_frame->paras[i]);
+	}
+	h += (paragraph_height(e->cursor_frame->paras[e->cursor_para]))/2;
+	e->scroll_pos = h - (e->visible_height/2);
+	set_vertical_params(e);
+
 	sc_editor_redraw(e);
 }
 

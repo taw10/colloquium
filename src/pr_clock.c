@@ -31,6 +31,7 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
+#include "pr_clock.h"
 
 
 struct pr_clock
@@ -53,9 +54,9 @@ struct pr_clock
 	int running;
 	double time_allowed;
 	double time_elapsed;
-	int slide_reached;
-	int last_slide;
-	int cur_slide;
+	int pos;
+	int end;
+	int pos_reached;
 
 	double t;
 	double tf;
@@ -181,8 +182,8 @@ static gboolean update_clock(gpointer data)
 	if ( n->time_allowed == 0.0 ) n->t = 0.0;
 	if ( n->time_elapsed > n->time_allowed ) n->t = 1.0;
 
-	if ( n->last_slide > 0 ) {
-		n->tf = (double)n->slide_reached / (n->last_slide-1);
+	if ( n->end > 0 ) {
+		n->tf = (double)n->pos_reached / (n->end-1);
 	} else {
 		n->tf = 0.0;
 	}
@@ -200,19 +201,14 @@ static gboolean update_clock(gpointer data)
 }
 
 
-void notify_clock_slide_changed(struct presentation *p, SCBlock *np)
+void pr_clock_set_pos(PRClock *n, int pos, int end)
 {
-	struct pr_clock *n = p->clock;
-	int sr;
-
 	if ( n == NULL ) return;
-
-	sr = slide_number(p, np);
-	n->cur_slide = sr;
-	n->last_slide = num_slides(p);
-
-	if ( sr > n->slide_reached ) n->slide_reached = sr;
-
+	n->pos = pos;
+	if ( n->pos > n->pos_reached ) {
+		n->pos_reached = pos;
+	}
+	n->end = end;
 	update_clock(n);
 }
 
@@ -254,8 +250,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
 		cairo_fill(cr);
 	}
 
-	ff = (double)n->cur_slide / (n->last_slide-1);
-	if ( n->last_slide == 1 ) ff = 0.0;
+	ff = (double)n->pos / (n->end-1);
+	if ( n->end == 1 ) ff = 0.0;
 	cairo_move_to(cr, 10.0+ff*s, 0.0);
 	cairo_line_to(cr, 10.0+ff*s, height);
 	cairo_set_line_width(cr, 2.0);
@@ -298,7 +294,6 @@ static gboolean reset_sig(GtkWidget *w, gpointer data)
 
 	n->time_elapsed = 0;
 	n->time_elapsed_at_start = 0;
-	n->slide_reached = n->cur_slide;
 
 	if ( n->start != NULL ) {
 		g_date_time_unref(n->start);
@@ -315,11 +310,7 @@ static gboolean reset_sig(GtkWidget *w, gpointer data)
 static gboolean setpos_sig(GtkWidget *w, gpointer data)
 {
 	struct pr_clock *n = data;
-
-	n->slide_reached = n->cur_slide;
-
 	update_clock(n);
-
 	return FALSE;
 }
 
@@ -350,7 +341,7 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
 }
 
 
-void open_clock(struct presentation *p)
+PRClock *pr_clock_new()
 {
 	struct pr_clock *n;
 	GtkWidget *vbox;
@@ -360,11 +351,8 @@ void open_clock(struct presentation *p)
 	GtkWidget *grid;
 	GtkWidget *label;
 
-	if ( p->clock != NULL ) return;  /* Already open */
-
 	n = malloc(sizeof(struct pr_clock));
-	if ( n == NULL ) return;
-	p->clock = n;
+	if ( n == NULL ) return NULL;
 	n->open = 1;
 
 	n->tz = g_time_zone_new_local();
@@ -399,7 +387,7 @@ void open_clock(struct presentation *p)
 	gtk_box_pack_start(GTK_BOX(vbox), n->da, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(draw_sig), n);
 	g_signal_connect(G_OBJECT(n->window), "destroy",
-	                 G_CALLBACK(close_clock_sig), p);
+	                 G_CALLBACK(close_clock_sig), n); /* FIXME: Uniqueness */
 
 	grid = gtk_grid_new();
 	gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
@@ -433,8 +421,8 @@ void open_clock(struct presentation *p)
 	n->time_allowed = 0;
 	n->time_elapsed = 0;
 	n->time_elapsed_at_start = 0;
-	n->slide_reached = 0;
-	n->last_slide = 0;
+	n->pos = 0;
+	n->end = 0;
 	n->start = NULL;
 	update_clock(n);
 	g_timeout_add_seconds(1, update_clock, n);
@@ -442,4 +430,5 @@ void open_clock(struct presentation *p)
 	gtk_window_set_title(GTK_WINDOW(n->window), "Presentation clock");
 
 	gtk_widget_show_all(n->window);
+	return n;
 }

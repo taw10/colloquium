@@ -422,6 +422,7 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
 		cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
 		cairo_set_line_width(cr, 5.0);
 		cairo_stroke(cr);
+		return;
 	}
 
 	if ( get_cursor_pos(fr, cursor_para, cursor_pos+cursor_trail,
@@ -1170,9 +1171,11 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 	switch ( event->keyval ) {
 
 		case GDK_KEY_Escape :
-		sc_editor_remove_cursor(e);
-		sc_editor_redraw(e);
-		claim = 1;
+		if ( !e->para_highlight ) {
+			sc_editor_remove_cursor(e);
+			sc_editor_redraw(e);
+			claim = 1;
+		}
 		break;
 
 		case GDK_KEY_Left :
@@ -1596,6 +1599,38 @@ void sc_editor_set_para_highlight(SCEditor *e, int para_highlight)
 {
 	e->para_highlight = para_highlight;
 	sc_editor_redraw(e);
+}
+
+int sc_editor_get_cursor_para(SCEditor *e)
+{
+	if ( e->cursor_frame == NULL ) return 0;
+	return e->cursor_para;
+}
+
+
+void sc_editor_set_cursor_para(SCEditor *e, signed int pos)
+{
+	if ( e->cursor_frame == NULL ) {
+		e->cursor_frame = e->top;
+		e->selection = e->top;
+	}
+
+	if ( pos < 0 ) {
+		e->cursor_para = e->cursor_frame->n_paras;
+	} else if ( pos >= e->cursor_frame->n_paras ) {
+		e->cursor_para = e->cursor_frame->n_paras - 1;
+	} else {
+		e->cursor_para = pos;
+	}
+	e->cursor_pos = 0;
+	sc_editor_redraw(e);
+}
+
+
+int sc_editor_get_num_paras(SCEditor *e)
+{
+	if ( e->cursor_frame == NULL ) return 1;
+	return e->cursor_frame->n_paras;
 }
 
 

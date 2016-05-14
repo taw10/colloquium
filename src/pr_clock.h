@@ -1,6 +1,6 @@
 /*
  * pr_clock.h
- * 
+ *
  * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
@@ -27,12 +27,11 @@
 #include <config.h>
 #endif
 
-struct pr_clock;
+typedef struct pr_clock PRClock;
 
-extern void open_clock(struct presentation *p);
+extern PRClock *pr_clock_new(void);
 
-extern void notify_clock_slide_changed(struct presentation *p,
-                                       SCBlock *np);
+extern void pr_clock_set_pos(PRClock *n, int pos, int end);
 
 
 #endif	/* CLOCK_H */

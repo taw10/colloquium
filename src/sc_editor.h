@@ -183,5 +183,8 @@ extern void sc_editor_remove_cursor(SCEditor *e);
 extern SCBlock *split_paragraph_at_cursor(SCEditor *e);
 
 extern void sc_editor_set_para_highlight(SCEditor *e, int para_highlight);
+extern int sc_editor_get_cursor_para(SCEditor *e);
+extern void sc_editor_set_cursor_para(SCEditor *e, signed int pos);
+extern int sc_editor_get_num_paras(SCEditor *e);
 
 #endif	/* SC_EDITOR_H */

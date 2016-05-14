@@ -142,8 +142,6 @@ void change_proj_slide(SlideShow *ss, SCBlock *np)
 {
 	ss->cur_slide = np;
 
-	notify_clock_slide_changed(ss->p, np);
-
 	slideshow_rerender(ss);
 	redraw_slideshow(ss);
 }
@@ -316,8 +314,6 @@ SlideShow *try_start_slideshow(struct presentation *p,
 	gtk_widget_show_all(GTK_WIDGET(ss->window));
 
 	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 1);
-
-	//notify_clock_slide_changed(p, ss->cur_slide); FIXME
 
 	return ss;
 }

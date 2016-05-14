@@ -51,16 +51,17 @@ struct _narrative_window
 	GApplication *app;
 	struct presentation *p;
 	SlideShow           *show;
+	PRClock             *pr_clock;
 	SCBlock             *sel_slide;
 };
 
 
 static void update_toolbar(NarrativeWindow *nw)
 {
-	int cur_slide_number;
+	int cur_para;
 
-	cur_slide_number = slide_number(nw->p, nw->sel_slide);
-	if ( cur_slide_number == 0 ) {
+	cur_para = sc_editor_get_cursor_para(nw->sceditor);
+	if ( cur_para == 0 ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
 	} else {
@@ -68,7 +69,7 @@ static void update_toolbar(NarrativeWindow *nw)
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), TRUE);
 	}
 
-	if ( cur_slide_number == num_slides(nw->p)-1 ) {
+	if ( cur_para == sc_editor_get_num_paras(nw->sceditor) ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
 	} else {
@@ -175,79 +176,57 @@ static void ss_end_show(SlideShow *ss, void *vp)
 }
 
 
-static void ss_next_slide(SlideShow *ss, void *vp)
-{
-	NarrativeWindow *nw = vp;
-	SCBlock *tt;
-
-	tt = next_slide(nw->p, nw->sel_slide);
-	if ( tt == NULL ) return;  /* Already on last slide */
-	nw->sel_slide = tt;
-	if ( slideshow_linked(nw->show) ) {
-		change_proj_slide(nw->show, nw->sel_slide);
-	} /* else leave the slideshow alone */
-	update_toolbar(nw);
-}
-
-
-static void ss_prev_slide(SlideShow *ss, void *vp)
-{
-	NarrativeWindow *nw = vp;
-	SCBlock *tt;
-
-	tt = prev_slide(nw->p, nw->sel_slide);
-	if ( tt == NULL ) return;  /* Already on first slide */
-	nw->sel_slide = tt;
-	if ( slideshow_linked(nw->show) ) {
-		change_proj_slide(nw->show, nw->sel_slide);
-	} /* else leave the slideshow alone */
-	update_toolbar(nw);
-}
-
-
-static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
-                            gpointer vp)
-{
-	NarrativeWindow *nw = vp;
-	SCBlock *tt;
-
-	tt = first_slide(nw->p);
-	if ( tt == NULL ) return;  /* Fail */
-	nw->sel_slide = tt;
-	if ( slideshow_linked(nw->show) ) {
-		change_proj_slide(nw->show, nw->sel_slide);
-	} /* else leave the slideshow alone */
-	update_toolbar(nw);
-}
-
-
-static void prev_slide_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-	ss_prev_slide(NULL, vp);
-}
-
-
-static void next_slide_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-	ss_next_slide(NULL, vp);
-}
-
-
-static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
+static void first_para_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	SCBlock *tt;
-
-	tt = last_slide(nw->p);
-	if ( tt == NULL ) return;  /* Fail */
-	nw->sel_slide = tt;
-	if ( slideshow_linked(nw->show) ) {
-		change_proj_slide(nw->show, nw->sel_slide);
-	} /* else leave the slideshow alone */
+	sc_editor_set_cursor_para(nw->sceditor, 0);
 	update_toolbar(nw);
+}
+
+
+static void ss_prev_para(SlideShow *ss, void *vp)
+{
+	NarrativeWindow *nw = vp;
+	if ( sc_editor_get_cursor_para(nw->sceditor) == 0 ) return;
+	sc_editor_set_cursor_para(nw->sceditor,
+	                          sc_editor_get_cursor_para(nw->sceditor)-1);
+	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
+	                               sc_editor_get_num_paras(nw->sceditor));
+}
+
+
+static void prev_para_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	ss_prev_para(nw->show, nw);
+}
+
+
+static void ss_next_para(SlideShow *ss, void *vp)
+{
+	NarrativeWindow *nw = vp;
+	sc_editor_set_cursor_para(nw->sceditor,
+	                          sc_editor_get_cursor_para(nw->sceditor)+1);
+	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
+	                               sc_editor_get_num_paras(nw->sceditor));
+}
+
+
+static void next_para_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	ss_next_para(nw->show, nw);
+}
+
+
+static void last_para_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	sc_editor_set_cursor_para(nw->sceditor, -1);
 }
 
 
@@ -271,17 +250,18 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 
 	if ( num_slides(nw->p) == 0 ) return;
 
-	ssc.next_slide = ss_next_slide;
-	ssc.prev_slide = ss_prev_slide;
+	ssc.next_slide = ss_next_para;
+	ssc.prev_slide = ss_prev_para;
 	ssc.current_slide = ss_cur_slide;
 	ssc.changed_link = ss_changed_link;
 	ssc.end_show = ss_end_show;
 
 	nw->sel_slide = first_slide(nw->p);
-
 	nw->show = try_start_slideshow(nw->p, ssc, nw);
+
 	if ( nw->show != NULL ) {
 		sc_editor_set_para_highlight(nw->sceditor, 1);
+		sc_editor_set_cursor_para(nw->sceditor, 0);
 	}
 }
 
@@ -294,7 +274,7 @@ static void open_notes_sig(GSimpleAction *action, GVariant *parameter, gpointer 
 static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	open_clock(nw->p);
+	nw->pr_clock = pr_clock_new();
 }
 
 
@@ -356,10 +336,10 @@ GActionEntry nw_entries[] = {
 	{ "notes", open_notes_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },
 	{ "testcard", testcard_sig, NULL, NULL, NULL },
-	{ "first", first_slide_sig, NULL, NULL, NULL },
-	{ "prev", prev_slide_sig, NULL, NULL, NULL },
-	{ "next", next_slide_sig, NULL, NULL, NULL },
-	{ "last", last_slide_sig, NULL, NULL, NULL },
+	{ "first", first_para_sig, NULL, NULL, NULL },
+	{ "prev", prev_para_sig, NULL, NULL, NULL },
+	{ "next", next_para_sig, NULL, NULL, NULL },
+	{ "last", last_para_sig, NULL, NULL, NULL },
 };
 
 
@@ -410,14 +390,14 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Page_Up :
 		if ( nw->show != NULL ) {
-			ss_prev_slide(nw->show, nw);
+			ss_prev_para(nw->show, nw);
 			return TRUE;
 		}
 		break;
 
 		case GDK_KEY_Page_Down :
 		if ( nw->show != NULL) {
-			ss_next_slide(nw->show, nw);
+			ss_next_para(nw->show, nw);
 			return TRUE;
 		}
 		break;
@@ -631,6 +611,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 
 	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
+	gtk_container_set_focus_child(GTK_CONTAINER(nw->window),
+	                              GTK_WIDGET(nw->sceditor));
 
 	gtk_widget_show_all(nw->window);
 	nw->app = app;

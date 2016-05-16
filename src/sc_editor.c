@@ -89,6 +89,10 @@ static void vertical_adjust(GtkAdjustment *adj, SCEditor *e)
 static void set_vertical_params(SCEditor *e)
 {
 	if ( e->vadj == NULL ) return;
+	if ( e->scroll_pos < 0.0 ) e->scroll_pos = 0.0;
+	if ( e->scroll_pos > e->h - e->visible_height ) {
+		e->scroll_pos = e->h - e->visible_height;
+	}
 	gtk_adjustment_configure(e->vadj, e->scroll_pos, 0, e->h, 100,
 	                         e->visible_height, e->visible_height);
 }
@@ -1619,7 +1623,7 @@ void sc_editor_set_cursor_para(SCEditor *e, signed int pos)
 	}
 
 	if ( pos < 0 ) {
-		e->cursor_para = e->cursor_frame->n_paras;
+		e->cursor_para = e->cursor_frame->n_paras - 1;
 	} else if ( pos >= e->cursor_frame->n_paras ) {
 		e->cursor_para = e->cursor_frame->n_paras - 1;
 	} else {

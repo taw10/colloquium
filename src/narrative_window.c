@@ -69,7 +69,7 @@ static void update_toolbar(NarrativeWindow *nw)
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), TRUE);
 	}
 
-	if ( cur_para == sc_editor_get_num_paras(nw->sceditor) ) {
+	if ( cur_para == sc_editor_get_num_paras(nw->sceditor)-1 ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
 	} else {
@@ -181,6 +181,8 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
 {
 	NarrativeWindow *nw = vp;
 	sc_editor_set_cursor_para(nw->sceditor, 0);
+	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
+	                               sc_editor_get_num_paras(nw->sceditor));
 	update_toolbar(nw);
 }
 
@@ -193,6 +195,7 @@ static void ss_prev_para(SlideShow *ss, void *vp)
 	                          sc_editor_get_cursor_para(nw->sceditor)-1);
 	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
 	                               sc_editor_get_num_paras(nw->sceditor));
+	update_toolbar(nw);
 }
 
 
@@ -211,6 +214,7 @@ static void ss_next_para(SlideShow *ss, void *vp)
 	                          sc_editor_get_cursor_para(nw->sceditor)+1);
 	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
 	                               sc_editor_get_num_paras(nw->sceditor));
+	update_toolbar(nw);
 }
 
 
@@ -227,6 +231,9 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
 {
 	NarrativeWindow *nw = vp;
 	sc_editor_set_cursor_para(nw->sceditor, -1);
+	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
+	                               sc_editor_get_num_paras(nw->sceditor));
+	update_toolbar(nw);
 }
 
 
@@ -262,6 +269,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 	if ( nw->show != NULL ) {
 		sc_editor_set_para_highlight(nw->sceditor, 1);
 		sc_editor_set_cursor_para(nw->sceditor, 0);
+		update_toolbar(nw);
 	}
 }
 

@@ -39,7 +39,7 @@ struct sscontrolfuncs
 	/* Controller should return what it thinks is the current slide
 	 * (this might not be what is on the screen, e.g. if the display
 	 * is unlinked) */
-	SCBlock *(*current_slide)(SlideShow *ss, void *vp);
+	SCBlock *(*current_slide)(void *vp);
 
 	/* Controller should update whatever visual representation of
 	 * whether or not the display is linked */

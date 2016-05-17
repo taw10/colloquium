@@ -1010,3 +1010,9 @@ Paragraph *current_para(struct frame *fr)
 
 	return NULL;
 }
+
+void *get_para_bvp(Paragraph *para)
+{
+	if ( para->type != PARA_TYPE_CALLBACK ) return NULL;
+	return para->bvp;
+}

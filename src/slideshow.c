@@ -42,7 +42,6 @@ struct _slideshow
 	struct presentation *p;
 	struct sscontrolfuncs ssc;
 	void                *vp;  /* Controller's private word */
-	SCBlock             *cur_slide;
 	GtkWidget           *window;
 	GtkWidget           *drawingarea;
 	GdkCursor           *blank_cursor;
@@ -81,8 +80,8 @@ void slideshow_rerender(SlideShow *ss)
 	stylesheets[0] = ss->p->stylesheet;
 	stylesheets[1] = NULL;
 
-	n = slide_number(ss->p, ss->cur_slide);
-	ss->surface = render_sc(sc_block_child(ss->cur_slide),
+	n = slide_number(ss->p, ss->ssc.current_slide(ss->vp));
+	ss->surface = render_sc(sc_block_child(ss->ssc.current_slide(ss->vp)),
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
 	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n,
@@ -140,8 +139,6 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SlideShow *ss)
 
 void change_proj_slide(SlideShow *ss, SCBlock *np)
 {
-	ss->cur_slide = np;
-
 	slideshow_rerender(ss);
 	redraw_slideshow(ss);
 }
@@ -173,7 +170,7 @@ void toggle_slideshow_link(SlideShow *ss)
 {
 	ss->linked = 1 - ss->linked;
 	if ( ss->linked ) {
-		change_proj_slide(ss, ss->ssc.current_slide(ss, ss->vp));
+		change_proj_slide(ss, ss->ssc.current_slide(ss->vp));
 	}
 	ss->ssc.changed_link(ss, ss->vp);
 }
@@ -240,13 +237,6 @@ static gboolean ss_realize_sig(GtkWidget *w, SlideShow *ss)
 }
 
 
-SCBlock *slideshow_slide(SlideShow *ss)
-{
-	if ( ss == NULL ) return NULL;
-	return ss->cur_slide;
-}
-
-
 SlideShow *try_start_slideshow(struct presentation *p,
                                struct sscontrolfuncs ssc, void *vp)
 {
@@ -264,7 +254,6 @@ SlideShow *try_start_slideshow(struct presentation *p,
 	ss->vp = vp;
 	ss->blank = 0;
 	ss->p = p;
-	ss->cur_slide = ss->ssc.current_slide(ss, vp);
 
 	if ( ss->inhibit == NULL ) {
 		ss->inhibit = inhibit_prepare();

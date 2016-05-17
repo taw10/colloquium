@@ -1612,6 +1612,15 @@ int sc_editor_get_cursor_para(SCEditor *e)
 }
 
 
+void *sc_editor_get_cursor_bvp(SCEditor *e)
+{
+	Paragraph *para;
+	if ( e->cursor_frame == NULL ) return 0;
+	para = e->cursor_frame->paras[e->cursor_para];
+	return get_para_bvp(para);
+}
+
+
 void sc_editor_set_cursor_para(SCEditor *e, signed int pos)
 {
 	double h;

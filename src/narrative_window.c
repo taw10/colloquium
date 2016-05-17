@@ -210,10 +210,18 @@ static void prev_para_sig(GSimpleAction *action, GVariant *parameter,
 static void ss_next_para(SlideShow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
+	SCBlock *ns;
+
 	sc_editor_set_cursor_para(nw->sceditor,
 	                          sc_editor_get_cursor_para(nw->sceditor)+1);
 	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
 	                               sc_editor_get_num_paras(nw->sceditor));
+	ns = sc_editor_get_cursor_bvp(nw->sceditor);
+	if ( ns != NULL ) {
+		nw->sel_slide = ns;
+		slideshow_rerender(nw->show);
+		redraw_slideshow(nw->show);
+	}
 	update_toolbar(nw);
 }
 
@@ -242,7 +250,7 @@ static void ss_changed_link(SlideShow *ss, void *vp)
 }
 
 
-static SCBlock *ss_cur_slide(SlideShow *ss, void *vp)
+static SCBlock *ss_cur_slide(void *vp)
 {
 	NarrativeWindow *nw = vp;
 	return nw->sel_slide;

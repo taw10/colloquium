@@ -168,10 +168,6 @@ void change_edit_slide(SlideWindow *sw, SCBlock *np)
 	}
 	sc_editor_set_scblock(sw->sceditor, ch);
 	sw->scblocks = np;
-
-	if ( slideshow_linked(sw->show) ) {
-		change_proj_slide(sw->show, np);
-	} /* else leave the slideshow alone */
 }
 
 

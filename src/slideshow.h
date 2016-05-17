@@ -1,7 +1,7 @@
 /*
  * slideshow.h
  *
- * Copyright © 2013-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -27,40 +27,52 @@
 #include <config.h>
 #endif
 
-/* Opaque data structure representing a slideshow */
-typedef struct _slideshow SlideShow;
+#define SC_TYPE_SLIDESHOW            (sc_slideshow_get_type())
 
-struct sscontrolfuncs
+#define SC_SLIDESHOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                      SC_TYPE_SLIDESHOW, SCEditor))
+
+#define SC_IS_SLIDESHOW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
+                                      SC_TYPE_SLIDESHOW))
+
+#define SC_SLIDESHOW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((obj), \
+                                      SC_TYPE_SLIDESHOW, SCEditorClass))
+
+#define SC_IS_SLIDESHOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
+                                      SC_TYPE_SLIDESHOW))
+
+#define SC_SLIDESHOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), \
+                                      SC_TYPE_SLIDESHOW, SCSlideShowClass))
+
+struct _scslideshow
 {
-	/* Controller should switch slide forwards or backwards */
-	void (*next_slide)(SlideShow *ss, void *vp);
-	void (*prev_slide)(SlideShow *ss, void *vp);
+	GtkWindow parent_instance;
 
-	/* Controller should return what it thinks is the current slide
-	 * (this might not be what is on the screen, e.g. if the display
-	 * is unlinked) */
-	SCBlock *(*current_slide)(void *vp);
-
-	/* Controller should update whatever visual representation of
-	 * whether or not the display is linked */
-	void (*changed_link)(SlideShow *ss, void *vp);
-
-	/* Slideshow ended (including if you called end_slideshow) */
-	void (*end_show)(SlideShow *ss, void *vp);
+	/* <private> */
+	struct presentation *p;
+	SCBlock             *cur_slide;
+	GtkWidget           *drawingarea;
+	GdkCursor           *blank_cursor;
+	int                  blank;
+	char                 geom[256];
+	int                  slide_width;
+	int                  slide_height;
+	struct inhibit_sys  *inhibit;
+	int                  linked;
+	cairo_surface_t     *surface;
+	struct frame        *top;
 };
 
-extern SlideShow *try_start_slideshow(struct presentation *p,
-                                      struct sscontrolfuncs ssc, void *vp);
-extern void end_slideshow(SlideShow *ss);
 
-extern void change_proj_slide(SlideShow *ss, SCBlock *np);
-extern SCBlock *slideshow_slide(SlideShow *ss);
+struct _scslideshowclass
+{
+	GtkWindowClass parent_class;
+};
 
-extern void toggle_slideshow_link(SlideShow *ss);
-extern int slideshow_linked(SlideShow *ss);
-extern void check_toggle_blank(SlideShow *ss);
+typedef struct _scslideshow SCSlideshow;
+typedef struct _scslideshowclass SCSlideshowClass;
 
-extern void redraw_slideshow(SlideShow *ss);
-extern void slideshow_rerender(SlideShow *ss);
+extern SCSlideshow *sc_slideshow_new(struct presentation *p);
+extern void sc_slideshow_set_slide(SCSlideshow *ss, SCBlock *ns);
 
 #endif	/* SLIDESHOW_H */

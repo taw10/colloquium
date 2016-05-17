@@ -62,8 +62,6 @@ struct _slidewindow
 
 	struct menu_pl      *style_menu;
 	int                  n_style_menu;
-
-	SlideShow           *show;
 };
 
 
@@ -312,8 +310,6 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 
 	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);
-
-	sw->show = NULL;
 
 	update_titlebar(p);
 

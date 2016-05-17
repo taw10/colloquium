@@ -37,41 +37,26 @@
 #include "inhibit_screensaver.h"
 #include "frame.h"
 
-struct _slideshow
+G_DEFINE_TYPE_WITH_CODE(SCSlideshow, sc_slideshow, GTK_TYPE_WINDOW, NULL)
+
+
+static void sc_slideshow_init(SCSlideshow *ss)
 {
-	struct presentation *p;
-	struct sscontrolfuncs ssc;
-	void                *vp;  /* Controller's private word */
-	GtkWidget           *window;
-	GtkWidget           *drawingarea;
-	GdkCursor           *blank_cursor;
-	int                  blank;
-	char                 geom[256];
-	int                  slide_width;
-	int                  slide_height;
-	struct inhibit_sys  *inhibit;
-	int                  linked;
-	cairo_surface_t     *surface;
-	struct frame        *top;
-};
-
-
-/* Force a redraw of the slideshow */
-void redraw_slideshow(SlideShow *ss)
-{
-	gint w, h;
-
-	w = gtk_widget_get_allocated_width(GTK_WIDGET(ss->drawingarea));
-	h = gtk_widget_get_allocated_height(GTK_WIDGET(ss->drawingarea));
-
-	gtk_widget_queue_draw_area(ss->drawingarea, 0, 0, w, h);
 }
 
 
-void slideshow_rerender(SlideShow *ss)
+void sc_slideshow_class_init(SCSlideshowClass *klass)
+{
+}
+
+
+static void slideshow_rerender(SCSlideshow *ss)
 {
 	int n;
 	SCBlock *stylesheets[2];
+	gint w, h;
+
+	if ( ss->cur_slide == NULL ) return;
 
 	if ( ss->surface != NULL ) {
 		cairo_surface_destroy(ss->surface);
@@ -80,28 +65,31 @@ void slideshow_rerender(SlideShow *ss)
 	stylesheets[0] = ss->p->stylesheet;
 	stylesheets[1] = NULL;
 
-	n = slide_number(ss->p, ss->ssc.current_slide(ss->vp));
-	ss->surface = render_sc(sc_block_child(ss->ssc.current_slide(ss->vp)),
+	n = slide_number(ss->p, ss->cur_slide);
+	ss->surface = render_sc(sc_block_child(ss->cur_slide),
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
 	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n,
 	                        &ss->top, ss->p->lang);
+
+	w = gtk_widget_get_allocated_width(GTK_WIDGET(ss->drawingarea));
+	h = gtk_widget_get_allocated_height(GTK_WIDGET(ss->drawingarea));
+
+	gtk_widget_queue_draw_area(ss->drawingarea, 0, 0, w, h);
 }
 
 
-static gint ss_destroy_sig(GtkWidget *widget, SlideShow *ss)
+static gint ss_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 {
 	g_object_unref(ss->blank_cursor);
-	ss->ssc.end_show(ss, ss->vp);
 	if ( ss->surface != NULL ) {
 		cairo_surface_destroy(ss->surface);
 	}
-	free(ss);
 	return FALSE;
 }
 
 
-static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SlideShow *ss)
+static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
 {
 	double xoff, yoff;
 	double width, height;
@@ -137,90 +125,7 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SlideShow *ss)
 }
 
 
-void change_proj_slide(SlideShow *ss, SCBlock *np)
-{
-	slideshow_rerender(ss);
-	redraw_slideshow(ss);
-}
-
-
-static gint prev_slide_sig(GtkWidget *widget, SlideShow *ss)
-{
-	ss->ssc.prev_slide(ss, ss->vp);
-	return FALSE;
-}
-
-
-static gint next_slide_sig(GtkWidget *widget, SlideShow *ss)
-{
-	ss->ssc.next_slide(ss, ss->vp);
-	return FALSE;
-}
-
-
-void end_slideshow(SlideShow *ss)
-{
-	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 0);
-	gtk_widget_destroy(ss->drawingarea);
-	gtk_widget_destroy(ss->window);
-}
-
-
-void toggle_slideshow_link(SlideShow *ss)
-{
-	ss->linked = 1 - ss->linked;
-	if ( ss->linked ) {
-		change_proj_slide(ss, ss->ssc.current_slide(ss->vp));
-	}
-	ss->ssc.changed_link(ss, ss->vp);
-}
-
-
-int slideshow_linked(SlideShow *ss)
-{
-	if ( ss == NULL ) return 0;
-	return ss->linked;
-}
-
-
-void check_toggle_blank(SlideShow *ss)
-{
-	toggle_slideshow_link(ss);
-}
-
-
-static gboolean ss_key_press_sig(GtkWidget *da, GdkEventKey *event,
-                                 SlideShow *ss)
-{
-	switch ( event->keyval )
-	{
-
-		case GDK_KEY_B :
-		case GDK_KEY_b :
-		check_toggle_blank(ss);
-		break;
-
-		case GDK_KEY_Page_Up :
-		case GDK_KEY_Up :
-		prev_slide_sig(NULL, ss);
-		break;
-
-		case GDK_KEY_Page_Down :
-		case GDK_KEY_Down :
-		next_slide_sig(NULL, ss);
-		break;
-
-		case GDK_KEY_Escape :
-		end_slideshow(ss);
-		break;
-
-	}
-
-	return FALSE;
-}
-
-
-static gboolean ss_realize_sig(GtkWidget *w, SlideShow *ss)
+static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
 {
 	GdkWindow *win;
 
@@ -237,42 +142,43 @@ static gboolean ss_realize_sig(GtkWidget *w, SlideShow *ss)
 }
 
 
-SlideShow *try_start_slideshow(struct presentation *p,
-                               struct sscontrolfuncs ssc, void *vp)
+void sc_slideshow_set_slide(SCSlideshow *ss, SCBlock *ns)
+{
+	ss->cur_slide = ns;
+	slideshow_rerender(ss);
+}
+
+
+SCSlideshow *sc_slideshow_new(struct presentation *p)
 {
 	GdkScreen *screen;
 	int n_monitors;
 	int i;
-	SlideShow *ss;
+	SCSlideshow *ss;
 	double slide_width = 1024.0; /* Logical slide size */
 	double slide_height = 768.0; /* FIXME: Should come from slide */
 
-	ss = calloc(1, sizeof(SlideShow));
+	ss = g_object_new(SC_TYPE_SLIDESHOW, NULL);
 	if ( ss == NULL ) return NULL;
 
-	ss->ssc = ssc;
-	ss->vp = vp;
 	ss->blank = 0;
 	ss->p = p;
+	ss->cur_slide = NULL;
 
 	if ( ss->inhibit == NULL ) {
 		ss->inhibit = inhibit_prepare();
 	}
 
-	ss->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-
 	ss->drawingarea = gtk_drawing_area_new();
-	gtk_container_add(GTK_CONTAINER(ss->window), ss->drawingarea);
+	gtk_container_add(GTK_CONTAINER(ss), ss->drawingarea);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(ss->drawingarea), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(ss->drawingarea),
 	                      GDK_KEY_PRESS_MASK);
 
-	g_signal_connect(G_OBJECT(ss->drawingarea), "key-press-event",
-			 G_CALLBACK(ss_key_press_sig), ss);
-	g_signal_connect(G_OBJECT(ss->window), "destroy",
+	g_signal_connect(G_OBJECT(ss), "destroy",
 	                 G_CALLBACK(ss_destroy_sig), ss);
-	g_signal_connect(G_OBJECT(ss->window), "realize",
+	g_signal_connect(G_OBJECT(ss), "realize",
 	                 G_CALLBACK(ss_realize_sig), ss);
 
 	g_signal_connect(G_OBJECT(ss->drawingarea), "draw",
@@ -299,8 +205,8 @@ SlideShow *try_start_slideshow(struct presentation *p,
 	} /* FIXME: Sensible (configurable) choice of monitor */
 
 	ss->linked = 1;
-	gtk_window_fullscreen(GTK_WINDOW(ss->window));
-	gtk_widget_show_all(GTK_WIDGET(ss->window));
+	gtk_window_fullscreen(GTK_WINDOW(ss));
+	gtk_widget_show_all(GTK_WIDGET(ss));
 
 	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 1);
 

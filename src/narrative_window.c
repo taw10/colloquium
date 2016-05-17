@@ -50,9 +50,8 @@ struct _narrative_window
 	SCEditor *sceditor;
 	GApplication *app;
 	struct presentation *p;
-	SlideShow           *show;
+	SCSlideshow         *show;
 	PRClock             *pr_clock;
-	SCBlock             *sel_slide;
 };
 
 
@@ -168,14 +167,6 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void ss_end_show(SlideShow *ss, void *vp)
-{
-	NarrativeWindow *nw = vp;
-	nw->show = NULL;
-	sc_editor_set_para_highlight(nw->sceditor, 0);
-}
-
-
 static void first_para_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
@@ -187,7 +178,7 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void ss_prev_para(SlideShow *ss, void *vp)
+static void ss_prev_para(SCSlideshow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
 	if ( sc_editor_get_cursor_para(nw->sceditor) == 0 ) return;
@@ -207,7 +198,7 @@ static void prev_para_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void ss_next_para(SlideShow *ss, void *vp)
+static void ss_next_para(SCSlideshow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
 	SCBlock *ns;
@@ -218,9 +209,7 @@ static void ss_next_para(SlideShow *ss, void *vp)
 	                               sc_editor_get_num_paras(nw->sceditor));
 	ns = sc_editor_get_cursor_bvp(nw->sceditor);
 	if ( ns != NULL ) {
-		nw->sel_slide = ns;
-		slideshow_rerender(nw->show);
-		redraw_slideshow(nw->show);
+		sc_slideshow_set_slide(nw->show, ns);
 	}
 	update_toolbar(nw);
 }
@@ -242,43 +231,6 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
 	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
 	                               sc_editor_get_num_paras(nw->sceditor));
 	update_toolbar(nw);
-}
-
-
-static void ss_changed_link(SlideShow *ss, void *vp)
-{
-}
-
-
-static SCBlock *ss_cur_slide(void *vp)
-{
-	NarrativeWindow *nw = vp;
-	return nw->sel_slide;
-}
-
-
-static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
-                                gpointer vp)
-{
-	NarrativeWindow *nw = vp;
-	struct sscontrolfuncs ssc;
-
-	if ( num_slides(nw->p) == 0 ) return;
-
-	ssc.next_slide = ss_next_para;
-	ssc.prev_slide = ss_prev_para;
-	ssc.current_slide = ss_cur_slide;
-	ssc.changed_link = ss_changed_link;
-	ssc.end_show = ss_end_show;
-
-	nw->sel_slide = first_slide(nw->p);
-	nw->show = try_start_slideshow(nw->p, ssc, nw);
-
-	if ( nw->show != NULL ) {
-		sc_editor_set_para_highlight(nw->sceditor, 1);
-		sc_editor_set_cursor_para(nw->sceditor, 0);
-		update_toolbar(nw);
-	}
 }
 
 
@@ -341,30 +293,6 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
 
 
 
-GActionEntry nw_entries[] = {
-
-	{ "save", save_sig, NULL, NULL, NULL },
-	{ "saveas", saveas_sig, NULL, NULL, NULL },
-	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
-	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
-	{ "slide", add_slide_sig, NULL, NULL, NULL },
-	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
-	{ "notes", open_notes_sig, NULL, NULL, NULL },
-	{ "clock", open_clock_sig, NULL, NULL, NULL },
-	{ "testcard", testcard_sig, NULL, NULL, NULL },
-	{ "first", first_para_sig, NULL, NULL, NULL },
-	{ "prev", prev_para_sig, NULL, NULL, NULL },
-	{ "next", next_para_sig, NULL, NULL, NULL },
-	{ "last", last_para_sig, NULL, NULL, NULL },
-};
-
-
-GActionEntry nw_entries_p[] = {
-	{ "print", print_sig, NULL, NULL, NULL  },
-	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
-};
-
-
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  NarrativeWindow *nw)
 {
@@ -418,9 +346,46 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		}
 		break;
 
+		case GDK_KEY_Escape :
+		if ( nw->show != NULL ) {
+			gtk_widget_destroy(GTK_WIDGET(nw->show));
+			return TRUE;
+		}
+		break;
+
 	}
 
 	return FALSE;
+}
+
+
+static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
+{
+	nw->show = NULL;
+	sc_editor_set_para_highlight(nw->sceditor, 0);
+	return FALSE;
+}
+
+
+static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
+                                gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+
+	if ( num_slides(nw->p) == 0 ) return;
+
+	nw->show = sc_slideshow_new(nw->p);
+
+	if ( nw->show == NULL ) return;
+
+	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
+		 G_CALLBACK(key_press_sig), nw);
+	g_signal_connect(G_OBJECT(nw->show), "destroy",
+		 G_CALLBACK(ss_destroy_sig), nw);
+	sc_slideshow_set_slide(nw->show, first_slide(nw->p));
+	sc_editor_set_para_highlight(nw->sceditor, 1);
+	sc_editor_set_cursor_para(nw->sceditor, 0);
+	update_toolbar(nw);
 }
 
 
@@ -494,6 +459,30 @@ static int click_thumbnail(double x, double y, void *bvp, void *vp)
 
 	return 0;
 }
+
+
+GActionEntry nw_entries[] = {
+
+	{ "save", save_sig, NULL, NULL, NULL },
+	{ "saveas", saveas_sig, NULL, NULL, NULL },
+	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
+	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
+	{ "slide", add_slide_sig, NULL, NULL, NULL },
+	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
+	{ "notes", open_notes_sig, NULL, NULL, NULL },
+	{ "clock", open_clock_sig, NULL, NULL, NULL },
+	{ "testcard", testcard_sig, NULL, NULL, NULL },
+	{ "first", first_para_sig, NULL, NULL, NULL },
+	{ "prev", prev_para_sig, NULL, NULL, NULL },
+	{ "next", next_para_sig, NULL, NULL, NULL },
+	{ "last", last_para_sig, NULL, NULL, NULL },
+};
+
+
+GActionEntry nw_entries_p[] = {
+	{ "print", print_sig, NULL, NULL, NULL  },
+	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
+};
 
 
 NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
@@ -605,7 +594,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
 	                               "win.last");
 
-	nw->sel_slide = NULL;
 	update_toolbar(nw);
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);

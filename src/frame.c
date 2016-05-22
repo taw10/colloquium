@@ -861,6 +861,60 @@ static __attribute__((unused)) void show_para(Paragraph *p)
 }
 
 
+void merge_paragraphs(struct frame *fr, int para)
+{
+	Paragraph *p1, *p2;
+	struct text_run *runs_new;
+	int i;
+	size_t len;
+	SCBlock *scblock;
+
+	if ( para >= fr->n_paras-1 ) {
+		printf("Paragraph number too high to merge.\n");
+		return;
+	}
+
+	p1 = fr->paras[para];
+	p2 = fr->paras[para+1];
+	show_para(p1);
+	show_para(p2);
+
+	if ( (p1->type != PARA_TYPE_TEXT) || (p2->type != PARA_TYPE_TEXT) ) {
+		printf("Trying to merge non-text paragraphs.\n");
+		return;
+	}
+
+	/* All the runs from p2 get added to p1 */
+	runs_new = realloc(p1->runs,
+	                   (p1->n_runs+p2->n_runs)*sizeof(struct text_run));
+	if ( runs_new == NULL ) {
+		fprintf(stderr, "Failed to allocate merged runs.\n");
+		return;
+	}
+	p1->runs = runs_new;
+
+	/* Take off the newline at the end of the last run */
+	scblock = p1->runs[p1->n_runs-1].scblock;
+	len = p1->runs[p1->n_runs-1].len_bytes--;
+	if ( sc_block_contents(scblock)[len+1] != '\n' ) {
+		fprintf(stderr, "Whoops, not a newline!\n");
+	}
+	scblock_delete_text(scblock, len+1, len+2);
+
+	for ( i=0; i<p2->n_runs; i++ ) {
+		p1->runs[p1->n_runs++] = p2->runs[i];
+	}
+	free(p2->runs);
+	free(p2);
+	show_para(p1);
+
+	for ( i=para+1; i<fr->n_paras-1; i++ ) {
+		fr->paras[i] = fr->paras[i+1];
+	}
+	fr->n_paras--;
+}
+
+
 static char *s_strdup(const char *a)
 {
 	if ( a == NULL ) return NULL;

@@ -74,4 +74,6 @@ extern void show_sc_block(const SCBlock *bl, const char *prefix);
 extern char *serialise_sc_block(const SCBlock *bl);
 extern void save_sc_block(FILE *fh, const SCBlock *bl);
 
+extern void scblock_delete_text(SCBlock *b, size_t o1, size_t o2);
+
 #endif	/* SC_PARSE_H */

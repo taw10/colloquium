@@ -555,7 +555,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
 
 	/* Add slide */
-	image = gtk_image_new_from_icon_name("add",
+	image = gtk_image_new_from_icon_name("list-add",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
 	button = gtk_tool_button_new(image, "Add slide");
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
@@ -565,29 +565,28 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	button = gtk_separator_tool_item_new();
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
 
-	/* Change slide.  FIXME: LTR vs RTL */
-	image = gtk_image_new_from_icon_name("gtk-goto-first-ltr",
+	image = gtk_image_new_from_icon_name("go-top",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
 	nw->bfirst = gtk_tool_button_new(image, "First slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bfirst));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bfirst),
 	                               "win.first");
 
-	image = gtk_image_new_from_icon_name("gtk-go-back-ltr",
+	image = gtk_image_new_from_icon_name("go-up",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
 	nw->bprev = gtk_tool_button_new(image, "Previous slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bprev));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bprev),
 	                               "win.prev");
 
-	image = gtk_image_new_from_icon_name("gtk-go-forward-ltr",
+	image = gtk_image_new_from_icon_name("go-down",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
 	nw->bnext = gtk_tool_button_new(image, "Next slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bnext));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bnext),
 	                               "win.next");
 
-	image = gtk_image_new_from_icon_name("gtk-goto-last-ltr",
+	image = gtk_image_new_from_icon_name("go-bottom",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
 	nw->blast = gtk_tool_button_new(image, "Last slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->blast));

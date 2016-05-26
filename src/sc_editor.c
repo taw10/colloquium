@@ -412,26 +412,37 @@ static void draw_editing_box(cairo_t *cr, struct frame *fr)
 }
 
 
+static void draw_para_highlight(cairo_t *cr, struct frame *fr, int cursor_para)
+{
+	double cx, cy, w, h;
+
+	if ( get_para_highlight(fr, cursor_para, &cx, &cy, &w, &h) != 0 ) {
+		return;
+	}
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, cx+fr->x, cy+fr->y, w, h);
+	cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
+	cairo_set_line_width(cr, 5.0);
+	cairo_stroke(cr);
+}
+
+
 static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
                        size_t cursor_pos, int cursor_trail, int hgh)
 {
 	double cx, clow, chigh, h;
-	double cy, w;
 	const double t = 1.8;
 
-	if ( hgh && get_para_highlight(fr, cursor_para, &cx, &cy, &w, &h) == 0 )
-	{
-		cairo_new_path(cr);
-		cairo_rectangle(cr, cx+fr->x, cy+fr->y, w, h);
-		cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
-		cairo_set_line_width(cr, 5.0);
-		cairo_stroke(cr);
+	if ( hgh ) {
+		draw_para_highlight(cr, fr, cursor_para);
 		return;
 	}
 
 	if ( get_cursor_pos(fr, cursor_para, cursor_pos+cursor_trail,
 	                    &cx, &clow, &h) )
 	{
+		draw_para_highlight(cr, fr, cursor_para);
 		return;
 	}
 

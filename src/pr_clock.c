@@ -50,6 +50,7 @@ struct pr_clock
 
 	GDateTime *start;
 	double time_elapsed_at_start;
+	guint timer_id;
 
 	int running;
 	double time_allowed;
@@ -213,10 +214,10 @@ void pr_clock_set_pos(PRClock *n, int pos, int end)
 }
 
 
-static gint close_clock_sig(GtkWidget *w, struct presentation *p)
+static gint close_clock_sig(GtkWidget *w, PRClock *n)
 {
-	p->clock->open = 0;
-	p->clock = NULL;
+	g_source_remove(n->timer_id);
+	free(n);
 	return FALSE;
 }
 
@@ -310,6 +311,7 @@ static gboolean reset_sig(GtkWidget *w, gpointer data)
 static gboolean setpos_sig(GtkWidget *w, gpointer data)
 {
 	struct pr_clock *n = data;
+	n->pos_reached = n->pos;
 	update_clock(n);
 	return FALSE;
 }
@@ -422,10 +424,11 @@ PRClock *pr_clock_new()
 	n->time_elapsed = 0;
 	n->time_elapsed_at_start = 0;
 	n->pos = 0;
+	n->pos_reached = 0;
 	n->end = 0;
 	n->start = NULL;
 	update_clock(n);
-	g_timeout_add_seconds(1, update_clock, n);
+	n->timer_id = g_timeout_add_seconds(1, update_clock, n);
 
 	gtk_window_set_title(GTK_WINDOW(n->window), "Presentation clock");
 

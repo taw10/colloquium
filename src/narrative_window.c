@@ -140,9 +140,24 @@ static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
-                             gpointer vp)
+static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
+                              gpointer vp)
 {
+	SCBlock *ns;
+	NarrativeWindow *nw = vp;
+
+	/* Get the SCBlock corresponding to the slide */
+	ns = sc_editor_get_cursor_bvp(nw->sceditor);
+	if ( ns == NULL ) {
+		fprintf(stderr, "Not a slide!\n");
+		return;
+	}
+
+	sc_block_delete(nw->p->scblocks, ns);
+
+	/* Full rerender */
+	sc_editor_set_scblock(nw->sceditor,
+	                      sc_editor_get_scblock(nw->sceditor));
 }
 
 
@@ -466,7 +481,7 @@ GActionEntry nw_entries[] = {
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
 	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
-	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
+	{ "deleteslide", delete_slide_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
 	{ "notes", open_notes_sig, NULL, NULL, NULL },

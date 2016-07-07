@@ -45,13 +45,6 @@ struct text_run
 	double                col[4];
 };
 
-enum para_type
-{
-	PARA_TYPE_TEXT,
-	PARA_TYPE_IMAGE,
-	PARA_TYPE_CALLBACK
-};
-
 struct _paragraph
 {
 	enum para_type   type;
@@ -1069,4 +1062,16 @@ void *get_para_bvp(Paragraph *para)
 {
 	if ( para->type != PARA_TYPE_CALLBACK ) return NULL;
 	return para->bvp;
+}
+
+
+SCBlock *para_scblock(Paragraph *para)
+{
+	return para->scblock;
+}
+
+
+enum para_type para_type(Paragraph *para)
+{
+	return para->type;
 }

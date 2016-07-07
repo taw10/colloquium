@@ -49,6 +49,13 @@ typedef enum
 	GRAD_VERT
 } GradientType;
 
+enum para_type
+{
+	PARA_TYPE_TEXT,
+	PARA_TYPE_IMAGE,
+	PARA_TYPE_CALLBACK
+};
+
 typedef struct _paragraph Paragraph;
 
 struct frame
@@ -165,5 +172,8 @@ extern int get_sc_pos(struct frame *fr, int pn, size_t pos,
 extern void *get_para_bvp(Paragraph *para);
 
 extern void merge_paragraphs(struct frame *fr, int para);
+
+extern enum para_type para_type(Paragraph *para);
+extern SCBlock *para_scblock(Paragraph *para);
 
 #endif	/* FRAME_H */

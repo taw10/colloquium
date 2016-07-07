@@ -595,12 +595,49 @@ static void insert_text(char *t, SCEditor *e)
 	}
 
 	para = e->cursor_frame->paras[e->cursor_para];
-	insert_text_in_paragraph(para, e->cursor_pos+e->cursor_trail, t);
-	wrap_paragraph(para, NULL, e->cursor_frame->w - e->cursor_frame->pad_l
-	                            - e->cursor_frame->pad_r);
-	cursor_moveh(e->cursor_frame, &e->cursor_para,
-	             &e->cursor_pos, &e->cursor_trail, +1);
-	sc_editor_redraw(e);
+
+	/* Is this paragraph even a text one? */
+	if ( para_type(para) == PARA_TYPE_TEXT ) {
+
+
+		/* Yes. The "easy" case */
+		insert_text_in_paragraph(para, e->cursor_pos+e->cursor_trail,
+		                         t);
+		wrap_paragraph(para, NULL,
+		               e->cursor_frame->w - e->cursor_frame->pad_l
+		                            - e->cursor_frame->pad_r);
+		cursor_moveh(e->cursor_frame, &e->cursor_para,
+		             &e->cursor_pos, &e->cursor_trail, +1);
+
+		sc_editor_redraw(e);
+
+	} else {
+
+		SCBlock *ad;
+		char *tmp;
+
+		tmp = malloc(strlen(t)+2);
+		strcpy(tmp, "\n");
+		strcat(tmp, t);
+
+		/* FIXME: We should not assume that box void pointers correspond
+		 * to "real" scblocks for callback paragraphs.  Not in this
+		 * file, at least.  It would be OK in narrative_window.c where
+		 * we know there aren't any other callbacks */
+		ad = get_para_bvp(para);
+		if ( ad == NULL ) {
+			ad = para_scblock(para);
+		}
+
+		/* No. Create a new text paragraph straight afterwards */
+		sc_block_insert_after(ad, NULL, NULL, tmp);
+		full_rerender(e);
+
+		/* FIXME: Find the cursor again */
+
+		sc_editor_redraw(e);
+	}
+
 }
 
 

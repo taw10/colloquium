@@ -838,18 +838,29 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
 }
 
 
+static char *run_text(struct text_run *run)
+{
+	return strndup(sc_block_contents(run->scblock)+run->scblock_offs_bytes,
+	               run->len_bytes);
+}
+
+
 static __attribute__((unused)) void show_para(Paragraph *p)
 {
 	int i;
 	printf("Paragraph %p\n", p);
 	printf("%i runs:\n", p->n_runs);
 	for ( i=0; i<p->n_runs; i++ ) {
+		char *tmp = run_text(&p->runs[i]);
 		printf("  Run %2i: para offs %lli, SCBlock %p offs %lli, len "
-		       "%lli %s\n", i, (long long int)p->runs[i].para_offs_bytes,
+		       "%lli %s '%s'\n",
+		       i, (long long int)p->runs[i].para_offs_bytes,
 		       p->runs[i].scblock,
 		       (long long int)p->runs[i].scblock_offs_bytes,
 		       (long long int)p->runs[i].len_bytes,
-		       pango_font_description_to_string(p->runs[i].fontdesc));
+		       pango_font_description_to_string(p->runs[i].fontdesc),
+		       tmp);
+		free(tmp);
 	}
 }
 

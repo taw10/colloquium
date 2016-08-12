@@ -633,11 +633,13 @@ void sc_insert_block(SCBlock *b1, int o1, SCBlock *ins)
 
 void scblock_delete_text(SCBlock *b, size_t o1, size_t o2)
 {
-	if ( o1 >= o2 ) {
-		fprintf(stderr, "Backwards delete!\n");
+	size_t len = strlen(b->contents);
+	if ( (o1 >= o2) || (o1 > len) || (o2 > len) ) {
+		fprintf(stderr, "Invalid delete: %i %i %i\n",
+		        (int)o1, (int)o2, (int)len);
 		return;
 	}
-	memmove(b->contents+o1, b->contents+o2, o2-o1);
+	memmove(b->contents+o1, b->contents+o2, len-o2+1);
 }
 
 

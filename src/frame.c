@@ -869,8 +869,8 @@ void merge_paragraphs(struct frame *fr, int para)
 {
 	Paragraph *p1, *p2;
 	struct text_run *runs_new;
-	int i;
-	size_t len;
+	int i, j;
+	size_t offs;
 	SCBlock *scblock;
 
 	if ( para >= fr->n_paras-1 ) {
@@ -880,8 +880,6 @@ void merge_paragraphs(struct frame *fr, int para)
 
 	p1 = fr->paras[para];
 	p2 = fr->paras[para+1];
-	show_para(p1);
-	show_para(p2);
 
 	if ( (p1->type != PARA_TYPE_TEXT) || (p2->type != PARA_TYPE_TEXT) ) {
 		printf("Trying to merge non-text paragraphs.\n");
@@ -897,20 +895,50 @@ void merge_paragraphs(struct frame *fr, int para)
 	}
 	p1->runs = runs_new;
 
-	/* Take off the newline at the end of the last run */
+	/* Locate the newline which we have just deleted. */
 	scblock = p1->runs[p1->n_runs-1].scblock;
-	len = p1->runs[p1->n_runs-1].len_bytes--;
-	if ( sc_block_contents(scblock)[len+1] != '\n' ) {
-		fprintf(stderr, "Whoops, not a newline!\n");
+	offs = p1->runs[p1->n_runs-1].scblock_offs_bytes;
+	offs += p1->runs[p1->n_runs-1].len_bytes;
+	if ( sc_block_contents(scblock)[offs] == '\n' ) {
+
+		scblock_delete_text(scblock, offs, offs+1);
+
+		/* Update the SC offset of any run from this SCBlock */
+		for ( i=para+1; i<fr->n_paras; i++ ) {
+			int done = 0;
+			if ( fr->paras[i]->type != PARA_TYPE_TEXT ) break;
+			for ( j=0; j<fr->paras[i]->n_runs; j++ ) {
+				struct text_run *run = &fr->paras[i]->runs[j];
+				if ( run->scblock == scblock ) {
+					run->scblock_offs_bytes -= 1;
+				} else {
+					done = 1;
+					break;
+				}
+			}
+			if ( done ) break;
+		}
+
+	} else {
+		printf("Couldn't find newline!\n");
+		printf("Have '%s'\n", sc_block_contents(scblock)+offs);
 	}
-	scblock_delete_text(scblock, len+1, len+2);
 
 	for ( i=0; i<p2->n_runs; i++ ) {
-		p1->runs[p1->n_runs++] = p2->runs[i];
+
+		size_t offs;
+
+		p1->runs[p1->n_runs] = p2->runs[i];
+
+		offs = p1->runs[p1->n_runs-1].para_offs_bytes;
+		offs += p1->runs[p1->n_runs-1].len_bytes;
+		p1->runs[p1->n_runs].para_offs_bytes = offs;
+
+		p1->n_runs++;
+
 	}
 	free(p2->runs);
 	free(p2);
-	show_para(p1);
 
 	for ( i=para+1; i<fr->n_paras-1; i++ ) {
 		fr->paras[i] = fr->paras[i+1];

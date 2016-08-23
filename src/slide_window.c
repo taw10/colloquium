@@ -344,10 +344,17 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(scroll));
 
 	/* Default size */
-	gtk_window_set_default_size(GTK_WINDOW(sw->window), 1024, 768);
+	gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll),
+	                                          1024);
+	gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll),
+	                                           768);
 	gtk_window_set_resizable(GTK_WINDOW(sw->window), TRUE);
 
 	gtk_widget_show_all(window);
+	gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll),
+	                                          100);
+	gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll),
+	                                           100);
 
 	return sw;
 }

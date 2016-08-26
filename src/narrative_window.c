@@ -368,6 +368,12 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		}
 		break;
 
+		case GDK_KEY_F5 :
+		if ( nw->show != NULL ) {
+			/* Trap F5 so that full rerender does NOT happen */
+			return TRUE;
+		}
+
 	}
 
 	return FALSE;

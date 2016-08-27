@@ -321,7 +321,7 @@ void save_sc_block(FILE *fh, const SCBlock *bl)
 			fprintf(stderr, "Failed to serialise block\n");
 			return;
 		}
-		fprintf(fh, a);
+		fputs(a, fh);
 		free(a);
 		bl = bl->next;
 	}

@@ -65,7 +65,6 @@ extern void sc_block_set_options(SCBlock *bl, char *opt);
 extern void sc_block_set_contents(SCBlock *bl, char *con);
 extern void sc_insert_text(SCBlock *b1, size_t o1, const char *t);
 extern void sc_insert_block(SCBlock *b1, int o1, SCBlock *ins);
-extern void sc_delete_text(SCBlock *b1, int o1, SCBlock *b2, int o2);
 extern SCBlock *sc_block_split(SCBlock *bl, size_t pos);
 
 extern void show_sc_blocks(const SCBlock *bl);

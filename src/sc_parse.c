@@ -643,52 +643,6 @@ void scblock_delete_text(SCBlock *b, size_t o1, size_t o2)
 }
 
 
-static void delete_from_block(SCBlock *b, int o1, int o2)
-{
-	if ( o1 == o2 ) return;  /* nothing to delete */
-	assert(o2 > o1);
-	char *p1 = g_utf8_offset_to_pointer(b->contents, o1);
-	char *p2 = g_utf8_offset_to_pointer(b->contents, o2);
-	memmove(p1, p2, strlen(p2)+1);
-}
-
-
-static void delete_to_end(SCBlock *b, int offs)
-{
-	char *p = g_utf8_offset_to_pointer(b->contents, offs);
-	p[0] = '\0';
-}
-
-
-static void delete_from_start(SCBlock *b, int offs)
-{
-	char *p = g_utf8_offset_to_pointer(b->contents, offs);
-	memmove(b->contents, p, strlen(p)+1);
-}
-
-
-/* Character offsets */
-void sc_delete_text(SCBlock *b1, int o1, SCBlock *b2, int o2)
-{
-	if ( b1 == b2 ) {
-		delete_from_block(b1, o1, o2);
-	} else if ( b2 == b1->next ) {
-		delete_to_end(b1, o1);
-		delete_from_start(b2, o2);
-	} else {
-		delete_to_end(b1, o1);
-		delete_from_start(b2, o2);
-		b1->next = b2;
-		SCBlock *de = b1->next;
-		while ( de != b2 ) {
-			SCBlock *denext = de->next;
-			sc_block_free(de);
-			de = denext;
-		}
-	}
-}
-
-
 /* Create a deep copy of "bl", including all its children */
 SCBlock *sc_block_copy(const SCBlock *bl)
 {

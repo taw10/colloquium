@@ -831,8 +831,7 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
 		/* Delete from the corresponding SC block */
 		scblock_offs1 = ds + run->scblock_offs_bytes;
 		scblock_offs2 = de + run->scblock_offs_bytes;
-		sc_delete_text(run->scblock, scblock_offs1,
-		               run->scblock, scblock_offs2);
+		scblock_delete_text(run->scblock, scblock_offs1, scblock_offs2);
 
 		/* Fix up the offsets of the subsequent text runs */
 		size_t del_len = de - ds;

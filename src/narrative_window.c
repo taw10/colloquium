@@ -249,11 +249,6 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void open_notes_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-}
-
-
 static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
@@ -490,7 +485,6 @@ GActionEntry nw_entries[] = {
 	{ "deleteslide", delete_slide_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
-	{ "notes", open_notes_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },
 	{ "testcard", testcard_sig, NULL, NULL, NULL },
 	{ "first", first_para_sig, NULL, NULL, NULL },

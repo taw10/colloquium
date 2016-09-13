@@ -34,6 +34,4 @@ extern SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 extern void change_edit_slide(SlideWindow *sw, SCBlock *np);
 extern void update_titlebar(struct presentation *p);
 
-extern void slidewindow_notes_closed(SlideWindow *sw);
-
 #endif	/* SLIDEWINDOW_H */

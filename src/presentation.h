@@ -53,7 +53,6 @@ struct presentation
 	NarrativeWindow  *narrative_window;
 	SlideWindow      *slidewindow;
 
-	struct notes     *notes;
 	struct pr_clock  *clock;
 	struct slide_sorter *slide_sorter;
 

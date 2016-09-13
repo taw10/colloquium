@@ -800,10 +800,8 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 
 void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
 {
-	int nrun1, nrun2;
+	int nrun1, nrun2, nrun;
 	int i;
-	struct text_run *run1;
-	struct text_run *run2;
 	size_t scblock_offs1, scblock_offs2;
 
 	/* Find which run we are in */
@@ -813,27 +811,39 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
 		fprintf(stderr, "Couldn't find run to delete from.\n");
 		return;
 	}
-	run1 = &para->runs[nrun1];
-	run2 = &para->runs[nrun2];
 
-	/* Translate paragraph offsets into SCBlock offsets */
-	scblock_offs1 = offs1 - run1->para_offs_bytes + run1->scblock_offs_bytes;
-	scblock_offs2 = offs2 - run2->para_offs_bytes + run2->scblock_offs_bytes;
-	sc_delete_text(run1->scblock, scblock_offs1,
-	               run2->scblock, scblock_offs2);
+	for ( nrun=nrun1; nrun<=nrun2; nrun++ ) {
 
-	if ( nrun1 == nrun2 ) {
-		size_t del_len = offs2 - offs1;
-		run1->len_bytes -= del_len;
-		for ( i=nrun1+1; i<para->n_runs; i++ ) {
-			if ( para->runs[i].scblock == run1->scblock ) {
+		ssize_t ds, de;
+		struct text_run *run;
+
+		run = &para->runs[nrun];
+		ds = offs1 - run->para_offs_bytes;
+		de = offs2 - run->para_offs_bytes;
+		if ( ds < 0 ) ds = 0;
+		if ( de > run->len_bytes ) {
+			de = run->len_bytes;
+		}
+		assert(ds >= 0);  /* Otherwise nrun1 was too big */
+		assert(de >= 0);  /* Otherwise nrun2 was too big */
+		if ( ds == de ) continue;
+
+		/* Delete from the corresponding SC block */
+		scblock_offs1 = ds + run->scblock_offs_bytes;
+		scblock_offs2 = de + run->scblock_offs_bytes;
+		sc_delete_text(run->scblock, scblock_offs1,
+		               run->scblock, scblock_offs2);
+
+		/* Fix up the offsets of the subsequent text runs */
+		size_t del_len = de - ds;
+		run->len_bytes -= del_len;
+		for ( i=nrun+1; i<para->n_runs; i++ ) {
+			if ( para->runs[i].scblock == run->scblock ) {
 				para->runs[i].scblock_offs_bytes -= del_len;
 			}
 			para->runs[i].para_offs_bytes -= del_len;
 		}
-	} else {
-		/* FIXME: Implement this case */
-		printf("Multi-run delete!\n");
+
 	}
 }
 

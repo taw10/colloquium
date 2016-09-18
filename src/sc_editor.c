@@ -89,10 +89,20 @@ static void vertical_adjust(GtkAdjustment *adj, SCEditor *e)
 static void set_vertical_params(SCEditor *e)
 {
 	if ( e->vadj == NULL ) return;
+
+	/* Ensure we do not scroll off the top of the document */
 	if ( e->scroll_pos < 0.0 ) e->scroll_pos = 0.0;
+
+	/* Ensure we do not scroll off the bottom of the document */
 	if ( e->scroll_pos > e->h - e->visible_height ) {
 		e->scroll_pos = e->h - e->visible_height;
 	}
+
+	/* If we can show the whole document, show it at the top */
+	if ( e->h < e->visible_height ) {
+		e->scroll_pos = 0.0;
+	}
+
 	gtk_adjustment_configure(e->vadj, e->scroll_pos, 0, e->h, 100,
 	                         e->visible_height, e->visible_height);
 }

@@ -88,6 +88,8 @@ static void vertical_adjust(GtkAdjustment *adj, SCEditor *e)
 
 static void set_vertical_params(SCEditor *e)
 {
+	double page;
+
 	if ( e->vadj == NULL ) return;
 
 	/* Ensure we do not scroll off the top of the document */
@@ -103,8 +105,14 @@ static void set_vertical_params(SCEditor *e)
 		e->scroll_pos = 0.0;
 	}
 
+	if ( e->h > e->visible_height ) {
+		page = e->visible_height;
+	} else {
+		page = e->h;
+	}
+
 	gtk_adjustment_configure(e->vadj, e->scroll_pos, 0, e->h, 100,
-	                         e->visible_height, e->visible_height);
+	                         e->visible_height, page);
 }
 
 

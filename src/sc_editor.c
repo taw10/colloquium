@@ -608,6 +608,8 @@ static void check_cursor_visible(SCEditor *e)
 	size_t offs;
 	Paragraph *para;
 
+	if ( e->cursor_frame == NULL ) return;
+
 	para = e->cursor_frame->paras[e->cursor_para];
 	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
 	get_cursor_pos(e->cursor_frame, e->cursor_para, offs, &x, &y, &h);

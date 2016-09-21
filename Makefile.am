@@ -29,7 +29,7 @@ src/default_stylesheet.o: src/default_stylesheet.sty
 	ld -r -b binary -o src/default_stylesheet.o src/default_stylesheet.sty
 
 colloquiumdir = $(datadir)/colloquium
-colloquium_DATA = data/sky.png data/canvas.png
+colloquium_DATA = data/sky.png data/canvas.png data/demo.sc
 EXTRA_DIST += $(colloquium_DATA)
 
 iconsdir = $(datadir)/icons/hicolor/scalable/apps

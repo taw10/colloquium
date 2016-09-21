@@ -27,6 +27,10 @@
 
 #include <gtk/gtk.h>
 #include <getopt.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 
 #include "colloquium.h"
 #include "presentation.h"
@@ -36,6 +40,8 @@
 struct _colloquium
 {
 	GtkApplication parent_instance;
+	char *mydir;
+	int first_run;
 };
 
 
@@ -45,11 +51,14 @@ typedef GtkApplicationClass ColloquiumClass;
 G_DEFINE_TYPE(Colloquium, colloquium, GTK_TYPE_APPLICATION)
 
 
-static void colloquium_activate(GApplication *app)
+static void colloquium_activate(GApplication *papp)
 {
-	struct presentation *p;
-	p = new_presentation();
-	narrative_window_new(p, app);
+	Colloquium *app = COLLOQUIUM(papp);
+	if ( !app->first_run ) {
+		struct presentation *p;
+		p = new_presentation();
+		narrative_window_new(p, papp);
+	}
 }
 
 
@@ -132,11 +141,13 @@ static void colloquium_finalize(GObject *object)
 }
 
 
-static void colloquium_startup(GApplication *app)
+static void colloquium_startup(GApplication *papp)
 {
+	Colloquium *app = COLLOQUIUM(papp);
 	GtkBuilder *builder;
+	const char *configdir;
 
-	G_APPLICATION_CLASS(colloquium_parent_class)->startup(app);
+	G_APPLICATION_CLASS(colloquium_parent_class)->startup(papp);
 
 	g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries,
 	                                 G_N_ELEMENTS(app_entries), app);
@@ -290,8 +301,25 @@ static void colloquium_startup(GApplication *app)
 	    G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu")));
 	gtk_application_set_menubar(GTK_APPLICATION(app),
 	    G_MENU_MODEL(gtk_builder_get_object(builder, "menubar")));
-
 	g_object_unref(builder);
+
+	configdir = g_get_user_config_dir();
+	app->mydir = malloc(strlen(configdir+14));
+	strcpy(app->mydir, configdir);
+	strcat(app->mydir, "/colloquium");
+
+	if ( !g_file_test(app->mydir, G_FILE_TEST_IS_DIR) ) {
+
+		/* Folder not created yet */
+		GFile *file = g_file_new_for_path(DATADIR"/colloquium/demo.sc");
+		g_application_open(G_APPLICATION(app), &file, 1, "");
+		app->first_run = 1;
+		g_object_unref(file);
+
+		if ( g_mkdir(app->mydir, S_IRUSR | S_IWUSR | S_IXUSR) ) {
+			fprintf(stderr, "Failed to create folder\n");
+		}
+	}
 }
 
 
@@ -330,6 +358,9 @@ static Colloquium *colloquium_new()
 	                   "flags", G_APPLICATION_HANDLES_OPEN,
 	                   "register-session", TRUE,
 	                   NULL);
+
+	app->first_run = 0;  /* Will be updated at "startup" if appropriate */
+
 	return app;
 }
 

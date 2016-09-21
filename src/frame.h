@@ -156,6 +156,8 @@ extern void cursor_movev(struct frame *fr, int *cpara, size_t *cpos, int *ctrail
 
 extern void check_callback_click(struct frame *fr, int para);
 
+extern size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail);
+
 extern void insert_text_in_paragraph(Paragraph *para, size_t offs,
                                      const char *t);
 

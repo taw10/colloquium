@@ -593,17 +593,24 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 
 SCBlock *split_paragraph_at_cursor(SCEditor *e)
 {
-	return split_paragraph(e->cursor_frame, e->cursor_para,
-	                       e->cursor_pos+e->cursor_trail, e->pc);
+	size_t offs;
+	Paragraph *para;
+
+	para = e->cursor_frame->paras[e->cursor_para];
+	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
+	return split_paragraph(e->cursor_frame, e->cursor_para, offs, e->pc);
 }
 
 
 static void check_cursor_visible(SCEditor *e)
 {
 	double x, y, h;
+	size_t offs;
+	Paragraph *para;
 
-	get_cursor_pos(e->cursor_frame, e->cursor_para,
-	               e->cursor_pos+e->cursor_trail, &x, &y, &h);
+	para = e->cursor_frame->paras[e->cursor_para];
+	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
+	get_cursor_pos(e->cursor_frame, e->cursor_para, offs, &x, &y, &h);
 
 	/* Off the bottom? */
 	if ( y - e->scroll_pos + h > e->visible_height ) {
@@ -637,14 +644,16 @@ static void insert_text(char *t, SCEditor *e)
 	/* Is this paragraph even a text one? */
 	if ( para_type(para) == PARA_TYPE_TEXT ) {
 
+		size_t off;
 
 		/* Yes. The "easy" case */
-		insert_text_in_paragraph(para, e->cursor_pos+e->cursor_trail,
-		                         t);
+		off = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
+		insert_text_in_paragraph(para, off, t);
 		wrap_paragraph(para, NULL,
 		               e->cursor_frame->w - e->cursor_frame->pad_l
 		                            - e->cursor_frame->pad_r);
 		if ( e->flow ) update_size(e);
+
 		cursor_moveh(e->cursor_frame, &e->cursor_para,
 		             &e->cursor_pos, &e->cursor_trail, +1);
 
@@ -702,9 +711,15 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 		wrap_paragraph(e->cursor_frame->paras[new_para], NULL, wrapw);
 	} else {
 
-		delete_text_in_paragraph(para, e->cursor_pos+e->cursor_trail,
-		                         old_pos+old_trail);
+		size_t offs_new, offs_old;
+
+		offs_new = pos_trail_to_offset(para, e->cursor_pos,
+		                               e->cursor_trail);
+		offs_old = pos_trail_to_offset(para, old_pos, old_trail);
+
+		delete_text_in_paragraph(para, offs_new, offs_old);
 		wrap_paragraph(para, NULL, wrapw);
+
 	}
 
 
@@ -1213,8 +1228,7 @@ static void copy_selection(SCEditor *e)
 	char *storycode;
 	SCBlock *bl;
 
-	bl = block_at_cursor(e->cursor_frame, e->cursor_para,
-	                     e->cursor_pos+e->cursor_trail);
+	bl = block_at_cursor(e->cursor_frame, e->cursor_para, 0);
 	if ( bl == NULL ) return;
 
 	storycode = serialise_sc_block(bl);
@@ -1231,10 +1245,13 @@ static void paste_callback(GtkClipboard *cb, const gchar *text, void *vp)
 	SCBlock *bl = sc_parse(text);
 	SCBlock *cur_bl;
 	size_t cur_sc_pos;
+	size_t offs;
+	Paragraph *para;
 
-	get_sc_pos(e->cursor_frame, e->cursor_para,
-	           e->cursor_pos+e->cursor_trail,
-	           &cur_bl, &cur_sc_pos);
+	para = e->cursor_frame->paras[e->cursor_para];
+	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
+
+	get_sc_pos(e->cursor_frame, e->cursor_para, offs, &cur_bl, &cur_sc_pos);
 	sc_insert_block(cur_bl, cur_sc_pos, bl);
 	full_rerender(e);
 }

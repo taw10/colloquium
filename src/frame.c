@@ -764,6 +764,25 @@ static int which_run(Paragraph *para, size_t offs)
 }
 
 
+size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
+{
+	glong char_offs;
+	const char *run_text;
+	struct text_run *run;
+	int nrun;
+	char *ptr;
+
+	nrun = which_run(para, offs);
+	run= &para->runs[nrun];
+	run_text = sc_block_contents(run->scblock) + run->scblock_offs_bytes;
+	char_offs = g_utf8_pointer_to_offset(run_text, run_text+offs);
+	char_offs += trail;
+
+	ptr = g_utf8_offset_to_pointer(run_text, char_offs);
+	return ptr - run_text;
+}
+
+
 void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 {
 	int nrun;

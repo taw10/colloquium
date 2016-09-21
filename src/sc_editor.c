@@ -598,6 +598,26 @@ SCBlock *split_paragraph_at_cursor(SCEditor *e)
 }
 
 
+static void check_cursor_visible(SCEditor *e)
+{
+	double x, y, h;
+
+	get_cursor_pos(e->cursor_frame, e->cursor_para,
+	               e->cursor_pos+e->cursor_trail, &x, &y, &h);
+
+	/* Off the bottom? */
+	if ( y - e->scroll_pos + h > e->visible_height ) {
+		e->scroll_pos = y + h - e->visible_height;
+		e->scroll_pos += e->cursor_frame->pad_b;
+	}
+
+	/* Off the top? */
+	if ( y < e->scroll_pos ) {
+		e->scroll_pos = y - e->cursor_frame->pad_t;
+	}
+}
+
+
 static void insert_text(char *t, SCEditor *e)
 {
 	Paragraph *para;
@@ -627,8 +647,6 @@ static void insert_text(char *t, SCEditor *e)
 		cursor_moveh(e->cursor_frame, &e->cursor_para,
 		             &e->cursor_pos, &e->cursor_trail, +1);
 
-		sc_editor_redraw(e);
-
 	} else {
 
 		SCBlock *ad;
@@ -653,9 +671,10 @@ static void insert_text(char *t, SCEditor *e)
 
 		/* FIXME: Find the cursor again */
 
-		sc_editor_redraw(e);
 	}
 
+	check_cursor_visible(e);
+	sc_editor_redraw(e);
 }
 
 

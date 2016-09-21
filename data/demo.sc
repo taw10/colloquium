@@ -34,6 +34,6 @@ What is the narrative window for?  Well, it's up to you!  Here are some suggesti
 \bp{}Write bullet-pointed notes to structure your talk.
 \bp{}Create a written version of your talk to print out and give to your audience as a handout.
 Besides this, Colloquium has some features which will help you when you come to give your presentation.  In the "Tools" menu, you'll find the presentation clock and the test card.
-Use the test card to make sure your computer is talking to the projector correctly.  It's fairly self-explanatory...
+Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
 Here's how the presentation clock works:
 \slide{}

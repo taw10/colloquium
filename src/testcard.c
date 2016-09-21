@@ -85,6 +85,28 @@ static void arrow_up(cairo_t *cr, double size)
 }
 
 
+static void colour_box(cairo_t *cr, double x, double y,
+                       double r, double g, double b, const char *label)
+{
+	const double w = 50.0;
+	const double h = 50.0;
+	cairo_text_extents_t size;
+
+	cairo_rectangle(cr, x+0.5, y+0.5, w, h);
+	cairo_set_source_rgb(cr, r, g, b);
+	cairo_fill_preserve(cr);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+
+	cairo_set_font_size(cr, 24.0);
+	cairo_text_extents(cr, label, &size);
+	cairo_move_to(cr, x+(w/2.0)-(size.width/2.0), y-10.0);
+	cairo_show_text(cr, label);
+
+}
+
+
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 {
 	double xoff, yoff;
@@ -129,7 +151,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	pango_layout_get_size(pl, &plw, &plh);
 	plw = pango_units_to_double(plw);
 	plh = pango_units_to_double(plh);
-	cairo_move_to(cr, (width-plw)/2, (height-plh)/2);
+	cairo_move_to(cr, (width-plw)/2, 200.0);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	pango_cairo_show_layout(cr, pl);
 
@@ -162,6 +184,23 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	cairo_move_to(cr, 100+tc->slide_width/2, 0.0);
 	arrow_up(cr, 80.0);
 	cairo_fill(cr);
+
+	/* Colour boxes */
+	colour_box(cr, 300, 400, 1.0, 0.0, 0.0, "Red");
+	colour_box(cr, 380, 400, 0.0, 1.0, 0.0, "Green");
+	colour_box(cr, 460, 400, 0.0, 0.0, 1.0, "Blue");
+	colour_box(cr, 540, 400, 1.0, 1.0, 0.0, "Yellow");
+	colour_box(cr, 620, 400, 1.0, 0.0, 1.0, "Pink");
+	colour_box(cr, 700, 400, 0.0, 1.0, 1.0, "Cyan");
+
+	/* Shades of grey */
+	double i;
+	for ( i=0; i<=1.0; i+=0.2 ) {
+		char label[32];
+		snprintf(label, 31, "%.0f%%", i*100.0);
+		colour_box(cr, 300+(i*5*80), 520, i, i, i, label);
+	}
+
 	return FALSE;
 }
 

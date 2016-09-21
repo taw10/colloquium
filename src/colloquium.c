@@ -304,7 +304,7 @@ static void colloquium_startup(GApplication *papp)
 	g_object_unref(builder);
 
 	configdir = g_get_user_config_dir();
-	app->mydir = malloc(strlen(configdir+14));
+	app->mydir = malloc(strlen(configdir)+14);
 	strcpy(app->mydir, configdir);
 	strcat(app->mydir, "/colloquium");
 

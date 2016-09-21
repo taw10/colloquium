@@ -644,6 +644,7 @@ static void insert_text(char *t, SCEditor *e)
 		wrap_paragraph(para, NULL,
 		               e->cursor_frame->w - e->cursor_frame->pad_l
 		                            - e->cursor_frame->pad_r);
+		if ( e->flow ) update_size(e);
 		cursor_moveh(e->cursor_frame, &e->cursor_para,
 		             &e->cursor_pos, &e->cursor_trail, +1);
 

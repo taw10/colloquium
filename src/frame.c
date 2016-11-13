@@ -777,7 +777,13 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	char *ptr;
 
 	nrun = which_run(para, offs);
-	run= &para->runs[nrun];
+	run = &para->runs[nrun];
+
+	if ( run == NULL ) {
+		fprintf(stderr, "pos_trail_to_offset: No run\n");
+		return 0;
+	}
+
 	run_text = sc_block_contents(run->scblock) + run->scblock_offs_bytes;
 	char_offs = g_utf8_pointer_to_offset(run_text, run_text+offs);
 	char_offs += trail;

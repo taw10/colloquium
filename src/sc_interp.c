@@ -875,6 +875,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	double *col;
 	int just_closed = 0;
 	struct sc_state *st = &scin->state[scin->j];
+	SCBlock *mrb;
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
@@ -885,6 +886,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
+	mrb = sc_interp_get_macro_real_block(scin);
 
 	len_bytes = strlen(text);
 	start = 0;
@@ -903,7 +905,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 		if ( text[start] == '\n' ) {
 			if ( just_closed ) {
 				Paragraph *para = last_open_para(fr);
-				add_run(para, bl, start, 0, fontdesc, col);
+				add_run(para, bl, mrb, start, 0, fontdesc, col);
 				set_para_spacing(para, st->paraspace);
 			}
 			close_last_paragraph(fr);
@@ -911,7 +913,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 			just_closed = 1;
 		} else  {
 			Paragraph *para = last_open_para(fr);
-			add_run(para, bl, start, len, fontdesc, col);
+			add_run(para, bl, mrb, start, len, fontdesc, col);
 			set_para_spacing(para, st->paraspace);
 			start += len;
 			just_closed = 0;

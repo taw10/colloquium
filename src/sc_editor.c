@@ -938,7 +938,7 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
 		scblocks = sc_block_next(scblocks);
 	}
 
-	add_run(para, scblocks, 0, 0, fr->fontdesc, fr->col);
+	add_run(para, scblocks, NULL, 0, 0, fr->fontdesc, fr->col);
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r);
 }
 

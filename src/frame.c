@@ -38,6 +38,7 @@
 struct text_run
 {
 	SCBlock              *scblock;
+	SCBlock              *macro_real_block;
 	size_t                scblock_offs_bytes;
 	size_t                para_offs_bytes;
 	size_t                len_bytes;
@@ -58,7 +59,8 @@ struct _paragraph
 	PangoLayout     *layout;
 	size_t           offset_last;
 
-	/* For anything other than PARA_TYPE_TEXT */
+	/* For anything other than PARA_TYPE_TEXT
+	 * (for text paragraphs, these things are in the runs) */
 	SCBlock         *scblock;
 	SCBlock         *macro_real_scblock;
 
@@ -340,8 +342,9 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 }
 
 
-void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
-             size_t len_bytes, PangoFontDescription *fdesc, double col[4])
+void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
+             size_t offs_bytes, size_t len_bytes, PangoFontDescription *fdesc,
+             double col[4])
 {
 	struct text_run *runs_new;
 
@@ -359,6 +362,7 @@ void add_run(Paragraph *para, SCBlock *scblock, size_t offs_bytes,
 
 	para->runs = runs_new;
 	para->runs[para->n_runs].scblock = scblock;
+	para->runs[para->n_runs].macro_real_block = macro_real;
 	para->runs[para->n_runs].scblock_offs_bytes = offs_bytes;
 	para->runs[para->n_runs].para_offs_bytes = para->offset_last;
 	para->offset_last += len_bytes;
@@ -798,6 +802,11 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 	}
 	run = &para->runs[nrun];
 
+	if ( run->macro_real_block != NULL ) {
+		printf("Not inserting text into a macro block.\n");
+		return;
+	}
+
 	/* Translate paragraph offset for insertion into SCBlock offset */
 	run_offs = offs - run->para_offs_bytes;
 	scblock_offs = run_offs + run->scblock_offs_bytes;
@@ -837,6 +846,12 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
 		struct text_run *run;
 
 		run = &para->runs[nrun];
+
+		if ( run->macro_real_block != NULL ) {
+			printf("Not deleting text from macro block\n");
+			continue;
+		}
+
 		ds = offs1 - run->para_offs_bytes;
 		de = offs2 - run->para_offs_bytes;
 		if ( ds < 0 ) ds = 0;

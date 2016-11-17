@@ -44,6 +44,13 @@ struct macro
 };
 
 
+struct template
+{
+	char *name;
+	SCBlock *bl;
+};
+
+
 struct sc_state
 {
 	PangoFontDescription *fontdesc;
@@ -58,6 +65,10 @@ struct sc_state
 	int n_macros;
 	int max_macros;
 	struct macro *macros;  /* Contents need to be copied on push */
+
+	int n_templates;
+	int max_templates;
+	struct template *templates;
 
 	SCBlock *macro_contents;
 	SCBlock *macro_real_block;
@@ -562,6 +573,14 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->max_macros = 16;
 	st->macros = malloc(16*sizeof(struct macro));
 	if ( st->macros == NULL ) {
+		free(scin->state);
+		free(scin);
+		return NULL;
+	}
+	st->n_templates = 0;
+	st->max_templates = 16;
+	st->templates = malloc(16*sizeof(struct template));
+	if ( st->templates == NULL ) {
 		free(scin->state);
 		free(scin);
 		return NULL;
@@ -1176,6 +1195,50 @@ static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
 }
 
 
+static int try_add_template(SCInterpreter *scin, const char *options, SCBlock *bl)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	char *nn;
+	char *comma;
+	int i;
+
+	nn = strdup(options);
+	comma = strchr(nn, ',');
+	if ( comma != NULL ) {
+		comma[0] = '\0';
+	}
+
+	for ( i=0; i<st->n_templates; i++ ) {
+		if ( strcmp(st->templates[i].name, nn) == 0 ) {
+			fprintf(stderr, "Duplicate template '%s'\n", nn);
+			return 0;
+		}
+	}
+
+	if ( st->max_templates == st->n_templates ) {
+
+		struct template *templates_new;
+
+		templates_new = realloc(st->templates, sizeof(struct template)
+		                     * (st->max_templates+16));
+		if ( templates_new == NULL ) {
+			fprintf(stderr, "Failed to add templates\n");
+			return 1;
+		}
+
+		st->templates = templates_new;
+		st->max_templates += 16;
+
+	}
+
+	i = st->n_templates++;
+
+	st->templates[i].name = nn;
+	st->templates[i].bl = bl;
+
+	return 0;
+}
+
 void add_macro(SCInterpreter *scin, const char *mname, const char *contents)
 {
 	SCBlock *bl = sc_parse(contents);
@@ -1199,10 +1262,15 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 		const char *name = sc_block_name(bl);
 		const char *options = sc_block_options(bl);
 
-		if ( (name != NULL) && (strcmp(name, "ss") == 0) ) {
+		if ( name == NULL ) {
+
+			/* Do nothing */
+
+		} else if ( strcmp(name, "ss") == 0 ) {
 			try_add_macro(scin, options, sc_block_child(bl));
 
-		} else if ( name == NULL ) {
+		} else if ( strcmp(name, "template") == 0 ) {
+			try_add_template(scin, options, sc_block_child(bl));
 
 		} else if ( strcmp(name, "font") == 0 ) {
 			set_font(scin, options);

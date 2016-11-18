@@ -77,12 +77,14 @@ extern void update_geom(struct frame *fr);
 extern SCBlock *sc_interp_get_macro_real_block(SCInterpreter *scin);
 
 
-struct style_id
+struct template_id
 {
 	char *name;
 	char *friendlyname;
+	SCBlock *scblock;
 };
 
-extern struct style_id *list_styles(SCInterpreter *scin, int *n);
+extern struct template_id *sc_interp_get_templates(SCInterpreter *scin,
+                                                   int *np);
 
 #endif	/* SC_INTERP_H */

@@ -606,6 +606,8 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 
 void sc_interp_destroy(SCInterpreter *scin)
 {
+	/* FIXME: Free all templates and macros */
+
 	/* Empty the stack */
 	while ( scin->j > 0 ) {
 		sc_interp_restore(scin);
@@ -1326,19 +1328,20 @@ void find_stylesheet(struct presentation *p)
 }
 
 
-struct style_id *list_styles(SCInterpreter *scin, int *np)
+struct template_id *sc_interp_get_templates(SCInterpreter *scin, int *np)
 {
-	struct style_id *list;
+	struct template_id *list;
 	int i;
 
-	list = malloc(sizeof(struct style_id)*scin->state->n_macros);
+	list = malloc(sizeof(struct template_id)*scin->state->n_templates);
 	if ( list == NULL ) return NULL;
 
-	for ( i=0; i<scin->state->n_macros; i++ ) {
-		list[i].name = strdup(scin->state->macros[i].name);
-		list[i].friendlyname = strdup(scin->state->macros[i].name);
+	for ( i=0; i<scin->state->n_templates; i++ ) {
+		list[i].name = strdup(scin->state->templates[i].name);
+		list[i].friendlyname = strdup(scin->state->templates[i].name);
+		list[i].scblock = sc_block_copy(scin->state->templates[i].bl);
 	}
 
-	*np = scin->state->n_macros;
+	*np = scin->state->n_templates;
 	return list;
 }

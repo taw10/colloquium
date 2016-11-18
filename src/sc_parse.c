@@ -86,6 +86,15 @@ const char *sc_block_contents(const SCBlock *bl)
 }
 
 
+void sc_block_append_p(SCBlock *bl, SCBlock *bln)
+{
+	if ( bl != NULL ) {
+		bln->next = bl->next;
+		bl->next = bln;
+	}
+}
+
+
 /* Insert a new block after "bl".  "name", "options" and "contents"
  * will not be copied.  Returns the block just created, or NULL on error.
  * If *blfp points to NULL, it will updated to point at the new block.  */
@@ -102,10 +111,7 @@ SCBlock *sc_block_append(SCBlock *bl, char *name, char *opt, char *contents,
 	bln->child = NULL;
 	bln->next = NULL;
 
-	if ( bl != NULL ) {
-		bln->next = bl->next;
-		bl->next = bln;
-	}
+        sc_block_append_p(bl, bln);
 
 	if ( (blfp != NULL) && (*blfp == NULL) ) {
 		*blfp = bln;

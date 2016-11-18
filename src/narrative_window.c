@@ -161,18 +161,77 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static struct template_id *get_templates(SCBlock *ss, int *n)
+{
+	struct template_id *list;
+	SCInterpreter *scin;
+
+	scin = sc_interp_new(NULL, NULL, NULL);
+	sc_interp_run_stylesheet(scin, ss);  /* ss == NULL is OK */
+	list = sc_interp_get_templates(scin, n);
+	sc_interp_destroy(scin);
+	return list;
+}
+
+
+static void update_template_menus(NarrativeWindow *nw)
+{
+	struct template_id *templates;
+	int i, n_templates;
+
+	templates = get_templates(nw->p->stylesheet, &n_templates);
+
+	for ( i=0; i<n_templates; i++ ) {
+		printf("%2i: %s %s\n", i, templates[i].name,
+		       templates[i].friendlyname);
+		free(templates[i].name);
+		free(templates[i].friendlyname);
+		sc_block_free(templates[i].scblock);
+	}
+
+	free(templates);
+}
+
+
+static SCBlock *get_slide_template(SCBlock *ss)
+{
+	struct template_id *templates;
+	int i, n_templates;
+	SCBlock *ret = NULL;
+
+	templates = get_templates(ss, &n_templates);
+
+	for ( i=0; i<n_templates; i++ ) {
+		if ( strcmp(templates[i].name, "slide") == 0 ) {
+			ret = templates[i].scblock;
+		} else {
+			sc_block_free(templates[i].scblock);
+		}
+		free(templates[i].name);
+		free(templates[i].friendlyname);
+	}
+	free(templates);
+	return ret;  /* NB this is a copy of the one owned by the interpreter */
+}
+
+
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
 	SCBlock *nsblock;
+	SCBlock *templ;
 	NarrativeWindow *nw = vp;
 
 	/* Split the current paragraph */
 	nsblock = split_paragraph_at_cursor(nw->sceditor);
 
+	/* Get the template */
+	templ = get_slide_template(nw->p->stylesheet); /* our copy */
+	show_sc_blocks(templ);
+
 	/* Link the new SCBlock in */
 	if ( nsblock != NULL ) {
-		sc_block_append(nsblock, "slide", NULL, NULL, NULL);
+		sc_block_append_p(nsblock, templ);
 	} else {
 		fprintf(stderr, "Failed to split paragraph\n");
 	}
@@ -609,6 +668,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	                               "win.last");
 
 	update_toolbar(nw);
+	update_template_menus(nw);
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),

@@ -85,66 +85,6 @@ static gint UNUSED add_furniture(GtkWidget *widget, struct menu_pl *pl)
 }
 
 
-static void UNUSED update_style_menus(SlideWindow *sw)
-{
-	//GtkWidget *menu;
-	SCInterpreter *scin;
-	struct style_id *styles;
-	int i, n_sty;
-
-	/* Free old list */
-	for ( i=0; i<sw->n_style_menu; i++ ) {
-		gtk_widget_destroy(sw->style_menu[i].widget);
-		free(sw->style_menu[i].style_name);
-	}
-	free(sw->style_menu);
-
-	/* Get the list of styles from the style sheet */
-	scin = sc_interp_new(NULL, sw->p->lang, NULL);
-	if ( scin == NULL ) {
-		fprintf(stderr, "Failed to set up interpreter.\n");
-		return;
-	}
-	sc_interp_run_stylesheet(scin, sw->p->stylesheet);
-
-	styles = list_styles(scin, &n_sty);
-	if ( styles == NULL ) return;
-
-	sc_interp_destroy(scin);
-
-	/* Set up list for next time */
-	sw->style_menu = calloc(n_sty, sizeof(struct menu_pl));
-	if ( sw->style_menu == NULL ) return;
-
-#if 0   //  FIXME
-	/* Add the styles to the "Insert" menu */
-	menu = gtk_ui_manager_get_widget(sw->ui, "/displaywindow/insert");
-	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM(menu));
-
-	for ( i=0; i<n_sty; i++ ) {
-
-		GtkWidget *item;
-
-		item = gtk_menu_item_new_with_label(styles[i].friendlyname);
-		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-
-		sw->style_menu[i].sw = sw;
-		sw->style_menu[i].widget = item;
-		sw->style_menu[i].style_name = styles[i].name;
-
-		g_signal_connect(G_OBJECT(item), "activate",
-		                 G_CALLBACK(add_furniture),
-		                 &sw->style_menu[i]);
-
-		free(styles[i].friendlyname);
-	}
-
-	gtk_widget_show_all(menu);
-	free(styles);
-#endif
-}
-
-
 static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {

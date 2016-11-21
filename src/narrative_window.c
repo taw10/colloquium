@@ -211,6 +211,12 @@ static SCBlock *get_slide_template(SCBlock *ss)
 		free(templates[i].friendlyname);
 	}
 	free(templates);
+
+        /* No template? */
+        if ( ret == NULL ) {
+		ret = sc_parse("\\slide{}");
+	}
+
 	return ret;  /* NB this is a copy of the one owned by the interpreter */
 }
 

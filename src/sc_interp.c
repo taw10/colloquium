@@ -1046,6 +1046,18 @@ static void run_macro_contents(SCInterpreter *scin)
 	SCBlock *contents = st->macro_contents;
 
 	sc_interp_save(scin);
+	scin->state[scin->j].macro_real_block = NULL;
+	sc_interp_add_blocks(scin, contents);
+	sc_interp_restore(scin);
+}
+
+
+static void run_editable(SCInterpreter *scin, SCBlock *contents)
+{
+	struct sc_state *st = &scin->state[scin->j];
+
+	sc_interp_save(scin);
+	scin->state[scin->j].macro_real_block = NULL;
 	sc_interp_add_blocks(scin, contents);
 	sc_interp_restore(scin);
 }
@@ -1107,6 +1119,9 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "contents") == 0 ) {
 			run_macro_contents(scin);
+
+		} else if ( strcmp(name, "editable") == 0 ) {
+			run_editable(scin, child);
 
 		} else if ( strcmp(name, "pad") == 0 ) {
 			maybe_recurse_before(scin, child);

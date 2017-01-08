@@ -6,7 +6,7 @@
 
 	\ss[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\contents}
 	\ss[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}
-	\ss[footer]{\f[600ux30u+500+740]{\fontsize[11]\bold{T. A. White } | A demonstration talk | 25th September 2013 | \bold{Slide \slidenumber}}}
+	\ss[footer]{\f[600ux30u+500+740]{\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 25th September 2013} | \bold{Slide} \slidenumber}}}
 	\ss[credit]{\f[600ux30u+700+700]{\fontsize[11]\contents}}
 	\ss[bp]{➤ }
 

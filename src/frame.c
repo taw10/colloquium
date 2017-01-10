@@ -1031,6 +1031,9 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		return NULL; /* Badness is coming */
 	}
 
+	/* Copy spacing */
+	for ( i=0; i<4; i++ ) pnew->space[i] = para->space[i];
+
 	/* First run of the new paragraph contains the leftover text */
 	rr = &para->runs[run];
 	pnew->runs[0].scblock = rr->scblock;

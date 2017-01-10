@@ -641,6 +641,17 @@ static void insert_text(char *t, SCEditor *e)
 		return;
 	}
 
+
+	if ( strcmp(t, "\n") == 0 ) {
+		split_paragraph_at_cursor(e);
+		if ( e->flow ) update_size(e);
+		cursor_moveh(e->cursor_frame, &e->cursor_para,
+		             &e->cursor_pos, &e->cursor_trail, +1);
+		check_cursor_visible(e);
+		sc_editor_redraw(e);
+		return;
+	}
+
 	para = e->cursor_frame->paras[e->cursor_para];
 
 	/* Is this paragraph even a text one? */

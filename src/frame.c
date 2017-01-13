@@ -1037,15 +1037,16 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	/* First run of the new paragraph contains the leftover text */
 	rr = &para->runs[run];
 	pnew->runs[0].scblock = rr->scblock;
+	pnew->runs[0].macro_real_block = rr->macro_real_block;
 	run_offs = pos - rr->para_offs_bytes;
 	pnew->runs[0].scblock_offs_bytes = rr->scblock_offs_bytes + run_offs;
 	pnew->runs[0].para_offs_bytes = 0;
 	pnew->runs[0].len_bytes = rr->len_bytes - run_offs;
+	pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
 	pnew->runs[0].col[0] = rr->col[0];
 	pnew->runs[0].col[1] = rr->col[1];
 	pnew->runs[0].col[2] = rr->col[2];
 	pnew->runs[0].col[3] = rr->col[3];
-	pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
 	pnew->n_runs = 1;
 
 	/* All later runs just get moved to the new paragraph */

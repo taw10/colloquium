@@ -1092,8 +1092,8 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	pnew->open = para->open;
 	para->open = 0;
 
-	wrap_paragraph(para, pc, fr->w);
-	wrap_paragraph(pnew, pc, fr->w);
+	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r);
+	wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r);
 
 	return sc_block_next(rr->scblock);
 }

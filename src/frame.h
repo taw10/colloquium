@@ -114,7 +114,7 @@ extern double total_height(struct frame *fr);
 extern Paragraph *last_open_para(struct frame *fr);
 extern Paragraph *current_para(struct frame *fr);
 extern void close_last_paragraph(struct frame *fr);
-
+extern void show_para(Paragraph *p);
 extern void set_para_spacing(Paragraph *para, float space[4]);
 
 extern double paragraph_height(Paragraph *para);

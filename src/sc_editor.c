@@ -1279,6 +1279,26 @@ static void paste_selection(SCEditor *e)
 }
 
 
+static void debug_paragraphs(SCEditor *e)
+{
+	struct frame *fr = e->cursor_frame;
+	int i;
+
+	printf("Paragraphs in current frame:\n");
+	for ( i=0; i<fr->n_paras; i++ ) {
+		show_para(fr->paras[i]);
+	}
+}
+
+
+static void show_cursor_pos(SCEditor *e)
+{
+	fprintf(stderr, "Cursor: fr %p, para %i, pos %li, trail %i\n",
+	        e->cursor_frame, e->cursor_para, (long int)e->cursor_pos,
+		e->cursor_trail);
+}
+
+
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               SCEditor *e)
 {
@@ -1351,6 +1371,18 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_F5 :
 		full_rerender(e);
+		break;
+
+		case GDK_KEY_F6 :
+		show_cursor_pos(e);
+		break;
+
+		case GDK_KEY_F7 :
+		debug_paragraphs(e);
+		break;
+
+		case GDK_KEY_F8 :
+		show_sc_blocks(e->scblocks);
 		break;
 
 		case GDK_KEY_C :

@@ -894,7 +894,7 @@ static char *run_text(struct text_run *run)
 }
 
 
-static __attribute__((unused)) void show_para(Paragraph *p)
+void show_para(Paragraph *p)
 {
 	int i;
 	printf("Paragraph %p\n", p);

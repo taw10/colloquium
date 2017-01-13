@@ -921,6 +921,7 @@ void merge_paragraphs(struct frame *fr, int para)
 	int i, j;
 	size_t offs;
 	SCBlock *scblock;
+	SCBlock *n;
 
 	if ( para >= fr->n_paras-1 ) {
 		printf("Paragraph number too high to merge.\n");
@@ -946,8 +947,10 @@ void merge_paragraphs(struct frame *fr, int para)
 
 	/* Locate the newline which we have just deleted. */
 	scblock = p1->runs[p1->n_runs-1].scblock;
+	n = sc_block_next(scblock);
 	offs = p1->runs[p1->n_runs-1].scblock_offs_bytes;
 	offs += p1->runs[p1->n_runs-1].len_bytes;
+
 	if ( sc_block_contents(scblock)[offs] == '\n' ) {
 
 		scblock_delete_text(scblock, offs, offs+1);
@@ -966,6 +969,17 @@ void merge_paragraphs(struct frame *fr, int para)
 				}
 			}
 			if ( done ) break;
+		}
+
+	} else if ( (n!=NULL) && (sc_block_contents(n)[0] == '\n') ) {
+
+		/* It's in the following SCBlock instead */
+
+		const char *c = sc_block_contents(n);
+		if ( strlen(c) == 1 ) {
+			sc_block_delete(scblock, n);
+		} else {
+			scblock_delete_text(n, 0, 1);
 		}
 
 	} else {

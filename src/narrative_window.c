@@ -536,7 +536,11 @@ static int click_thumbnail(double x, double y, void *bvp, void *vp)
 	struct presentation *p = vp;
 	SCBlock *scblocks = bvp;
 
-	slide_window_open(p, scblocks, p->narrative_window->app);
+	if ( p->narrative_window->show != NULL ) {
+		sc_slideshow_set_slide(p->narrative_window->show, scblocks);
+	} else {
+		slide_window_open(p, scblocks, p->narrative_window->app);
+	}
 
 	return 0;
 }

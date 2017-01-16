@@ -177,24 +177,6 @@ void slidewindow_redraw(SlideWindow *sw)
 }
 
 
-void update_titlebar(struct presentation *p)
-{
-	get_titlebar_string(p);
-
-	if ( p->slidewindow != NULL ) {
-
-		char *title;
-
-		title = malloc(strlen(p->titlebar)+14);
-		sprintf(title, "%s - Colloquium", p->titlebar);
-		gtk_window_set_title(GTK_WINDOW(p->slidewindow->window), title);
-		free(title);
-
-       }
-
-}
-
-
 static gboolean close_sig(GtkWidget *w, SlideWindow *sw)
 {
 	sw->p->slidewindow = NULL;
@@ -250,8 +232,6 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 
 	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);
-
-	update_titlebar(p);
 
 	g_signal_connect(G_OBJECT(window), "destroy",
 	                 G_CALLBACK(close_sig), sw);

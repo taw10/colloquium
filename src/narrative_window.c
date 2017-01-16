@@ -375,6 +375,13 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
+static void changed_sig(GtkWidget *da, NarrativeWindow *nw)
+{
+	nw->p->saved = 0;
+	update_titlebar(nw);
+}
+
+
 static void scroll_down(NarrativeWindow *nw)
 {
 	gdouble inc, val;
@@ -569,6 +576,23 @@ GActionEntry nw_entries_p[] = {
 };
 
 
+void update_titlebar(NarrativeWindow *nw)
+{
+	char *title;
+
+	title = get_titlebar_string(nw->p);
+	title = realloc(title, strlen(title)+16);
+	if ( title == NULL ) return;
+
+	strcat(title, " - Colloquium");
+	if ( !nw->p->saved ) {
+		strcat(title, " *");
+	}
+	gtk_window_set_title(GTK_WINDOW(nw->window), title);
+	free(title);
+}
+
+
 NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 {
 	NarrativeWindow *nw;
@@ -593,6 +617,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 
 	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
 	p->narrative_window = nw;
+	update_titlebar(nw);
 
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
 	                                G_N_ELEMENTS(nw_entries), nw);
@@ -692,6 +717,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 
 	g_signal_connect(G_OBJECT(nw->sceditor), "button-press-event",
 	                 G_CALLBACK(button_press_sig), nw);
+	g_signal_connect(G_OBJECT(nw->sceditor), "changed",
+	                 G_CALLBACK(changed_sig), nw);
 	g_signal_connect(G_OBJECT(nw->sceditor), "key-press-event",
 			 G_CALLBACK(key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->window), "destroy",

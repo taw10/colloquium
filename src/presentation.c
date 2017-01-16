@@ -90,7 +90,7 @@ static char *safe_basename(const char *in)
 
 char *get_titlebar_string(struct presentation *p)
 {
-	if ( p->filename == NULL ) {
+	if ( p == NULL || p->filename == NULL ) {
 		return strdup("(untitled)");
 	} else {
 		return safe_basename(p->filename);
@@ -114,6 +114,7 @@ struct presentation *new_presentation()
 	new->slide_height = 768.0;
 
 	new->completely_empty = 1;
+	new->saved = 1;
 	new->stylesheet = NULL;
 	new->is = imagestore_new();
 
@@ -140,9 +141,10 @@ int save_presentation(struct presentation *p, const char *filename)
 	imagestore_set_presentation_file(p->is, filename);
 	p->filename = strdup(filename);
 	if ( old_fn != NULL ) free(old_fn);
-	update_titlebar(p);
 
 	fclose(fh);
+	p->saved = 1;
+	update_titlebar(p->narrative_window);
 	return 0;
 }
 
@@ -372,7 +374,6 @@ int load_presentation(struct presentation *p, const char *filename)
 
 	assert(p->filename == NULL);
 	p->filename = strdup(filename);
-	update_titlebar(p);
 	imagestore_set_presentation_file(p->is, filename);
 
 	return 0;

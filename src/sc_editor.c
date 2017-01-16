@@ -1,7 +1,7 @@
 /*
  * sc_editor.c
  *
- * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -189,6 +189,12 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 }
 
 
+static void emit_change_sig(SCEditor *e)
+{
+	g_signal_emit_by_name(e, "changed");
+}
+
+
 void sc_editor_set_flow(SCEditor *e, int flow)
 {
 	e->flow = flow;
@@ -313,6 +319,9 @@ static void sc_editor_class_init(SCEditorClass *klass)
 	GTK_WIDGET_CLASS(klass)->get_preferred_width = get_preferred_width;
 	GTK_WIDGET_CLASS(klass)->get_preferred_height = get_preferred_height;
 	GTK_WIDGET_CLASS(klass)->get_preferred_height_for_width = NULL;
+
+	g_signal_new("changed", SC_TYPE_EDITOR, G_SIGNAL_RUN_LAST, 0,
+	             NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
 
@@ -390,6 +399,7 @@ void sc_editor_delete_selected_frame(SCEditor *e)
 {
 	sc_block_delete(e->scblocks, e->selection->scblocks);
 	full_rerender(e);
+	emit_change_sig(e);
 }
 
 
@@ -648,6 +658,7 @@ static void insert_text(char *t, SCEditor *e)
 		cursor_moveh(e->cursor_frame, &e->cursor_para,
 		             &e->cursor_pos, &e->cursor_trail, +1);
 		check_cursor_visible(e);
+		emit_change_sig(e);
 		sc_editor_redraw(e);
 		return;
 	}
@@ -696,6 +707,7 @@ static void insert_text(char *t, SCEditor *e)
 
 	}
 
+	emit_change_sig(e);
 	check_cursor_visible(e);
 	sc_editor_redraw(e);
 }
@@ -735,7 +747,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 
 	}
 
-
+	emit_change_sig(e);
 	sc_editor_redraw(e);
 }
 

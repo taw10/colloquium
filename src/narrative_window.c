@@ -158,6 +158,8 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 	/* Full rerender */
 	sc_editor_set_scblock(nw->sceditor,
 	                      sc_editor_get_scblock(nw->sceditor));
+	nw->p->saved = 0;
+	update_titlebar(nw);
 }
 
 
@@ -244,6 +246,8 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 
 	sc_editor_set_scblock(nw->sceditor,
 	                      sc_editor_get_scblock(nw->sceditor));
+	nw->p->saved = 0;
+	update_titlebar(nw);
 }
 
 

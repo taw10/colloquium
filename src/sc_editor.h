@@ -1,7 +1,7 @@
 /*
  * sc_editor.h
  *
- * Copyright © 2014-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -59,7 +59,8 @@ enum drag_reason
 	DRAG_REASON_CREATE,
 	DRAG_REASON_IMPORT,
 	DRAG_REASON_RESIZE,
-	DRAG_REASON_MOVE
+	DRAG_REASON_MOVE,
+	DRAG_REASON_TEXTSEL
 };
 
 
@@ -142,6 +143,9 @@ struct _sceditor
 	enum drag_reason     drag_reason;
 	enum drag_status     drag_status;
 	enum corner          drag_corner;
+	int                  sel_active;
+	struct edit_pos      sel_start; /* Where the user dragged from */
+	struct edit_pos      sel_end;
 
 	/* Stuff to do with drag and drop import of "content" */
 	int                  drag_preview_pending;

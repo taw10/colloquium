@@ -1,7 +1,7 @@
 /*
  * render.c
  *
- * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -151,7 +151,7 @@ void wrap_frame(struct frame *fr, PangoContext *pc)
 	w = fr->w - fr->pad_l - fr->pad_r;
 
 	for ( i=0; i<fr->n_paras; i++ ) {
-		wrap_paragraph(fr->paras[i], pc, w);
+		wrap_paragraph(fr->paras[i], pc, w, 0, 0);
 	}
 }
 

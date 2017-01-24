@@ -675,7 +675,7 @@ static void insert_text(char *t, SCEditor *e)
 		insert_text_in_paragraph(para, off, t);
 		wrap_paragraph(para, NULL,
 		               e->cursor_frame->w - e->cursor_frame->pad_l
-		                            - e->cursor_frame->pad_r);
+		                            - e->cursor_frame->pad_r, 0, 0);
 		if ( e->flow ) update_size(e);
 
 		cursor_moveh(e->cursor_frame, &e->cursor_para,
@@ -733,7 +733,8 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	             &e->cursor_trail, -1);
 	if ( e->cursor_para != old_para ) {
 		merge_paragraphs(e->cursor_frame, e->cursor_para);
-		wrap_paragraph(e->cursor_frame->paras[new_para], NULL, wrapw);
+		wrap_paragraph(e->cursor_frame->paras[new_para], NULL, wrapw,
+		               0, 0);
 	} else {
 
 		size_t offs_new, offs_old;
@@ -743,7 +744,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 		offs_old = pos_trail_to_offset(para, old_pos, old_trail);
 
 		delete_text_in_paragraph(para, offs_new, offs_old);
-		wrap_paragraph(para, NULL, wrapw);
+		wrap_paragraph(para, NULL, wrapw, 0, 0);
 
 	}
 
@@ -962,7 +963,69 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
 	}
 
 	add_run(para, scblocks, NULL, 0, 0, fr->fontdesc, fr->col);
-	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r);
+	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
+}
+
+
+static void rewrap_paragraph_range(struct frame *fr, int a, int b,
+                                   struct edit_pos sel_start,
+                                   struct edit_pos sel_end,
+                                   int sel_active)
+{
+	int i;
+	int sel_s, sel_e;
+	Paragraph *para;
+
+	if ( a > b ) {
+		int t = a;
+		a = b; b = t;
+	}
+
+	if ( fr->paras == NULL ) return;
+
+	sort_positions(&sel_start, &sel_end);
+
+	para = fr->paras[sel_start.para];
+	sel_s = pos_trail_to_offset(para, sel_start.pos, sel_start.trail);
+	para = fr->paras[sel_end.para];
+	sel_e = pos_trail_to_offset(para, sel_end.pos, sel_end.trail);
+
+	for ( i=a; i<=b; i++ ) {
+		size_t srt, end;
+		if ( sel_active ) {
+			if ( i == sel_start.para ) {
+				srt = sel_s;
+			} else {
+				srt = 0;
+			}
+			if ( i == sel_end.para ) {
+				end = sel_e;
+			} else {
+				end = G_MAXUINT;
+			}
+			if ( i > sel_start.para && i < sel_end.para ) {
+				end = G_MAXUINT;
+			}
+		} else {
+			srt = 0;
+			end = 0;
+		}
+		wrap_paragraph(fr->paras[i], NULL,
+		               fr->w - fr->pad_l - fr->pad_r, srt, end);
+	}
+}
+
+
+static void unset_selection(SCEditor *e)
+{
+	int a, b;
+	a = e->sel_start.para;
+	b = e->sel_end.para;
+	if ( a > b ) {
+		a = e->sel_end.para;
+		b = e->sel_start.para;
+	}
+	rewrap_paragraph_range(e->top, a, b, e->sel_start, e->sel_end, 0);
 }
 
 
@@ -1029,6 +1092,12 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			if ( fr->resizable ) {
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_MOVE;
+			} else {
+				e->drag_status = DRAG_STATUS_COULD_DRAG;
+				e->drag_reason = DRAG_REASON_TEXTSEL;
+				unset_selection(e);
+				find_cursor_2(clicked, x-fr->x, y-fr->y,
+				              &e->sel_start);
 			}
 
 		}
@@ -1047,8 +1116,11 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	} else {
 
 		/* Clicked an existing frame, no immediate dragging */
-		e->drag_status = DRAG_STATUS_NONE;
-		e->drag_reason = DRAG_REASON_NONE;
+		e->drag_status = DRAG_STATUS_COULD_DRAG;
+		e->drag_reason = DRAG_REASON_TEXTSEL;
+		unset_selection(e);
+		find_cursor_2(clicked, x-clicked->x, y-clicked->y,
+		              &e->sel_start);
 		e->selection = clicked;
 		e->cursor_frame = clicked;
 		if ( clicked == e->top ) {
@@ -1075,7 +1147,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 	gdouble x, y;
 
 	x = event->x - e->border_offs_x;
-	y = event->y - e->border_offs_y;
+	y = event->y - e->border_offs_y + e->scroll_pos;
 
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
 
@@ -1110,6 +1182,16 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		e->box_y = (fr->y - e->start_corner_y) + y;
 		e->box_width = fr->w;
 		e->box_height = fr->h;
+		sc_editor_redraw(e);
+		break;
+
+		case DRAG_REASON_TEXTSEL :
+		unset_selection(e);
+		find_cursor_2(fr, x-fr->x, y-fr->y, &e->sel_end);
+		rewrap_paragraph_range(fr, e->sel_start.para, e->sel_end.para,
+		                       e->sel_start, e->sel_end, 1);
+		find_cursor(fr, x-fr->x, y-fr->y, &e->cursor_para,
+		            &e->cursor_pos, &e->cursor_trail);
 		sc_editor_redraw(e);
 		break;
 
@@ -1235,6 +1317,10 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 		case DRAG_REASON_MOVE :
 		do_resize(e, e->box_x, e->box_y, e->box_width, e->box_height);
+		break;
+
+		case DRAG_REASON_TEXTSEL :
+		/* Do nothing (text is already selected) */
 		break;
 
 	}

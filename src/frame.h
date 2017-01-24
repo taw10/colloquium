@@ -1,7 +1,7 @@
 /*
  * frame.h
  *
- * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -57,6 +57,15 @@ enum para_type
 };
 
 typedef struct _paragraph Paragraph;
+
+
+struct edit_pos
+{
+	int para;
+	size_t pos;
+	int trail;
+};
+
 
 struct frame
 {
@@ -135,12 +144,18 @@ extern void add_image_para(struct frame *fr, SCBlock *scblock,
                            const char *filename,
                            double w, double h, int editable);
 
-extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w);
+extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
+                           size_t sel_start, size_t sel_end);
 
 extern size_t end_offset_of_para(struct frame *fr, int pn);
 
 extern int find_cursor(struct frame *fr, double x, double y,
                        int *ppara, size_t *ppos, int *ptrail);
+
+extern int find_cursor_2(struct frame *fr, double x, double y,
+                         struct edit_pos *pos);
+
+extern void sort_positions(struct edit_pos *a, struct edit_pos *b);
 
 extern int get_para_highlight(struct frame *fr, int cursor_para,
                               double *cx, double *cy, double *cw, double *ch);

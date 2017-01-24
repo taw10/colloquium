@@ -1,7 +1,7 @@
 /*
  * frame.c
  *
- * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -270,7 +270,8 @@ struct frame *find_frame_with_scblocks(struct frame *fr, SCBlock *scblocks)
 }
 
 
-void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
+void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
+                    size_t sel_start, size_t sel_end)
 {
 	size_t total_len = 0;
 	int i;
@@ -325,6 +326,15 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w)
 		pos += para->runs[i].len_bytes;
 		strncat(text, run_text, para->runs[i].len_bytes);
 
+	}
+
+	/* Add attributes for selected text */
+	if ( sel_start > 0 || sel_end > 0 ) {
+		PangoAttribute *attr;
+		attr = pango_attr_background_new(42919, 58853, 65535);
+		attr->start_index = sel_start;
+		attr->end_index = sel_end;
+		pango_attr_list_insert(attrs, attr);
 	}
 
 	if ( para->layout == NULL ) {
@@ -593,10 +603,30 @@ static size_t text_para_pos(Paragraph *para, double x, double y, int *ptrail)
 }
 
 
-int find_cursor(struct frame *fr, double x, double y,
-                int *ppara, size_t *ppos, int *ptrail)
+void sort_positions(struct edit_pos *a, struct edit_pos *b)
 {
-	double pos = fr->pad_t;
+	if ( a->para > b->para ) {
+		size_t tpos;
+		int tpara, ttrail;
+		tpara = b->para;   tpos = b->pos;  ttrail = b->trail;
+		b->para = a->para;  b->pos = a->pos;  b->trail = a->trail;
+		a->para = tpara;    a->pos = tpos;    a->trail = ttrail;
+	}
+
+	if ( (a->para == b->para) && (a->pos > b->pos) )
+	{
+		size_t tpos = b->pos;
+		int ttrail = b->trail;
+		b->pos = a->pos;  b->trail = a->trail;
+		a->pos = tpos;    a->trail = ttrail;
+	}
+}
+
+
+int find_cursor_2(struct frame *fr, double x, double y,
+                  struct edit_pos *pos)
+{
+	double pad = fr->pad_t;
 	int i;
 
 	if ( fr == NULL ) {
@@ -605,20 +635,20 @@ int find_cursor(struct frame *fr, double x, double y,
 	}
 
 	for ( i=0; i<fr->n_paras; i++ ) {
-		double npos = pos + fr->paras[i]->height;
+		double npos = pad + fr->paras[i]->height;
 		if ( npos > y ) {
-			*ppara = i;
+			pos->para = i;
 			if ( fr->paras[i]->type == PARA_TYPE_TEXT ) {
-				*ppos = text_para_pos(fr->paras[i],
+				pos->pos = text_para_pos(fr->paras[i],
 				          x - fr->pad_l - fr->paras[i]->space[0],
-				          y - pos - fr->paras[i]->space[2],
-				          ptrail);
+				          y - pad - fr->paras[i]->space[2],
+				          &pos->trail);
 			} else {
-				*ppos = 0;
+				pos->pos = 0;
 			}
 			return 0;
 		}
-		pos = npos;
+		pad = npos;
 	}
 
 	if ( fr->n_paras == 0 ) {
@@ -627,10 +657,24 @@ int find_cursor(struct frame *fr, double x, double y,
 	}
 
 	/* Pretend it's in the last paragraph */
-	pos -= fr->paras[fr->n_paras-1]->height;
-	*ppara = fr->n_paras - 1;
-	*ppos = text_para_pos(fr->paras[fr->n_paras-1],
-	                      x - fr->pad_l, y - pos, ptrail);
+	pad -= fr->paras[fr->n_paras-1]->height;
+	pos->para = fr->n_paras - 1;
+	pos->pos = text_para_pos(fr->paras[fr->n_paras-1],
+	                         x - fr->pad_l, y - pad, &pos->trail);
+	return 0;
+}
+
+
+int find_cursor(struct frame *fr, double x, double y,
+                int *ppara, size_t *ppos, int *ptrail)
+{
+	struct edit_pos p;
+	int r;
+	r = find_cursor_2(fr, x, y, &p);
+	if ( r ) return r;
+	*ppara = p.para;
+	*ppos = p.pos;
+	*ptrail = p.trail;
 	return 0;
 }
 
@@ -1092,8 +1136,8 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	pnew->open = para->open;
 	para->open = 0;
 
-	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r);
-	wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r);
+	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
+	wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 
 	return sc_block_next(rr->scblock);
 }

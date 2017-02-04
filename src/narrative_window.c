@@ -223,6 +223,34 @@ static SCBlock *get_slide_template(SCBlock *ss)
 }
 
 
+static SCBlock *narrative_stylesheet()
+{
+	return sc_parse("\\stylesheet{"
+	                "\\ss[slide]{\\callback[sthumb]}"
+	                "}");
+}
+
+
+static SCBlock **get_ss_list(struct presentation *p)
+{
+	SCBlock **stylesheets;
+
+	stylesheets = malloc(3 * sizeof(SCBlock *));
+	if ( stylesheets == NULL ) return NULL;
+
+	if ( p->stylesheet != NULL ) {
+		stylesheets[0] = p->stylesheet;
+		stylesheets[1] = narrative_stylesheet();
+		stylesheets[2] = NULL;
+	} else {
+		stylesheets[0] = narrative_stylesheet();
+		stylesheets[1] = NULL;
+	}
+
+	return stylesheets;
+}
+
+
 static gint load_ss_response_sig(GtkWidget *d, gint response,
                                  NarrativeWindow *nw)
 {
@@ -243,8 +271,15 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 			ss = find_stylesheet(bl);
 			if ( ss != NULL ) {
 
+				SCBlock **stylesheets;
+
 				/* Substitute the style sheet */
 				replace_stylesheet(nw->p, ss);
+
+				stylesheets = get_ss_list(nw->p);
+				sc_editor_set_stylesheets(nw->sceditor,
+				                          stylesheets);
+				free(stylesheets);
 
 				/* Full rerender, first block may have
 				 * changed */
@@ -566,14 +601,6 @@ static void nw_update_titlebar(NarrativeWindow *nw)
 }
 
 
-static SCBlock *narrative_stylesheet()
-{
-	return sc_parse("\\stylesheet{"
-	                "\\ss[slide]{\\callback[sthumb]}"
-	                "}");
-}
-
-
 static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
                             double *w, double *h, void **bvp, void *vp)
 {
@@ -672,7 +699,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	GtkWidget *scroll;
 	GtkWidget *toolbar;
 	GtkToolItem *button;
-	SCBlock *stylesheets[3];
+	SCBlock **stylesheets;
 	SCCallbackList *cbl;
 	GtkWidget *image;
 
@@ -701,20 +728,14 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	if ( p->stylesheet != NULL ) {
-		stylesheets[0] = p->stylesheet;
-		stylesheets[1] = narrative_stylesheet();
-		stylesheets[2] = NULL;
-	} else {
-		stylesheets[0] = narrative_stylesheet();
-		stylesheets[1] = NULL;
-	}
+	stylesheets = get_ss_list(p);
 
 	if ( nw->p->scblocks == NULL ) {
 		nw->p->scblocks = sc_parse("");
 	}
 
 	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang);
+	free(stylesheets);
 	cbl = sc_callback_list_new();
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
 	                              render_thumbnail, click_thumbnail, p);

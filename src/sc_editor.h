@@ -168,6 +168,7 @@ typedef struct _sceditor SCEditor;
 typedef struct _sceditorclass SCEditorClass;
 
 extern void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks);
+extern void sc_editor_set_stylesheets(SCEditor *e, SCBlock **stylesheets);
 extern SCBlock *sc_editor_get_scblock(SCEditor *e);
 extern GtkWidget *sc_editor_get_widget(SCEditor *e);
 extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,

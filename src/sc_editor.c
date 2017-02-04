@@ -1840,6 +1840,17 @@ static SCBlock **copy_ss_list(SCBlock **stylesheets)
 }
 
 
+void sc_editor_set_stylesheets(SCEditor *e, SCBlock **stylesheets)
+{
+	int i = 0;;
+	while ( e->stylesheets[i] != NULL ) {
+		sc_block_free(e->stylesheets[i++]);
+	}
+	free(e->stylesheets);
+	e->stylesheets = copy_ss_list(stylesheets);
+}
+
+
 void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl)
 {
 	if ( e->cbl != NULL ) sc_callback_list_free(e->cbl);

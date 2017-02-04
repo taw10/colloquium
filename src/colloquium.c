@@ -85,13 +85,13 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(window),
 	    PACKAGE_VERSION);
 	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
-	    "© 2016 Thomas White <taw@bitwiz.org.uk>");
+	    "© 2017 Thomas White <taw@bitwiz.org.uk>");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
 	    "Narrative-based presentation system");
 	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
-	    "© 2016 Thomas White <taw@bitwiz.org.uk>\n");
+	    "© 2017 Thomas White <taw@bitwiz.org.uk>\n");
 	gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(window),
-	    "http://www.bitwiz.org.uk/");
+	    "https://www.bitwiz.org.uk/");
 	gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(window), authors);
 
 	g_signal_connect(window, "response", G_CALLBACK(gtk_widget_destroy),

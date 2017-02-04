@@ -50,7 +50,6 @@ extern void sc_interp_restore(SCInterpreter *scin);
 
 extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
 
-extern void find_stylesheet(struct presentation *p);
 extern void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl);
 extern void add_macro(SCInterpreter *scin, const char *mname,
                       const char *contents);

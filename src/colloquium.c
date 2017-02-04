@@ -263,6 +263,10 @@ static void colloquium_startup(GApplication *papp)
 	    "          <attribute name='label'>Edit stylesheet...</attribute>"
 	    "          <attribute name='action'>win.stylesheet</attribute>"
 	    "        </item>"
+	    "        <item>"
+	    "          <attribute name='label'>Change stylesheet...</attribute>"
+	    "          <attribute name='action'>win.loadstylesheet</attribute>"
+	    "        </item>"
 	    "      </section>"
 	    "    </submenu>"
 

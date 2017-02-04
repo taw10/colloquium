@@ -69,6 +69,9 @@ struct presentation
 
 
 extern struct presentation *new_presentation(void);
+extern char *load_everything(const char *filename);
+extern SCBlock *find_stylesheet(SCBlock *bl);
+extern int replace_stylesheet(struct presentation *p, SCBlock *ss);
 extern void free_presentation(struct presentation *p);
 
 extern char *get_titlebar_string(struct presentation *p);

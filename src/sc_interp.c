@@ -1317,32 +1317,6 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 }
 
 
-void find_stylesheet(struct presentation *p)
-{
-	SCBlock *bl = p->scblocks;
-
-	if ( p->stylesheet != NULL ) {
-		fprintf(stderr, "Duplicate style sheet!\n");
-		return;
-	}
-
-	while ( bl != NULL ) {
-
-		const char *name = sc_block_name(bl);
-
-		if ( (name != NULL) && (strcmp(name, "stylesheet") == 0) ) {
-			p->stylesheet = bl;
-			return;
-		}
-
-		bl = sc_block_next(bl);
-
-	}
-
-	fprintf(stderr, "No style sheet.\n");
-}
-
-
 struct template_id *sc_interp_get_templates(SCInterpreter *scin, int *np)
 {
 	struct template_id *list;

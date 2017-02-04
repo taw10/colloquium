@@ -211,6 +211,19 @@ static SCBlock *sc_find_parent(SCBlock *top, SCBlock *find)
 }
 
 
+void sc_block_substitute(SCBlock **top, SCBlock *old, SCBlock *new)
+{
+	if ( old == *top ) {
+		/* It is the first block */
+		new->next = old->next;
+		*top = new;
+	} else {
+		sc_block_delete(*top, old);
+		sc_block_append_p(new, *top);
+	}
+}
+
+
 /* Delete "deleteme", which is somewhere under "top" */
 void sc_block_delete(SCBlock *top, SCBlock *deleteme)
 {

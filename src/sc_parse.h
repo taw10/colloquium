@@ -1,7 +1,7 @@
 /*
  * sc_parse.h
  *
- * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -42,6 +42,7 @@ extern SCBlock *sc_block_child(const SCBlock *bl);
 extern const char *sc_block_name(const SCBlock *bl);
 extern const char *sc_block_options(const SCBlock *bl);
 extern const char *sc_block_contents(const SCBlock *bl);
+extern void sc_block_substitute(SCBlock **top, SCBlock *old, SCBlock *new);
 
 extern SCBlock *sc_block_append(SCBlock *bl,
                                 char *name, char *opt, char *contents,

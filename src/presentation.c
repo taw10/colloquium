@@ -1,7 +1,7 @@
 /*
  * presentation.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -321,19 +321,14 @@ SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 }
 
 
-int load_presentation(struct presentation *p, const char *filename)
+char *load_everything(const char *filename)
 {
 	FILE *fh;
-	int r = 0;
-	char *everything;
 	size_t el = 1;
-
-	everything = strdup("");
-
-	assert(p->completely_empty);
+	char *everything = strdup("");
 
 	fh = fopen(filename, "r");
-	if ( fh == NULL ) return 1;
+	if ( fh == NULL ) return NULL;
 
 	while ( !feof(fh) ) {
 
@@ -344,8 +339,8 @@ int load_presentation(struct presentation *p, const char *filename)
 
 			everything = realloc(everything, el+len);
 			if ( everything == NULL ) {
-				r = 1;
-				break;
+				fprintf(stderr, "Failed to allocate memory\n");
+				return NULL;
 			}
 			el += len;
 
@@ -355,6 +350,70 @@ int load_presentation(struct presentation *p, const char *filename)
 	}
 
 	fclose(fh);
+
+	return everything;
+}
+
+
+int replace_stylesheet(struct presentation *p, SCBlock *ss)
+{
+	/* Create style sheet from union of old and new,
+	 * preferring items from the new one */
+
+	/* Cut the old stylesheet out of the presentation,
+	 * and put in the new one */
+	sc_block_substitute(&p->scblocks, p->stylesheet, ss);
+	p->stylesheet = ss;
+
+	return 0;
+}
+
+
+SCBlock *find_stylesheet(SCBlock *bl)
+{
+	while ( bl != NULL ) {
+
+		const char *name = sc_block_name(bl);
+
+		if ( (name != NULL) && (strcmp(name, "stylesheet") == 0) ) {
+			return bl;
+		}
+
+		bl = sc_block_next(bl);
+
+	}
+
+	return NULL;
+}
+
+
+static void install_stylesheet(struct presentation *p)
+{
+	if ( p->stylesheet != NULL ) {
+		fprintf(stderr, "Duplicate style sheet!\n");
+		return;
+	}
+
+	p->stylesheet = find_stylesheet(p->scblocks);
+
+	if ( p->stylesheet == NULL ) {
+		fprintf(stderr, "No style sheet.\n");
+	}
+}
+
+
+int load_presentation(struct presentation *p, const char *filename)
+{
+	int r = 0;
+	char *everything;
+
+	assert(p->completely_empty);
+
+	everything = load_everything(filename);
+	if ( everything == NULL ) {
+		fprintf(stderr, "Failed to load '%s'\n", filename);
+		return 1;
+	}
 
 	p->scblocks = sc_parse(everything);
 	free(everything);
@@ -370,7 +429,7 @@ int load_presentation(struct presentation *p, const char *filename)
 		return r;  /* Error */
 	}
 
-	find_stylesheet(p);
+	install_stylesheet(p);
 
 	assert(p->filename == NULL);
 	p->filename = strdup(filename);

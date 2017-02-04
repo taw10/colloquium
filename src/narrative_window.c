@@ -223,6 +223,73 @@ static SCBlock *get_slide_template(SCBlock *ss)
 }
 
 
+static gint load_ss_response_sig(GtkWidget *d, gint response,
+                                 NarrativeWindow *nw)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+		char *stext;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+		printf("Loading %s\n",filename);
+
+		stext = load_everything(filename);
+		if ( stext != NULL ) {
+			SCBlock *bl;
+			SCBlock *ss;
+			bl = sc_parse(stext);
+			free(stext);
+			ss = find_stylesheet(bl);
+			if ( ss != NULL ) {
+
+				/* Substitute the style sheet */
+				replace_stylesheet(nw->p, ss);
+
+				/* Full rerender, first block may have
+				 * changed */
+				sc_editor_set_scblock(nw->sceditor,
+				                      nw->p->scblocks);
+
+			} else {
+				fprintf(stderr, "Not a style sheet\n");
+			}
+		} else {
+			fprintf(stderr, "Failed to load\n");
+		}
+
+		g_free(filename);
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static void load_ss_sig(GSimpleAction *action, GVariant *parameter,
+                        gpointer vp)
+{
+	SCBlock *nsblock;
+	SCBlock *templ;
+	NarrativeWindow *nw = vp;
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new("Load stylesheet",
+	                                GTK_WINDOW(nw->window),
+	                                GTK_FILE_CHOOSER_ACTION_OPEN,
+	                                "_Cancel", GTK_RESPONSE_CANCEL,
+	                                "_Open", GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(load_ss_response_sig), nw);
+
+	gtk_widget_show_all(d);
+}
+
+
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
@@ -564,6 +631,7 @@ GActionEntry nw_entries[] = {
 	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
 	{ "deleteslide", delete_slide_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
+	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },
 	{ "testcard", testcard_sig, NULL, NULL, NULL },

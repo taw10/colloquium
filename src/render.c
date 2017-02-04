@@ -267,8 +267,8 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	pc = pango_cairo_create_context(cr);
 	cairo_scale(cr, w/log_w, h/log_h);
 	top = render_sc_with_context(scblocks, cr, log_w, log_h,
-	                           stylesheets, cbl, is, isz,slide_number,
-	                           lang, pc);
+	                             stylesheets, cbl, is, isz,slide_number,
+	                             lang, pc);
 	g_object_unref(pc);
 	cairo_destroy(cr);
 

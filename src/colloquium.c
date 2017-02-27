@@ -1,7 +1,7 @@
 /*
  * colloquium.c
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -410,7 +410,9 @@ int main(int argc, char *argv[])
 
 	}
 
+#if !GLIB_CHECK_VERSION(2,36,0)
 	g_type_init();
+#endif
 
 	app = colloquium_new();
 	status = g_application_run(G_APPLICATION(app), argc, argv);

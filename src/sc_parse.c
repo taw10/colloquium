@@ -86,6 +86,7 @@ const char *sc_block_contents(const SCBlock *bl)
 }
 
 
+/* Append "bln" after "bl" */
 void sc_block_append_p(SCBlock *bl, SCBlock *bln)
 {
 	if ( bl != NULL ) {

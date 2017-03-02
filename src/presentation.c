@@ -360,6 +360,12 @@ int replace_stylesheet(struct presentation *p, SCBlock *ss)
 	/* Create style sheet from union of old and new,
 	 * preferring items from the new one */
 
+	/* If there was no stylesheet before, add a dummy one */
+	if ( p->stylesheet == NULL ) {
+		p->stylesheet = sc_block_append_end(p->scblocks,
+		                                    "stylesheet", NULL, NULL);
+	}
+
 	/* Cut the old stylesheet out of the presentation,
 	 * and put in the new one */
 	sc_block_substitute(&p->scblocks, p->stylesheet, ss);

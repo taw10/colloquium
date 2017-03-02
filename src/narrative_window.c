@@ -273,13 +273,13 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 
 				SCBlock **stylesheets;
 
+				/* Substitute the style sheet */
+				replace_stylesheet(nw->p, ss);
+
 				stylesheets = get_ss_list(nw->p);
 				sc_editor_set_stylesheets(nw->sceditor,
 				                          stylesheets);
 				free(stylesheets);
-
-				/* Substitute the style sheet */
-				replace_stylesheet(nw->p, ss);
 
 				/* Full rerender, first block may have
 				 * changed */

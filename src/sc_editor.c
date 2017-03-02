@@ -397,7 +397,7 @@ void sc_editor_redraw(SCEditor *e)
 
 void sc_editor_delete_selected_frame(SCEditor *e)
 {
-	sc_block_delete(e->scblocks, e->selection->scblocks);
+	sc_block_delete(&e->scblocks, e->selection->scblocks);
 	full_rerender(e);
 	emit_change_sig(e);
 }

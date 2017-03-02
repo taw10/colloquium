@@ -1021,7 +1021,9 @@ void merge_paragraphs(struct frame *fr, int para)
 
 		const char *c = sc_block_contents(n);
 		if ( strlen(c) == 1 ) {
-			sc_block_delete(scblock, n);
+			SCBlock *ss = scblock;
+			sc_block_delete(&scblock, n);
+			assert(ss == scblock);
 		} else {
 			scblock_delete_text(n, 0, 1);
 		}

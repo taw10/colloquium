@@ -153,7 +153,7 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 		return;
 	}
 
-	sc_block_delete(nw->p->scblocks, ns);
+	sc_block_delete(&nw->p->scblocks, ns);
 
 	/* Full rerender */
 	sc_editor_set_scblock(nw->sceditor,

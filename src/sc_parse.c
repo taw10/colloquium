@@ -213,23 +213,34 @@ static SCBlock *sc_find_parent(SCBlock *top, SCBlock *find)
 
 void sc_block_substitute(SCBlock **top, SCBlock *old, SCBlock *new)
 {
+	if ( old == NULL ) {
+		fprintf(stderr, "Substituting nothing!\n");
+		return;
+	}
+
 	if ( old == *top ) {
 		/* It is the first block */
 		new->next = old->next;
 		*top = new;
 	} else {
-		sc_block_unlink(*top, old);
-		sc_block_append_p(new, *top);
+		sc_block_unlink(top, old);
+		sc_block_append_p(*top, new);
 	}
 }
 
 
-/* Delete "deleteme", which is somewhere under "top" */
-void sc_block_unlink(SCBlock *top, SCBlock *deleteme)
+/* Unlink "deleteme", which is somewhere under "top" */
+void sc_block_unlink(SCBlock **top, SCBlock *deleteme)
 {
-	SCBlock *parent = sc_find_parent(top, deleteme);
+	SCBlock *parent = sc_find_parent(*top, deleteme);
 	if ( parent == NULL ) {
-		fprintf(stderr, "Couldn't find block parent!\n");
+		/* Maybe it's the first block? */
+		if ( *top == deleteme ) {
+			fprintf(stderr, "Unlinking at top\n");
+			*top = (*top)->next;
+		} else {
+			fprintf(stderr, "Couldn't find block parent!\n");
+		}
 		return;
 	}
 
@@ -243,11 +254,13 @@ void sc_block_unlink(SCBlock *top, SCBlock *deleteme)
 }
 
 
-void sc_block_delete(SCBlock *top, SCBlock *deleteme)
+/* Delete "deleteme", which is somewhere under "top" */
+void sc_block_delete(SCBlock **top, SCBlock *deleteme)
 {
 	sc_block_unlink(top, deleteme);
 	sc_block_free(deleteme);
 }
+
 
 /* Frees "bl" and all its children (but not the blocks following it) */
 void sc_block_free(SCBlock *bl)

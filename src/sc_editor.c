@@ -805,12 +805,8 @@ static enum corner which_corner(double xp, double yp, struct frame *fr)
 	/* Top left? */
 	if ( (x<20.0) && (y<20.0) ) return CORNER_TL;
 	if ( (x>fr->w-20.0) && (y<20.0) ) return CORNER_TR;
-	if ( (x<20.0) && (y>fr->h-20.0) ) {
-		return CORNER_BL;
-	}
-	if ( (x>fr->w-20.0) && (y>fr->h-20.0) ) {
-		return CORNER_BR;
-	}
+	if ( (x<20.0) && (y>fr->h-20.0) ) return CORNER_BL;
+	if ( (x>fr->w-20.0) && (y>fr->h-20.0) ) return CORNER_BR;
 
 	return CORNER_NONE;
 }
@@ -1075,18 +1071,15 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 			/* Position cursor and prepare for possible drag */
 			e->cursor_frame = clicked;
-			check_paragraph(e->cursor_frame, e->pc,
-			                sc_block_child(fr->scblocks));
+			check_paragraph(e->cursor_frame, e->pc, sc_block_child(fr->scblocks));
 			find_cursor(clicked, x-fr->x, y-fr->y,
-			            &e->cursor_para, &e->cursor_pos,
-			            &e->cursor_trail);
+			            &e->cursor_para, &e->cursor_pos, &e->cursor_trail);
 
 			e->start_corner_x = event->x - e->border_offs_x;
 			e->start_corner_y = event->y - e->border_offs_y;
 
 			if ( event->type == GDK_2BUTTON_PRESS ) {
-				check_callback_click(e->cursor_frame,
-				                     e->cursor_para);
+				check_callback_click(e->cursor_frame, e->cursor_para);
 			}
 
 			if ( fr->resizable ) {
@@ -1096,8 +1089,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_TEXTSEL;
 				unset_selection(e);
-				find_cursor_2(clicked, x-fr->x, y-fr->y,
-				              &e->sel_start);
+				find_cursor_2(clicked, x-fr->x, y-fr->y, &e->sel_start);
 			}
 
 		}
@@ -1744,13 +1736,10 @@ static gint realise_sig(GtkWidget *da, SCEditor *e)
 	/* Keyboard and input method stuff */
 	e->im_context = gtk_im_multicontext_new();
 	win = gtk_widget_get_window(GTK_WIDGET(e));
-	gtk_im_context_set_client_window(GTK_IM_CONTEXT(e->im_context),
-	                                 win);
+	gtk_im_context_set_client_window(GTK_IM_CONTEXT(e->im_context), win);
 	gdk_window_set_accept_focus(win, TRUE);
-	g_signal_connect(G_OBJECT(e->im_context), "commit",
-			 G_CALLBACK(im_commit_sig), e);
-	g_signal_connect(G_OBJECT(e), "key-press-event",
-			 G_CALLBACK(key_press_sig), e);
+	g_signal_connect(G_OBJECT(e->im_context), "commit", G_CALLBACK(im_commit_sig), e);
+	g_signal_connect(G_OBJECT(e), "key-press-event", G_CALLBACK(key_press_sig), e);
 
 	/* FIXME: Can do this "properly" by setting up a separate font map */
 	e->pc = gtk_widget_get_pango_context(GTK_WIDGET(e));

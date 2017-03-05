@@ -1022,6 +1022,7 @@ static void unset_selection(SCEditor *e)
 		a = e->sel_end.para;
 		b = e->sel_start.para;
 	}
+	e->sel_active = 0;
 	rewrap_paragraph_range(e->top, a, b, e->sel_start, e->sel_end, 0);
 }
 
@@ -1185,6 +1186,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 		                       e->sel_start, e->sel_end, 1);
 		find_cursor(fr, x-fr->x, y-fr->y, &e->cursor_para,
 		            &e->cursor_pos, &e->cursor_trail);
+		e->sel_active = !positions_equal(e->sel_start, e->sel_end);
 		sc_editor_redraw(e);
 		break;
 

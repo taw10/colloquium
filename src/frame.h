@@ -157,6 +157,8 @@ extern int find_cursor_2(struct frame *fr, double x, double y,
 
 extern void sort_positions(struct edit_pos *a, struct edit_pos *b);
 
+extern int positions_equal(struct edit_pos a, struct edit_pos b);
+
 extern int get_para_highlight(struct frame *fr, int cursor_para,
                               double *cx, double *cy, double *cw, double *ch);
 

@@ -603,6 +603,16 @@ static size_t text_para_pos(Paragraph *para, double x, double y, int *ptrail)
 }
 
 
+
+int positions_equal(struct edit_pos a, struct edit_pos b)
+{
+	if ( a.para != b.para ) return 0;
+	if ( a.pos != b.pos ) return 0;
+	if ( a.trail != b.trail ) return 0;
+	return 1;
+}
+
+
 void sort_positions(struct edit_pos *a, struct edit_pos *b)
 {
 	if ( a->para > b->para ) {

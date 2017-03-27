@@ -178,8 +178,10 @@ extern size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail);
 extern void insert_text_in_paragraph(Paragraph *para, size_t offs,
                                      const char *t);
 
-extern void delete_text_in_paragraph(Paragraph *para,
-                                     size_t offs1, size_t offs2);
+extern void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_pos p2,
+                                   double wrap_w);
+
+extern void delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2);
 
 extern SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos,
                                 PangoContext *pc);

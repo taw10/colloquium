@@ -715,36 +715,47 @@ static void insert_text(char *t, SCEditor *e)
 
 static void do_backspace(struct frame *fr, SCEditor *e)
 {
-	size_t old_pos = e->cursor_pos;
-	int old_para = e->cursor_para;
-	int old_trail = e->cursor_trail;
+	double wrapw = e->cursor_frame->w - e->cursor_frame->pad_l - e->cursor_frame->pad_r;
 
-	int new_para = old_para;
-	size_t new_pos = old_pos;
-	int new_trail = old_trail;
+	if ( e->sel_active ) {
 
-	double wrapw = e->cursor_frame->w - e->cursor_frame->pad_l
-	                - e->cursor_frame->pad_r;
+		/* Delete the selected block */
+		printf("delete block\n");
+		delete_text_from_frame(e->cursor_frame, e->sel_start, e->sel_end, wrapw);
 
-	Paragraph *para = e->cursor_frame->paras[old_para];
-
-	cursor_moveh(e->cursor_frame, &new_para, &new_pos, &new_trail, -1);
-	cursor_moveh(e->cursor_frame, &e->cursor_para, &e->cursor_pos,
-	             &e->cursor_trail, -1);
-	if ( e->cursor_para != old_para ) {
-		merge_paragraphs(e->cursor_frame, e->cursor_para);
-		wrap_paragraph(e->cursor_frame->paras[new_para], NULL, wrapw,
-		               0, 0);
 	} else {
 
-		size_t offs_new, offs_old;
+		/* Delete one character */
+		size_t old_pos = e->cursor_pos;
+		int old_para = e->cursor_para;
+		int old_trail = e->cursor_trail;
 
-		offs_new = pos_trail_to_offset(para, e->cursor_pos,
-		                               e->cursor_trail);
-		offs_old = pos_trail_to_offset(para, old_pos, old_trail);
+		int new_para = old_para;
+		size_t new_pos = old_pos;
+		int new_trail = old_trail;
 
-		delete_text_in_paragraph(para, offs_new, offs_old);
-		wrap_paragraph(para, NULL, wrapw, 0, 0);
+		Paragraph *para = e->cursor_frame->paras[old_para];
+
+		cursor_moveh(e->cursor_frame, &new_para, &new_pos, &new_trail, -1);
+		cursor_moveh(e->cursor_frame, &e->cursor_para, &e->cursor_pos, &e->cursor_trail, -1);
+
+		if ( e->cursor_para != old_para ) {
+
+			merge_paragraphs(e->cursor_frame, e->cursor_para);
+			wrap_paragraph(e->cursor_frame->paras[new_para], NULL, wrapw, 0, 0);
+
+		} else {
+
+			size_t offs_new, offs_old;
+
+			offs_new = pos_trail_to_offset(para, e->cursor_pos,
+			                               e->cursor_trail);
+			offs_old = pos_trail_to_offset(para, old_pos, old_trail);
+
+			delete_text_in_paragraph(para, offs_new, offs_old);
+			wrap_paragraph(para, NULL, wrapw, 0, 0);
+
+		}
 
 	}
 

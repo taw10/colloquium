@@ -886,7 +886,48 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 }
 
 
-void delete_text_in_paragraph(Paragraph *para, size_t offs1, size_t offs2)
+static void delete_paragraph(struct frame *fr, int p)
+{
+}
+
+
+void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_pos p2,
+                            double wrapw)
+{
+	int i;
+
+	for ( i=p1.para; i<=p2.para; i++ ) {
+
+		size_t start;
+		ssize_t finis;
+
+		Paragraph *para = fr->paras[i];
+
+		if ( i == p1.para ) {
+			start = pos_trail_to_offset(para, p1.pos, p1.trail);
+		} else {
+			start = 0;
+		}
+
+		if ( i == p2.para ) {
+			finis = pos_trail_to_offset(para, p2.pos, p2.trail);
+		} else {
+			finis = -1;
+		}
+
+		if ( (start == 0) && (finis == -1) ) {
+			delete_paragraph(fr, para);
+		} else {
+			delete_text_in_paragraph(para, start, finis);
+			wrap_paragraph(para, NULL, wrapw, 0, 0);
+		}
+
+	}
+}
+
+
+/* offs2 negative means "to end" */
+void delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 {
 	int nrun1, nrun2, nrun;
 	int i;

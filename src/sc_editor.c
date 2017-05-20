@@ -723,6 +723,12 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 		printf("delete block\n");
 		delete_text_from_frame(e->cursor_frame, e->sel_start, e->sel_end, wrapw);
 
+		/* Cursor goes at start of deletion */
+		e->cursor_para = e->sel_start.para;
+		e->cursor_pos = e->sel_start.pos;
+		e->cursor_trail = e->sel_start.trail;
+		e->sel_active = 0;
+
 	} else {
 
 		/* Delete one character */

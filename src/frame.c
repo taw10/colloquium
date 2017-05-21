@@ -39,8 +39,8 @@ struct text_run
 {
 	SCBlock              *scblock;
 	SCBlock              *macro_real_block;
-	size_t                scblock_offs_bytes;
-	size_t                para_offs_bytes;
+	size_t                scblock_offs_bytes;  /* Offset from start of SCBlock */
+	size_t                para_offs_bytes;  /* Offset from start of paragraph */
 	size_t                len_bytes;
 	PangoFontDescription *fontdesc;
 	double                col[4];
@@ -825,6 +825,7 @@ static int which_run(Paragraph *para, size_t offs)
 size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 {
 	glong char_offs;
+	size_t run_offs;
 	const char *run_text;
 	struct text_run *run;
 	int nrun;
@@ -838,12 +839,24 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
+	/* Get the text for the run */
 	run_text = sc_block_contents(run->scblock) + run->scblock_offs_bytes;
-	char_offs = g_utf8_pointer_to_offset(run_text, run_text+offs);
+
+	/* Turn  the paragraph offset into a run offset */
+	run_offs = offs - run->para_offs_bytes;
+
+	char_offs = g_utf8_pointer_to_offset(run_text, run_text+run_offs);
 	char_offs += trail;
 
+	if ( char_offs > g_utf8_strlen(run_text, -1) ) {
+		printf("Offset outside string! '%s'\n"
+		       "char_offs %li offs %li len %li\n",
+		       run_text, (long int)char_offs, (long int)offs,
+		       (long int)g_utf8_strlen(run_text, -1));
+	}
+
 	ptr = g_utf8_offset_to_pointer(run_text, char_offs);
-	return ptr - run_text;
+	return ptr - run_text + run->para_offs_bytes;
 }
 
 
@@ -896,6 +909,8 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 {
 	int i;
 
+	sort_positions(&p1, &p2);
+
 	for ( i=p1.para; i<=p2.para; i++ ) {
 
 		size_t start;
@@ -916,7 +931,7 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 		}
 
 		if ( (start == 0) && (finis == -1) ) {
-			delete_paragraph(fr, para);
+			delete_paragraph(fr, i);
 		} else {
 			delete_text_in_paragraph(para, start, finis);
 			wrap_paragraph(para, NULL, wrapw, 0, 0);

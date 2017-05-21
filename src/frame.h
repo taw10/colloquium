@@ -61,8 +61,8 @@ typedef struct _paragraph Paragraph;
 
 struct edit_pos
 {
-	int para;
-	size_t pos;
+	int para;    /* Paragraph number */
+	size_t pos;  /* Byte position within paragraph */
 	int trail;
 };
 

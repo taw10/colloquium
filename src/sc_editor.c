@@ -724,6 +724,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 		delete_text_from_frame(e->cursor_frame, e->sel_start, e->sel_end, wrapw);
 
 		/* Cursor goes at start of deletion */
+		sort_positions(&e->sel_start, &e->sel_end);
 		e->cursor_para = e->sel_start.para;
 		e->cursor_pos = e->sel_start.pos;
 		e->cursor_trail = e->sel_start.trail;

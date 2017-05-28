@@ -992,6 +992,7 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 			}
 			para->runs[i].para_offs_bytes -= del_len;
 		}
+		offs2 -= del_len;
 
 	}
 }

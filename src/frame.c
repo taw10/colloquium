@@ -969,6 +969,8 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 
 		if ( (start == 0) && (finis == -1) ) {
 			delete_paragraph(fr, i);
+			p2.para--;
+			i--;
 		} else {
 			delete_text_in_paragraph(para, start, finis);
 			wrap_paragraph(para, NULL, wrapw, 0, 0);

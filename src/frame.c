@@ -901,6 +901,43 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 
 static void delete_paragraph(struct frame *fr, int p)
 {
+	int i;
+	Paragraph *para = fr->paras[p];
+
+	/* Delete the corresponding SC */
+	for ( i=0; i<para->n_runs; i++ ) {
+
+		int j;
+		struct text_run *run;
+
+		run = &para->runs[i];
+
+		if ( run->macro_real_block != NULL ) {
+			printf("Not deleting text from macro block\n");
+			continue;
+		}
+
+		/* Delete from the corresponding SC block */
+		scblock_delete_text(run->scblock, run->scblock_offs_bytes,
+		                    run->scblock_offs_bytes + run->len_bytes);
+
+		/* Fix up the offsets of the subsequent text runs */
+		size_t del_len = run->len_bytes;
+		run->len_bytes -= del_len;
+		for ( j=i+1; j<para->n_runs; j++ ) {
+			if ( para->runs[j].scblock == run->scblock ) {
+				para->runs[j].scblock_offs_bytes -= del_len;
+			}
+			para->runs[j].para_offs_bytes -= del_len;
+		}
+	}
+
+	/* Delete the paragraph from the frame */
+	free_paragraph(fr->paras[p]);
+	for ( i=p; i<fr->n_paras-1; i++ ) {
+		fr->paras[i] = fr->paras[i+1];
+	}
+	fr->n_paras--;
 }
 
 

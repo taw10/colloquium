@@ -945,13 +945,19 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
                             double wrapw)
 {
 	int i;
+	size_t del = 0;
 
 	sort_positions(&p1, &p2);
+
+	printf("para %i offs %ld\n", p1.para, p1.pos);
+	printf("para %i offs %li\n", p2.para, p2.pos);
 
 	for ( i=p1.para; i<=p2.para; i++ ) {
 
 		size_t start;
 		ssize_t finis;
+
+		printf("para %i\n", i);
 
 		Paragraph *para = fr->paras[i];
 
@@ -968,31 +974,44 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 		}
 
 		if ( (start == 0) && (finis == -1) ) {
+			printf("deleting para %i\n", i);
 			delete_paragraph(fr, i);
 			p2.para--;
 			i--;
 		} else {
-			delete_text_in_paragraph(para, start, finis);
+			printf("deleting from %ld to %ld\n", start, finis);
+			del += delete_text_in_paragraph(para, start, finis);
 			wrap_paragraph(para, NULL, wrapw, 0, 0);
 		}
 
 	}
+
+	/* Update offsets for all subsequent paragraphs, but only if they're
+	 * from the same SCBlock */
+	printf("fixing offsets from para %i by %i\n", p1.para, del);
+	fix_scblock_offsets(fr, p1, del);
 }
 
 
 /* offs2 negative means "to end" */
-void delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
+size_t delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 {
 	int nrun1, nrun2, nrun;
 	int i;
 	size_t scblock_offs1, scblock_offs2;
+	size_t sum_del = 0;
 
 	/* Find which run we are in */
 	nrun1 = which_run(para, offs1);
-	nrun2 = which_run(para, offs2);
+	if ( offs2 < 0 ) {
+		/* Delete to end */
+		nrun2 = para->n_runs-1;
+	} else {
+		nrun2 = which_run(para, offs2);
+	}
 	if ( (nrun1 == para->n_runs) || (nrun2 == para->n_runs) ) {
 		fprintf(stderr, "Couldn't find run to delete from.\n");
-		return;
+		return 0;
 	}
 
 	for ( nrun=nrun1; nrun<=nrun2; nrun++ ) {
@@ -1008,7 +1027,11 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 		}
 
 		ds = offs1 - run->para_offs_bytes;
-		de = offs2 - run->para_offs_bytes;
+		if ( offs2 < 0 ) {
+			de = run->len_bytes;
+		} else {
+			de = offs2 - run->para_offs_bytes;
+		}
 		if ( ds < 0 ) ds = 0;
 		if ( de > run->len_bytes ) {
 			de = run->len_bytes;
@@ -1020,6 +1043,8 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 		/* Delete from the corresponding SC block */
 		scblock_offs1 = ds + run->scblock_offs_bytes;
 		scblock_offs2 = de + run->scblock_offs_bytes;
+		sum_del += scblock_offs2 - scblock_offs1;
+		printf("del %i %i\n", scblock_offs1, scblock_offs2);
 		scblock_delete_text(run->scblock, scblock_offs1, scblock_offs2);
 
 		/* Fix up the offsets of the subsequent text runs */
@@ -1033,6 +1058,43 @@ void delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 		}
 		offs2 -= del_len;
 
+	}
+
+	return sum_del;
+}
+
+
+void fix_scblock_offsets(struct frame *fr, struct edit_pos pos, size_t del)
+{
+	int i;
+	int nrun;
+	size_t offs;
+	SCBlock *scblock;
+
+	offs = pos_trail_to_offset(fr->paras[pos.para], pos.pos, pos.trail);
+	nrun = which_run(fr->paras[pos.para], offs);
+
+	if ( nrun == fr->paras[pos.para]->n_runs ) {
+		fprintf(stderr, "Couldn't find new start\n");
+		return;
+	}
+
+	/* We will update the offsets of any runs which match this block */
+	scblock = fr->paras[pos.para]->runs[nrun].scblock;
+
+	for ( i=pos.para+1; i<fr->n_paras; i++ ) {
+
+		int j;
+		Paragraph *para;
+
+		para = fr->paras[i];
+
+		if ( para->type != PARA_TYPE_TEXT ) continue;
+
+		for ( j=0; j<para->n_runs; j++ ) {
+			if ( para->runs[j].scblock != scblock) return;
+			para->runs[j].scblock_offs_bytes -= del;
+		}
 	}
 }
 

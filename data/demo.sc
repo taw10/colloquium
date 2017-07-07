@@ -1,6 +1,6 @@
 \stylesheet{
 
-	\font[Junge Regular 20]
+	\font[Cantarell Regular 14]
 	\bggradv[#333333,#000055]
 	\fgcol[#c5c5c5]
 
@@ -27,13 +27,14 @@ To edit a slide, simply double-click on it.  Try it on this next slide:
 \slidetitle{Here is the slide title!}
 \footer{}
 \f[425.5ux85.0u+456.3+513.9]{Close this window when you've finished editing...}\f[915.5ux78.1u+58.0+126.6]{Editing slides works how you expect it to.  Add a new text frame by dragging from an empty area.  Then simply type into the new frame.}\f[454.3ux139.3u+142.6+295.8]{Click and drag frames to move them, and change their shape and size by dragging the handles at the corners.}\f[0.0ux1.0u+809.1+430.0]{}}
+
 You can add a new slide from the "Insert" menu or using the toolbar at the top of the narrative window.  Try it now: click to place the cursor at the end of this paragraph, then add a new slide.
 What is the narrative window for?  Well, it's up to you!  Here are some suggestions:
-\bp{}Use it just to help plan a smooth flow for your talk, reading it through to spot awkward transitions, but without referring to the notes during the actual talk.
-\bp{}Write your talk word for word and read it out like a politician.  Deliver your talk precisely as you planned it, no matter how nervous you get.
+\bp{}Use it just to help plan a smooth flow for your talk, reading it through to spot awkward transitions.
+\bp{}Write your talk word for word.  Deliver your talk precisely as you planned it, no matter how nervous you get.
 \bp{}Write bullet-pointed notes to structure your talk.
 \bp{}Create a written version of your talk to print out and give to your audience as a handout.
-\bp{}Use it as a journal during some kind of activity, adding slides whenever you have an illustration.  You'll have a ready-made presentation on the activity at the end.
+\bp{}Use it as a journal, adding slides whenever you have an illustration.  You'll have a ready-made presentation on your activity, with no extra effort!
 If you have two screens connected to your computer at the moment, you could try a mock presentation now.
 Besides this, Colloquium has some features which will help you when you come to give your presentation.  In the "Tools" menu, you'll find the presentation clock and the test card.
 Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.

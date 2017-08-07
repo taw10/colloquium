@@ -42,6 +42,7 @@
 #include "sc_interp.h"
 #include "sc_editor.h"
 #include "slideshow.h"
+#include "debugger.h"
 
 
 static void scroll_interface_init(GtkScrollable *iface)
@@ -1495,11 +1496,13 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_F7 :
-		debug_paragraphs(e);
-		break;
-
-		case GDK_KEY_F8 :
-		show_sc_blocks(e->scblocks);
+		if ( event->state == GDK_CONTROL_MASK ) {
+			debug_paragraphs(e);
+		} else if ( event->state == GDK_SHIFT_MASK ) {
+			show_sc_blocks(e->scblocks);
+		} else {
+			open_debugger(e->cursor_frame);
+		}
 		break;
 
 		case GDK_KEY_C :

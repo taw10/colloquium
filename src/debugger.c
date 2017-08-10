@@ -87,6 +87,29 @@ static const char *str_type(enum para_type t)
 	}
 }
 
+static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
+                            PangoFontDescription *fontdesc)
+{
+	int i, nrun;
+	char tmp[256];
+
+	nrun = para_debug_num_runs(para);
+	snprintf(tmp, 255, "  %i runs", nrun);
+	plot_text(cr, ypos, fontdesc, tmp);
+
+	for ( i=0; i<nrun; i++ ) {
+		size_t scblock_offs, para_offs, len;
+		SCBlock *scblock;
+		if ( para_debug_run_info(para, i, &len, &scblock, &scblock_offs, &para_offs) ) {
+			plot_text(cr, ypos, fontdesc, "Error");
+		} else {
+			snprintf(tmp, 255, "  Run %i: len %li, SCBlock %p offs %li, para offs %li",
+			         i, len, scblock, scblock_offs, para_offs);
+			plot_text(cr, ypos, fontdesc, tmp);
+		}
+	}
+}
+
 
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
 {
@@ -114,10 +137,16 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
 	plot_text(cr, &ypos, fontdesc, tmp);
 
 	for ( i=0; i<dbgw->fr->n_paras; i++ ) {
+
 		enum para_type t = para_type(dbgw->fr->paras[i]);
+
 		plot_hr(cr, &ypos, width);
 		snprintf(tmp, 255, "Paragraph %i: type %s", i, str_type(t));
 		plot_text(cr, &ypos, fontdesc, tmp);
+
+		if ( t == PARA_TYPE_TEXT ) {
+			debug_text_para(dbgw->fr->paras[i], cr, &ypos, fontdesc);
+		}
 
 	}
 

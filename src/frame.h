@@ -199,4 +199,8 @@ extern void merge_paragraphs(struct frame *fr, int para);
 extern enum para_type para_type(Paragraph *para);
 extern SCBlock *para_scblock(Paragraph *para);
 
+extern int para_debug_num_runs(Paragraph *para);
+extern int para_debug_run_info(Paragraph *para, int i, size_t *len, SCBlock **scblock,
+                               size_t *scblock_offs, size_t *para_offs);
+
 #endif	/* FRAME_H */

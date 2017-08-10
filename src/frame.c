@@ -1395,3 +1395,22 @@ enum para_type para_type(Paragraph *para)
 {
 	return para->type;
 }
+
+int para_debug_num_runs(Paragraph *para)
+{
+	if ( para->type != PARA_TYPE_TEXT ) return 0;
+	return para->n_runs;
+}
+
+int para_debug_run_info(Paragraph *para, int i, size_t *len, SCBlock **scblock,
+                        size_t *scblock_offs, size_t *para_offs)
+{
+	if ( para->type != PARA_TYPE_TEXT ) return 1;
+	if ( i >= para->n_runs ) return 1;
+
+	*len = para->runs[i].len_bytes;
+	*scblock_offs = para->runs[i].scblock_offs_bytes;
+	*para_offs = para->runs[i].para_offs_bytes;
+	*scblock = para->runs[i].scblock;
+	return 0;
+}

@@ -988,7 +988,7 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 
 	/* Update offsets for all subsequent paragraphs, but only if they're
 	 * from the same SCBlock */
-	printf("fixing offsets from para %i by %i\n", p1.para, del);
+	printf("fixing offsets from para %i by %i\n", p1.para, (int)del);
 	fix_scblock_offsets(fr, p1, del);
 }
 
@@ -1044,7 +1044,7 @@ size_t delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 		scblock_offs1 = ds + run->scblock_offs_bytes;
 		scblock_offs2 = de + run->scblock_offs_bytes;
 		sum_del += scblock_offs2 - scblock_offs1;
-		printf("del %i %i\n", scblock_offs1, scblock_offs2);
+		printf("del %i %i\n", (int)scblock_offs1, (int)scblock_offs2);
 		scblock_delete_text(run->scblock, scblock_offs1, scblock_offs2);
 
 		/* Fix up the offsets of the subsequent text runs */

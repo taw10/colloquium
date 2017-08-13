@@ -993,6 +993,23 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 }
 
 
+static void eliminate_empty_runs(Paragraph *para)
+{
+	int i;
+
+	for ( i=0; i<para->n_runs; i++ ) {
+		if ( para->runs[i].len_bytes == 0 ) {
+			int j;
+			printf("run %i empty\n", i);
+			for ( j=i; j<para->n_runs-1; j++ ) {
+				para->runs[j] = para->runs[j+1];
+			}
+			para->n_runs--;
+		}
+	}
+}
+
+
 /* offs2 negative means "to end" */
 size_t delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 {
@@ -1059,6 +1076,8 @@ size_t delete_text_in_paragraph(Paragraph *para, size_t offs1, ssize_t offs2)
 		offs2 -= del_len;
 
 	}
+
+	eliminate_empty_runs(para);
 
 	return sum_del;
 }

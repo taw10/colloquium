@@ -64,6 +64,26 @@ G_DEFINE_TYPE_WITH_CODE(SCEditor, sc_editor, GTK_TYPE_DRAWING_AREA,
                         G_IMPLEMENT_INTERFACE(GTK_TYPE_SCROLLABLE,
                                               scroll_interface_init))
 
+static void debug_paragraphs(SCEditor *e)
+{
+	struct frame *fr = e->cursor_frame;
+	int i;
+
+	printf("Paragraphs in current frame:\n");
+	for ( i=0; i<fr->n_paras; i++ ) {
+		show_para(fr->paras[i]);
+	}
+}
+
+
+static void show_cursor_pos(SCEditor *e)
+{
+	fprintf(stderr, "Cursor: fr %p, para %i, pos %li, trail %i\n",
+	        e->cursor_frame, e->cursor_para, (long int)e->cursor_pos,
+		e->cursor_trail);
+}
+
+
 
 static void horizontal_adjust(GtkAdjustment *adj, SCEditor *e)
 {
@@ -1394,26 +1414,6 @@ static void paste_selection(SCEditor *e)
 
 	cb = gtk_clipboard_get(GDK_NONE);
 	gtk_clipboard_request_text(cb, paste_callback, e);
-}
-
-
-static void debug_paragraphs(SCEditor *e)
-{
-	struct frame *fr = e->cursor_frame;
-	int i;
-
-	printf("Paragraphs in current frame:\n");
-	for ( i=0; i<fr->n_paras; i++ ) {
-		show_para(fr->paras[i]);
-	}
-}
-
-
-static void show_cursor_pos(SCEditor *e)
-{
-	fprintf(stderr, "Cursor: fr %p, para %i, pos %li, trail %i\n",
-	        e->cursor_frame, e->cursor_para, (long int)e->cursor_pos,
-		e->cursor_trail);
 }
 
 

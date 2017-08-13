@@ -1061,6 +1061,9 @@ static void rewrap_paragraph_range(struct frame *fr, int a, int b,
 static void unset_selection(SCEditor *e)
 {
 	int a, b;
+
+	if ( !e->sel_active ) return;
+
 	a = e->sel_start.para;
 	b = e->sel_end.para;
 	if ( a > b ) {

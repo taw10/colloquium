@@ -36,12 +36,30 @@
 #include "frame.h"
 
 
+#define MAX_DEBUG_RUNS (1024)
+
+struct run_debug
+{
+	enum para_type para_type;
+
+	int np;
+	size_t len;
+	void *scblock; /* Don't you dare try to dereference this */
+	size_t offs;
+	size_t para_offs;
+};
+
+
 struct debugwindow
 {
 	GtkWidget *window;
 	GtkWidget *drawingarea;
 	struct frame *fr;
 	guint timeout;
+
+	int n_changed;
+	int changesig;
+	struct run_debug *runs;
 };
 
 
@@ -88,7 +106,8 @@ static const char *str_type(enum para_type t)
 }
 
 static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
-                            PangoFontDescription *fontdesc)
+                            PangoFontDescription *fontdesc,
+                            struct run_debug *rd, int *dpos, int *changesig)
 {
 	int i, nrun;
 	char tmp[256];
@@ -103,11 +122,79 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 		if ( para_debug_run_info(para, i, &len, &scblock, &scblock_offs, &para_offs) ) {
 			plot_text(cr, ypos, fontdesc, "Error");
 		} else {
+
 			snprintf(tmp, 255, "  Run %i: len %li, SCBlock %p offs %li, para offs %li",
 			         i, len, scblock, scblock_offs, para_offs);
 			plot_text(cr, ypos, fontdesc, tmp);
+			if ( len != rd[*dpos].len ) {
+				snprintf(tmp, 255, "   (len was %li)", rd[*dpos].len);
+				plot_text(cr, ypos, fontdesc, tmp);
+				(*changesig) += i*(*dpos)*len*(*ypos);
+			}
+			if ( para_offs != rd[*dpos].para_offs ) {
+				snprintf(tmp, 255, "   (para offs was %li)", rd[*dpos].para_offs);
+				plot_text(cr, ypos, fontdesc, tmp);
+				(*changesig) += i*(*dpos)*para_offs*(*ypos);
+			}
+			if ( scblock_offs != rd[*dpos].offs ) {
+				snprintf(tmp, 255, "   (offs was %li)", rd[*dpos].offs);
+				plot_text(cr, ypos, fontdesc, tmp);
+				(*changesig) += i*(*dpos)*scblock_offs*(*ypos);
+			}
+			(*dpos)++;
+
 		}
 	}
+}
+
+
+static void record_runs(struct debugwindow *dbgw)
+{
+	int i;
+	int n = 0;
+
+	for ( i=0; i<dbgw->fr->n_paras; i++ ) {
+
+		int j, nrun;
+		Paragraph *para = dbgw->fr->paras[i];
+
+		dbgw->runs[n].para_type = para_type(para);
+
+		if ( para_type(para) != PARA_TYPE_TEXT ) {
+			n++;
+			continue;
+		}
+
+		nrun = para_debug_num_runs(para);
+
+		for ( j=0; j<nrun; j++ ) {
+
+			size_t scblock_offs, para_offs, len;
+			SCBlock *scblock;
+
+			if ( para_debug_run_info(para, j, &len, &scblock,
+			                         &scblock_offs, &para_offs) )
+			{
+				continue;
+			}
+
+			dbgw->runs[n].np = i;
+			dbgw->runs[n].len = len;
+			dbgw->runs[n].scblock = scblock;
+			dbgw->runs[n].offs = scblock_offs;
+			dbgw->runs[n].para_offs = para_offs;
+			n++;
+
+			if ( n == MAX_DEBUG_RUNS ) {
+				printf("Too many runs to debug\n");
+				return;
+			}
+
+		}
+
+	}
+
+	dbgw->changesig = 0;
 }
 
 
@@ -118,6 +205,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
 	PangoFontDescription *fontdesc;
 	int i;
 	double ypos = 10.0;
+	int dpos = 0;
+	int changesig = 0;
 
 	/* Background */
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
@@ -145,9 +234,23 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
 		plot_text(cr, &ypos, fontdesc, tmp);
 
 		if ( t == PARA_TYPE_TEXT ) {
-			debug_text_para(dbgw->fr->paras[i], cr, &ypos, fontdesc);
+			debug_text_para(dbgw->fr->paras[i], cr, &ypos, fontdesc,
+			                dbgw->runs, &dpos, &changesig);
+		} else {
+			dpos++;
 		}
 
+	}
+
+	if ( changesig == dbgw->changesig ) {
+		dbgw->n_changed++;
+		if ( dbgw->n_changed >= 5 ) {
+			record_runs(dbgw);
+			dbgw->n_changed = 0;
+		}
+	} else {
+		dbgw->changesig = changesig;
+		dbgw->n_changed = 0;
 	}
 
 	pango_font_description_free(fontdesc);
@@ -183,6 +286,11 @@ void open_debugger(struct frame *fr)
 	if ( dbgw == NULL ) return;
 
 	dbgw->fr = fr;
+	dbgw->runs = malloc(MAX_DEBUG_RUNS * sizeof(struct run_debug));
+	if ( dbgw->runs == NULL ) return;
+
+	dbgw->n_changed = 0;
+	record_runs(dbgw);
 
 	dbgw->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_role(GTK_WINDOW(dbgw->window), "debugger");
@@ -197,7 +305,7 @@ void open_debugger(struct frame *fr)
 
 	g_signal_connect(G_OBJECT(dbgw->drawingarea), "draw",
 			 G_CALLBACK(draw_sig), dbgw);
-	
+
 	g_signal_connect(G_OBJECT(dbgw->window), "delete-event",
 			 G_CALLBACK(close_sig), dbgw);
 

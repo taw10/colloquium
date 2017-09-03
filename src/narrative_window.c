@@ -306,8 +306,8 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 static void load_ss_sig(GSimpleAction *action, GVariant *parameter,
                         gpointer vp)
 {
-	SCBlock *nsblock;
-	SCBlock *templ;
+	//SCBlock *nsblock;
+	//SCBlock *templ;
 	NarrativeWindow *nw = vp;
 	GtkWidget *d;
 

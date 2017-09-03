@@ -1054,7 +1054,7 @@ static void run_macro_contents(SCInterpreter *scin)
 
 static void run_editable(SCInterpreter *scin, SCBlock *contents)
 {
-	struct sc_state *st = &scin->state[scin->j];
+	//struct sc_state *st = &scin->state[scin->j];
 
 	sc_interp_save(scin);
 	scin->state[scin->j].macro_real_block = NULL;

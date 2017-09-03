@@ -222,7 +222,7 @@ static gboolean realize_sig(GtkWidget *w, struct testcard *tc)
 
 void show_testcard(struct presentation *p)
 {
-	GdkScreen *screen;
+	GdkDisplay *display;
 	int n_monitors;
 	int i;
 	struct testcard *tc;
@@ -257,14 +257,16 @@ void show_testcard(struct presentation *p)
 
 	gtk_widget_grab_focus(GTK_WIDGET(tc->drawingarea));
 
-	screen = gdk_screen_get_default();
-	n_monitors = gdk_screen_get_n_monitors(screen);
+	display = gdk_display_get_default();
+	n_monitors = gdk_display_get_n_monitors(display);
 	for ( i=0; i<n_monitors; i++ ) {
 
+		GdkMonitor *monitor;
 		GdkRectangle rect;
 		int w;
 
-		gdk_screen_get_monitor_geometry(screen, i, &rect);
+		monitor = gdk_display_get_monitor(display, i);
+		gdk_monitor_get_geometry(monitor,&rect);
 		snprintf(tc->geom, 255, "%ix%i+%i+%i",
 		         rect.width, rect.height, rect.x, rect.y);
 

@@ -151,7 +151,7 @@ void sc_slideshow_set_slide(SCSlideshow *ss, SCBlock *ns)
 
 SCSlideshow *sc_slideshow_new(struct presentation *p)
 {
-	GdkScreen *screen;
+	GdkDisplay *display;
 	int n_monitors;
 	int i;
 	SCSlideshow *ss;
@@ -186,14 +186,16 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 
 	gtk_widget_grab_focus(GTK_WIDGET(ss->drawingarea));
 
-	screen = gdk_screen_get_default();
-	n_monitors = gdk_screen_get_n_monitors(screen);
+	display = gdk_display_get_default();
+	n_monitors = gdk_display_get_n_monitors(display);
 	for ( i=0; i<n_monitors; i++ ) {
 
+		GdkMonitor *monitor;
 		GdkRectangle rect;
 		int w;
 
-		gdk_screen_get_monitor_geometry(screen, i, &rect);
+		monitor = gdk_display_get_monitor(display, i);
+		gdk_monitor_get_geometry(monitor,&rect);
 		snprintf(ss->geom, 255, "%ix%i+%i+%i",
 		         rect.width, rect.height, rect.x, rect.y);
 

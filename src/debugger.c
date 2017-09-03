@@ -207,6 +207,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
 	double ypos = 10.0;
 	int dpos = 0;
 	int changesig = 0;
+	int npr = 10;  /* Not zero */
 
 	/* Background */
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
@@ -228,6 +229,10 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
 	for ( i=0; i<dbgw->fr->n_paras; i++ ) {
 
 		enum para_type t = para_type(dbgw->fr->paras[i]);
+
+		/* Jump the "old values" pointer forward to the next paragraph start */
+		while ( dbgw->runs[dpos].np == npr ) dpos++;
+		npr = dbgw->runs[dpos].np;
 
 		plot_hr(cr, &ypos, width);
 		snprintf(tmp, 255, "Paragraph %i: type %s", i, str_type(t));

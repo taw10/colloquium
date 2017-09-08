@@ -773,19 +773,14 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 
 		} else {
 
-			size_t del;
 			size_t offs_new, offs_old;
-			struct edit_pos pos;
 
 			offs_new = pos_trail_to_offset(para, e->cursor_pos,
 			                               e->cursor_trail);
 			offs_old = pos_trail_to_offset(para, old_pos, old_trail);
 
-			del = delete_text_in_paragraph(para, offs_new, offs_old);
-			pos.para = new_para;
-			pos.pos = new_pos;
-			pos.trail = new_trail;
-			fix_scblock_offsets(fr, pos, 1);
+			delete_text_in_paragraph(e->cursor_frame, old_para,
+			                         offs_new, offs_old);
 			wrap_paragraph(para, NULL, wrapw, 0, 0);
 
 

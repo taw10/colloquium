@@ -181,9 +181,7 @@ extern void insert_text_in_paragraph(Paragraph *para, size_t offs,
 extern void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_pos p2,
                                    double wrap_w);
 
-extern size_t delete_text_in_paragraph(Paragraph *para, size_t offs0, ssize_t offs2);
-
-extern void fix_scblock_offsets(struct frame *fr, struct edit_pos pos, size_t del);
+extern size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs0, ssize_t offs2);
 
 extern SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos,
                                 PangoContext *pc);

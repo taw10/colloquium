@@ -1245,6 +1245,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	int run;
 	Paragraph *para = fr->paras[pn];
 	struct text_run *rr;
+	int bf_pos;
 
 	pnew = insert_paragraph(fr, pn);
 	if ( pnew == NULL ) {
@@ -1267,29 +1268,49 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	/* Copy spacing */
 	for ( i=0; i<4; i++ ) pnew->space[i] = para->space[i];
 
-	/* First run of the new paragraph contains the leftover text */
 	rr = &para->runs[run];
-	pnew->runs[0].scblock = rr->scblock;
-	pnew->runs[0].macro_real_block = rr->macro_real_block;
 	run_offs = pos - rr->para_offs_bytes;
-	pnew->runs[0].scblock_offs_bytes = rr->scblock_offs_bytes + run_offs;
-	pnew->runs[0].para_offs_bytes = 0;
-	pnew->runs[0].len_bytes = rr->len_bytes - run_offs;
-	pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
-	pnew->runs[0].col[0] = rr->col[0];
-	pnew->runs[0].col[1] = rr->col[1];
-	pnew->runs[0].col[2] = rr->col[2];
-	pnew->runs[0].col[3] = rr->col[3];
-	pnew->n_runs = 1;
+
+	if ( rr->len_bytes == run_offs ) {
+
+		/* We are splitting at a run boundary, so things are easy */
+		pnew->runs[0] = para->runs[run+1];
+		pnew->runs[0].para_offs_bytes = 0;
+		pnew->n_runs = 1;
+
+		/* We start copying runs after the whole second one which we
+		 * just brought forward, i.e. we start at the THIRD run */
+		bf_pos = 2;
+
+	} else {
+
+		/* First run of the new paragraph contains the leftover text */
+		pnew->runs[0].scblock = rr->scblock;
+		pnew->runs[0].macro_real_block = rr->macro_real_block;
+		pnew->runs[0].scblock_offs_bytes = rr->scblock_offs_bytes + run_offs;
+		pnew->runs[0].para_offs_bytes = 0;
+		pnew->runs[0].len_bytes = rr->len_bytes - run_offs;
+		pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
+		pnew->runs[0].col[0] = rr->col[0];
+		pnew->runs[0].col[1] = rr->col[1];
+		pnew->runs[0].col[2] = rr->col[2];
+		pnew->runs[0].col[3] = rr->col[3];
+		pnew->n_runs = 1;
+
+		/* We start copying runs at the second run of the paragraph */
+		bf_pos = 1;
+
+	}
 
 	/* All later runs just get moved to the new paragraph */
 	offs = pnew->runs[0].len_bytes;
-	for ( i=run+1; i<para->n_runs; i++ ) {
+	for ( i=run+bf_pos; i<para->n_runs; i++ ) {
 		pnew->runs[pnew->n_runs] = para->runs[i];
 		pnew->runs[pnew->n_runs].para_offs_bytes = offs;
 		pnew->n_runs++;
-		offs += rr->len_bytes;
+		offs += para->runs[i].len_bytes;
 	}
+
 
 	/* Truncate the first paragraph at the appropriate position */
 	rr->len_bytes = run_offs;

@@ -842,6 +842,8 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	nrun = which_run(para, offs);
 	run = &para->runs[nrun];
 
+	if ( para->type != PARA_TYPE_TEXT ) return 0;
+
 	if ( run == NULL ) {
 		fprintf(stderr, "pos_trail_to_offset: No run\n");
 		return 0;

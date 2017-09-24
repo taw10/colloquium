@@ -482,14 +482,17 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
 {
 	double cx, clow, chigh, h;
 	const double t = 1.8;
+	size_t offs;
+	Paragraph *para;
 
 	if ( hgh ) {
 		draw_para_highlight(cr, fr, cursor_para);
 		return;
 	}
 
-	if ( get_cursor_pos(fr, cursor_para, cursor_pos+cursor_trail,
-	                    &cx, &clow, &h) )
+	para = fr->paras[cursor_para];
+	offs = pos_trail_to_offset(para, cursor_pos, cursor_trail);
+	if ( get_cursor_pos(fr, cursor_para, offs, &cx, &clow, &h) )
 	{
 		draw_para_highlight(cr, fr, cursor_para);
 		return;

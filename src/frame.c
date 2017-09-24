@@ -1274,9 +1274,31 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	if ( rr->len_bytes == run_offs ) {
 
 		/* We are splitting at a run boundary, so things are easy */
-		pnew->runs[0] = para->runs[run+1];
-		pnew->runs[0].para_offs_bytes = 0;
-		pnew->n_runs = 1;
+
+		if ( run == para->n_runs-1 ) {
+
+			/* It's actually a paragraph boundary.  Even easier still... */
+			pnew->runs[0].para_offs_bytes = 0;
+			pnew->runs[0].scblock = rr->scblock;
+			pnew->runs[0].macro_real_block = rr->macro_real_block;
+			pnew->runs[0].scblock_offs_bytes = rr->scblock_offs_bytes + run_offs;
+			pnew->runs[0].para_offs_bytes = 0;
+			pnew->runs[0].len_bytes = 0;
+			pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
+			pnew->runs[0].col[0] = rr->col[0];
+			pnew->runs[0].col[1] = rr->col[1];
+			pnew->runs[0].col[2] = rr->col[2];
+			pnew->runs[0].col[3] = rr->col[3];
+			pnew->n_runs = 1;
+
+
+		} else {
+
+			pnew->runs[0] = para->runs[run+1];
+			pnew->runs[0].para_offs_bytes = 0;
+			pnew->n_runs = 1;
+
+		}
 
 		/* We start copying runs after the whole second one which we
 		 * just brought forward, i.e. we start at the THIRD run */

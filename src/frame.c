@@ -765,9 +765,17 @@ void cursor_moveh(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
 	                                  dir, &np, ctrail);
 	if ( np == -1 ) {
 		if ( *cpara > 0 ) {
+			size_t end_offs;
 			(*cpara)--;
-			*cpos = end_offset_of_para(fr, *cpara) - 1;
-			*ctrail = 1;
+			end_offs = end_offset_of_para(fr, *cpara);
+			if ( end_offs > 0 ) {
+				*cpos = end_offs - 1;
+				*ctrail = 1;
+			} else {
+				/* Jumping into an empty paragraph */
+				*cpos = 0;
+				*ctrail = 0;
+			}
 			return;
 		} else {
 			/* Can't move any further */

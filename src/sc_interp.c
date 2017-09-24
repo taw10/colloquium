@@ -889,7 +889,6 @@ static int in_macro(SCInterpreter *scin)
 static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
                     PangoLanguage *lang, int editable, SCInterpreter *scin)
 {
-	glong len_chars;
 	const char *text = sc_block_contents(bl);
 	size_t start, len_bytes;
 	PangoFontDescription *fontdesc;
@@ -900,10 +899,6 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
-
-	/* Zero-length block? */
-	len_chars = g_utf8_strlen(text, -1);
-	if ( len_chars == 0 ) return 1;
 
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);

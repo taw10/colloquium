@@ -1503,9 +1503,9 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_F7 :
-		if ( event->state == GDK_CONTROL_MASK ) {
+		if ( event->state & GDK_CONTROL_MASK ) {
 			debug_paragraphs(e);
-		} else if ( event->state == GDK_SHIFT_MASK ) {
+		} else if ( event->state & GDK_SHIFT_MASK ) {
 			show_sc_blocks(e->scblocks);
 		} else {
 			open_debugger(e->cursor_frame);

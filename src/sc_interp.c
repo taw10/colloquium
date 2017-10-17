@@ -887,6 +887,13 @@ static int in_macro(SCInterpreter *scin)
 }
 
 
+static void set_newline_at_end_last_para(struct frame *fr)
+{
+	if ( fr->paras == NULL ) return;
+	set_newline_at_end(fr->paras[fr->n_paras-1]);
+}
+
+
 /* Add the SCBlock to the text in 'frame', at the end */
 static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
                     PangoLanguage *lang, int editable, SCInterpreter *scin)
@@ -895,7 +902,6 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	size_t start, len_bytes;
 	PangoFontDescription *fontdesc;
 	double *col;
-	int just_closed = 0;
 	struct sc_state *st = &scin->state[scin->j];
 	SCBlock *mrb;
 
@@ -921,20 +927,23 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 		}
 
 		if ( text[start] == '\n' ) {
-			if ( just_closed ) {
+			if ( !last_para_available_for_text(fr) ) {
+				/* Add an empty paragraph */
 				Paragraph *para = last_open_para(fr);
 				add_run(para, bl, mrb, start, 0, fontdesc, col);
 				set_para_spacing(para, st->paraspace);
+				set_newline_at_end(para);
 			}
+			/* Close this paragraph */
+			set_newline_at_end_last_para(fr);
 			close_last_paragraph(fr);
 			start += 1;
-			just_closed = 1;
 		} else  {
+			/* Just add some text */
 			Paragraph *para = last_open_para(fr);
 			add_run(para, bl, mrb, start, len, fontdesc, col);
 			set_para_spacing(para, st->paraspace);
 			start += len;
-			just_closed = 0;
 		}
 
 	} while ( start < len_bytes );

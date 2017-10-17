@@ -123,12 +123,16 @@ extern double total_height(struct frame *fr);
 extern Paragraph *last_open_para(struct frame *fr);
 extern Paragraph *current_para(struct frame *fr);
 extern void close_last_paragraph(struct frame *fr);
+extern int last_para_available_for_text(struct frame *fr);
 extern void show_para(Paragraph *p);
 extern void set_para_spacing(Paragraph *para, float space[4]);
 
 extern double paragraph_height(Paragraph *para);
 extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
                              enum is_size isz);
+
+extern int get_newline_at_end(Paragraph *para);
+extern void set_newline_at_end(Paragraph *para);
 
 extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
                     size_t offs_bytes, size_t len_bytes,

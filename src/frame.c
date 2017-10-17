@@ -51,6 +51,7 @@ struct _paragraph
 	enum para_type   type;
 	double           height;
 	float            space[4];
+	int              newline_at_end;
 
 	/* For PARA_TYPE_TEXT */
 	int              n_runs;
@@ -351,6 +352,17 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 	para->height += para->space[2] + para->space[3];
 }
 
+int get_newline_at_end(Paragraph *para)
+{
+	return para->newline_at_end;
+}
+
+
+void set_newline_at_end(Paragraph *para)
+{
+	para->newline_at_end = 1;
+}
+
 
 void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
              size_t offs_bytes, size_t len_bytes, PangoFontDescription *fdesc,
@@ -521,7 +533,22 @@ Paragraph *last_open_para(struct frame *fr)
 void close_last_paragraph(struct frame *fr)
 {
 	if ( fr->paras == NULL ) return;
+	if ( fr->paras[fr->n_paras-1]->type != PARA_TYPE_TEXT ) {
+		printf("Closing a non-text paragraph!\n");
+	}
 	fr->paras[fr->n_paras-1]->open = 0;
+}
+
+
+int last_para_available_for_text(struct frame *fr)
+{
+	Paragraph *last_para;
+	if ( fr->paras == NULL ) return 0;
+	last_para = fr->paras[fr->n_paras-1];
+	if ( last_para->type == PARA_TYPE_TEXT ) {
+		if ( last_para->open ) return 1;
+	}
+	return 0;
 }
 
 
@@ -909,16 +936,39 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 }
 
 
-static void delete_paragraph(struct frame *fr, int p)
+static void fixup_subsq(int first_para, struct frame *fr, SCBlock *scblock,
+                        size_t del_len)
 {
 	int i;
-	Paragraph *para = fr->paras[p];
+
+	for ( i=first_para; i<fr->n_paras; i++ ) {
+		int j;
+		int done = 0;
+		Paragraph *para = fr->paras[i];
+		if ( para->type != PARA_TYPE_TEXT ) continue;
+		for ( j=0; j<para->n_runs; j++ ) {
+			if ( para->runs[j].scblock != scblock) {
+				done = 1;
+				break;
+				}
+			printf("subsq para %p run %i del %i\n", para, i, (int)del_len);
+			para->runs[j].scblock_offs_bytes -= del_len;
+		}
+		if ( done ) break;
+	}
+}
+
+
+static void delete_text_paragraph(Paragraph *para, int p, struct frame *fr)
+{
+	int i;
 
 	/* Delete the corresponding SC */
 	for ( i=0; i<para->n_runs; i++ ) {
 
 		int j;
 		struct text_run *run;
+		size_t nl = 0;
 
 		run = &para->runs[i];
 
@@ -927,12 +977,22 @@ static void delete_paragraph(struct frame *fr, int p)
 			continue;
 		}
 
+		/* Find the newline at the end of the paragraph, if it
+		 * exists */
+		size_t toffs = run->scblock_offs_bytes + run->len_bytes;
+		if ( sc_block_contents(run->scblock)[toffs] == '\n' ) {
+			printf("Found newline when deleting paragraph\n");
+			nl = 1;
+		} else {
+			printf("No newline when deleting paragraph\n");
+		}
+
 		/* Delete from the corresponding SC block */
 		scblock_delete_text(run->scblock, run->scblock_offs_bytes,
-		                    run->scblock_offs_bytes + run->len_bytes);
+		                    run->scblock_offs_bytes + run->len_bytes+nl);
 
 		/* Fix up the offsets of the subsequent text runs */
-		size_t del_len = run->len_bytes;
+		size_t del_len = run->len_bytes + nl;
 		run->len_bytes -= del_len;
 		for ( j=i+1; j<para->n_runs; j++ ) {
 			if ( para->runs[j].scblock == run->scblock ) {
@@ -940,6 +1000,28 @@ static void delete_paragraph(struct frame *fr, int p)
 			}
 			para->runs[j].para_offs_bytes -= del_len;
 		}
+
+		/* ... and in subsequent paragraphs, if they're from the same
+		 * SCBlock */
+		fixup_subsq(p+1, fr, run->scblock, del_len);
+
+	}
+}
+
+
+static void delete_paragraph(struct frame *fr, int p)
+{
+	int i;
+	Paragraph *para = fr->paras[p];
+
+	if ( para->type != PARA_TYPE_TEXT ) {
+		if ( para->macro_real_scblock != NULL ) {
+			sc_block_delete(&fr->scblocks, para->macro_real_scblock);
+		} else {
+			sc_block_delete(&fr->scblocks, para->scblock);
+		}
+	} else {
+		delete_text_paragraph(para, p, fr);
 	}
 
 	/* Delete the paragraph from the frame */
@@ -1088,22 +1170,9 @@ size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs1, ssize
 
 		/* ... and in subsequent paragraphs, if they're from the same
 		 * SCBlock */
-		for ( i=npara+1; i<fr->n_paras; i++ ) {
-			int j;
-			int done = 0;
-			Paragraph *para = fr->paras[i];
-			if ( para->type != PARA_TYPE_TEXT ) continue;
-			for ( j=0; j<para->n_runs; j++ ) {
-				if ( para->runs[j].scblock != run->scblock) {
-					done = 1;
-					break;
-				}
-				printf("subsq para %p run %i del %i\n", para, i, (int)del_len);
-				para->runs[j].scblock_offs_bytes -= del_len;
-			}
-			if ( done ) break;
-		}
+		fixup_subsq(npara+1, fr, run->scblock, del_len);
 
+		offs1 -= del_len;
 		offs2 -= del_len;
 
 	}

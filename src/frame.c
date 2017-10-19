@@ -989,7 +989,6 @@ static void delete_text_paragraph(Paragraph *para, int p, struct frame *fr)
 
 		int j;
 		struct text_run *run;
-		size_t nl = 0;
 
 		run = &para->runs[i];
 
@@ -998,22 +997,12 @@ static void delete_text_paragraph(Paragraph *para, int p, struct frame *fr)
 			continue;
 		}
 
-		/* Find the newline at the end of the paragraph, if it
-		 * exists */
-		size_t toffs = run->scblock_offs_bytes + run->len_bytes;
-		if ( sc_block_contents(run->scblock)[toffs] == '\n' ) {
-			printf("Found newline when deleting paragraph\n");
-			nl = 1;
-		} else {
-			printf("No newline when deleting paragraph\n");
-		}
-
 		/* Delete from the corresponding SC block */
 		scblock_delete_text(run->scblock, run->scblock_offs_bytes,
-		                    run->scblock_offs_bytes + run->len_bytes+nl);
+		                    run->scblock_offs_bytes + run->len_bytes);
 
 		/* Fix up the offsets of the subsequent text runs */
-		size_t del_len = run->len_bytes + nl;
+		size_t del_len = run->len_bytes;
 		run->len_bytes -= del_len;
 		for ( j=i+1; j<para->n_runs; j++ ) {
 			if ( para->runs[j].scblock == run->scblock ) {

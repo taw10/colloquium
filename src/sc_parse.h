@@ -65,6 +65,7 @@ extern void sc_block_unlink(SCBlock **top, SCBlock *deleteme);
 extern SCBlock *find_last_child(SCBlock *bl);
 
 
+extern void sc_block_set_name(SCBlock *bl, char *nam);
 extern void sc_block_set_options(SCBlock *bl, char *opt);
 extern void sc_block_set_contents(SCBlock *bl, char *con);
 extern void sc_insert_text(SCBlock *b1, size_t o1, const char *t);

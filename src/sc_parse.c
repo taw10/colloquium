@@ -296,6 +296,9 @@ char *serialise_sc_block(const SCBlock *bl)
 
 	if ( bl->name == NULL ) {
 		strcat(a, bl->contents);
+	} else if ( strcmp(bl->name, "newpara") == 0 ) {
+		strcat(a, "\n");
+
 	} else {
 
 		strcat(a, "\\");
@@ -503,6 +506,41 @@ static size_t read_block(const char *sc, char **pname, char **options,
 }
 
 
+static void separate_newlines(SCBlock *bl)
+{
+	while ( bl != NULL ) {
+
+		char *npos;
+		const char *contents = sc_block_contents(bl);
+
+		if ( contents != NULL ) {
+			npos = strchr(contents, '\n');
+			if ( npos != NULL ) {
+				SCBlock *nb = NULL;
+				if ( npos == contents ) {
+					bl->name = strdup("newpara");
+					bl->contents = NULL;
+					nb = bl;
+				} else {
+					sc_block_append(bl, strdup("newpara"), NULL, NULL, &nb);
+				}
+				if ( strlen(npos+1) > 0 ) {
+					sc_block_append(nb, NULL, NULL, strdup(npos+1), &nb);
+				}
+				npos[0] = '\0';
+			}
+		}
+
+		if ( sc_block_child(bl) != NULL ) {
+			separate_newlines(sc_block_child(bl));
+		}
+
+		bl = sc_block_next(bl);
+
+	}
+}
+
+
 SCBlock *sc_parse(const char *sc)
 {
 	SCBlock *bl;
@@ -601,7 +639,16 @@ SCBlock *sc_parse(const char *sc)
 		j = 0;
 	}
 
+	separate_newlines(blf);
+
 	return blf;
+}
+
+
+void sc_block_set_name(SCBlock *bl, char *nam)
+{
+	free(bl->name);
+	bl->name = nam;
 }
 
 

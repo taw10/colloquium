@@ -131,8 +131,9 @@ extern double paragraph_height(Paragraph *para);
 extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
                              enum is_size isz);
 
-extern int get_newline_at_end(Paragraph *para);
-extern void set_newline_at_end(Paragraph *para);
+extern SCBlock *get_newline_at_end(Paragraph *para);
+extern void set_newline_at_end(Paragraph *para, SCBlock *bl);
+extern void check_run(struct frame *fr, int pn);
 
 extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
                     size_t offs_bytes, size_t len_bytes,

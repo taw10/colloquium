@@ -887,13 +887,6 @@ static int in_macro(SCInterpreter *scin)
 }
 
 
-static void set_newline_at_end_last_para(struct frame *fr)
-{
-	if ( fr->paras == NULL ) return;
-	set_newline_at_end(fr->paras[fr->n_paras-1]);
-}
-
-
 /* Add the SCBlock to the text in 'frame', at the end */
 static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
                     PangoLanguage *lang, int editable, SCInterpreter *scin)
@@ -916,35 +909,12 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	start = 0;
 	do {
 
-		char *para_end;
-		size_t len;
+		size_t len = strlen(text+start);
 
-		para_end = strchr(text+start, '\n');
-		if ( para_end == NULL ) {
-			len = strlen(text+start);
-		} else {
-			len = para_end - (text+start);
-		}
-
-		if ( text[start] == '\n' ) {
-			if ( !last_para_available_for_text(fr) ) {
-				/* Add an empty paragraph */
-				Paragraph *para = last_open_para(fr);
-				add_run(para, bl, mrb, start, 0, fontdesc, col);
-				set_para_spacing(para, st->paraspace);
-				set_newline_at_end(para);
-			}
-			/* Close this paragraph */
-			set_newline_at_end_last_para(fr);
-			close_last_paragraph(fr);
-			start += 1;
-		} else  {
-			/* Just add some text */
-			Paragraph *para = last_open_para(fr);
-			add_run(para, bl, mrb, start, len, fontdesc, col);
-			set_para_spacing(para, st->paraspace);
-			start += len;
-		}
+		Paragraph *para = last_open_para(fr);
+		add_run(para, bl, mrb, start, len, fontdesc, col);
+		set_para_spacing(para, st->paraspace);
+		start += len;
 
 	} while ( start < len_bytes );
 
@@ -1000,6 +970,14 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
 		maybe_recurse_after(scin, child);
+
+	} else if ( strcmp(name, "newpara")==0 ) {
+		struct frame *fr = sc_interp_get_frame(scin);
+		Paragraph *para = last_open_para(fr);
+		/* Add a dummy run which we can type into */
+		add_run(para, bl, NULL, 0, 0, fr->fontdesc, fr->col);
+		set_newline_at_end(para, bl);
+		close_last_paragraph(fr);
 
 	} else {
 		return 0;

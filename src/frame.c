@@ -51,7 +51,7 @@ struct _paragraph
 	enum para_type   type;
 	double           height;
 	float            space[4];
-	int              newline_at_end;
+	SCBlock         *newline_at_end;
 
 	/* For PARA_TYPE_TEXT */
 	int              n_runs;
@@ -352,15 +352,15 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 	para->height += para->space[2] + para->space[3];
 }
 
-int get_newline_at_end(Paragraph *para)
+SCBlock *get_newline_at_end(Paragraph *para)
 {
 	return para->newline_at_end;
 }
 
 
-void set_newline_at_end(Paragraph *para)
+void set_newline_at_end(Paragraph *para, SCBlock *bl)
 {
-	para->newline_at_end = 1;
+	para->newline_at_end = bl;
 }
 
 
@@ -917,6 +917,27 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 		return;
 	}
 
+	if ( (sc_block_name(run->scblock) != NULL)
+	  && (strcmp(sc_block_name(run->scblock), "newpara") == 0) )
+	{
+
+		SCBlock *nnp;
+		printf("Inserting into newpara block...\n");
+
+		/* Add a new \newpara block after this one */
+		nnp = sc_block_append(run->scblock, "newpara",
+		                      NULL, NULL, NULL);
+
+		/* The first \newpara block becomes a normal anonymous block */
+		sc_block_set_name(run->scblock, NULL);
+
+		if ( para->newline_at_end == run->scblock ) {
+			para->newline_at_end = nnp;
+			printf("Replaced the newpara block\n");
+		}
+
+	}
+
 	/* Translate paragraph offset for insertion into SCBlock offset */
 	run_offs = offs - run->para_offs_bytes;
 	scblock_offs = run_offs + run->scblock_offs_bytes;
@@ -1214,9 +1235,7 @@ void merge_paragraphs(struct frame *fr, int para)
 {
 	Paragraph *p1, *p2;
 	struct text_run *runs_new;
-	int i, j;
-	size_t offs;
-	SCBlock *scblock;
+	int i;
 	SCBlock *n;
 
 	if ( para >= fr->n_paras-1 ) {
@@ -1241,49 +1260,14 @@ void merge_paragraphs(struct frame *fr, int para)
 	}
 	p1->runs = runs_new;
 
-	/* Locate the newline which we have just deleted. */
-	scblock = p1->runs[p1->n_runs-1].scblock;
-	n = sc_block_next(scblock);
-	offs = p1->runs[p1->n_runs-1].scblock_offs_bytes;
-	offs += p1->runs[p1->n_runs-1].len_bytes;
+	/* Delete the \newpara block to unite the paragraphs */
+	n = get_newline_at_end(p1);
+	assert(n != NULL);
+	sc_block_delete(&fr->scblocks, n);
 
-	if ( sc_block_contents(scblock)[offs] == '\n' ) {
-
-		scblock_delete_text(scblock, offs, offs+1);
-
-		/* Update the SC offset of any run from this SCBlock */
-		for ( i=para+1; i<fr->n_paras; i++ ) {
-			int done = 0;
-			if ( fr->paras[i]->type != PARA_TYPE_TEXT ) break;
-			for ( j=0; j<fr->paras[i]->n_runs; j++ ) {
-				struct text_run *run = &fr->paras[i]->runs[j];
-				if ( run->scblock == scblock ) {
-					run->scblock_offs_bytes -= 1;
-				} else {
-					done = 1;
-					break;
-				}
-			}
-			if ( done ) break;
-		}
-
-	} else if ( (n!=NULL) && (sc_block_contents(n)[0] == '\n') ) {
-
-		/* It's in the following SCBlock instead */
-
-		const char *c = sc_block_contents(n);
-		if ( strlen(c) == 1 ) {
-			SCBlock *ss = scblock;
-			sc_block_delete(&scblock, n);
-			assert(ss == scblock);
-		} else {
-			scblock_delete_text(n, 0, 1);
-		}
-
-	} else {
-		printf("Couldn't find newline!\n");
-		printf("Have '%s'\n", sc_block_contents(scblock)+offs);
-	}
+	/* The end of the united paragraph should now be the end of the
+	 * second one */
+	set_newline_at_end(p1, get_newline_at_end(p2));
 
 	for ( i=0; i<p2->n_runs; i++ ) {
 
@@ -1305,13 +1289,6 @@ void merge_paragraphs(struct frame *fr, int para)
 		fr->paras[i] = fr->paras[i+1];
 	}
 	fr->n_paras--;
-}
-
-
-static char *s_strdup(const char *a)
-{
-	if ( a == NULL ) return NULL;
-	return strdup(a);
 }
 
 
@@ -1425,10 +1402,10 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		pnew->runs[0].scblock_offs_bytes = 0;
 	}
 
-	/* Add a newline after the end of the first paragraph's SC */
-	sc_block_append(rr->scblock, s_strdup(sc_block_name(rr->scblock)),
-	                             s_strdup(sc_block_options(rr->scblock)),
-	                             strdup("\n"), NULL);
+	/* Add a \newpara after the end of the first paragraph's SC */
+	set_newline_at_end(para,
+	                   sc_block_append(rr->scblock, strdup("newpara"),
+	                                   NULL, NULL, NULL));
 
 	pnew->open = para->open;
 	para->open = 0;

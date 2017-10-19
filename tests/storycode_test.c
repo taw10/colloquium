@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
 	int v = 0;
 	int r;
 
-	r = test_sc("\\bg[a=b]{wibble \\f{wobble}}\\bg{rwawr}\\muhu Wobble"
-	            "\\wibble{}\\f{wibble \\bg[muhu]{wobble}}\\frib[\\f] f");
+	r = test_sc("\\bg[a=b]{wibble \\f{wobble}}\\bg{rwawr\ngrrr}\\muhu Wobble"
+	            "\\wibble{}\\f{wibble \\bg[muhu]{wobble\nwibble\nwabble}}\\frib[\\f] f");
 	if ( r ) v = 1;
 
 	r = test_sc("A B C \\wibble\\\\w");

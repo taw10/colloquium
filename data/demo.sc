@@ -26,7 +26,8 @@ To edit a slide, simply double-click on it.  Try it on this next slide:
 \slide{
 \slidetitle{Here is the slide title!}
 \footer{}
-\f[425.5ux85.0u+456.3+513.9]{Close this window when you've finished editing...}\f[915.5ux78.1u+58.0+126.6]{Editing slides works how you expect it to.  Add a new text frame by dragging from an empty area.  Then simply type into the new frame.}\f[454.3ux139.3u+142.6+295.8]{Click and drag frames to move them, and change their shape and size by dragging the handles at the corners.}\f[0.0ux1.0u+809.1+430.0]{}}
+\f[425.5ux85.0u+519.3+526.9]{Close this window when you've finished editing...}\f[383.5ux112.1u+62.0+139.6]{Editing slides works how you expect it to.  Add a new text frame by holding shift and dragging from an empty area.  Then simply type into the new frame.}\f[442.3ux120.3u+321.6+341.8]{Shift-click and drag frames to move them.
+Change their shape and size by shift-dragging the handles at the corners.}\f[0.0ux1.0u+809.1+430.0]{}}
 You can add a new slide from the "Insert" menu or using the toolbar at the top of the narrative window.  Try it now: click to place the cursor at the end of this paragraph, then add a new slide.
 What is the narrative window for?  Well, it's up to you!  Here are some suggestions:
 \bp{}Use it just to help plan a smooth flow for your talk, reading it through to spot awkward transitions.

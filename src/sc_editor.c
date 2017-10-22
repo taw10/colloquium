@@ -1075,7 +1075,7 @@ static void unset_selection(SCEditor *e)
 		b = e->sel_start.para;
 	}
 	e->sel_active = 0;
-	rewrap_paragraph_range(e->top, a, b, e->sel_start, e->sel_end, 0);
+	rewrap_paragraph_range(e->cursor_frame, a, b, e->sel_start, e->sel_end, 0);
 }
 
 

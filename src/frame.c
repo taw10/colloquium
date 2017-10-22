@@ -630,6 +630,11 @@ static size_t text_para_pos(Paragraph *para, double x, double y, int *ptrail)
 }
 
 
+void show_edit_pos(struct edit_pos a)
+{
+	printf("para %i, pos %li, trail %i\n", a.para, (long int)a.pos, a.trail);
+}
+
 
 int positions_equal(struct edit_pos a, struct edit_pos b)
 {

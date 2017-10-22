@@ -134,6 +134,7 @@ extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
 extern SCBlock *get_newline_at_end(Paragraph *para);
 extern void set_newline_at_end(Paragraph *para, SCBlock *bl);
 extern void check_run(struct frame *fr, int pn);
+extern void show_edit_pos(struct edit_pos a);
 
 extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
                     size_t offs_bytes, size_t len_bytes,

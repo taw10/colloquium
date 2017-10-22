@@ -1027,6 +1027,7 @@ static void rewrap_paragraph_range(struct frame *fr, int a, int b,
 		a = b; b = t;
 	}
 
+	if ( fr == NULL ) return;
 	if ( fr->paras == NULL ) return;
 
 	sort_positions(&sel_start, &sel_end);

@@ -1086,9 +1086,11 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	enum corner c;
 	gdouble x, y;
 	struct frame *clicked;
+	int shift;
 
 	x = event->x - e->border_offs_x;
 	y = event->y - e->border_offs_y + e->scroll_pos;
+	shift = event->state & GDK_SHIFT_MASK;
 
 	if ( within_frame(e->selection, x, y) ) {
 		clicked = e->selection;
@@ -1096,8 +1098,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		clicked = find_frame_at_position(e->top, x, y);
 	}
 
-	/* If the user clicked the currently selected frame, position cursor
-	 * or possibly prepare for resize */
+	/* Clicked within the currently selected frame
+	 *   -> resize, move or select text */
 	if ( (e->selection != NULL) && (clicked == e->selection) ) {
 
 		struct frame *fr;
@@ -1106,7 +1108,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		/* Within the resizing region? */
 		c = which_corner(x, y, fr);
-		if ( (c != CORNER_NONE) && (fr->resizable) ) {
+		if ( (c != CORNER_NONE) && fr->resizable && shift ) {
 
 			e->drag_reason = DRAG_REASON_RESIZE;
 			e->drag_corner = c;
@@ -1137,7 +1139,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 				check_callback_click(e->cursor_frame, e->cursor_para);
 			}
 
-			if ( fr->resizable ) {
+			if ( fr->resizable && shift ) {
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_MOVE;
 			} else {
@@ -1152,13 +1154,16 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	} else if ( (clicked == NULL)
 	         || ( !e->top_editable && (clicked == e->top) ) )
 	{
-		/* Clicked no object. Deselect old object and set up for
-		 * (maybe) creating a new one. */
+		/* Clicked no object. Deselect old object.
+		 * If shift held, set up for creating a new one. */
 		e->selection = NULL;
-		e->start_corner_x = event->x - e->border_offs_x;
-		e->start_corner_y = event->y - e->border_offs_y;
-		e->drag_status = DRAG_STATUS_COULD_DRAG;
-		e->drag_reason = DRAG_REASON_CREATE;
+
+		if ( shift ) {
+			e->start_corner_x = event->x - e->border_offs_x;
+			e->start_corner_y = event->y - e->border_offs_y;
+			e->drag_status = DRAG_STATUS_COULD_DRAG;
+			e->drag_reason = DRAG_REASON_CREATE;
+		}
 
 	} else {
 

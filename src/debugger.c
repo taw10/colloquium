@@ -146,9 +146,8 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 		}
 	}
 
-	if ( get_newline_at_end(para) ) {
-		plot_text(cr, ypos, fontdesc, "Ends with newline");
-	}
+	snprintf(tmp, 255, "Newline at end: %p\n", get_newline_at_end(para));
+	plot_text(cr, ypos, fontdesc, tmp);
 }
 
 

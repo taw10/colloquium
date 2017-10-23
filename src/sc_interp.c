@@ -594,13 +594,16 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->paraspace[1] = 0.0;
 	st->paraspace[2] = 0.0;
 	st->paraspace[3] = 0.0;
+	st->fontdesc = NULL;
 
 	scin->lang = lang;
 
 	/* The "ultimate" default font */
-	set_font(scin, "Sans 12");
-	set_colour(scin, "#000000");
-	set_frame(scin, top);
+	if ( scin->pc != NULL ) {
+		set_font(scin, "Cantarell Regular 14");
+		set_colour(scin, "#000000");
+		set_frame(scin, top);
+	}
 
 	return scin;
 }
@@ -615,7 +618,9 @@ void sc_interp_destroy(SCInterpreter *scin)
 		sc_interp_restore(scin);
 	}
 
-	pango_font_description_free(scin->state[0].fontdesc);
+	if ( scin->state[0].fontdesc != NULL ) {
+		pango_font_description_free(scin->state[0].fontdesc);
+	}
 
 	free(scin->state);
 	free(scin);

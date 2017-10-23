@@ -368,6 +368,7 @@ void sc_editor_remove_cursor(SCEditor *e)
 	e->cursor_frame = NULL;
 	e->cursor_para = 0;
 	e->cursor_pos = 0;
+	e->cursor_trail = 0;
 	e->selection = NULL;
 }
 
@@ -1930,6 +1931,7 @@ void sc_editor_set_cursor_para(SCEditor *e, signed int pos)
 		e->cursor_para = pos;
 	}
 	e->cursor_pos = 0;
+	e->cursor_trail = 0;
 
 	h = 0;
 	for ( i=0; i<e->cursor_para; i++ ) {
@@ -1973,7 +1975,13 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->scroll_pos = 0;
 	sceditor->flow = 0;
 	sceditor->lang = lang;
+
 	sceditor->para_highlight = 0;
+	sceditor->cursor_frame = NULL;
+	sceditor->cursor_para = 0;
+	sceditor->cursor_pos = 0;
+	sceditor->cursor_trail = 0;
+	sceditor->selection = NULL;
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 

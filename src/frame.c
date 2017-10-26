@@ -1377,7 +1377,8 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	para->n_runs = run+1;
 
 	/* If the first and second paragraphs have the same SCBlock, split it */
-	if ( rr->scblock == pnew->runs[0].scblock ) {
+	if ( (rr->scblock != NULL) && (rr->scblock == pnew->runs[0].scblock) ) {
+
 		size_t sc_offs;
 		sc_offs = rr->scblock_offs_bytes + run_offs;
 		pnew->runs[0].scblock = sc_block_split(rr->scblock, sc_offs);

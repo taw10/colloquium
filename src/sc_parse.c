@@ -786,10 +786,13 @@ SCBlock *sc_block_split(SCBlock *bl, size_t pos)
 	/* Second block */
 	n->name = s_strdup(bl->name);
 	n->options = s_strdup(bl->options);
-	n->contents = strdup(bl->contents+pos);
-
-	/* Truncate the first block */
-	bl->contents[pos] = '\0';
+	if ( bl->contents != NULL ) {
+		n->contents = strdup(bl->contents+pos);
+		/* Truncate the first block */
+		bl->contents[pos] = '\0';
+	} else {
+		n->contents = NULL;
+	}
 
 	n->next = bl->next;
 	bl->next = n;

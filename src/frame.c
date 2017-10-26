@@ -1002,6 +1002,13 @@ static void delete_text_paragraph(Paragraph *para, int p, struct frame *fr)
 			continue;
 		}
 
+		if ( (sc_block_name(run->scblock) != NULL)
+		  && (strcmp(sc_block_name(run->scblock), "newpara") == 0) )
+		{
+			sc_block_delete(&fr->scblocks, run->scblock);
+			return;
+		}
+
 		/* Delete from the corresponding SC block */
 		scblock_delete_text(run->scblock, run->scblock_offs_bytes,
 		                    run->scblock_offs_bytes + run->len_bytes);

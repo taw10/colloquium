@@ -298,6 +298,8 @@ static void update_font(SCInterpreter *scin)
 	PangoFontMetrics *metrics;
 	struct sc_state *st = &scin->state[scin->j];
 
+	if ( scin->pc == NULL ) return;
+
 	st->font = pango_font_map_load_font(pango_context_get_font_map(scin->pc),
 	                                    scin->pc, st->fontdesc);
 	if ( st->font == NULL ) {

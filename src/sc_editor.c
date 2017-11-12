@@ -1033,6 +1033,12 @@ static void rewrap_paragraph_range(struct frame *fr, int a, int b,
 
 	sort_positions(&sel_start, &sel_end);
 
+	//printf("frame %p\n", fr);
+	//printf("start: ");
+	//show_edit_pos(sel_start);
+	//printf("  end: ");
+	//show_edit_pos(sel_end);
+
 	para = fr->paras[sel_start.para];
 	sel_s = pos_trail_to_offset(para, sel_start.pos, sel_start.trail);
 	para = fr->paras[sel_end.para];

@@ -309,7 +309,7 @@ void open_debugger(struct frame *fr)
 
 	dbgw->drawingarea = gtk_drawing_area_new();
 	gtk_container_add(GTK_CONTAINER(scroll), dbgw->drawingarea);
-	gtk_widget_set_size_request(dbgw->drawingarea, 100, 2000);
+	gtk_widget_set_size_request(dbgw->drawingarea, 100, 8000);
 
 	g_signal_connect(G_OBJECT(dbgw->drawingarea), "draw",
 			 G_CALLBACK(draw_sig), dbgw);

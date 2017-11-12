@@ -304,7 +304,8 @@ static void update_font(SCInterpreter *scin)
 	                                    scin->pc, st->fontdesc);
 	if ( st->font == NULL ) {
 		char *f = pango_font_description_to_string(st->fontdesc);
-		fprintf(stderr, "Couldn't load font '%s'\n", f);
+		fprintf(stderr, "Couldn't load font '%s' (font map %p, pc %p)\n",
+		        f, pango_context_get_font_map(scin->pc), scin->pc);
 		g_free(f);
 		return;
 	}

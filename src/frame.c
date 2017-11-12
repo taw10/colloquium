@@ -881,6 +881,14 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
+	if ( sc_block_contents(run->scblock) == NULL ) {
+		fprintf(stderr, "pos_trail_to_offset: No contents "
+		        "(%p name=%s, options=%s)\n",
+		        run->scblock, sc_block_name(run->scblock),
+		        sc_block_options(run->scblock));
+		return 0;
+	}
+
 	/* Get the text for the run */
 	run_text = sc_block_contents(run->scblock) + run->scblock_offs_bytes;
 
@@ -1274,6 +1282,27 @@ void merge_paragraphs(struct frame *fr, int para)
 }
 
 
+static void check_para(Paragraph *para)
+{
+	int i;
+	for ( i=0; i<para->n_runs; i++ ) {
+		const char *run_text;
+		if ( sc_block_contents(para->runs[i].scblock) == NULL ) continue;
+		run_text = sc_block_contents(para->runs[i].scblock)
+		           + para->runs[i].scblock_offs_bytes;
+		if ( strlen(run_text) < para->runs[i].len_bytes ) {
+			printf("found a wrong run\n");
+			printf("run %i sc offs %li, para offs %li text '%s'\n", i,
+			       (long int)para->runs[i].scblock_offs_bytes,
+			       (long int)para->runs[i].para_offs_bytes,
+			       run_text);
+			printf("(the SCBlock contains '%s'\n", sc_block_contents(para->runs[i].scblock));
+			printf("run %p block %p\n", &para->runs[i], para->runs[i].scblock);
+		}
+	}
+}
+
+
 static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
                                      PangoContext *pc)
 {
@@ -1308,6 +1337,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 	rr = &para->runs[run];
 	run_offs = pos - rr->para_offs_bytes;
+	printf("split at run %i\n", run);
 
 	if ( rr->len_bytes == run_offs ) {
 
@@ -1316,6 +1346,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		if ( run == para->n_runs-1 ) {
 
 			/* It's actually a paragraph boundary.  Even easier still... */
+			printf("splitting at end of para\n");
 			pnew->runs[0].para_offs_bytes = 0;
 			pnew->runs[0].scblock = rr->scblock;
 			pnew->runs[0].macro_real_block = rr->macro_real_block;
@@ -1350,6 +1381,8 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		pnew->runs[0].scblock_offs_bytes = rr->scblock_offs_bytes + run_offs;
 		pnew->runs[0].para_offs_bytes = 0;
 		pnew->runs[0].len_bytes = rr->len_bytes - run_offs;
+		printf("%i - %i\n", (int)rr->len_bytes, (int)run_offs);
+		printf("second run len = %i\n", (int)pnew->runs[0].len_bytes);
 		pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
 		pnew->runs[0].col[0] = rr->col[0];
 		pnew->runs[0].col[1] = rr->col[1];
@@ -1381,8 +1414,18 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 		size_t sc_offs;
 		sc_offs = rr->scblock_offs_bytes + run_offs;
+		printf("splitting SCBlock at %i\n", (int)sc_offs);
+		printf("old block: '%s'\n", sc_block_contents(rr->scblock));
 		pnew->runs[0].scblock = sc_block_split(rr->scblock, sc_offs);
 		pnew->runs[0].scblock_offs_bytes = 0;
+		printf("new block 1: '%s'\n", sc_block_contents(rr->scblock));
+		printf("new block 2: '%s'\n", sc_block_contents(pnew->runs[0].scblock));
+		printf("run %p block %p\n", &pnew->runs[0], pnew->runs[0].scblock);
+
+		printf("run %i sc offs %li, para offs %li\n", 0,
+		       (long int)pnew->runs[0].scblock_offs_bytes,
+		       (long int)pnew->runs[0].para_offs_bytes);
+		printf("len %i\n", (int)pnew->runs[0].len_bytes);
 	}
 
 	/* Add a \newpara after the end of the first paragraph's SC */
@@ -1392,6 +1435,11 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 	pnew->open = para->open;
 	para->open = 0;
+
+	printf("first para:\n");
+	check_para(para);
+	printf("second para:\n");
+	check_para(pnew);
 
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 	wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);

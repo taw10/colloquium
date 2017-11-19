@@ -1756,7 +1756,8 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			fr->empty = 0;
 			sc_block_append_inside(fr->scblocks, "image", opts, "");
 			full_rerender(e); /* FIXME: No need for full */
-			e->selection = fr;
+			e->selection = NULL;
+			e->cursor_frame = NULL;
 			e->cursor_para = 0;
 			e->cursor_pos = 0;
 			sc_editor_redraw(e);

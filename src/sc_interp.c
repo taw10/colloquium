@@ -908,6 +908,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
+	if ( strlen(text) == 0 ) return 1;
 
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);

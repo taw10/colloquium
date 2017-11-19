@@ -634,6 +634,8 @@ SCBlock *split_paragraph_at_cursor(SCEditor *e)
 	size_t offs;
 	Paragraph *para;
 
+	if ( e->cursor_frame == NULL ) return NULL;
+
 	para = e->cursor_frame->paras[e->cursor_para];
 	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
 	return split_paragraph(e->cursor_frame, e->cursor_para, offs, e->pc);

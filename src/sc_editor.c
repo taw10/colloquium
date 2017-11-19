@@ -1170,6 +1170,9 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			e->start_corner_y = event->y - e->border_offs_y;
 			e->drag_status = DRAG_STATUS_COULD_DRAG;
 			e->drag_reason = DRAG_REASON_CREATE;
+		} else {
+			e->drag_status = DRAG_STATUS_NONE;
+			e->drag_reason = DRAG_REASON_NONE;
 		}
 
 	} else {
@@ -1180,6 +1183,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		unset_selection(e);
 		find_cursor_2(clicked, x-clicked->x, y-clicked->y,
 		              &e->sel_start);
+		find_cursor_2(clicked, x-clicked->x, y-clicked->y,
+		              &e->sel_end);
 		e->selection = clicked;
 		e->cursor_frame = clicked;
 		if ( clicked == e->top ) {

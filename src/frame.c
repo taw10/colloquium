@@ -881,6 +881,12 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
+	if ( (sc_block_name(run->scblock) != NULL)
+	  && (strcmp(sc_block_name(run->scblock), "newpara") == 0) )
+	{
+		return 0;
+	}
+
 	if ( sc_block_contents(run->scblock) == NULL ) {
 		fprintf(stderr, "pos_trail_to_offset: No contents "
 		        "(%p name=%s, options=%s)\n",

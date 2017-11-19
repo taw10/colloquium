@@ -1164,6 +1164,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		/* Clicked no object. Deselect old object.
 		 * If shift held, set up for creating a new one. */
 		e->selection = NULL;
+		unset_selection(e);
 
 		if ( shift ) {
 			e->start_corner_x = event->x - e->border_offs_x;

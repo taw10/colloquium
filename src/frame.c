@@ -492,6 +492,10 @@ void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
 	pnew->image_h = h;
 	pnew->height = h;
 	pnew->open = 0;
+	pnew->space[0] = 0.0;
+	pnew->space[1] = 0.0;
+	pnew->space[2] = 0.0;
+	pnew->space[3] = 0.0;
 }
 
 

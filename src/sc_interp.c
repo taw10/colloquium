@@ -723,20 +723,29 @@ static int parse_dims(const char *opt, struct frame *parent,
 	if ( check == w ) goto invalid;
 	w_units = get_units(w);
 	if ( w_units == UNITS_FRAC ) {
-		double pw = parent->w;
-		pw -= parent->pad_l;
-		pw -= parent->pad_r;
-		*wp = pw * *wp;
+		if ( parent != NULL ) {
+			double pw = parent->w;
+			pw -= parent->pad_l;
+			pw -= parent->pad_r;
+			*wp = pw * *wp;
+		} else {
+			*wp = -1.0;
+		}
+
 	}
 
 	*hp = strtod(h, &check);
 	if ( check == h ) goto invalid;
 	h_units = get_units(h);
 	if ( h_units == UNITS_FRAC ) {
-		double ph = parent->h;
-		ph -= parent->pad_t;
-		ph -= parent->pad_b;
-		*hp = ph * *hp;
+		if ( parent != NULL ) {
+			double ph = parent->h;
+			ph -= parent->pad_t;
+			ph -= parent->pad_b;
+			*hp = ph * *hp;
+		} else {
+			*hp = -1.0;
+		}
 	}
 
 	*xp= strtod(x, &check);
@@ -810,7 +819,7 @@ static int parse_image_option(const char *opt, struct frame *parent,
 	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
 	  && (index(opt, '+') != rindex(opt, '+')) ) {
 		double dum;
-		return parse_dims(opt, parent, wp, hp, &dum, &dum);
+		return parse_dims(opt, NULL, wp, hp, &dum, &dum);
 	}
 
 	if ( strncmp(opt, "filename=\"", 10) == 0 ) {

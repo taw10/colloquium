@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "sc_parse.h"
 #include "frame.h"
@@ -69,6 +70,8 @@ struct _paragraph
 	char            *filename;
 	double           image_w;
 	double           image_h;
+	int              image_real_w;
+	int              image_real_h;
 
 	/* For PARA_TYPE_CALLBACK */
 	double                cb_w;
@@ -283,6 +286,15 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 
 	w -= para->space[0] + para->space[1];
 
+	if ( para->type == PARA_TYPE_IMAGE ) {
+		if ( para->image_w < 0.0 ) {
+			para->image_w = w;
+			para->image_h = w*((float)para->image_real_h/para->image_real_w);
+		}
+		para->height = para->image_h;
+		return;
+	}
+
 	if ( para->type != PARA_TYPE_TEXT ) return;
 
 	for ( i=0; i<para->n_runs; i++ ) {
@@ -478,6 +490,7 @@ void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
                     double w, double h, int editable)
 {
 	Paragraph *pnew;
+	int wi, hi;
 
 	pnew = create_paragraph(fr);
 	if ( pnew == NULL ) {
@@ -485,11 +498,19 @@ void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
 		return;
 	}
 
+	if ( gdk_pixbuf_get_file_info(filename, &wi, &hi) == NULL ) {
+		fprintf(stderr, "Couldn't get size for %s\n", filename);
+		wi = 100;
+		hi = 100;
+	}
+
 	pnew->type = PARA_TYPE_IMAGE;
 	pnew->scblock = scblock;
 	pnew->filename = strdup(filename);
 	pnew->image_w = w;
 	pnew->image_h = h;
+	pnew->image_real_w = wi;
+	pnew->image_real_h = hi;
 	pnew->height = h;
 	pnew->open = 0;
 	pnew->space[0] = 0.0;

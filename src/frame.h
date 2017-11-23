@@ -128,8 +128,7 @@ extern void show_para(Paragraph *p);
 extern void set_para_spacing(Paragraph *para, float space[4]);
 
 extern double paragraph_height(Paragraph *para);
-extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
-                             enum is_size isz);
+extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is);
 
 extern SCBlock *get_newline_at_end(Paragraph *para);
 extern void set_newline_at_end(Paragraph *para, SCBlock *bl);

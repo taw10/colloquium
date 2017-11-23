@@ -91,7 +91,7 @@ static void do_background(cairo_t *cr, struct frame *fr)
 
 
 static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
-                      enum is_size isz, double min_y, double max_y)
+                      double min_y, double max_y)
 {
 	int i;
 	double hpos = 0.0;
@@ -109,7 +109,7 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 		cairo_translate(cr, 0.0, hpos);
 
 		if ( (hpos + cur_h > min_y) && (hpos < max_y) ) {
-			render_paragraph(cr, fr->paras[i], is, isz);
+			render_paragraph(cr, fr->paras[i], is);
 		} /* else paragraph is not visible */
 
 		hpos += cur_h;
@@ -123,17 +123,17 @@ static int draw_frame(cairo_t *cr, struct frame *fr, ImageStore *is,
 
 
 int recursive_draw(struct frame *fr, cairo_t *cr,
-                   ImageStore *is, enum is_size isz,
+                   ImageStore *is,
                    double min_y, double max_y)
 {
 	int i;
 
-	draw_frame(cr, fr, is, isz, min_y, max_y);
+	draw_frame(cr, fr, is, min_y, max_y);
 
 	for ( i=0; i<fr->num_children; i++ ) {
 		cairo_save(cr);
 		cairo_translate(cr, fr->children[i]->x, fr->children[i]->y);
-		recursive_draw(fr->children[i], cr, is, isz,
+		recursive_draw(fr->children[i], cr, is,
 		               min_y - fr->children[i]->y,
 		               max_y - fr->children[i]->y);
 		cairo_restore(cr);
@@ -172,7 +172,7 @@ int recursive_wrap(struct frame *fr, PangoContext *pc)
 
 struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                SCCallbackList *cbl, ImageStore *is,
-                               enum is_size isz, int slide_number,
+                               int slide_number,
                                cairo_t *cr, double w, double h,
                                PangoLanguage *lang)
 {
@@ -229,7 +229,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 static struct frame *render_sc_with_context(SCBlock *scblocks,
                                  cairo_t *cr, double log_w, double log_h,
                                  SCBlock **stylesheets, SCCallbackList *cbl,
-                                 ImageStore *is, enum is_size isz,
+                                 ImageStore *is,
                                  int slide_number, PangoLanguage *lang,
 				 PangoContext *pc)
 {
@@ -239,12 +239,12 @@ static struct frame *render_sc_with_context(SCBlock *scblocks,
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
-	top = interp_and_shape(scblocks, stylesheets, cbl, is, isz,
+	top = interp_and_shape(scblocks, stylesheets, cbl, is,
 	                       slide_number, cr, log_w, log_h, lang);
 
 	recursive_wrap(top, pc);
 
-	recursive_draw(top, cr, is, isz, 0.0, log_h);
+	recursive_draw(top, cr, is, 0.0, log_h);
 
 	return top;
 }
@@ -253,7 +253,7 @@ static struct frame *render_sc_with_context(SCBlock *scblocks,
 cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                            double log_w, double log_h,
                            SCBlock **stylesheets, SCCallbackList *cbl,
-                           ImageStore *is, enum is_size isz,
+                           ImageStore *is,
                            int slide_number, struct frame **ptop,
                            PangoLanguage *lang)
 {
@@ -267,7 +267,7 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	pc = pango_cairo_create_context(cr);
 	cairo_scale(cr, w/log_w, h/log_h);
 	top = render_sc_with_context(scblocks, cr, log_w, log_h,
-	                             stylesheets, cbl, is, isz,slide_number,
+	                             stylesheets, cbl, is, slide_number,
 	                             lang, pc);
 	g_object_unref(pc);
 	cairo_destroy(cr);
@@ -333,7 +333,7 @@ int export_pdf(struct presentation *p, const char *filename)
 
 		render_sc_with_context(sc_block_child(bl), cr, p->slide_width,
 		                     p->slide_height, stylesheets, NULL,
-		                     p->is, ISZ_SLIDESHOW, i, p->lang, pc);
+		                     p->is, i, p->lang, pc);
 
 		cairo_restore(cr);
 

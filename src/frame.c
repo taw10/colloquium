@@ -602,8 +602,7 @@ static void render_from_surf(cairo_surface_t *surf, cairo_t *cr,
 }
 
 
-void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is,
-                      enum is_size isz)
+void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 {
 	cairo_surface_t *surf;
 

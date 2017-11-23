@@ -186,7 +186,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 			h = e->log_h;
 		}
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-		                          e->is, ISZ_EDITOR, e->slidenum, cr,
+		                          e->is, e->slidenum, cr,
 		                          w, h, e->lang);
 		recursive_wrap(e->top, pc);
 	}
@@ -388,7 +388,7 @@ static void full_rerender(SCEditor *e)
 	pc = pango_cairo_create_context(cr);
 
 	e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-	                          e->is, ISZ_EDITOR, e->slidenum,
+	                          e->is, e->slidenum,
 	                          cr, e->w, 0.0, e->lang);
 
 	e->top->x = 0.0;
@@ -619,7 +619,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 	/* Contents */
 	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);
 	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
-	recursive_draw(e->top, cr, e->is, ISZ_EDITOR,
+	recursive_draw(e->top, cr, e->is,
 	               e->scroll_pos, e->scroll_pos + e->visible_height);
 
 	/* Editing overlay */

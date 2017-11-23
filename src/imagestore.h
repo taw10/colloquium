@@ -1,7 +1,7 @@
 /*
  * imagestore.h
  *
- * Copyright © 2013-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -32,13 +32,6 @@
 
 typedef struct _imagestore ImageStore;
 
-enum is_size {
-	ISZ_SLIDESHOW = 0,
-	ISZ_EDITOR = 1,
-	ISZ_THUMBNAIL = 2,
-	NUM_ISZ_SIZES
-};
-
 extern ImageStore *imagestore_new(void);
 
 extern void imagestore_destroy(ImageStore *is);
@@ -46,8 +39,7 @@ extern void imagestore_destroy(ImageStore *is);
 extern void imagestore_set_presentation_file(ImageStore *is,
                                              const char *filename);
 
-extern cairo_surface_t *lookup_image(ImageStore *is, const char *filename,
-                                     int w, enum is_size isz);
+extern cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w);
 
 extern void show_imagestore(ImageStore *is);
 

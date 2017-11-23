@@ -1,7 +1,7 @@
 /*
  * imagestore.c
  *
- * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -35,11 +35,14 @@
 
 #include "imagestore.h"
 
+#define MAX_SIZES (32)
+
 struct image_record
 {
 	char *filename;
-	cairo_surface_t *surf[NUM_ISZ_SIZES];
-	int w[NUM_ISZ_SIZES];
+	cairo_surface_t *surf[MAX_SIZES];
+	int w[MAX_SIZES];
+	int n_sizes;
 };
 
 
@@ -107,7 +110,7 @@ void imagestore_destroy(ImageStore *is)
 	for ( i=0; i<is->n_images; i++ ) {
 		int j;
 		free(is->images[i].filename);
-		for ( j=0; j<NUM_ISZ_SIZES; j++ ) {
+		for ( j=0; j<is->images[i].n_sizes; j++ ) {
 			if ( is->images[i].surf[j] != NULL ) {
 				g_object_unref(is->images[i].surf[j]);
 			}
@@ -133,6 +136,9 @@ static cairo_surface_t *pixbuf_to_surface(GdkPixbuf *t)
 	cr = cairo_create(surf);
 
 	gdk_cairo_set_source_pixbuf(cr, t, 0, 0);
+	cairo_pattern_t *patt = cairo_get_source(cr);
+	cairo_pattern_set_extend(patt, CAIRO_EXTEND_PAD);
+	cairo_pattern_set_filter(patt, CAIRO_FILTER_BEST);
 	cairo_paint(cr);
 
 	cairo_destroy(cr);
@@ -141,65 +147,46 @@ static cairo_surface_t *pixbuf_to_surface(GdkPixbuf *t)
 }
 
 
-static cairo_surface_t *try_all_locations(const char *filename, int w,
-                                          ImageStore *is)
+static cairo_surface_t *try_all_locations(const char *filename, int w)
 {
 	GError *error = NULL;
 	GdkPixbuf *t;
-	char *tmp;
-	const char *image_folder = "/home/taw/Documents/Slides"; /* FIXME ! */
 
-	/* Try the filename as is */
 	t = gdk_pixbuf_new_from_file_at_size(filename, w, -1, &error);
-	if ( t != NULL ) return pixbuf_to_surface(t);
+	if ( t == NULL ) return NULL;
 
-	/* Try the file prefixed with the directory the presentation is in */
-	if ( is->dname != NULL ) {
+	/* FIXME: Restore searching in pre-defined folder,
+	 * hence (or otherwise) providing for relocation of presentation files */
 
-		error = NULL;
-		tmp = malloc(strlen(filename) + strlen(is->dname) + 2);
-		if ( tmp == NULL ) return NULL;
-		strcpy(tmp, is->dname);
-		strcat(tmp, "/");
-		strcat(tmp, filename);
-		t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
-		free(tmp);
-		if ( t != NULL ) return pixbuf_to_surface(t);
+	return pixbuf_to_surface(t);
+}
 
+
+static cairo_surface_t *add_image_size(struct image_record *im,
+                                       const char *filename, int w)
+{
+	cairo_surface_t *surf;
+
+	if ( im->n_sizes == MAX_SIZES ) {
+		/* FIXME: Nice cache replacement algorithm */
+		fprintf(stderr, "Too many image sizes!\n");
+		return NULL;
 	}
 
-	/* Try prefixed with image pathname */
-	error = NULL;
-	tmp = malloc(strlen(filename) + strlen(image_folder) + 2);
-	if ( tmp == NULL ) return NULL;
-	strcpy(tmp, image_folder);
-	strcat(tmp, "/");
-	strcat(tmp, filename);
-	t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
-	free(tmp);
-	if ( t != NULL ) return pixbuf_to_surface(t);
+	surf = try_all_locations(filename, w);
+	if ( surf == NULL ) return NULL;
 
-	return NULL;
+	/* Add surface to list */
+	im->w[im->n_sizes] = w;
+	im->surf[im->n_sizes] = surf;
+	im->n_sizes++;
+
+	return surf;
 }
 
 
-static cairo_surface_t *add_image(struct image_record *im, const char *filename,
-                                  int w, enum is_size isz, ImageStore *is)
+static cairo_surface_t *add_new_image(ImageStore *is, const char *filename, int w)
 {
-	im->surf[isz] = try_all_locations(filename, w, is);
-
-	if ( im->surf[isz] == NULL ) return NULL;
-
-	im->w[isz] = w;
-
-	return im->surf[isz];
-}
-
-
-static cairo_surface_t *add_new_image(ImageStore *is, const char *filename,
-                                      int w, enum is_size isz)
-{
-	int j;
 	int idx;
 
 	if ( is->n_images == is->max_images ) {
@@ -211,13 +198,10 @@ static cairo_surface_t *add_new_image(ImageStore *is, const char *filename,
 
 	idx = is->n_images++;
 
+	is->images[idx].n_sizes = 0;
 	is->images[idx].filename = strdup(filename);
-	for ( j=0; j<NUM_ISZ_SIZES; j++ ) {
-		is->images[idx].surf[j] = NULL;
-		is->images[idx].w[j] = 0;
-	}
 
-	return add_image(&is->images[idx], filename, w, isz, is);
+	return add_image_size(&is->images[idx], filename, w);
 }
 
 
@@ -230,22 +214,15 @@ void show_imagestore(ImageStore *is)
 	for ( i=0; i<is->n_images; i++ ) {
 
 		printf("%s :\n", is->images[i].filename);
-		printf("ss: %p %i  ", is->images[i].surf[ISZ_SLIDESHOW],
-		                      is->images[i].w[ISZ_SLIDESHOW]);
-		printf("ed: %p %i  ", is->images[i].surf[ISZ_EDITOR],
-		                      is->images[i].w[ISZ_EDITOR]);
-		printf("th: %p %i  ", is->images[i].surf[ISZ_THUMBNAIL],
-		                      is->images[i].w[ISZ_THUMBNAIL]);
 		printf("\n");
 
 	}
 }
 
 
-cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w,
-                        enum is_size isz)
+cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w)
 {
-	int i;
+	int i, j;
 	int found = 0;
 	cairo_surface_t *surf;
 
@@ -256,21 +233,14 @@ cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w,
 		}
 	}
 	if ( !found ) {
-		return add_new_image(is, filename, w, isz);
+		return add_new_image(is, filename, w);
 	}
 
-	/* Image already exists, but might not have the right size or
-	 * the right slot filled in */
-
-	if ( is->images[i].w[isz] == w ) return is->images[i].surf[isz];
-
-	/* Image is the wrong size or slot is not filled in yet */
-	if ( is->images[i].surf[isz] != NULL ) {
-		cairo_surface_destroy(is->images[i].surf[isz]);
-		is->images[i].surf[isz] = NULL;
+	for ( j=0; j<is->images[i].n_sizes; j++ ) {
+		if ( is->images[i].w[j] == w ) return is->images[i].surf[j];
 	}
 
-	/* Slot is not filled in yet */
-	surf = add_image(&is->images[i], filename, w, isz, is);
+	/* We don't have this size yet */
+	surf = add_image_size(&is->images[i], filename, w);
 	return surf;
 }

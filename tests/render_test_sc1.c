@@ -57,7 +57,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 	h = gtk_widget_get_allocated_height(da);
 
 	surface = render_sc(scblocks, w, h, w, h, NULL, NULL, NULL,
-	                    ISZ_EDITOR, 1, &top, lang);
+	                    1, &top, lang);
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_surface(cr, surface, 0.0, 0.0);
 	cairo_fill(cr);

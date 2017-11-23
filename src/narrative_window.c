@@ -629,7 +629,7 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	stylesheets[1] = NULL;
 	/* FIXME: Cache like crazy here */
 	surf = render_sc(scblocks, w, h, 1024.0, 768.0, stylesheets, NULL,
-	                 p->is, ISZ_THUMBNAIL, 0, &top, p->lang);
+	                 p->is, 0, &top, p->lang);
 	frame_free(top);
 
 	return surf;

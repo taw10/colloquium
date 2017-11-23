@@ -36,7 +36,7 @@
 extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                                   double log_w, double log_h,
                                   SCBlock **stylesheets, SCCallbackList *cbl,
-                                  ImageStore *is, enum is_size isz,
+                                  ImageStore *is,
                                   int slide_number, struct frame **ptop,
                                   PangoLanguage *lang);
 
@@ -46,7 +46,7 @@ extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
  */
 extern struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                       SCCallbackList *cbl,
-                                      ImageStore *is, enum is_size isz,
+                                      ImageStore *is,
                                       int slide_number, cairo_t *cr,
                                       double w, double h, PangoLanguage *lang);
 
@@ -56,7 +56,7 @@ extern int recursive_wrap(struct frame *fr, PangoContext *pc);
 extern int export_pdf(struct presentation *p, const char *filename);
 
 extern int recursive_draw(struct frame *fr, cairo_t *cr,
-                          ImageStore *is, enum is_size isz,
+                          ImageStore *is,
                           double min_y, double max_y);
 
 #endif	/* RENDER_H */

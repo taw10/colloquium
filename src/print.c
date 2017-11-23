@@ -118,14 +118,14 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 	cairo_fill(cr);
 
 	top = interp_and_shape(sc_block_child(ps->slide), stylesheets, NULL,
-	                       ps->p->is, ISZ_SLIDESHOW,
+	                       ps->p->is,
 	                       page+1, cr,
 	                       ps->p->slide_width, ps->p->slide_height,
 	                       ps->p->lang);
 
 	recursive_wrap(top, pc);
 
-	recursive_draw(top, cr, ps->p->is, ISZ_SLIDESHOW,
+	recursive_draw(top, cr, ps->p->is,
 	               0.0, ps->p->slide_height);
 
 	ps->slide = next_slide(ps->p, ps->slide);
@@ -160,7 +160,7 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	stylesheets[1] = NULL;
 	/* FIXME: Cache like crazy here */
 	surf = render_sc(scblocks, w, h, 1024.0, 768.0, stylesheets, NULL,
-	                 p->is, ISZ_THUMBNAIL, 0, &top, p->lang);
+	                 p->is, 0, &top, p->lang);
 	frame_free(top);
 
 	return surf;
@@ -200,7 +200,7 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 	}
 
 	ps->top = interp_and_shape(ps->p->scblocks, stylesheets, cbl,
-	                           ps->is, ISZ_SLIDESHOW, 0,
+	                           ps->is, 0,
 	                           gtk_print_context_get_cairo_context(ctx),
 	                           gtk_print_context_get_width(ctx),
 	                           gtk_print_context_get_height(ctx),
@@ -244,7 +244,7 @@ static void print_narrative(GtkPrintOperation *op, GtkPrintContext *ctx,
 		h += paragraph_height(ps->top->paras[i]);
 		if ( h > page_height ) return;
 
-		render_paragraph(cr, ps->top->paras[i], ps->is, ISZ_SLIDESHOW);
+		render_paragraph(cr, ps->top->paras[i], ps->is);
 		cairo_translate(cr, 0.0, paragraph_height(ps->top->paras[i]));
 
 	}

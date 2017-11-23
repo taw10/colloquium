@@ -69,7 +69,7 @@ static void slideshow_rerender(SCSlideshow *ss)
 	ss->surface = render_sc(sc_block_child(ss->cur_slide),
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
-	                        stylesheets, NULL, ss->p->is, ISZ_SLIDESHOW, n,
+	                        stylesheets, NULL, ss->p->is, n,
 	                        &ss->top, ss->p->lang);
 
 	w = gtk_widget_get_allocated_width(GTK_WIDGET(ss->drawingarea));

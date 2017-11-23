@@ -581,15 +581,23 @@ static void render_from_surf(cairo_surface_t *surf, cairo_t *cr,
                              double w, double h, int border)
 {
 	double x, y;
+	int sw, sh;
 
 	x = 0.0;  y = 0.0;
 	cairo_user_to_device(cr, &x, &y);
 	x = rint(x);  y = rint(y);
 	cairo_device_to_user(cr, &x, &y);
 
+	sw = cairo_image_surface_get_width(surf);
+	sh = cairo_image_surface_get_height(surf);
+
+	cairo_scale(cr, w/sw, h/sh);
 	cairo_new_path(cr);
-	cairo_rectangle(cr, x, y, w, h);
+	cairo_rectangle(cr, x, y, sw, sh);
 	cairo_set_source_surface(cr, surf, 0.0, 0.0);
+	cairo_pattern_t *patt = cairo_get_source(cr);
+	cairo_pattern_set_extend(patt, CAIRO_EXTEND_PAD);
+	cairo_pattern_set_filter(patt, CAIRO_FILTER_BEST);
 	cairo_fill(cr);
 
 	if ( border ) {
@@ -605,6 +613,7 @@ static void render_from_surf(cairo_surface_t *surf, cairo_t *cr,
 void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 {
 	cairo_surface_t *surf;
+	double w, h;
 
 	cairo_translate(cr, para->space[0], para->space[2]);
 
@@ -618,7 +627,10 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 		break;
 
 		case PARA_TYPE_IMAGE :
-		surf = lookup_image(is, para->filename, para->image_w, isz);
+		w = para->image_w;
+		h = para->image_h;
+		cairo_user_to_device_distance(cr, &w, &h);
+		surf = lookup_image(is, para->filename, w);
 		render_from_surf(surf, cr, para->image_w, para->image_h, 0);
 		break;
 

@@ -41,6 +41,9 @@ extern void imagestore_set_presentation_file(ImageStore *is,
 
 extern cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w);
 
+extern int imagestore_get_size(ImageStore *is, const char *filename,
+                               int *w, int *h);
+
 extern void show_imagestore(ImageStore *is);
 
 #endif	/* IMAGESTORE_H */

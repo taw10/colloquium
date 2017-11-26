@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <libgen.h>
 #include <cairo.h>
+#include <glib.h>
 #include <gdk/gdk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
@@ -151,42 +152,55 @@ static cairo_surface_t *pixbuf_to_surface(GdkPixbuf *t)
 }
 
 
-static cairo_surface_t *try_all_locations(const char *filename,
-                                          const char *dname, const char *iname,
-                                          int w)
+static char *try_all_locations(const char *filename,
+                               const char *dname, const char *iname)
 {
-	GError *error = NULL;
-	GdkPixbuf *t;
-
-	t = gdk_pixbuf_new_from_file_at_size(filename, w, -1, &error);
+	if ( g_file_test(filename, G_FILE_TEST_EXISTS) ) {
+		return strdup(filename);
+	}
 
 	/* Try the file prefixed with the directory the presentation is in */
-	if ( (t == NULL) && (dname != NULL) ) {
+	if ( dname != NULL ) {
 		char *tmp;
-		error = NULL;
 		tmp = malloc(strlen(filename) + strlen(dname) + 2);
 		if ( tmp == NULL ) return NULL;
 		strcpy(tmp, dname);
 		strcat(tmp, "/");
 		strcat(tmp, filename);
-		t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
+		if ( g_file_test(tmp, G_FILE_TEST_EXISTS) ) {
+			return tmp;
+		}
 		free(tmp);
 	}
 
 	/* Try prefixing with imagestore folder */
-	if ( (t == NULL) && (iname != NULL) ) {
+	if ( iname != NULL ) {
 		char *tmp;
-		error = NULL;
 		tmp = malloc(strlen(filename) + strlen(iname) + 2);
 		if ( tmp == NULL ) return NULL;
 		strcpy(tmp, iname);
 		strcat(tmp, "/");
 		strcat(tmp, filename);
-		t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
+		if ( g_file_test(tmp, G_FILE_TEST_EXISTS) ) {
+			return tmp;
+		}
 		free(tmp);
 	}
 
-	return pixbuf_to_surface(t);
+	return NULL;
+}
+
+
+int imagestore_get_size(ImageStore *is, const char *filename,
+                        int *w, int *h)
+{
+	char *fullfn;
+
+	fullfn = try_all_locations(filename, is->dname, is->storename);
+	if ( gdk_pixbuf_get_file_info(fullfn, w, h) == NULL ) {
+		return 1;
+	}
+	return 0;
 }
 
 
@@ -195,7 +209,10 @@ static cairo_surface_t *add_image_size(struct image_record *im,
                                        const char *dname, const char *iname,
                                        int w)
 {
+	char *fullfn;
 	cairo_surface_t *surf;
+	GdkPixbuf *t;
+	GError *error = NULL;
 
 	if ( im->n_sizes == MAX_SIZES ) {
 		/* FIXME: Nice cache replacement algorithm */
@@ -203,8 +220,14 @@ static cairo_surface_t *add_image_size(struct image_record *im,
 		return NULL;
 	}
 
-	surf = try_all_locations(filename, dname, iname, w);
-	if ( surf == NULL ) return NULL;
+	fullfn = try_all_locations(filename, dname, iname);
+	if ( fullfn == NULL ) return NULL;
+
+	t = gdk_pixbuf_new_from_file_at_size(fullfn, w, -1, &error);
+	free(fullfn);
+
+	surf = pixbuf_to_surface(t);
+	g_object_unref(t);
 
 	/* Add surface to list */
 	im->w[im->n_sizes] = w;

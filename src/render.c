@@ -191,7 +191,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	top->h = h;
 	top->scblocks = scblocks;
 
-	scin = sc_interp_new(pc, lang, top);
+	scin = sc_interp_new(pc, lang, is, top);
 	if ( scin == NULL ) {
 		fprintf(stderr, "Failed to set up interpreter.\n");
 		frame_free(top);

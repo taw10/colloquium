@@ -169,7 +169,7 @@ static struct template_id *get_templates(SCBlock *ss, int *n)
 	struct template_id *list;
 	SCInterpreter *scin;
 
-	scin = sc_interp_new(NULL, NULL, NULL);
+	scin = sc_interp_new(NULL, NULL, NULL, NULL);
 	sc_interp_run_stylesheet(scin, ss);  /* ss == NULL is OK */
 	list = sc_interp_get_templates(scin, n);
 	sc_interp_destroy(scin);

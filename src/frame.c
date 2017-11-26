@@ -487,7 +487,7 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *mr,
 
 
 void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
-                    double w, double h, int editable)
+                    ImageStore *is, double w, double h, int editable)
 {
 	Paragraph *pnew;
 	int wi, hi;
@@ -498,7 +498,7 @@ void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
 		return;
 	}
 
-	if ( gdk_pixbuf_get_file_info(filename, &wi, &hi) == NULL ) {
+	if ( imagestore_get_size(is, filename, &wi, &hi) ) {
 		fprintf(stderr, "Couldn't get size for %s\n", filename);
 		wi = 100;
 		hi = 100;

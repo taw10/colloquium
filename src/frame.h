@@ -147,7 +147,7 @@ extern void add_callback_para(struct frame *fr, SCBlock *scblock, SCBlock *mr,
 
 extern void add_image_para(struct frame *fr, SCBlock *scblock,
                            const char *filename,
-                           double w, double h, int editable);
+                           ImageStore *is, double w, double h, int editable);
 
 extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
                            size_t sel_start, size_t sel_end);

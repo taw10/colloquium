@@ -1,7 +1,7 @@
 /*
  * sc_interp.c
  *
- * Copyright © 2014-2015 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -31,6 +31,7 @@
 #include <pango/pangocairo.h>
 #include <gdk/gdk.h>
 
+#include "imagestore.h"
 #include "sc_parse.h"
 #include "sc_interp.h"
 #include "presentation.h"
@@ -79,6 +80,7 @@ struct _scinterp
 {
 	PangoContext *pc;
 	PangoLanguage *lang;
+	ImageStore *is;
 
 	struct slide_constants *s_constants;
 	struct presentation_constants *p_constants;
@@ -552,7 +554,7 @@ static void set_frame(SCInterpreter *scin, struct frame *fr)
 
 
 SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
-                             struct frame *top)
+                             ImageStore *is, struct frame *top)
 {
 	SCInterpreter *scin;
 	struct sc_state *st;
@@ -569,6 +571,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	scin->max_state = 8;
 
 	scin->pc = pc;
+	scin->is = is;
 	scin->s_constants = NULL;
 	scin->p_constants = NULL;
 	scin->cbl = NULL;
@@ -957,7 +960,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		                         &w, &h, &filename) == 0 )
 		{
 			add_image_para(sc_interp_get_frame(scin), bl,
-			               filename, w, h, 1);
+			               filename, scin->is, w, h, 1);
 			free(filename);
 		} else {
 			fprintf(stderr, "Invalid image options '%s'\n",

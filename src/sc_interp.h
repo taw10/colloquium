@@ -1,7 +1,7 @@
 /*
  * sc_interp.h
  *
- * Copyright © 2014-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -40,9 +40,10 @@ typedef cairo_surface_t *(*SCCallbackDrawFunc)(int w, int h, void *, void *);
 typedef int (*SCCallbackClickFunc)(double x, double y, void *, void *);
 
 #include "frame.h"
+#include "imagestore.h"
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
-                                    struct frame *top);
+                                    ImageStore *is, struct frame *top);
 extern void sc_interp_destroy(SCInterpreter *scin);
 
 extern void sc_interp_save(SCInterpreter *scin);

@@ -636,7 +636,9 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 		h = para->image_h;
 		cairo_user_to_device_distance(cr, &w, &h);
 		surf = lookup_image(is, para->filename, w);
-		render_from_surf(surf, cr, para->image_w, para->image_h, 0);
+		if ( surf != NULL ) {
+			render_from_surf(surf, cr, para->image_w, para->image_h, 0);
+		}
 		break;
 
 		case PARA_TYPE_CALLBACK :

@@ -591,6 +591,7 @@ static void render_from_surf(cairo_surface_t *surf, cairo_t *cr,
 	sw = cairo_image_surface_get_width(surf);
 	sh = cairo_image_surface_get_height(surf);
 
+	cairo_save(cr);
 	cairo_scale(cr, w/sw, h/sh);
 	cairo_new_path(cr);
 	cairo_rectangle(cr, x, y, sw, sh);
@@ -599,6 +600,7 @@ static void render_from_surf(cairo_surface_t *surf, cairo_t *cr,
 	cairo_pattern_set_extend(patt, CAIRO_EXTEND_PAD);
 	cairo_pattern_set_filter(patt, CAIRO_FILTER_BEST);
 	cairo_fill(cr);
+	cairo_restore(cr);
 
 	if ( border ) {
 		cairo_new_path(cr);
@@ -613,9 +615,12 @@ static void render_from_surf(cairo_surface_t *surf, cairo_t *cr,
 void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 {
 	cairo_surface_t *surf;
+	cairo_surface_type_t type;
 	double w, h;
 
 	cairo_translate(cr, para->space[0], para->space[2]);
+
+	type = cairo_surface_get_type(cairo_get_target(cr));
 
 	switch ( para->type ) {
 
@@ -635,7 +640,13 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 		break;
 
 		case PARA_TYPE_CALLBACK :
-		surf = para->draw_func(para->cb_w, para->cb_h,
+		w = para->cb_w;
+		h = para->cb_h;
+		cairo_user_to_device_distance(cr, &w, &h);
+		if ( type == CAIRO_SURFACE_TYPE_PDF ) {
+			w *= 6;  h *= 6;
+		}
+		surf = para->draw_func(w, h,
 		                       para->bvp, para->vp);
 		render_from_surf(surf, cr, para->cb_w, para->cb_h, 1);
 		cairo_surface_destroy(surf);  /* FIXME: Cache like crazy */

@@ -232,7 +232,6 @@ static void print_narrative(GtkPrintOperation *op, GtkPrintContext *ctx,
 	int i;
 	double h, page_height;
 	cairo_t *cr;
-	printf("printing page %i\n", page);
 
 	page_height = gtk_print_context_get_height(ctx);
 	cr = gtk_print_context_get_cairo_context(ctx);

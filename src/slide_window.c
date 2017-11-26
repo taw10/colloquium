@@ -1,7 +1,7 @@
 /*
  * slide_window.c
  *
- * Copyright © 2013-2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -33,6 +33,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <math.h>
 
+#include "colloquium.h"
 #include "presentation.h"
 #include "slide_window.h"
 #include "render.h"
@@ -214,13 +215,14 @@ GActionEntry sw_entries[] = {
 
 
 SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
-                               GApplication *app)
+                               GApplication *papp)
 {
 	GtkWidget *window;
 	GtkWidget *scroll;
 	SlideWindow *sw;
 	SCBlock *stylesheets[2];
 	SCBlock *ch;
+	Colloquium *app = COLLOQUIUM(papp);
 
 	sw = calloc(1, sizeof(SlideWindow));
 	if ( sw == NULL ) return NULL;
@@ -244,7 +246,8 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	if ( ch == NULL ) {
 		ch = sc_block_append_inside(scblocks, NULL, NULL, "");
 	}
-	sw->sceditor = sc_editor_new(ch, stylesheets, p->lang);
+	sw->sceditor = sc_editor_new(ch, stylesheets, p->lang,
+	                             colloquium_get_imagestore(app));
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, scblocks));
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);

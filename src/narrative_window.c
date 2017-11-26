@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "colloquium.h"
 #include "presentation.h"
 #include "narrative_window.h"
 #include "sc_editor.h"
@@ -692,7 +693,7 @@ void update_titlebar(NarrativeWindow *nw)
 }
 
 
-NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
+NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp)
 {
 	NarrativeWindow *nw;
 	GtkWidget *vbox;
@@ -702,6 +703,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	SCBlock **stylesheets;
 	SCCallbackList *cbl;
 	GtkWidget *image;
+	Colloquium *app = COLLOQUIUM(papp);
 
 	if ( p->narrative_window != NULL ) {
 		fprintf(stderr, "Narrative window is already open!\n");
@@ -711,7 +713,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	nw = calloc(1, sizeof(NarrativeWindow));
 	if ( nw == NULL ) return NULL;
 
-	nw->app = app;
+	nw->app = papp;
 	nw->p = p;
 
 	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
@@ -734,7 +736,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 		nw->p->scblocks = sc_parse("");
 	}
 
-	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang);
+	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang,
+	                             colloquium_get_imagestore(app));
 	free(stylesheets);
 	cbl = sc_callback_list_new();
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
@@ -823,8 +826,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *app)
 	                              GTK_WIDGET(nw->sceditor));
 
 	gtk_widget_show_all(nw->window);
-	nw->app = app;
-	g_application_hold(app);
+	g_application_hold(papp);
 
 	return nw;
 }

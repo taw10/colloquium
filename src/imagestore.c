@@ -52,6 +52,7 @@ struct _imagestore
 	struct image_record *images;
 	int max_images;
 	char *dname;
+	const char *storename;
 };
 
 
@@ -69,7 +70,7 @@ static int alloc_images(ImageStore *is, int new_max_images)
 }
 
 
-ImageStore *imagestore_new()
+ImageStore *imagestore_new(const char *storename)
 {
 	ImageStore *is;
 
@@ -78,6 +79,7 @@ ImageStore *imagestore_new()
 
 	is->images = NULL;
 	is->dname = NULL;
+	is->storename = storename;
 	is->n_images = 0;
 	is->max_images = 0;
 	if ( alloc_images(is, 32) ) {
@@ -127,6 +129,8 @@ static cairo_surface_t *pixbuf_to_surface(GdkPixbuf *t)
 	cairo_t *cr;
 	int w, h;
 
+	if ( t == NULL ) return NULL;
+
 	w = gdk_pixbuf_get_width(t);
 	h = gdk_pixbuf_get_height(t);
 
@@ -147,23 +151,49 @@ static cairo_surface_t *pixbuf_to_surface(GdkPixbuf *t)
 }
 
 
-static cairo_surface_t *try_all_locations(const char *filename, int w)
+static cairo_surface_t *try_all_locations(const char *filename,
+                                          const char *dname, const char *iname,
+                                          int w)
 {
 	GError *error = NULL;
 	GdkPixbuf *t;
 
 	t = gdk_pixbuf_new_from_file_at_size(filename, w, -1, &error);
-	if ( t == NULL ) return NULL;
 
-	/* FIXME: Restore searching in pre-defined folder,
-	 * hence (or otherwise) providing for relocation of presentation files */
+	/* Try the file prefixed with the directory the presentation is in */
+	if ( (t == NULL) && (dname != NULL) ) {
+		char *tmp;
+		error = NULL;
+		tmp = malloc(strlen(filename) + strlen(dname) + 2);
+		if ( tmp == NULL ) return NULL;
+		strcpy(tmp, dname);
+		strcat(tmp, "/");
+		strcat(tmp, filename);
+		t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
+		free(tmp);
+	}
+
+	/* Try prefixing with imagestore folder */
+	if ( (t == NULL) && (iname != NULL) ) {
+		char *tmp;
+		error = NULL;
+		tmp = malloc(strlen(filename) + strlen(iname) + 2);
+		if ( tmp == NULL ) return NULL;
+		strcpy(tmp, iname);
+		strcat(tmp, "/");
+		strcat(tmp, filename);
+		t = gdk_pixbuf_new_from_file_at_size(tmp, w, -1, &error);
+		free(tmp);
+	}
 
 	return pixbuf_to_surface(t);
 }
 
 
 static cairo_surface_t *add_image_size(struct image_record *im,
-                                       const char *filename, int w)
+                                       const char *filename,
+                                       const char *dname, const char *iname,
+                                       int w)
 {
 	cairo_surface_t *surf;
 
@@ -173,7 +203,7 @@ static cairo_surface_t *add_image_size(struct image_record *im,
 		return NULL;
 	}
 
-	surf = try_all_locations(filename, w);
+	surf = try_all_locations(filename, dname, iname, w);
 	if ( surf == NULL ) return NULL;
 
 	/* Add surface to list */
@@ -201,7 +231,8 @@ static cairo_surface_t *add_new_image(ImageStore *is, const char *filename, int 
 	is->images[idx].n_sizes = 0;
 	is->images[idx].filename = strdup(filename);
 
-	return add_image_size(&is->images[idx], filename, w);
+	return add_image_size(&is->images[idx], filename, is->dname,
+	                      is->storename, w);
 }
 
 
@@ -241,6 +272,7 @@ cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w)
 	}
 
 	/* We don't have this size yet */
-	surf = add_image_size(&is->images[i], filename, w);
+	surf = add_image_size(&is->images[i], filename, is->dname,
+	                      is->storename, w);
 	return surf;
 }

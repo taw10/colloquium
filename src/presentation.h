@@ -68,7 +68,7 @@ struct presentation
 };
 
 
-extern struct presentation *new_presentation(void);
+extern struct presentation *new_presentation(const char *imagestore);
 extern char *load_everything(const char *filename);
 extern SCBlock *find_stylesheet(SCBlock *bl);
 extern int replace_stylesheet(struct presentation *p, SCBlock *ss);

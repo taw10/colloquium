@@ -1963,7 +1963,7 @@ int sc_editor_get_num_paras(SCEditor *e)
 
 
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
-                        PangoLanguage *lang)
+                        PangoLanguage *lang, const char *storename)
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
@@ -1977,7 +1977,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->log_h = 100;
 	sceditor->border_offs_x = 0;
 	sceditor->border_offs_y = 0;
-	sceditor->is = imagestore_new();
+	sceditor->is = imagestore_new(storename);
 	sceditor->slidenum = 0;
 	sceditor->min_border = 0.0;
 	sceditor->top_editable = 0;

@@ -28,6 +28,7 @@
 #include <gtk/gtk.h>
 #include <getopt.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -42,6 +43,7 @@ struct _colloquium
 	GtkApplication parent_instance;
 	char *mydir;
 	int first_run;
+	char *imagestore;
 };
 
 
@@ -56,7 +58,7 @@ static void colloquium_activate(GApplication *papp)
 	Colloquium *app = COLLOQUIUM(papp);
 	if ( !app->first_run ) {
 		struct presentation *p;
-		p = new_presentation();
+		p = new_presentation(app->imagestore);
 		narrative_window_new(p, papp);
 	}
 }
@@ -116,17 +118,18 @@ GActionEntry app_entries[] = {
 };
 
 
-static void colloquium_open(GApplication  *app, GFile **files, gint n_files,
+static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
                             const gchar *hint)
 {
 	int i;
+	Colloquium *app = COLLOQUIUM(papp);
 
 	for ( i = 0; i<n_files; i++ ) {
 		struct presentation *p;
 		char *uri = g_file_get_path(files[i]);
-		p = new_presentation();
+		p = new_presentation(app->imagestore);
 		if ( load_presentation(p, uri) == 0 ) {
-			narrative_window_new(p, app);
+			narrative_window_new(p, papp);
 		} else {
 			fprintf(stderr, "Failed to load '%s'\n", uri);
 		}
@@ -141,11 +144,75 @@ static void colloquium_finalize(GObject *object)
 }
 
 
+static void create_config(const char *filename)
+{
+
+	FILE *fh;
+	fh = fopen(filename, "w");
+	if ( fh == NULL ) {
+		fprintf(stderr, "Failed to create config\n");
+		return;
+	}
+
+	fprintf(fh, "imagestore: %s\n",
+	        g_get_user_special_dir(G_USER_DIRECTORY_PICTURES));
+
+	fclose(fh);
+}
+
+
+static void chomp(char *s)
+{
+	size_t i;
+
+	if ( !s ) return;
+
+	for ( i=0; i<strlen(s); i++ ) {
+		if ( (s[i] == '\n') || (s[i] == '\r') ) {
+			s[i] = '\0';
+			return;
+		}
+	}
+}
+
+
+static void read_config(const char *filename, Colloquium *app)
+{
+	FILE *fh;
+	char line[1024];
+
+	fh = fopen(filename, "r");
+	if ( fh == NULL ) {
+		fprintf(stderr, "Failed to open %s\n", filename);
+		return;
+	}
+
+	if ( fgets(line, 1024, fh) == NULL ) {
+		fprintf(stderr, "Failed to read from config\n");
+		return;
+	}
+	chomp(line);
+
+	if ( strncmp(line, "imagestore: ", 11) == 0 ) {
+		app->imagestore = strdup(line+12);
+	}
+
+	fclose(fh);
+}
+
+
+const char *colloquium_get_imagestore(Colloquium *app)
+{
+	return app->imagestore;
+}
+
+
 static void colloquium_startup(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);
 	GtkBuilder *builder;
 	const char *configdir;
+	char *tmp;
 
 	G_APPLICATION_CLASS(colloquium_parent_class)->startup(papp);
 
@@ -323,6 +390,23 @@ static void colloquium_startup(GApplication *papp)
 		if ( g_mkdir(app->mydir, S_IRUSR | S_IWUSR | S_IXUSR) ) {
 			fprintf(stderr, "Failed to create folder\n");
 		}
+	}
+
+	/* Read config file */
+	tmp = malloc(strlen(app->mydir)+32);
+	if ( tmp != NULL ) {
+
+		tmp[0] = '\0';
+		strcat(tmp, app->mydir);
+		strcat(tmp, "/config");
+
+		/* Create default config file if it doesn't exist */
+		if ( !g_file_test(tmp, G_FILE_TEST_EXISTS) ) {
+			create_config(tmp);
+		}
+
+		read_config(tmp, app);
+		free(tmp);
 	}
 }
 

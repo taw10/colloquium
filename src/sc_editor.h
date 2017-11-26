@@ -172,7 +172,7 @@ extern void sc_editor_set_stylesheets(SCEditor *e, SCBlock **stylesheets);
 extern SCBlock *sc_editor_get_scblock(SCEditor *e);
 extern GtkWidget *sc_editor_get_widget(SCEditor *e);
 extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
-                               PangoLanguage *lang);
+                               PangoLanguage *lang, const char *storename);
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
 extern void sc_editor_set_flow(SCEditor *e, int flow);

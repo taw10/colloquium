@@ -1,7 +1,7 @@
 /*
  * colloquium.h
  *
- * Copyright © 2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2017 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -35,5 +35,7 @@ typedef struct _colloquium Colloquium;
 #define COLLOQUIUM(obj)           (G_TYPE_CHECK_INSTANCE_CAST((obj), \
                                    GTK_TYPE_APPLICATION, Colloquium))
 
+
+const char *colloquium_get_imagestore(Colloquium *app);
 
 #endif	/* COLLOQUIUM_H */

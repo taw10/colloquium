@@ -32,7 +32,7 @@
 
 typedef struct _imagestore ImageStore;
 
-extern ImageStore *imagestore_new(void);
+extern ImageStore *imagestore_new(const char *storename);
 
 extern void imagestore_destroy(ImageStore *is);
 

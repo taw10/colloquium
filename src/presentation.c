@@ -98,7 +98,7 @@ char *get_titlebar_string(struct presentation *p)
 }
 
 
-struct presentation *new_presentation()
+struct presentation *new_presentation(const char *imagestore)
 {
 	struct presentation *new;
 
@@ -116,7 +116,7 @@ struct presentation *new_presentation()
 	new->completely_empty = 1;
 	new->saved = 1;
 	new->stylesheet = NULL;
-	new->is = imagestore_new();
+	new->is = imagestore_new(imagestore);
 
 	/* FIXME: Hardcoded */
 	new->lang = pango_language_from_string("en_GB");

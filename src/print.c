@@ -51,8 +51,10 @@ struct print_stuff
 	/* When printing narrative */
 	int nar_line;
 	struct frame *top;
-	ImageStore *is;
 	int start_paras[256];
+
+	ImageStore *is;
+	const char *storename;
 };
 
 
@@ -188,7 +190,7 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
 	                              render_thumbnail, NULL, ps->p);
 
-	ps->is = imagestore_new();
+	ps->is = imagestore_new(ps->storename);
 
 	if ( ps->p->stylesheet != NULL ) {
 		stylesheets[0] = ps->p->stylesheet;

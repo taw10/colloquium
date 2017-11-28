@@ -43,7 +43,9 @@ struct image_record
 	char *filename;
 	cairo_surface_t *surf[MAX_SIZES];
 	int w[MAX_SIZES];
+	int last_used[MAX_SIZES];
 	int n_sizes;
+	int h_last_used;
 };
 
 
@@ -204,6 +206,28 @@ int imagestore_get_size(ImageStore *is, const char *filename,
 }
 
 
+static int find_earliest(struct image_record *im)
+{
+	int i, earliest, l;
+
+	earliest = im->h_last_used;
+	l = im->n_sizes;
+
+	for ( i=0; i<im->n_sizes; i++ ) {
+		if ( im->last_used[i] < earliest ) {
+			earliest = im->last_used[i];
+			l = i;
+		}
+	}
+
+	assert(l != im->n_sizes);
+
+	cairo_surface_destroy(im->surf[l]);
+
+	return l;
+}
+
+
 static cairo_surface_t *add_image_size(struct image_record *im,
                                        const char *filename,
                                        const char *dname, const char *iname,
@@ -213,12 +237,7 @@ static cairo_surface_t *add_image_size(struct image_record *im,
 	cairo_surface_t *surf;
 	GdkPixbuf *t;
 	GError *error = NULL;
-
-	if ( im->n_sizes == MAX_SIZES ) {
-		/* FIXME: Nice cache replacement algorithm */
-		fprintf(stderr, "Too many image sizes!\n");
-		return NULL;
-	}
+	int pos;
 
 	fullfn = try_all_locations(filename, dname, iname);
 	if ( fullfn == NULL ) return NULL;
@@ -230,9 +249,15 @@ static cairo_surface_t *add_image_size(struct image_record *im,
 	g_object_unref(t);
 
 	/* Add surface to list */
-	im->w[im->n_sizes] = w;
-	im->surf[im->n_sizes] = surf;
-	im->n_sizes++;
+	if ( im->n_sizes == MAX_SIZES ) {
+		pos = find_earliest(im);
+	} else {
+		pos = im->n_sizes++;
+	}
+
+	im->w[pos] = w;
+	im->surf[pos] = surf;
+	im->last_used[pos] = im->h_last_used++;
 
 	return surf;
 }
@@ -253,6 +278,7 @@ static cairo_surface_t *add_new_image(ImageStore *is, const char *filename, int 
 
 	is->images[idx].n_sizes = 0;
 	is->images[idx].filename = strdup(filename);
+	is->images[idx].h_last_used = 0;
 
 	return add_image_size(&is->images[idx], filename, is->dname,
 	                      is->storename, w);
@@ -291,7 +317,10 @@ cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w)
 	}
 
 	for ( j=0; j<is->images[i].n_sizes; j++ ) {
-		if ( is->images[i].w[j] == w ) return is->images[i].surf[j];
+		if ( is->images[i].w[j] == w ) {
+			is->images[i].last_used[j] = is->images[i].h_last_used++;
+			return is->images[i].surf[j];
+		}
 	}
 
 	/* We don't have this size yet */

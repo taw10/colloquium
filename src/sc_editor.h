@@ -110,6 +110,7 @@ struct _sceditor
 	int                  visible_height;
 	int                  visible_width;
 	int                  flow;
+	int                  scale;
 
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;
@@ -176,6 +177,7 @@ extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
 extern void sc_editor_set_flow(SCEditor *e, int flow);
+extern void sc_editor_set_scale(SCEditor *e, int scale);
 extern void sc_editor_redraw(SCEditor *e);
 extern void sc_editor_set_background(SCEditor *e, double r, double g, double b);
 extern void sc_editor_set_slidenum(SCEditor *e, int slidenum);

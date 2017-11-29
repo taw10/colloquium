@@ -172,6 +172,11 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	cr = gdk_cairo_create(gtk_widget_get_window(widget));
 	pc = pango_cairo_create_context(cr);
 
+	if ( e->scale ) {
+		e->w = event->width;
+		e->h = event->height;
+	}
+
 	e->visible_height = event->height;
 	e->visible_width = event->width;
 
@@ -615,6 +620,10 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
 	cairo_rectangle(cr, 0.0, 0.0, width, height);
 	cairo_fill(cr);
+
+	if ( e->scale ) {
+		cairo_scale(cr, (double)e->w/e->log_w, (double)e->h/e->log_h);
+	}
 
 	/* Contents */
 	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);
@@ -1094,6 +1103,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 	x = event->x - e->border_offs_x;
 	y = event->y - e->border_offs_y + e->scroll_pos;
+	x /= e->w/e->log_w;
+	y /= e->h/e->log_h;
 	shift = event->state & GDK_SHIFT_MASK;
 
 	if ( within_frame(e->selection, x, y) ) {
@@ -1136,8 +1147,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			find_cursor(clicked, x-fr->x, y-fr->y,
 			            &e->cursor_para, &e->cursor_pos, &e->cursor_trail);
 
-			e->start_corner_x = event->x - e->border_offs_x;
-			e->start_corner_y = event->y - e->border_offs_y;
+			e->start_corner_x = x;
+			e->start_corner_y = y;
 
 			if ( event->type == GDK_2BUTTON_PRESS ) {
 				check_callback_click(e->cursor_frame, e->cursor_para);
@@ -1164,8 +1175,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		unset_selection(e);
 
 		if ( shift ) {
-			e->start_corner_x = event->x - e->border_offs_x;
-			e->start_corner_y = event->y - e->border_offs_y;
+			e->start_corner_x = x;
+			e->start_corner_y = y;
 			e->drag_status = DRAG_STATUS_COULD_DRAG;
 			e->drag_reason = DRAG_REASON_CREATE;
 		} else {
@@ -1210,6 +1221,8 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 	x = event->x - e->border_offs_x;
 	y = event->y - e->border_offs_y + e->scroll_pos;
+	x /= e->w/e->log_w;
+	y /= e->h/e->log_h;
 
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
 
@@ -1343,6 +1356,8 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 	x = event->x - e->border_offs_x;
 	y = event->y - e->border_offs_y;
+	x /= e->w/e->log_w;
+	y /= e->h/e->log_h;
 
 	/* Not dragging?  Then I don't care. */
 	if ( e->drag_status != DRAG_STATUS_DRAGGING ) return FALSE;
@@ -1962,6 +1977,12 @@ int sc_editor_get_num_paras(SCEditor *e)
 }
 
 
+void sc_editor_set_scale(SCEditor *e, int scale)
+{
+	e->scale = scale;
+}
+
+
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
                         PangoLanguage *lang, const char *storename)
 {
@@ -1984,6 +2005,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->cbl = NULL;
 	sceditor->scroll_pos = 0;
 	sceditor->flow = 0;
+	sceditor->scale = 0;
 	sceditor->lang = lang;
 
 	sceditor->para_highlight = 0;

@@ -249,35 +249,38 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	sw->sceditor = sc_editor_new(ch, stylesheets, p->lang,
 	                             colloquium_get_imagestore(app));
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, scblocks));
+	sc_editor_set_scale(sw->sceditor, 1);
 
-	scroll = gtk_scrolled_window_new(NULL, NULL);
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
-	                               GTK_POLICY_AUTOMATIC,
-	                               GTK_POLICY_AUTOMATIC);
-	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(sw->sceditor));
-	gtk_window_set_focus(GTK_WINDOW(window), GTK_WIDGET(sw->sceditor));
+//	scroll = gtk_scrolled_window_new(NULL, NULL);
+//	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
+//	                               GTK_POLICY_AUTOMATIC,
+//	                               GTK_POLICY_AUTOMATIC);
+//	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(sw->sceditor));
+//	gtk_window_set_focus(GTK_WINDOW(window), GTK_WIDGET(sw->sceditor));
 	g_signal_connect(G_OBJECT(sw->sceditor), "key-press-event",
 			 G_CALLBACK(key_press_sig), sw);
 
 	/* Size of SCEditor surface in pixels */
 	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
-	sc_editor_set_size(sw->sceditor, 1024, 768);
+//	sc_editor_set_size(sw->sceditor, 1024, 768);
 	sc_editor_set_logical_size(sw->sceditor, 1024.0, 768.0);
 
-	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(scroll));
+	gtk_window_set_default_size(GTK_WINDOW(window), 1024.0, 768.0);
+
+	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(sw->sceditor));
 
 	/* Default size */
-	gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll),
-	                                          1024);
-	gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll),
-	                                           768);
+//	gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll),
+//	                                          1024);
+//	gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll),
+//	                                           768);
 	gtk_window_set_resizable(GTK_WINDOW(sw->window), TRUE);
 
 	gtk_widget_show_all(window);
-	gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll),
-	                                          100);
-	gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll),
-	                                           100);
+//	gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scroll),
+//	                                          100);
+//	gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll),
+//	                                           100);
 
 	return sw;
 }

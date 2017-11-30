@@ -638,6 +638,8 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 		surf = lookup_image(is, para->filename, w);
 		if ( surf != NULL ) {
 			render_from_surf(surf, cr, para->image_w, para->image_h, 0);
+		} else {
+			printf("surf = NULL!\n");
 		}
 		break;
 
@@ -1260,18 +1262,27 @@ void show_para(Paragraph *p)
 {
 	int i;
 	printf("Paragraph %p\n", p);
-	printf("%i runs:\n", p->n_runs);
-	for ( i=0; i<p->n_runs; i++ ) {
-		char *tmp = run_text(&p->runs[i]);
-		printf("  Run %2i: para offs %lli, SCBlock %p offs %lli, len "
-		       "%lli %s '%s'\n",
-		       i, (long long int)p->runs[i].para_offs_bytes,
-		       p->runs[i].scblock,
-		       (long long int)p->runs[i].scblock_offs_bytes,
-		       (long long int)p->runs[i].len_bytes,
-		       pango_font_description_to_string(p->runs[i].fontdesc),
-		       tmp);
-		free(tmp);
+
+	if ( p->type == PARA_TYPE_TEXT ) {
+
+		printf("%i runs:\n", p->n_runs);
+		for ( i=0; i<p->n_runs; i++ ) {
+			char *tmp = run_text(&p->runs[i]);
+			printf("  Run %2i: para offs %lli, SCBlock %p offs %lli, len "
+			       "%lli %s '%s'\n",
+			       i, (long long int)p->runs[i].para_offs_bytes,
+			       p->runs[i].scblock,
+			       (long long int)p->runs[i].scblock_offs_bytes,
+			       (long long int)p->runs[i].len_bytes,
+			       pango_font_description_to_string(p->runs[i].fontdesc),
+			       tmp);
+			free(tmp);
+		}
+
+	} else if ( p->type == PARA_TYPE_IMAGE ) {
+		printf("  Image: %s\n", p->filename);
+	} else {
+		printf("  Other paragraph type\n");
 	}
 }
 

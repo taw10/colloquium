@@ -173,8 +173,23 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	pc = pango_cairo_create_context(cr);
 
 	if ( e->scale ) {
+
+		double sx, sy;
+		double aw, ah;
+
 		e->w = event->width;
 		e->h = event->height;
+		sx = (double)e->w / e->log_w;
+		sy = (double)e->h / e->log_h;
+		e->view_scale = (sx < sy) ? sx : sy;
+
+		/* Actual size (in device units) */
+		aw = e->view_scale * e->log_w;
+		ah = e->view_scale * e->log_h;
+
+		e->border_offs_x = (event->width - aw)/2.0;
+		e->border_offs_y = (event->height - ah)/2.0;
+
 	}
 
 	e->visible_height = event->height;
@@ -394,7 +409,7 @@ static void full_rerender(SCEditor *e)
 
 	e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
 	                          e->is, e->slidenum,
-	                          cr, e->w, 0.0, e->lang);
+	                          cr, e->log_w, 0.0, e->lang);
 
 	e->top->x = 0.0;
 	e->top->y = 0.0;
@@ -592,44 +607,27 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 }
 
 
-static void UNUSED tile_pixbuf(cairo_t *cr, GdkPixbuf *pb, int width, int height)
-{
-	int nx, ny, ix, iy, bgw, bgh;
-
-	bgw = gdk_pixbuf_get_width(pb);
-	bgh = gdk_pixbuf_get_height(pb);
-	nx = width/bgw + 1;
-	ny = height/bgh+ 1;
-	for ( ix=0; ix<nx; ix++ ) {
-	for ( iy=0; iy<ny; iy++ ) {
-		gdk_cairo_set_source_pixbuf(cr, pb, ix*bgw, iy*bgh);
-		cairo_rectangle(cr, ix*bgw, iy*bgh, width, height);
-		cairo_fill(cr);
-	}
-	}
-}
-
-
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 {
-	int width, height;
+	/* Ultimate background */
+	gdk_cairo_set_source_pixbuf(cr, e->bg_pixbuf, 0.0, 0.0);
+	cairo_pattern_t *patt = cairo_get_source(cr);
+	cairo_pattern_set_extend(patt, CAIRO_EXTEND_REPEAT);
+	cairo_paint(cr);
 
-	/* Overall background */
-	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
-	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
+	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
+	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);
+	cairo_scale(cr, e->view_scale, e->view_scale);
+
+	/* Rendering background */
 	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
-	cairo_rectangle(cr, 0.0, 0.0, width, height);
+	cairo_rectangle(cr, 0.0, 0.0, e->log_w, e->log_h);
 	cairo_fill(cr);
 
-	if ( e->scale ) {
-		cairo_scale(cr, (double)e->w/e->log_w, (double)e->h/e->log_h);
-	}
-
 	/* Contents */
-	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);
-	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
 	recursive_draw(e->top, cr, e->is,
-	               e->scroll_pos, e->scroll_pos + e->visible_height);
+	               e->scroll_pos/e->view_scale,
+	               (e->scroll_pos + e->visible_height)/e->view_scale);
 
 	/* Editing overlay */
 	draw_overlay(cr, e);
@@ -1103,8 +1101,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 	x = event->x - e->border_offs_x;
 	y = event->y - e->border_offs_y + e->scroll_pos;
-	x /= e->w/e->log_w;
-	y /= e->h/e->log_h;
+	x /= e->view_scale;
+	y /= e->view_scale;
 	shift = event->state & GDK_SHIFT_MASK;
 
 	if ( within_frame(e->selection, x, y) ) {
@@ -1221,8 +1219,8 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 	x = event->x - e->border_offs_x;
 	y = event->y - e->border_offs_y + e->scroll_pos;
-	x /= e->w/e->log_w;
-	y /= e->h/e->log_h;
+	x /= e->view_scale;
+	y /= e->view_scale;
 
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
 
@@ -1356,8 +1354,8 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 	x = event->x - e->border_offs_x;
 	y = event->y - e->border_offs_y;
-	x /= e->w/e->log_w;
-	y /= e->h/e->log_h;
+	x /= e->view_scale;
+	y /= e->view_scale;
 
 	/* Not dragging?  Then I don't care. */
 	if ( e->drag_status != DRAG_STATUS_DRAGGING ) return FALSE;
@@ -1980,6 +1978,9 @@ int sc_editor_get_num_paras(SCEditor *e)
 void sc_editor_set_scale(SCEditor *e, int scale)
 {
 	e->scale = scale;
+	if ( !scale ) {
+		e->view_scale = 1.0;
+	}
 }
 
 
@@ -1988,6 +1989,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 {
 	SCEditor *sceditor;
 	GtkTargetEntry targets[1];
+	GError *err;
 
 	sceditor = g_object_new(SC_TYPE_EDITOR, NULL);
 
@@ -2006,6 +2008,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->scroll_pos = 0;
 	sceditor->flow = 0;
 	sceditor->scale = 0;
+	sceditor->view_scale = 1.0;
 	sceditor->lang = lang;
 
 	sceditor->para_highlight = 0;
@@ -2018,6 +2021,13 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 
 	sceditor->bg_pixbuf = NULL;
+
+	err = NULL;
+	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/colloquium/sky.png", &err);
+	if ( sceditor->bg_pixbuf == NULL ) {
+		fprintf(stderr, "Failed to load background: %s\n",
+		        err->message);
+	}
 
 	gtk_widget_set_size_request(GTK_WIDGET(sceditor),
 	                            sceditor->w, sceditor->h);

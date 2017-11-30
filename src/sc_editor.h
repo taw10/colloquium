@@ -110,7 +110,8 @@ struct _sceditor
 	int                  visible_height;
 	int                  visible_width;
 	int                  flow;
-	int                  scale;
+	int                  scale;       /* Whether the SCEditor should scale to fit */
+	double               view_scale;  /* The scale factor, if scale=1 */
 
 	/* Pointers to the frame currently being edited */
 	struct frame        *selection;

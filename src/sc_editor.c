@@ -1155,7 +1155,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			if ( fr->resizable && shift ) {
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_MOVE;
-			} else {
+			} else if ( !e->para_highlight ) {
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_TEXTSEL;
 				unset_selection(e);

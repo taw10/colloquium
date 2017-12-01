@@ -116,6 +116,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	PangoFontDescription *desc;
 	char tmp[1024];
 	int plw, plh;
+	double xp, yp;
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
 	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
@@ -138,24 +139,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
-	snprintf(tmp, 1024, "Colloquium "PACKAGE_VERSION" test card\n"
-	                    "Screen resolution %.0f × %.0f\n"
-	                    "Slide resolution %i × %i", width, height,
-	                    tc->slide_width, h);
-
-	pl = pango_cairo_create_layout(cr);
-	desc = pango_font_description_from_string("Sans 24");
-	pango_layout_set_font_description(pl, desc);
-	pango_layout_set_text(pl, tmp, -1);
-
-	pango_layout_get_size(pl, &plw, &plh);
-	plw = pango_units_to_double(plw);
-	plh = pango_units_to_double(plh);
-	cairo_move_to(cr, (width-plw)/2, 200.0);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	pango_cairo_show_layout(cr, pl);
-
 	/* Arrows showing edges of screen */
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_move_to(cr, 0.0, height/2);
 	arrow_left(cr, 100.0);
 	cairo_fill(cr);
@@ -185,21 +170,45 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	arrow_up(cr, 80.0);
 	cairo_fill(cr);
 
+	/* Stuff in the middle */
+	yp = (tc->slide_height-400)/2.0;
+	cairo_save(cr);
+	cairo_translate(cr, 0.0, yp);
+
+	snprintf(tmp, 1024, "Colloquium "PACKAGE_VERSION" test card\n"
+	                    "Screen resolution %.0f × %.0f\n"
+	                    "Slide resolution %i × %i", width, height,
+	                    tc->slide_width, h);
+
+	pl = pango_cairo_create_layout(cr);
+	desc = pango_font_description_from_string("Sans 24");
+	pango_layout_set_font_description(pl, desc);
+	pango_layout_set_text(pl, tmp, -1);
+
+	pango_layout_get_size(pl, &plw, &plh);
+	plw = pango_units_to_double(plw);
+	plh = pango_units_to_double(plh);
+	cairo_move_to(cr, (tc->slide_width-plw)/2, 0.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	pango_cairo_show_layout(cr, pl);
+
 	/* Colour boxes */
-	colour_box(cr, 300, 400, 1.0, 0.0, 0.0, "Red");
-	colour_box(cr, 380, 400, 0.0, 1.0, 0.0, "Green");
-	colour_box(cr, 460, 400, 0.0, 0.0, 1.0, "Blue");
-	colour_box(cr, 540, 400, 1.0, 1.0, 0.0, "Yellow");
-	colour_box(cr, 620, 400, 1.0, 0.0, 1.0, "Pink");
-	colour_box(cr, 700, 400, 0.0, 1.0, 1.0, "Cyan");
+	xp = (tc->slide_width-450)/2.0;
+	colour_box(cr, xp+0,   200, 1.0, 0.0, 0.0, "Red");
+	colour_box(cr, xp+80,  200, 0.0, 1.0, 0.0, "Green");
+	colour_box(cr, xp+160, 200, 0.0, 0.0, 1.0, "Blue");
+	colour_box(cr, xp+240, 200, 1.0, 1.0, 0.0, "Yellow");
+	colour_box(cr, xp+320, 200, 1.0, 0.0, 1.0, "Pink");
+	colour_box(cr, xp+400, 200, 0.0, 1.0, 1.0, "Cyan");
 
 	/* Shades of grey */
 	double i;
 	for ( i=0; i<=1.0; i+=0.2 ) {
 		char label[32];
 		snprintf(label, 31, "%.0f%%", i*100.0);
-		colour_box(cr, 300+(i*5*80), 520, i, i, i, label);
+		colour_box(cr, xp+(i*5*80), 300, i, i, i, label);
 	}
+	cairo_restore(cr);
 
 	return FALSE;
 }

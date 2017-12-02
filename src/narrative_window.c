@@ -558,6 +558,12 @@ static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
 	nw->show = NULL;
 	sc_editor_set_para_highlight(nw->sceditor, 0);
+
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
+
 	return FALSE;
 }
 

@@ -562,6 +562,28 @@ static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 }
 
 
+static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
+                                     gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	void *bvp;
+
+	if ( num_slides(nw->p) == 0 ) return;
+
+	bvp = sc_editor_get_cursor_bvp(nw->sceditor);
+	if ( bvp == NULL ) return;
+
+	nw->show = sc_slideshow_new(nw->p);
+	if ( nw->show == NULL ) return;
+
+	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
+		 G_CALLBACK(key_press_sig), nw);
+	g_signal_connect(G_OBJECT(nw->show), "destroy",
+		 G_CALLBACK(ss_destroy_sig), nw);
+	sc_slideshow_set_slide(nw->show, bvp);
+	sc_editor_set_para_highlight(nw->sceditor, 1);
+}
+
 static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
                                 gpointer vp)
 {
@@ -570,7 +592,6 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 	if ( num_slides(nw->p) == 0 ) return;
 
 	nw->show = sc_slideshow_new(nw->p);
-
 	if ( nw->show == NULL ) return;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
@@ -661,6 +682,7 @@ GActionEntry nw_entries[] = {
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
+	{ "startslideshowhere", start_slideshow_here_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },
 	{ "testcard", testcard_sig, NULL, NULL, NULL },
 	{ "first", first_para_sig, NULL, NULL, NULL },

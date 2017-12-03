@@ -429,7 +429,7 @@ static Paragraph *create_paragraph(struct frame *fr)
 
 
 /* Create a new paragraph in 'fr' just after paragraph 'pos' */
-static Paragraph *insert_paragraph(struct frame *fr, int pos)
+Paragraph *insert_paragraph(struct frame *fr, int pos)
 {
 	Paragraph **paras_new;
 	Paragraph *pnew;
@@ -446,8 +446,10 @@ static Paragraph *insert_paragraph(struct frame *fr, int pos)
 	pnew = calloc(1, sizeof(struct _paragraph));
 	if ( pnew == NULL ) return NULL;
 
+	pnew->open = 1;
+
 	fr->paras = paras_new;
-	fr->n_paras ++;
+	fr->n_paras++;
 
 	for ( i=fr->n_paras-1; i>pos; i-- ) {
 		fr->paras[i] = fr->paras[i-1];

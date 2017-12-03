@@ -139,6 +139,8 @@ extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
                     size_t offs_bytes, size_t len_bytes,
                     PangoFontDescription *fdesc, double col[4]);
 
+extern Paragraph *insert_paragraph(struct frame *fr, int pos);
+
 extern void add_callback_para(struct frame *fr, SCBlock *scblock, SCBlock *mr,
                               double w, double h,
                               SCCallbackDrawFunc draw_func,

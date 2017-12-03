@@ -783,6 +783,7 @@ static void insert_text(char *t, SCEditor *e)
 	} else {
 
 		SCBlock *ad;
+		Paragraph *pnew;
 
 		/* FIXME: We should not assume that box void pointers correspond
 		 * to "real" scblocks for callback paragraphs.  Not in this
@@ -794,10 +795,25 @@ static void insert_text(char *t, SCEditor *e)
 		}
 
 		/* No. Create a new text paragraph straight afterwards */
-		sc_block_insert_after(ad, NULL, NULL, strdup(t));
-		full_rerender(e);
+		ad = sc_block_insert_after(ad, NULL, NULL, strdup(t));
+		if ( ad == NULL ) {
+			fprintf(stderr, "Failed to add SCBlock\n");
+			return;
+		}
 
-		/* FIXME: Find the cursor again */
+		pnew = insert_paragraph(e->cursor_frame, e->cursor_para);
+		if ( pnew == NULL ) {
+			fprintf(stderr, "Failed to insert paragraph\n");
+			return;
+		}
+		add_run(pnew, ad, NULL, 0, strlen(t),
+		        e->cursor_frame->fontdesc, e->cursor_frame->col);
+
+		wrap_frame(e->top, e->pc);
+
+		e->cursor_para += 1;
+		e->cursor_pos = 0;
+		e->cursor_trail = 1;
 
 	}
 

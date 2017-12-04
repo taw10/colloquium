@@ -167,10 +167,8 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            SCEditor *e)
 {
 	PangoContext *pc;
-	cairo_t *cr;
 
-	cr = gdk_cairo_create(gtk_widget_get_window(widget));
-	pc = pango_cairo_create_context(cr);
+	pc = gdk_pango_context_get();
 
 	if ( e->scale ) {
 
@@ -206,7 +204,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 			h = e->log_h;
 		}
 		e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
-		                          e->is, e->slidenum, cr,
+		                          e->is, e->slidenum, pc,
 		                          w, h, e->lang);
 		recursive_wrap(e->top, pc);
 	}
@@ -224,7 +222,6 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	update_size(e);
 
 	g_object_unref(pc);
-	cairo_destroy(cr);
 
 	return FALSE;
 }
@@ -398,18 +395,16 @@ void sc_editor_remove_cursor(SCEditor *e)
  * invalid.  The cursor position will be unset. */
 static void full_rerender(SCEditor *e)
 {
-	cairo_t *cr;
 	PangoContext *pc;
 
 	frame_free(e->top);
 	sc_editor_remove_cursor(e);
 
-	cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(e)));
-	pc = pango_cairo_create_context(cr);
+	pc = gdk_pango_context_get();
 
 	e->top = interp_and_shape(e->scblocks, e->stylesheets, e->cbl,
 	                          e->is, e->slidenum,
-	                          cr, e->log_w, 0.0, e->lang);
+	                          pc, e->log_w, 0.0, e->lang);
 
 	e->top->x = 0.0;
 	e->top->y = 0.0;
@@ -422,7 +417,6 @@ static void full_rerender(SCEditor *e)
 	sc_editor_redraw(e);
 
 	g_object_unref(pc);
-	cairo_destroy(cr);
 }
 
 

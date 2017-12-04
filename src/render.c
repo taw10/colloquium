@@ -173,15 +173,12 @@ int recursive_wrap(struct frame *fr, PangoContext *pc)
 struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                SCCallbackList *cbl, ImageStore *is,
                                int slide_number,
-                               cairo_t *cr, double w, double h,
+                               PangoContext *pc, double w, double h,
                                PangoLanguage *lang)
 {
-	PangoContext *pc;
 	SCInterpreter *scin;
 	char snum[64];
 	struct frame *top;
-
-	pc = pango_cairo_create_context(cr);
 
 	top = frame_new();
 	top->resizable = 0;
@@ -220,7 +217,6 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	sc_interp_add_blocks(scin, scblocks);
 
 	sc_interp_destroy(scin);
-	g_object_unref(pc);
 
 	return top;
 }
@@ -240,7 +236,7 @@ static struct frame *render_sc_with_context(SCBlock *scblocks,
 	cairo_fill(cr);
 
 	top = interp_and_shape(scblocks, stylesheets, cbl, is,
-	                       slide_number, cr, log_w, log_h, lang);
+	                       slide_number, pc, log_w, log_h, lang);
 
 	recursive_wrap(top, pc);
 

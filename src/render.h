@@ -47,7 +47,7 @@ extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 extern struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
                                       SCCallbackList *cbl,
                                       ImageStore *is,
-                                      int slide_number, cairo_t *cr,
+                                      int slide_number, PangoContext *pc,
                                       double w, double h, PangoLanguage *lang);
 
 extern void wrap_frame(struct frame *fr, PangoContext *pc);

@@ -121,7 +121,7 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 
 	top = interp_and_shape(sc_block_child(ps->slide), stylesheets, NULL,
 	                       ps->p->is,
-	                       page+1, cr,
+	                       page+1, pc,
 	                       ps->p->slide_width, ps->p->slide_height,
 	                       ps->p->lang);
 
@@ -201,13 +201,13 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 		stylesheets[1] = NULL;
 	}
 
+	pc = gtk_print_context_create_pango_context(ctx);
+
 	ps->top = interp_and_shape(ps->p->scblocks, stylesheets, cbl,
-	                           ps->is, 0,
-	                           gtk_print_context_get_cairo_context(ctx),
+	                           ps->is, 0, pc,
 	                           gtk_print_context_get_width(ctx),
 	                           gtk_print_context_get_height(ctx),
 	                           ps->p->lang);
-	pc = gtk_print_context_create_pango_context(ctx);
 	recursive_wrap(ps->top, pc);
 
 	/* Count pages */
@@ -225,6 +225,7 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 		h += paragraph_height(ps->top->paras[i]);
 	}
 	gtk_print_operation_set_n_pages(op, n_pages);
+	g_object_unref(pc);
 }
 
 

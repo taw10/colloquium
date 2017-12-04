@@ -54,13 +54,13 @@ struct _scslideshow
 	GtkWidget           *drawingarea;
 	GdkCursor           *blank_cursor;
 	int                  blank;
-	char                 geom[256];
 	int                  slide_width;
 	int                  slide_height;
 	struct inhibit_sys  *inhibit;
 	int                  linked;
 	cairo_surface_t     *surface;
 	struct frame        *top;
+	int                  single_monitor;
 };
 
 

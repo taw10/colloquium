@@ -135,10 +135,22 @@ static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
 	                                              GDK_BLANK_CURSOR);
 	gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
 
-	gtk_window_parse_geometry(GTK_WINDOW(w), ss->geom);
 	slideshow_rerender(ss);
 
 	return FALSE;
+}
+
+
+static void ss_size_sig(GtkWidget *widget, GdkRectangle *rect, SCSlideshow *ss)
+{
+	int w;
+
+	w = rect->height * ss->p->slide_width/ss->p->slide_height;
+	if ( w > rect->width ) w = rect->width;
+	ss->slide_width = w;
+	ss->slide_height = rect->height;
+
+	slideshow_rerender(ss);
 }
 
 
@@ -153,10 +165,7 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 {
 	GdkDisplay *display;
 	int n_monitors;
-	int i;
 	SCSlideshow *ss;
-	double slide_width = 1024.0; /* Logical slide size */
-	double slide_height = 768.0; /* FIXME: Should come from slide */
 
 	ss = g_object_new(SC_TYPE_SLIDESHOW, NULL);
 	if ( ss == NULL ) return NULL;
@@ -180,6 +189,8 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 	                 G_CALLBACK(ss_destroy_sig), ss);
 	g_signal_connect(G_OBJECT(ss), "realize",
 	                 G_CALLBACK(ss_realize_sig), ss);
+	g_signal_connect(G_OBJECT(ss), "size-allocate",
+	                 G_CALLBACK(ss_size_sig), ss);
 
 	g_signal_connect(G_OBJECT(ss->drawingarea), "draw",
 			 G_CALLBACK(ss_draw_sig), ss);
@@ -188,26 +199,25 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 
 	display = gdk_display_get_default();
 	n_monitors = gdk_display_get_n_monitors(display);
-	for ( i=0; i<n_monitors; i++ ) {
 
-		GdkMonitor *monitor;
-		GdkRectangle rect;
-		int w;
+	GdkMonitor *mon_ss;
+	if ( n_monitors == 1 ) {
+		mon_ss = gdk_display_get_primary_monitor(display);
+		printf("Single monitor mode\n");
+		ss->single_monitor = 1;
+	} else {
+		mon_ss = gdk_display_get_monitor(display, 1);
+		printf("Dual monitor mode\n");
+		ss->single_monitor = 0;
+	}
 
-		monitor = gdk_display_get_monitor(display, i);
-		gdk_monitor_get_geometry(monitor,&rect);
-		snprintf(ss->geom, 255, "%ix%i+%i+%i",
-		         rect.width, rect.height, rect.x, rect.y);
-
-		w = rect.height * slide_width/slide_height;
-		if ( w > rect.width ) w = rect.width;
-		ss->slide_width = w;
-		ss->slide_height = rect.height;
-
-	} /* FIXME: Sensible (configurable) choice of monitor */
+	/* Workaround because gtk_window_fullscreen_on_monitor doesn't work */
+	GdkRectangle rect;
+	gdk_monitor_get_geometry(mon_ss, &rect);
+	gtk_window_move(GTK_WINDOW(ss), rect.x, rect.y);
+	gtk_window_fullscreen(GTK_WINDOW(ss));
 
 	ss->linked = 1;
-	gtk_window_fullscreen(GTK_WINDOW(ss));
 	gtk_widget_show_all(GTK_WIDGET(ss));
 
 	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 1);

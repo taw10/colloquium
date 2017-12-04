@@ -214,6 +214,18 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 }
 
 
+static void size_sig(GtkWidget *widget, GdkRectangle *rect, struct testcard *ss)
+{
+	int w;
+
+	w = rect->height * ss->p->slide_width/ss->p->slide_height;
+	if ( w > rect->width ) w = rect->width;
+	ss->slide_width = w;
+	ss->slide_height = rect->height;
+}
+
+
+
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               struct testcard *tc)
 {
@@ -222,21 +234,11 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
-static gboolean realize_sig(GtkWidget *w, struct testcard *tc)
-{
-	gtk_window_parse_geometry(GTK_WINDOW(w), tc->geom);
-	return FALSE;
-}
-
-
 void show_testcard(struct presentation *p)
 {
 	GdkDisplay *display;
 	int n_monitors;
-	int i;
 	struct testcard *tc;
-	double slide_width = 1024.0; /* Logical slide size */
-	double slide_height = 768.0; /* FIXME: Should come from slide */
 
 	tc = calloc(1, sizeof(struct testcard));
 	if ( tc == NULL ) return;
@@ -259,8 +261,8 @@ void show_testcard(struct presentation *p)
 			 G_CALLBACK(key_press_sig), tc);
 	g_signal_connect(G_OBJECT(tc->window), "destroy",
 	                 G_CALLBACK(destroy_sig), tc);
-	g_signal_connect(G_OBJECT(tc->window), "realize",
-	                 G_CALLBACK(realize_sig), tc);
+	g_signal_connect(G_OBJECT(tc->window), "size-allocate",
+	                 G_CALLBACK(size_sig), tc);
 	g_signal_connect(G_OBJECT(tc->drawingarea), "draw",
 			 G_CALLBACK(draw_sig), tc);
 
@@ -268,25 +270,22 @@ void show_testcard(struct presentation *p)
 
 	display = gdk_display_get_default();
 	n_monitors = gdk_display_get_n_monitors(display);
-	for ( i=0; i<n_monitors; i++ ) {
 
-		GdkMonitor *monitor;
-		GdkRectangle rect;
-		int w;
+	GdkMonitor *mon_ss;
+	if ( n_monitors == 1 ) {
+		mon_ss = gdk_display_get_primary_monitor(display);
+		printf("Single monitor mode\n");
+	} else {
+		mon_ss = gdk_display_get_monitor(display, 1);
+		printf("Dual monitor mode\n");
+	}
 
-		monitor = gdk_display_get_monitor(display, i);
-		gdk_monitor_get_geometry(monitor,&rect);
-		snprintf(tc->geom, 255, "%ix%i+%i+%i",
-		         rect.width, rect.height, rect.x, rect.y);
-
-		w = rect.height * slide_width/slide_height;
-		if ( w > rect.width ) w = rect.width;
-		tc->slide_width = w;
-		tc->slide_height = rect.height;
-
-	} /* FIXME: Sensible (configurable) choice of monitor */
-
+	/* Workaround because gtk_window_fullscreen_on_monitor doesn't work */
+	GdkRectangle rect;
+	gdk_monitor_get_geometry(mon_ss, &rect);
+	gtk_window_move(GTK_WINDOW(tc->window), rect.x, rect.y);
 	gtk_window_fullscreen(GTK_WINDOW(tc->window));
+
 	gtk_widget_show_all(GTK_WIDGET(tc->window));
 
 	if ( tc->inhibit != NULL ) do_inhibit(tc->inhibit, 1);

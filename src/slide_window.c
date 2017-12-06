@@ -75,17 +75,6 @@ struct menu_pl
 };
 
 
-static gint UNUSED add_furniture(GtkWidget *widget, struct menu_pl *pl)
-{
-	sc_block_append_end(pl->sw->scblocks,
-	                    strdup(pl->style_name), NULL, NULL);
-
-	//do_slide_update(pl->p, pl->sw->pc); FIXME
-
-	return 0;
-}
-
-
 static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
@@ -260,12 +249,11 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	g_signal_connect(G_OBJECT(sw->sceditor), "key-press-event",
 			 G_CALLBACK(key_press_sig), sw);
 
-	/* Size of SCEditor surface in pixels */
-	/* FIXME: Somewhat arbitrary.  Should come from slide itself */
-//	sc_editor_set_size(sw->sceditor, 1024, 768);
-	sc_editor_set_logical_size(sw->sceditor, 1024.0, 768.0);
+	sc_editor_set_logical_size(sw->sceditor,
+	                           p->slide_width, p->slide_height);
 
-	gtk_window_set_default_size(GTK_WINDOW(window), 1024.0, 768.0);
+	gtk_window_set_default_size(GTK_WINDOW(window),
+	                            p->slide_width, p->slide_height);
 
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(sw->sceditor));
 

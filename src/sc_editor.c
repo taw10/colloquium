@@ -776,20 +776,18 @@ static void insert_text(char *t, SCEditor *e)
 
 	} else {
 
+		SCBlock *bd;
 		SCBlock *ad;
 		Paragraph *pnew;
 
-		/* FIXME: We should not assume that box void pointers correspond
-		 * to "real" scblocks for callback paragraphs.  Not in this
-		 * file, at least.  It would be OK in narrative_window.c where
-		 * we know there aren't any other callbacks */
-		ad = get_para_bvp(para);
-		if ( ad == NULL ) {
-			ad = para_scblock(para);
+		bd = para_scblock(para);
+		if ( bd == NULL ) {
+			fprintf(stderr, "No SCBlock for para\n");
+			return;
 		}
 
 		/* No. Create a new text paragraph straight afterwards */
-		ad = sc_block_insert_after(ad, NULL, NULL, strdup(t));
+		ad = sc_block_insert_after(bd, NULL, NULL, strdup(t));
 		if ( ad == NULL ) {
 			fprintf(stderr, "Failed to add SCBlock\n");
 			return;
@@ -803,7 +801,7 @@ static void insert_text(char *t, SCEditor *e)
 		add_run(pnew, ad, NULL, 0, strlen(t),
 		        e->cursor_frame->fontdesc, e->cursor_frame->col);
 
-		wrap_frame(e->top, e->pc);
+		wrap_frame(e->cursor_frame, e->pc);
 
 		e->cursor_para += 1;
 		e->cursor_pos = 0;

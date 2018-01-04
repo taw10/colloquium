@@ -110,9 +110,9 @@ struct presentation *new_presentation(const char *imagestore)
 
 	new->scblocks = NULL;
 
-	/* FIXME: Should come from presentation.  1024/768 for 4:3 */
-	new->slide_width = 1280.0;
-	new->slide_height = 720.0;
+	/* Default slide size */
+	new->slide_width = 1024.0;
+	new->slide_height = 768.0;
 
 	new->completely_empty = 1;
 	new->saved = 1;
@@ -408,6 +408,26 @@ static void install_stylesheet(struct presentation *p)
 }
 
 
+static void set_slide_size_from_stylesheet(struct presentation *p)
+{
+	SCInterpreter *scin;
+	double w, h;
+	int r;
+
+	if ( p->stylesheet == NULL ) return;
+
+	scin = sc_interp_new(NULL, NULL, NULL, NULL);
+	sc_interp_run_stylesheet(scin, p->stylesheet);  /* ss == NULL is OK */
+	r = sc_interp_get_slide_size(scin, &w, &h);
+	sc_interp_destroy(scin);
+
+	if ( r == 0 ) {
+		p->slide_width = w;
+		p->slide_height = h;
+	}
+}
+
+
 int load_presentation(struct presentation *p, const char *filename)
 {
 	int r = 0;
@@ -435,6 +455,7 @@ int load_presentation(struct presentation *p, const char *filename)
 	}
 
 	install_stylesheet(p);
+	set_slide_size_from_stylesheet(p);
 
 	assert(p->filename == NULL);
 	p->filename = strdup(filename);

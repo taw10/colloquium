@@ -87,4 +87,6 @@ struct template_id
 extern struct template_id *sc_interp_get_templates(SCInterpreter *scin,
                                                    int *np);
 
+extern int sc_interp_get_slide_size(SCInterpreter *scin, double *w, double *h);
+
 #endif	/* SC_INTERP_H */

@@ -61,6 +61,10 @@ struct sc_state
 	int height;
 	float paraspace[4];
 
+	int have_size;
+	double slide_width;
+	double slide_height;
+
 	struct frame *fr;  /* The current frame */
 
 	int n_macros;
@@ -601,6 +605,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->paraspace[2] = 0.0;
 	st->paraspace[3] = 0.0;
 	st->fontdesc = NULL;
+	st->have_size = 0;
 
 	scin->lang = lang;
 
@@ -630,6 +635,20 @@ void sc_interp_destroy(SCInterpreter *scin)
 
 	free(scin->state);
 	free(scin);
+}
+
+
+static int parse_double(const char *a, float v[2])
+{
+	int nn;
+
+	nn = sscanf(a, "%fx%f", &v[0], &v[1]);
+	if ( nn != 2 ) {
+		fprintf(stderr, "Invalid size '%s'\n", a);
+		return 1;
+	}
+
+	return 0;
 }
 
 
@@ -673,6 +692,19 @@ static void set_paraspace(SCInterpreter *scin, const char *opts)
 	st->paraspace[3] = p[3];
 
 	set_para_spacing(current_para(sc_interp_get_frame(scin)), p);
+}
+
+
+static void set_slide_size(SCInterpreter *scin, const char *opts)
+{
+	float p[2];
+	struct sc_state *st = &scin->state[scin->j];
+
+	if ( parse_double(opts, p) ) return;
+
+	st->slide_width = p[0];
+	st->slide_height = p[1];
+	st->have_size = 1;
 }
 
 
@@ -1314,11 +1346,23 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "paraspace") == 0 ) {
 			set_paraspace(scin, options);
 
+		} else if ( strcmp(name, "slidesize") == 0 ) {
+			set_slide_size(scin, options);
+
 		}
 
 		bl = sc_block_next(bl);
 
 	}
+}
+
+
+int sc_interp_get_slide_size(SCInterpreter *scin, double *w, double *h)
+{
+	if ( !scin->state->have_size ) return 1;
+	*w = scin->state->slide_width;
+	*h = scin->state->slide_height;
+	return 0;
 }
 
 

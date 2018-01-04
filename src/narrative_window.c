@@ -632,10 +632,10 @@ static void nw_update_titlebar(NarrativeWindow *nw)
 static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
                             double *w, double *h, void **bvp, void *vp)
 {
+	struct presentation *p = vp;
 	SCBlock *b;
 
-	/* FIXME: Should come from presentation.  320/256 for 4:3 */
-	*w = 480.0;
+	*w = 270.0*(p->slide_width / p->slide_height);
 	*h = 270.0;
 	b = sc_interp_get_macro_real_block(scin);
 
@@ -656,10 +656,10 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	scblocks = sc_block_child(scblocks);
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
+
 	/* FIXME: Cache like crazy here */
-	/* FIXME: Get size from presentation.  1024/768 for 4:3 */
-	surf = render_sc(scblocks, w, h, 1280.0, 720.0, stylesheets, NULL,
-	                 p->is, 0, &top, p->lang);
+	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height,
+	                 stylesheets, NULL, p->is, 0, &top, p->lang);
 	frame_free(top);
 
 	return surf;

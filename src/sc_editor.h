@@ -186,6 +186,8 @@ extern void sc_editor_set_min_border(SCEditor *e, double min_border);
 extern void sc_editor_set_top_frame_editable(SCEditor *e,
                                              int top_frame_editable);
 extern void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl);
+extern void sc_editor_paste(SCEditor *e);
+extern void sc_editor_copy_selected_frame(SCEditor *e);
 extern void sc_editor_delete_selected_frame(SCEditor *e);
 extern void sc_editor_remove_cursor(SCEditor *e);
 extern SCBlock *split_paragraph_at_cursor(SCEditor *e);

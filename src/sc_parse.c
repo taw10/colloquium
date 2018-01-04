@@ -140,6 +140,18 @@ SCBlock *sc_block_append_end(SCBlock *bl, char *name, char *opt, char *contents)
 }
 
 
+void sc_block_append_block(SCBlock *bl, SCBlock *bln)
+{
+
+	if ( bl == NULL ) return;
+
+	while ( bl->next != NULL ) bl = bl->next;
+
+	bl->next = bln;
+	bln->next = NULL;
+}
+
+
 /* Append a new block to the chain inside "parent".
  * "name", "options" and "contents" will not be copied.  Returns the block just
  * created, or NULL on error. */

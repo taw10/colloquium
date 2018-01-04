@@ -431,6 +431,48 @@ void sc_editor_redraw(SCEditor *e)
 }
 
 
+void paste_received(GtkClipboard *cb, const gchar *t, gpointer vp)
+{
+	SCEditor *e = vp;
+	SCBlock *nf;
+	nf = sc_parse(t);
+	sc_block_append_block(e->scblocks, nf);
+	full_rerender(e);
+}
+
+
+void sc_editor_paste(SCEditor *e)
+{
+	GtkClipboard *cb;
+	GdkAtom atom;
+
+	atom = gdk_atom_intern("CLIPBOARD", FALSE);
+	if ( atom == GDK_NONE ) return;
+	cb = gtk_clipboard_get(atom);
+	gtk_clipboard_request_text(cb, paste_received, e);
+}
+
+
+void sc_editor_copy_selected_frame(SCEditor *e)
+{
+	char *t;
+	GtkClipboard *cb;
+	GdkAtom atom;
+
+	if ( e->selection == NULL ) return;
+
+	atom = gdk_atom_intern("CLIPBOARD", FALSE);
+	if ( atom == GDK_NONE ) return;
+
+	cb = gtk_clipboard_get(atom);
+
+	t = serialise_sc_block(e->selection->scblocks);
+
+	gtk_clipboard_set_text(cb, t, -1);
+	free(t);
+}
+
+
 void sc_editor_delete_selected_frame(SCEditor *e)
 {
 	sc_block_delete(&e->scblocks, e->selection->scblocks);

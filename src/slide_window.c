@@ -75,6 +75,23 @@ struct menu_pl
 };
 
 
+static void paste_sig(GSimpleAction *action, GVariant *parameter,
+                      gpointer vp)
+{
+	SlideWindow *sw = vp;
+	sc_editor_paste(sw->sceditor);
+}
+
+
+
+static void copy_frame_sig(GSimpleAction *action, GVariant *parameter,
+                             gpointer vp)
+{
+	SlideWindow *sw = vp;
+	sc_editor_copy_selected_frame(sw->sceditor);
+}
+
+
 static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
@@ -195,6 +212,8 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 GActionEntry sw_entries[] = {
 
+	{ "paste", paste_sig, NULL, NULL, NULL },
+	{ "copyframe", copy_frame_sig, NULL, NULL, NULL },
 	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
 	{ "first", first_slide_sig, NULL, NULL, NULL },
 	{ "prev", prev_slide_sig, NULL, NULL, NULL },

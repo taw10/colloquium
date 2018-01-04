@@ -50,6 +50,8 @@ extern SCBlock *sc_block_append(SCBlock *bl,
 
 extern void sc_block_append_p(SCBlock *bl, SCBlock *bln);
 
+extern void sc_block_append_block(SCBlock *bl, SCBlock *bln);
+
 extern SCBlock *sc_block_append_end(SCBlock *bl,
                                     char *name, char *opt, char *contents);
 

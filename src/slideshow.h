@@ -56,6 +56,8 @@ struct _scslideshow
 	int                  blank;
 	int                  slide_width;
 	int                  slide_height;
+	int                  xoff;
+	int                  yoff;
 	struct inhibit_sys  *inhibit;
 	int                  linked;
 	cairo_surface_t     *surface;

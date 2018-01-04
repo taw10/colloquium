@@ -91,7 +91,6 @@ static gint ss_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 
 static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
 {
-	double xoff, yoff;
 	double width, height;
 
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
@@ -104,19 +103,10 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
 
 	if ( !ss->blank ) {
 
-		int h;
-
-		/* FIXME: Assumes that monitor and slide sizes are such that
-		 * letterboxing at sides.  This needn't be the case. */
-		h = ss->slide_width * ss->p->slide_height / ss->p->slide_width;
-
-		/* Get the overall size */
-		xoff = (width - ss->slide_width)/2.0;
-		yoff = (height - h)/2.0;
-
 		/* Draw the slide from the cache */
-		cairo_rectangle(cr, xoff, yoff, ss->slide_width, h);
-		cairo_set_source_surface(cr, ss->surface, xoff, yoff);
+		cairo_rectangle(cr, ss->xoff, ss->yoff,
+		                ss->slide_width, ss->slide_height);
+		cairo_set_source_surface(cr, ss->surface, ss->xoff, ss->yoff);
 		cairo_fill(cr);
 
 	}
@@ -143,12 +133,26 @@ static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
 
 static void ss_size_sig(GtkWidget *widget, GdkRectangle *rect, SCSlideshow *ss)
 {
-	int w;
+	const double sw = ss->p->slide_width;
+	const double sh = ss->p->slide_height;
 
-	w = rect->height * ss->p->slide_width/ss->p->slide_height;
-	if ( w > rect->width ) w = rect->width;
-	ss->slide_width = w;
-	ss->slide_height = rect->height;
+	if ( sw/sh > (double)rect->width/rect->height ) {
+		/* Slide is too wide.  Letterboxing top/bottom */
+		ss->slide_width = rect->width;
+		ss->slide_height = rect->width * sh/sw;
+	} else {
+		/* Letterboxing at sides */
+		ss->slide_width = rect->height * sw/sh;
+		ss->slide_height = rect->height;
+	}
+
+	ss->xoff = (rect->width - ss->slide_width)/2.0;
+	ss->yoff = (rect->height - ss->slide_height)/2.0;
+
+	printf("screen %i %i\n", rect->width, rect->height);
+	printf("slide %f %f\n", sw, sh);
+	printf("rendering slide at %i %i\n", ss->slide_width, ss->slide_height);
+	printf("offset %i %i\n", ss->xoff, ss->yoff);
 
 	slideshow_rerender(ss);
 }

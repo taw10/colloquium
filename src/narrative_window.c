@@ -634,8 +634,9 @@ static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
 {
 	SCBlock *b;
 
-	*w = 320.0;
-	*h = 256.0;
+	/* FIXME: Should come from presentation.  320/256 for 4:3 */
+	*w = 480.0;
+	*h = 270.0;
 	b = sc_interp_get_macro_real_block(scin);
 
 	*bvp = b;
@@ -656,7 +657,8 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
 	/* FIXME: Cache like crazy here */
-	surf = render_sc(scblocks, w, h, 1024.0, 768.0, stylesheets, NULL,
+	/* FIXME: Get size from presentation.  1024/768 for 4:3 */
+	surf = render_sc(scblocks, w, h, 1280.0, 720.0, stylesheets, NULL,
 	                 p->is, 0, &top, p->lang);
 	frame_free(top);
 

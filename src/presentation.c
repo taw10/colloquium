@@ -110,8 +110,9 @@ struct presentation *new_presentation(const char *imagestore)
 
 	new->scblocks = NULL;
 
-	new->slide_width = 1024.0;
-	new->slide_height = 768.0;
+	/* FIXME: Should come from presentation.  1024/768 for 4:3 */
+	new->slide_width = 1280.0;
+	new->slide_height = 720.0;
 
 	new->completely_empty = 1;
 	new->saved = 1;

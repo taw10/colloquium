@@ -392,6 +392,19 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 
 	sc_editor_set_cursor_para(nw->sceditor,
 	                          sc_editor_get_cursor_para(nw->sceditor)+1);
+
+	/* If we only have one monitor, don't try to do paragraph counting */
+	if ( ss->single_monitor ) {
+		int i, max;
+		max = sc_editor_get_num_paras(nw->sceditor);
+		for ( i=sc_editor_get_cursor_para(nw->sceditor); i<max; i++ ) {
+			SCBlock *ns;
+			sc_editor_set_cursor_para(nw->sceditor, i);
+			ns = sc_editor_get_cursor_bvp(nw->sceditor);
+			if ( ns != NULL ) break;
+		}
+	}
+
 	pr_clock_set_pos(nw->pr_clock, sc_editor_get_cursor_para(nw->sceditor),
 	                               sc_editor_get_num_paras(nw->sceditor));
 	ns = sc_editor_get_cursor_bvp(nw->sceditor);

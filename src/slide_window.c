@@ -91,7 +91,6 @@ static void paste_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-
 static void copy_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {

@@ -588,7 +588,31 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 		 G_CALLBACK(ss_destroy_sig), nw);
 	sc_slideshow_set_slide(nw->show, bvp);
 	sc_editor_set_para_highlight(nw->sceditor, 1);
+	gtk_widget_show_all(GTK_WIDGET(nw->show));
+	update_toolbar(nw);
 }
+
+
+static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parameter,
+                                         gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+
+	if ( num_slides(nw->p) == 0 ) return;
+
+	nw->show = sc_slideshow_new(nw->p);
+	if ( nw->show == NULL ) return;
+
+	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
+		 G_CALLBACK(key_press_sig), nw);
+	g_signal_connect(G_OBJECT(nw->show), "destroy",
+		 G_CALLBACK(ss_destroy_sig), nw);
+	sc_slideshow_set_slide(nw->show, first_slide(nw->p));
+	sc_editor_set_para_highlight(nw->sceditor, 1);
+	sc_editor_set_cursor_para(nw->sceditor, 0);
+	update_toolbar(nw);
+}
+
 
 static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
                                 gpointer vp)
@@ -607,6 +631,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 	sc_slideshow_set_slide(nw->show, first_slide(nw->p));
 	sc_editor_set_para_highlight(nw->sceditor, 1);
 	sc_editor_set_cursor_para(nw->sceditor, 0);
+	gtk_widget_show_all(GTK_WIDGET(nw->show));
 	update_toolbar(nw);
 }
 
@@ -691,6 +716,7 @@ GActionEntry nw_entries[] = {
 	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
 	{ "startslideshowhere", start_slideshow_here_sig, NULL, NULL, NULL },
+	{ "startslideshownoslides", start_slideshow_noslides_sig, NULL, NULL, NULL },
 	{ "clock", open_clock_sig, NULL, NULL, NULL },
 	{ "testcard", testcard_sig, NULL, NULL, NULL },
 	{ "first", first_para_sig, NULL, NULL, NULL },

@@ -222,7 +222,6 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 	gtk_window_fullscreen(GTK_WINDOW(ss));
 
 	ss->linked = 1;
-	gtk_widget_show_all(GTK_WIDGET(ss));
 
 	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 1);
 

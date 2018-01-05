@@ -75,6 +75,14 @@ struct menu_pl
 };
 
 
+static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
+                                  gpointer vp)
+{
+	SlideWindow *sw = vp;
+	sc_editor_add_storycode(sw->sceditor, "\\slidetitle{Slide title}");
+}
+
+
 static void paste_sig(GSimpleAction *action, GVariant *parameter,
                       gpointer vp)
 {
@@ -219,6 +227,7 @@ GActionEntry sw_entries[] = {
 	{ "prev", prev_slide_sig, NULL, NULL, NULL },
 	{ "next", next_slide_sig, NULL, NULL, NULL },
 	{ "last", last_slide_sig, NULL, NULL, NULL },
+	{ "slidetitle", insert_slidetitle_sig, NULL, NULL, NULL },
 };
 
 

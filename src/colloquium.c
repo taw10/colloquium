@@ -348,6 +348,10 @@ static void colloquium_startup(GApplication *papp)
 	    "          <attribute name='label'>Slide</attribute>"
 	    "          <attribute name='action'>win.slide</attribute>"
 	    "        </item>"
+	    "        <item>"
+	    "          <attribute name='label'>Slide title</attribute>"
+	    "          <attribute name='action'>win.slidetitle</attribute>"
+	    "        </item>"
 	    "      </section>"
 	    "    </submenu>"
 

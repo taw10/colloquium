@@ -453,6 +453,15 @@ void sc_editor_paste(SCEditor *e)
 }
 
 
+void sc_editor_add_storycode(SCEditor *e, const char *sc)
+{
+	SCBlock *nf;
+	nf = sc_parse(sc);
+	sc_block_append_block(e->scblocks, nf);
+	full_rerender(e);
+}
+
+
 void sc_editor_copy_selected_frame(SCEditor *e)
 {
 	char *t;

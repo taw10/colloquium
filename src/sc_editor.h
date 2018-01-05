@@ -187,6 +187,7 @@ extern void sc_editor_set_top_frame_editable(SCEditor *e,
                                              int top_frame_editable);
 extern void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl);
 extern void sc_editor_paste(SCEditor *e);
+extern void sc_editor_add_storycode(SCEditor *e, const char *sc);
 extern void sc_editor_copy_selected_frame(SCEditor *e);
 extern void sc_editor_delete_selected_frame(SCEditor *e);
 extern void sc_editor_remove_cursor(SCEditor *e);

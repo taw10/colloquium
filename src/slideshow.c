@@ -81,7 +81,9 @@ static void slideshow_rerender(SCSlideshow *ss)
 
 static gint ss_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 {
-	g_object_unref(ss->blank_cursor);
+	if ( ss->blank_cursor != NULL ) {
+		g_object_unref(ss->blank_cursor);
+	}
 	if ( ss->surface != NULL ) {
 		cairo_surface_destroy(ss->surface);
 	}
@@ -177,6 +179,8 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 	ss->blank = 0;
 	ss->p = p;
 	ss->cur_slide = NULL;
+	ss->blank_cursor = NULL;
+	ss->surface = NULL;
 
 	if ( ss->inhibit == NULL ) {
 		ss->inhibit = inhibit_prepare();

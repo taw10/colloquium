@@ -7,8 +7,7 @@ bin_PROGRAMS = src/colloquium
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -DDATADIR=\""$(datadir)"\" -I$(top_builddir)/lib \
               -I$(top_srcdir)/lib
-LDADD = $(top_builddir)/lib/libgnu.la @IGNORE_UNUSED_LIBRARIES_CFLAGS@ \
-        src/default_stylesheet.o
+LDADD = $(top_builddir)/lib/libgnu.la @IGNORE_UNUSED_LIBRARIES_CFLAGS@
 
 src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/presentation.c \
@@ -26,9 +25,6 @@ EXTRA_DIST += src/presentation.h src/render.h \
               src/inhibit_screensaver.h src/print.h \
               src/sc_editor.h src/slide_window.h src/narrative_window.h \
               src/print.h src/debugger.h
-
-src/default_stylesheet.o: src/default_stylesheet.sty
-	ld -r -b binary -o src/default_stylesheet.o src/default_stylesheet.sty
 
 colloquiumdir = $(datadir)/colloquium
 colloquium_DATA = data/sky.png data/canvas.png data/demo.sc

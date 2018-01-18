@@ -1,7 +1,7 @@
 /*
  * debugger.h
  *
- * Copyright © 2017 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2017-2018 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *

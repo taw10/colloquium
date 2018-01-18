@@ -1,7 +1,7 @@
 /*
  * frame.c
  *
- * Copyright © 2013-2017 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *

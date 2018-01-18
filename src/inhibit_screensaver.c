@@ -1,5 +1,5 @@
 /*
- * inhibit_screensaver.h
+ * inhibit_screensaver.c
  *
  * Copyright © 2013 Thomas White <taw@bitwiz.org.uk>
  * Copyright © 2009-2012 Rémi Denis-Courmont

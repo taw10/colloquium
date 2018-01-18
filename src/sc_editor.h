@@ -1,7 +1,7 @@
 /*
  * sc_editor.h
  *
- * Copyright © 2014-2017 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2018 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *

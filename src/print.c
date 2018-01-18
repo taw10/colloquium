@@ -1,7 +1,7 @@
 /*
  * print.c
  *
- * Copyright © 2016 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2016-2018 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *

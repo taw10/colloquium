@@ -1312,6 +1312,19 @@ void merge_paragraphs(struct frame *fr, int para)
 		return;
 	}
 
+	/* Delete the \newpara block to unite the paragraphs */
+	n = get_newline_at_end(p1);
+	assert(n != NULL);
+
+	if ( sc_block_delete(&fr->scblocks, n) ) {
+		if ( p1->runs[p1->n_runs-1].macro_contents != NULL ) {
+			if  ( sc_block_delete(&p1->runs[p1->n_runs-1].macro_contents, n) ) {
+				fprintf(stderr, "Failed to delete paragraph end sentinel.\n");
+				return;
+			}
+		}
+	}
+
 	/* All the runs from p2 get added to p1 */
 	runs_new = realloc(p1->runs,
 	                   (p1->n_runs+p2->n_runs)*sizeof(struct text_run));
@@ -1320,11 +1333,6 @@ void merge_paragraphs(struct frame *fr, int para)
 		return;
 	}
 	p1->runs = runs_new;
-
-	/* Delete the \newpara block to unite the paragraphs */
-	n = get_newline_at_end(p1);
-	assert(n != NULL);
-	sc_block_delete(&fr->scblocks, n);
 
 	/* The end of the united paragraph should now be the end of the
 	 * second one */

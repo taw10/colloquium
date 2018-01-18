@@ -75,8 +75,8 @@ struct sc_state
 	int max_templates;
 	struct template *templates;
 
-	SCBlock *macro_contents;
-	SCBlock *macro_real_block;
+	SCBlock *macro_contents;  /* If running a macro, the child block of the caller */
+	SCBlock *macro_real_block;  /* If running a macro, the block which called the macro */
 };
 
 
@@ -965,7 +965,8 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 		size_t len = strlen(text+start);
 
 		Paragraph *para = last_open_para(fr);
-		add_run(para, bl, mrb, start, len, fontdesc, col);
+		add_run(para, bl, mrb, st->macro_contents, start, len,
+		        fontdesc, col);
 		set_para_spacing(para, st->paraspace);
 		start += len;
 
@@ -1027,8 +1028,10 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 	} else if ( strcmp(name, "newpara")==0 ) {
 		struct frame *fr = sc_interp_get_frame(scin);
 		Paragraph *para = last_open_para(fr);
+		struct sc_state *st = &scin->state[scin->j];
 		/* Add a dummy run which we can type into */
-		add_run(para, bl, NULL, 0, 0, sc_interp_get_fontdesc(scin), fr->col);
+		add_run(para, bl, st->macro_real_block, st->macro_contents, 0, 0,
+		        sc_interp_get_fontdesc(scin), fr->col);
 		set_newline_at_end(para, bl);
 		close_last_paragraph(fr);
 

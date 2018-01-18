@@ -40,6 +40,7 @@ struct text_run
 {
 	SCBlock              *scblock;
 	SCBlock              *macro_real_block;
+	SCBlock              *macro_contents;
 	size_t                scblock_offs_bytes;  /* Offset from start of SCBlock */
 	size_t                para_offs_bytes;  /* Offset from start of paragraph */
 	size_t                len_bytes;
@@ -376,7 +377,8 @@ void set_newline_at_end(Paragraph *para, SCBlock *bl)
 }
 
 
-void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
+void add_run(Paragraph *para, SCBlock *scblock,
+             SCBlock *macro_real, SCBlock *contents_top,
              size_t offs_bytes, size_t len_bytes, PangoFontDescription *fdesc,
              double col[4])
 {
@@ -397,6 +399,7 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
 	para->runs = runs_new;
 	para->runs[para->n_runs].scblock = scblock;
 	para->runs[para->n_runs].macro_real_block = macro_real;
+	para->runs[para->n_runs].macro_contents = contents_top;
 	para->runs[para->n_runs].scblock_offs_bytes = offs_bytes;
 	para->runs[para->n_runs].para_offs_bytes = para->offset_last;
 	para->offset_last += len_bytes;

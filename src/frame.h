@@ -135,7 +135,8 @@ extern void set_newline_at_end(Paragraph *para, SCBlock *bl);
 extern void check_run(struct frame *fr, int pn);
 extern void show_edit_pos(struct edit_pos a);
 
-extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *macro_real,
+extern void add_run(Paragraph *para, SCBlock *scblock,
+                    SCBlock *macro_real, SCBlock *contents_top,
                     size_t offs_bytes, size_t len_bytes,
                     PangoFontDescription *fdesc, double col[4]);
 

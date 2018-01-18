@@ -61,8 +61,8 @@ extern SCBlock *sc_block_append_inside(SCBlock *parent,
 extern SCBlock *sc_block_insert_after(SCBlock *afterme,
                                       char *name, char *opt, char *contents);
 
-extern void sc_block_delete(SCBlock **top, SCBlock *deleteme);
-extern void sc_block_unlink(SCBlock **top, SCBlock *deleteme);
+extern int sc_block_delete(SCBlock **top, SCBlock *deleteme);
+extern int sc_block_unlink(SCBlock **top, SCBlock *deleteme);
 
 extern SCBlock *find_last_child(SCBlock *bl);
 

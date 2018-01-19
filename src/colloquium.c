@@ -110,9 +110,83 @@ static void quit_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
+static GFile **gslist_to_array(GSList *item, int *n)
+{
+	int i = 0;
+	int len = g_slist_length(item);
+	GFile **files = malloc(len * sizeof(GFile *));
+
+	if ( files == NULL ) return NULL;
+
+	while ( item != NULL ) {
+		if ( i == len ) {
+			fprintf(stderr, "WTF? Too many files\n");
+			break;
+		}
+		files[i++] = item->data;
+		item = item->next;
+	}
+
+	*n = len;
+	return files;
+}
+
+
+static gint open_response_sig(GtkWidget *d, gint response, GApplication *papp)
+{
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		GSList *files;
+		int n_files = 0;
+		GFile **files_array;
+		int i;
+
+		files = gtk_file_chooser_get_files(GTK_FILE_CHOOSER(d));
+		files_array = gslist_to_array(files, &n_files);
+		if ( files_array == NULL ) {
+			fprintf(stderr, "Failed to convert file list\n");
+			return 0;
+		}
+		g_slist_free(files);
+		g_application_open(papp, files_array, n_files, "");
+
+		for ( i=0; i<n_files; i++ ) {
+			g_object_unref(files_array[i]);
+		}
+
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static void open_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	GtkWidget *d;
+	GApplication *app = vp;
+
+	d = gtk_file_chooser_dialog_new("Open Presentation",
+	                                gtk_application_get_active_window(GTK_APPLICATION(app)),
+	                                GTK_FILE_CHOOSER_ACTION_OPEN,
+	                                "_Cancel", GTK_RESPONSE_CANCEL,
+	                                "_Open", GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(d), TRUE);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(open_response_sig), app);
+
+	gtk_widget_show_all(d);
+}
+
+
 GActionEntry app_entries[] = {
 
 	{ "new", new_sig, NULL, NULL, NULL  },
+	{ "open", open_sig, NULL, NULL, NULL  },
 	{ "about", about_sig, NULL, NULL, NULL  },
 	{ "quit", quit_sig, NULL, NULL, NULL  },
 };
@@ -127,6 +201,7 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 	for ( i = 0; i<n_files; i++ ) {
 		struct presentation *p;
 		char *uri = g_file_get_path(files[i]);
+		/* FIXME: Use GFile properly, hence support weird URIs etc */
 		p = new_presentation(app->imagestore);
 		if ( load_presentation(p, uri) == 0 ) {
 			narrative_window_new(p, papp);

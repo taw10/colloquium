@@ -111,7 +111,7 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	                                GTK_WINDOW(nw->window),
 	                                GTK_FILE_CHOOSER_ACTION_SAVE,
 	                                "_Cancel", GTK_RESPONSE_CANCEL,
-	                                "_Open", GTK_RESPONSE_ACCEPT,
+	                                "_Save", GTK_RESPONSE_ACCEPT,
 	                                NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
 	                                               TRUE);

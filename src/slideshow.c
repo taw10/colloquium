@@ -34,7 +34,6 @@
 #include "presentation.h"
 #include "render.h"
 #include "pr_clock.h"
-#include "inhibit_screensaver.h"
 #include "frame.h"
 
 G_DEFINE_TYPE_WITH_CODE(SCSlideshow, sc_slideshow, GTK_TYPE_WINDOW, NULL)
@@ -86,6 +85,9 @@ static gint ss_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 	}
 	if ( ss->surface != NULL ) {
 		cairo_surface_destroy(ss->surface);
+	}
+	if ( ss->app != NULL ) {
+		gtk_application_uninhibit(ss->app, ss->inhibit_cookie);
 	}
 	return FALSE;
 }
@@ -167,7 +169,7 @@ void sc_slideshow_set_slide(SCSlideshow *ss, SCBlock *ns)
 }
 
 
-SCSlideshow *sc_slideshow_new(struct presentation *p)
+SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 {
 	GdkDisplay *display;
 	int n_monitors;
@@ -181,10 +183,6 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 	ss->cur_slide = NULL;
 	ss->blank_cursor = NULL;
 	ss->surface = NULL;
-
-	if ( ss->inhibit == NULL ) {
-		ss->inhibit = inhibit_prepare();
-	}
 
 	ss->drawingarea = gtk_drawing_area_new();
 	gtk_container_add(GTK_CONTAINER(ss), ss->drawingarea);
@@ -227,7 +225,12 @@ SCSlideshow *sc_slideshow_new(struct presentation *p)
 
 	ss->linked = 1;
 
-	if ( ss->inhibit != NULL ) do_inhibit(ss->inhibit, 1);
+	if ( app != NULL ) {
+		ss->inhibit_cookie = gtk_application_inhibit(app, GTK_WINDOW(ss),
+		                                             GTK_APPLICATION_INHIBIT_IDLE,
+		                                             "Presentation slide show is running");
+		ss->app = app;
+	}
 
 	return ss;
 }

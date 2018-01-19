@@ -58,11 +58,12 @@ struct _scslideshow
 	int                  slide_height;
 	int                  xoff;
 	int                  yoff;
-	struct inhibit_sys  *inhibit;
 	int                  linked;
 	cairo_surface_t     *surface;
 	struct frame        *top;
 	int                  single_monitor;
+	uint                 inhibit_cookie;
+	GtkApplication      *app;
 };
 
 
@@ -74,7 +75,7 @@ struct _scslideshowclass
 typedef struct _scslideshow SCSlideshow;
 typedef struct _scslideshowclass SCSlideshowClass;
 
-extern SCSlideshow *sc_slideshow_new(struct presentation *p);
+extern SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app);
 extern void sc_slideshow_set_slide(SCSlideshow *ss, SCBlock *ns);
 
 #endif	/* SLIDESHOW_H */

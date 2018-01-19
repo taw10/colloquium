@@ -592,7 +592,7 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 	bvp = sc_editor_get_cursor_bvp(nw->sceditor);
 	if ( bvp == NULL ) return;
 
-	nw->show = sc_slideshow_new(nw->p);
+	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
@@ -613,7 +613,7 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 
 	if ( num_slides(nw->p) == 0 ) return;
 
-	nw->show = sc_slideshow_new(nw->p);
+	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
@@ -634,7 +634,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 
 	if ( num_slides(nw->p) == 0 ) return;
 
-	nw->show = sc_slideshow_new(nw->p);
+	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",

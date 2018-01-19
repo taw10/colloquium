@@ -14,7 +14,6 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
                          src/frame.c src/sc_parse.c \
                          src/slideshow.c src/sc_interp.c \
                          src/imagestore.c src/pr_clock.c \
-                         src/inhibit_screensaver.c \
                          src/sc_editor.c src/narrative_window.c \
                          src/slide_window.c src/testcard.c src/print.c \
                          src/debugger.c
@@ -22,7 +21,7 @@ src_colloquium_SOURCES = src/colloquium.c src/render.c \
 EXTRA_DIST += src/presentation.h src/render.h \
               src/slideshow.h src/sc_parse.h src/sc_interp.h \
               src/imagestore.h src/pr_clock.h \
-              src/inhibit_screensaver.h src/print.h \
+              src/print.h \
               src/sc_editor.h src/slide_window.h src/narrative_window.h \
               src/print.h src/debugger.h
 

@@ -31,7 +31,6 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
-#include "inhibit_screensaver.h"
 #include "presentation.h"
 
 
@@ -42,7 +41,6 @@ struct testcard
 	int slide_width;
 	int slide_height;
 	GtkWidget *drawingarea;
-	struct inhibit_sys *inhibit;
 	struct presentation *p;
 };
 
@@ -245,10 +243,6 @@ void show_testcard(struct presentation *p)
 
 	tc->p = p;
 
-	if ( tc->inhibit == NULL ) {
-		tc->inhibit = inhibit_prepare();
-	}
-
 	tc->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 	tc->drawingarea = gtk_drawing_area_new();
@@ -288,6 +282,5 @@ void show_testcard(struct presentation *p)
 
 	gtk_widget_show_all(GTK_WIDGET(tc->window));
 
-	if ( tc->inhibit != NULL ) do_inhibit(tc->inhibit, 1);
 }
 

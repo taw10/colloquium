@@ -690,6 +690,7 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	cairo_surface_t *surf;
 	SCBlock *stylesheets[2];
 	struct frame *top;
+	int sn = slide_number(p, scblocks);
 
 	scblocks = sc_block_child(scblocks);
 	stylesheets[0] = p->stylesheet;
@@ -697,7 +698,7 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 
 	/* FIXME: Cache like crazy here */
 	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height,
-	                 stylesheets, NULL, p->is, 0, &top, p->lang);
+	                 stylesheets, NULL, p->is, sn, &top, p->lang);
 	frame_free(top);
 
 	return surf;

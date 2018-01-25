@@ -52,6 +52,7 @@ struct print_stuff
 	int nar_line;
 	struct frame *top;
 	int start_paras[256];
+	int slide_number;
 
 	ImageStore *is;
 	const char *storename;
@@ -137,6 +138,8 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
                             double *w, double *h, void **bvp, void *vp)
 {
+	struct print_stuff *ps = vp;
+	struct presentation *p = ps->p;
 	SCBlock *b;
 
 	*w = 320.0;
@@ -151,7 +154,8 @@ static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
 
 static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 {
-	struct presentation *p = vp;
+	struct print_stuff *ps = vp;
+	struct presentation *p = ps->p;
 	SCBlock *scblocks = bvp;
 	cairo_surface_t *surf;
 	SCBlock *stylesheets[2];
@@ -160,9 +164,8 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	scblocks = sc_block_child(scblocks);
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
-	/* FIXME: Cache like crazy here */
-	surf = render_sc(scblocks, w, h, 1024.0, 768.0, stylesheets, NULL,
-	                 p->is, 0, &top, p->lang);
+	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height, stylesheets, NULL,
+	                 p->is, ps->slide_number++, &top, p->lang);
 	frame_free(top);
 
 	return surf;
@@ -187,8 +190,9 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 	double h, page_height;
 
 	cbl = sc_callback_list_new();
+	ps->slide_number = 1;
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
-	                              render_thumbnail, NULL, ps->p);
+	                              render_thumbnail, NULL, ps);
 
 	ps->is = imagestore_new(ps->storename);
 

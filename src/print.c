@@ -107,6 +107,9 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 	double w, h;
 	SCBlock *stylesheets[2];
 	struct frame *top;
+	const double sw = ps->p->slide_width;
+	const double sh = ps->p->slide_height;
+	double slide_width, slide_height;
 
 	cr = gtk_print_context_get_cairo_context(ctx);
 	pc = gtk_print_context_create_pango_context(ctx);
@@ -120,13 +123,24 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
+	if ( sw/sh > w/h ) {
+		/* Slide is too wide.  Letterboxing top/bottom */
+		slide_width = w;
+		slide_height = w * sh/sw;
+	} else {
+		/* Letterboxing at sides */
+		slide_width = h * sw/sh;
+		slide_height = h;
+	}
+
+	printf("%f x %f ---> %f x %f\n", w, h, slide_width, slide_height);
+
 	top = interp_and_shape(sc_block_child(ps->slide), stylesheets, NULL,
-	                       ps->p->is,
-	                       page+1, pc,
-	                       ps->p->slide_width, ps->p->slide_height,
-	                       ps->p->lang);
+	                       ps->p->is, page+1, pc, sw, sh, ps->p->lang);
 
 	recursive_wrap(top, pc);
+
+	cairo_scale(cr, slide_width/sw, slide_width/sw);
 
 	recursive_draw(top, cr, ps->p->is,
 	               0.0, ps->p->slide_height);

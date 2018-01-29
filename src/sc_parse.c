@@ -289,7 +289,7 @@ void sc_block_free(SCBlock *bl)
 		while ( ch != NULL ) {
 			SCBlock *next = ch->next;
 			sc_block_free(ch);
-			ch = next;;
+			ch = next;
 		}
 	}
 

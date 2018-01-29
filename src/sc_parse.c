@@ -263,7 +263,7 @@ int sc_block_unlink(SCBlock **top, SCBlock *deleteme)
 	}
 
 	if ( parent->child == deleteme ) {
-		parent->child = NULL;
+		parent->child = deleteme->next;
 	}
 	return 0;
 }
@@ -815,5 +815,16 @@ SCBlock *sc_block_split(SCBlock *bl, size_t pos)
 	n->next = bl->next;
 	bl->next = n;
 
+	return n;
+}
+
+
+/* Return a new block which is the parent for "bl" */
+SCBlock *sc_block_new_parent(SCBlock *bl, const char *name)
+{
+	SCBlock *n = sc_block_new();
+	if ( n == NULL ) return NULL;
+	n->name = s_strdup(name);
+	n->child = bl;
 	return n;
 }

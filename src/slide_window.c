@@ -258,11 +258,7 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	stylesheets[1] = NULL;
 
 	sw->scblocks = scblocks;
-	ch = sc_block_child(scblocks);
-	if ( ch == NULL ) {
-		ch = sc_block_append_inside(scblocks, NULL, NULL, "");
-	}
-	sw->sceditor = sc_editor_new(ch, stylesheets, p->lang,
+	sw->sceditor = sc_editor_new(scblocks, stylesheets, p->lang,
 	                             colloquium_get_imagestore(app));
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, scblocks));
 	sc_editor_set_scale(sw->sceditor, 1);

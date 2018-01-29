@@ -51,6 +51,7 @@ struct _narrative_window
 	SCEditor *sceditor;
 	GApplication *app;
 	struct presentation *p;
+	SCBlock             *dummy_top;
 	SCSlideshow         *show;
 	PRClock             *pr_clock;
 };
@@ -154,7 +155,7 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 		return;
 	}
 
-	sc_block_delete(&nw->p->scblocks, ns);
+	sc_block_delete(&nw->dummy_top, ns);
 
 	/* Full rerender */
 	sc_editor_set_scblock(nw->sceditor,
@@ -285,7 +286,7 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 				/* Full rerender, first block may have
 				 * changed */
 				sc_editor_set_scblock(nw->sceditor,
-				                      nw->p->scblocks);
+				                      nw->dummy_top);
 
 			} else {
 				fprintf(stderr, "Not a style sheet\n");
@@ -802,11 +803,17 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 
 	stylesheets = get_ss_list(p);
 
+	/* If the presentation is completely empty, give ourselves at least
+	 * something to work with */
 	if ( nw->p->scblocks == NULL ) {
 		nw->p->scblocks = sc_parse("");
 	}
 
-	nw->sceditor = sc_editor_new(nw->p->scblocks, stylesheets, p->lang,
+	/* Put everything we have inside \presentation{}.
+	 * SCEditor will start processing one level down */
+	nw->dummy_top = sc_block_new_parent(nw->p->scblocks, "presentation");
+
+	nw->sceditor = sc_editor_new(nw->dummy_top, stylesheets, p->lang,
 	                             colloquium_get_imagestore(app));
 	free(stylesheets);
 	cbl = sc_callback_list_new();

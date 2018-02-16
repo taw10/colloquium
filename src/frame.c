@@ -41,6 +41,7 @@ struct text_run
 	SCBlock              *scblock;
 	SCBlock              *macro_real_block;
 	SCBlock              *macro_contents;
+	int                   macro_editable;
 	size_t                scblock_offs_bytes;  /* Offset from start of SCBlock */
 	size_t                para_offs_bytes;  /* Offset from start of paragraph */
 	size_t                len_bytes;
@@ -380,7 +381,7 @@ void set_newline_at_end(Paragraph *para, SCBlock *bl)
 void add_run(Paragraph *para, SCBlock *scblock,
              SCBlock *macro_real, SCBlock *contents_top,
              size_t offs_bytes, size_t len_bytes, PangoFontDescription *fdesc,
-             double col[4])
+             double col[4], int macro_editable)
 {
 	struct text_run *runs_new;
 
@@ -400,6 +401,7 @@ void add_run(Paragraph *para, SCBlock *scblock,
 	para->runs[para->n_runs].scblock = scblock;
 	para->runs[para->n_runs].macro_real_block = macro_real;
 	para->runs[para->n_runs].macro_contents = contents_top;
+	para->runs[para->n_runs].macro_editable = macro_editable;
 	para->runs[para->n_runs].scblock_offs_bytes = offs_bytes;
 	para->runs[para->n_runs].para_offs_bytes = para->offset_last;
 	para->offset_last += len_bytes;
@@ -988,8 +990,10 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 	run = &para->runs[nrun];
 
 	if ( run->macro_real_block != NULL ) {
-		printf("Not inserting text into a macro block.\n");
-		return;
+		if ( !run->macro_editable ) {
+			printf("Not inserting text into a macro block.\n");
+			return;
+		}
 	}
 
 	if ( (sc_block_name(run->scblock) != NULL)
@@ -1207,11 +1211,6 @@ size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs1, ssize
 
 		run = &para->runs[nrun];
 
-		if ( run->macro_real_block != NULL ) {
-			printf("Not deleting text from macro block\n");
-			continue;
-		}
-
 		ds = offs1 - run->para_offs_bytes;
 		if ( offs2 < 0 ) {
 			de = run->len_bytes;
@@ -1225,6 +1224,13 @@ size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs1, ssize
 		assert(ds >= 0);  /* Otherwise nrun1 was too big */
 		assert(de >= 0);  /* Otherwise nrun2 was too big */
 		if ( ds == de ) continue;
+
+		if ( run->macro_real_block != NULL ) {
+			if ( !run->macro_editable ) {
+				printf("Not deleting inside macro block!\n");
+				continue;
+			}
+		}
 
 		/* Delete from the corresponding SC block */
 		scblock_offs1 = ds + run->scblock_offs_bytes;

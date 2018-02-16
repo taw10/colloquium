@@ -77,6 +77,7 @@ struct sc_state
 
 	SCBlock *macro_contents;  /* If running a macro, the child block of the caller */
 	SCBlock *macro_real_block;  /* If running a macro, the block which called the macro */
+	int macro_editable;  /* If running a macro, whether this bit can be edited or not */
 };
 
 
@@ -599,6 +600,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	}
 	st->macro_contents = NULL;
 	st->macro_real_block = NULL;
+	st->macro_editable = 0;
 	st->fr = NULL;
 	st->paraspace[0] = 0.0;
 	st->paraspace[1] = 0.0;
@@ -966,7 +968,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 
 		Paragraph *para = last_open_para(fr);
 		add_run(para, bl, mrb, st->macro_contents, start, len,
-		        fontdesc, col);
+		        fontdesc, col, st->macro_editable);
 		set_para_spacing(para, st->paraspace);
 		start += len;
 
@@ -1031,7 +1033,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		struct sc_state *st = &scin->state[scin->j];
 		/* Add a dummy run which we can type into */
 		add_run(para, bl, st->macro_real_block, st->macro_contents, 0, 0,
-		        sc_interp_get_fontdesc(scin), fr->col);
+		        sc_interp_get_fontdesc(scin), fr->col, st->macro_editable);
 		set_newline_at_end(para, bl);
 		close_last_paragraph(fr);
 
@@ -1097,7 +1099,8 @@ static void run_editable(SCInterpreter *scin, SCBlock *contents)
 	//struct sc_state *st = &scin->state[scin->j];
 
 	sc_interp_save(scin);
-	scin->state[scin->j].macro_real_block = NULL;
+	//scin->state[scin->j].macro_real_block = NULL;
+	scin->state[scin->j].macro_editable = 1;
 	sc_interp_add_blocks(scin, contents);
 	sc_interp_restore(scin);
 }

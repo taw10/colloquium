@@ -1182,7 +1182,8 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 }
 
 
-/* offs2 negative means "to end" */
+/* offs2 negative means "to end"
+ * offs1 and offs2 are byte offsets within paragraph */
 size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs1, ssize_t offs2)
 {
 	int nrun1, nrun2, nrun;

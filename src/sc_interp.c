@@ -239,7 +239,7 @@ static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
 		if ( !r ) return;
-		add_callback_para(sc_interp_get_frame(scin), bl, mr, w, h,
+		add_callback_para(sc_interp_get_frame(scin), bl, w, h,
 		                  cbl->draw_funcs[i], cbl->click_funcs[i],
 		                  bvp, cbl->vps[i]);
 
@@ -950,7 +950,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	PangoFontDescription *fontdesc;
 	double *col;
 	struct sc_state *st = &scin->state[scin->j];
-	SCBlock *mrb;
+	SCBlock *rbl;
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
@@ -958,12 +958,16 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
-	mrb = sc_interp_get_macro_real_block(scin);
 
 	len_bytes = strlen(text);
 	Paragraph *para = last_open_para(fr);
-	add_run(para, bl, mrb, st->macro_contents, len_bytes,
-	        fontdesc, col, st->macro_editable);
+
+	rbl = bl;
+	if ( st->macro_real_block != NULL ) {
+		bl = st->macro_real_block;
+	}
+
+	add_run(para, bl, rbl, len_bytes, fontdesc, col);
 	set_para_spacing(para, st->paraspace);
 
 	return 0;
@@ -975,6 +979,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
 	SCBlock *child = sc_block_child(bl);
+	struct sc_state *st = &scin->state[scin->j];
 
 	if ( name == NULL ) {
 		add_text(sc_interp_get_frame(scin),
@@ -986,7 +991,11 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		if ( parse_image_options(options, sc_interp_get_frame(scin),
 		                         &w, &h, &filename) == 0 )
 		{
-			add_image_para(sc_interp_get_frame(scin), bl,
+			SCBlock *ebl = bl;
+			if ( st->macro_real_block != NULL ) {
+				ebl = st->macro_real_block;
+			}
+			add_image_para(sc_interp_get_frame(scin), ebl,
 			               filename, scin->is, w, h, 1);
 			free(filename);
 		} else {
@@ -1022,10 +1031,8 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 	} else if ( strcmp(name, "newpara")==0 ) {
 		struct frame *fr = sc_interp_get_frame(scin);
 		Paragraph *para = last_open_para(fr);
-		struct sc_state *st = &scin->state[scin->j];
 		/* Add a dummy run which we can type into */
-		add_run(para, bl, st->macro_real_block, st->macro_contents, 0,
-		        sc_interp_get_fontdesc(scin), fr->col, st->macro_editable);
+		add_run(para, bl, bl, 0, sc_interp_get_fontdesc(scin), fr->col);
 		set_newline_at_end(para, bl);
 		close_last_paragraph(fr);
 

@@ -35,13 +35,10 @@
 #include "frame.h"
 #include "imagestore.h"
 
-
 struct text_run
 {
-	SCBlock              *scblock;
-	SCBlock              *macro_real_block;
-	SCBlock              *macro_contents;
-	int                   macro_editable;
+	SCBlock              *scblock;   /* If macro, this is \macro */
+	SCBlock              *rscblock;  /* The block with the actual text */
 	size_t                para_offs_bytes;  /* Offset from start of paragraph */
 	size_t                len_bytes;
 	PangoFontDescription *fontdesc;
@@ -65,7 +62,6 @@ struct _paragraph
 	/* For anything other than PARA_TYPE_TEXT
 	 * (for text paragraphs, these things are in the runs) */
 	SCBlock         *scblock;
-	SCBlock         *macro_real_scblock;
 
 	/* For PARA_TYPE_IMAGE */
 	char            *filename;
@@ -321,7 +317,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 		const char *run_text;
 		guint16 r, g, b;
 
-		run_text = sc_block_contents(para->runs[i].scblock);
+		run_text = sc_block_contents(para->runs[i].rscblock);
 
 		attr = pango_attr_font_desc_new(para->runs[i].fontdesc);
 		attr->start_index = pos;
@@ -377,10 +373,9 @@ void set_newline_at_end(Paragraph *para, SCBlock *bl)
 }
 
 
-void add_run(Paragraph *para, SCBlock *scblock,
-             SCBlock *macro_real, SCBlock *contents_top,
+void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
              size_t len_bytes, PangoFontDescription *fdesc,
-             double col[4], int macro_editable)
+             double col[4])
 {
 	struct text_run *runs_new;
 
@@ -398,9 +393,7 @@ void add_run(Paragraph *para, SCBlock *scblock,
 
 	para->runs = runs_new;
 	para->runs[para->n_runs].scblock = scblock;
-	para->runs[para->n_runs].macro_real_block = macro_real;
-	para->runs[para->n_runs].macro_contents = contents_top;
-	para->runs[para->n_runs].macro_editable = macro_editable;
+	para->runs[para->n_runs].rscblock = rscblock;
 	para->runs[para->n_runs].para_offs_bytes = para->offset_last;
 	para->offset_last += len_bytes;
 	para->runs[para->n_runs].len_bytes = len_bytes;
@@ -463,7 +456,7 @@ Paragraph *insert_paragraph(struct frame *fr, int pos)
 }
 
 
-void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *mr,
+void add_callback_para(struct frame *fr, SCBlock *bl,
                        double w, double h,
                        SCCallbackDrawFunc draw_func,
                        SCCallbackClickFunc click_func, void *bvp,
@@ -479,7 +472,6 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *mr,
 
 	pnew->type = PARA_TYPE_CALLBACK;
 	pnew->scblock = bl;
-	pnew->macro_real_scblock = mr;
 	pnew->cb_w = w;
 	pnew->cb_h = h;
 	pnew->draw_func = draw_func;
@@ -948,13 +940,13 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
-	if ( (sc_block_name(run->scblock) != NULL)
-	  && (strcmp(sc_block_name(run->scblock), "newpara") == 0) )
+	if ( (sc_block_name(run->rscblock) != NULL)
+	  && (strcmp(sc_block_name(run->rscblock), "newpara") == 0) )
 	{
 		return 0;
 	}
 
-	if ( sc_block_contents(run->scblock) == NULL ) {
+	if ( sc_block_contents(run->rscblock) == NULL ) {
 		fprintf(stderr, "pos_trail_to_offset: No contents "
 		        "(%p name=%s, options=%s)\n",
 		        run->scblock, sc_block_name(run->scblock),
@@ -963,7 +955,7 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	}
 
 	/* Get the text for the run */
-	run_text = sc_block_contents(run->scblock);
+	run_text = sc_block_contents(run->rscblock);
 
 	/* Turn  the paragraph offset into a run offset */
 	run_offs = offs - run->para_offs_bytes;
@@ -998,13 +990,6 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 	}
 	run = &para->runs[nrun];
 
-	if ( run->macro_real_block != NULL ) {
-		if ( !run->macro_editable ) {
-			printf("Not inserting text into a macro block.\n");
-			return;
-		}
-	}
-
 	if ( (sc_block_name(run->scblock) != NULL)
 	  && (strcmp(sc_block_name(run->scblock), "newpara") == 0) )
 	{
@@ -1028,7 +1013,7 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 
 	/* Translate paragraph offset for insertion into SCBlock offset */
 	run_offs = offs - run->para_offs_bytes;
-	sc_insert_text(run->scblock, run_offs, t);
+	sc_insert_text(run->rscblock, run_offs, t);
 
 	/* Update length of this run */
 	ins_len = strlen(t);
@@ -1041,65 +1026,370 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 }
 
 
-static void delete_text_paragraph(Paragraph *para, int p, struct frame *fr)
+static SCBlock *pos_to_rscblock(struct frame *fr, struct edit_pos p)
+{
+	int run;
+	size_t paraoffs;
+	Paragraph *para;
+
+	para = fr->paras[p.para];
+
+	if ( para->type != PARA_TYPE_TEXT ) {
+		return NULL;
+	}
+
+	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
+
+	run = which_run(para, paraoffs);
+	assert(run < para->n_runs);
+
+	return para->runs[run].rscblock;
+}
+
+
+
+static SCBlock *pos_to_scblock(struct frame *fr, struct edit_pos p,
+                               enum para_type *type)
+{
+	int run;
+	size_t paraoffs;
+	Paragraph *para;
+
+	para = fr->paras[p.para];
+	if ( type != NULL ) {
+		*type = para->type;
+	}
+
+	if ( para->type != PARA_TYPE_TEXT ) {
+		return para->scblock;
+	}
+
+	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
+
+	run = which_run(para, paraoffs);
+	assert(run < para->n_runs);
+
+	return para->runs[run].scblock;
+}
+
+
+static size_t pos_to_offset(struct frame *fr, struct edit_pos p)
+{
+	int run;
+	size_t paraoffs;
+	Paragraph *para;
+
+	para = fr->paras[p.para];
+	if ( para->type != PARA_TYPE_TEXT ) {
+		return 0;
+	}
+
+	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
+
+	run = which_run(para, paraoffs);
+	assert(run < para->n_runs);
+
+	return paraoffs - para->runs[run].para_offs_bytes;
+}
+
+
+static int pos_to_run_number(struct frame *fr, struct edit_pos p)
+{
+	int run;
+	size_t paraoffs;
+	Paragraph *para;
+
+	para = fr->paras[p.para];
+	if ( para->type != PARA_TYPE_TEXT ) {
+		return 0;
+	}
+
+	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
+
+	run = which_run(para, paraoffs);
+	assert(run < para->n_runs);
+
+	return run;
+}
+
+
+/* Reduce para_offs_bytes for all runs in "para" after "start" by "del" */
+static void update_subsq_para_offsets(Paragraph *para, int start, size_t del)
 {
 	int i;
 
-	/* Delete the corresponding SC */
-	for ( i=0; i<para->n_runs; i++ ) {
-
-		int j;
-		struct text_run *run;
-
-		run = &para->runs[i];
-
-		if ( run->macro_real_block != NULL ) {
-			printf("Not deleting text from macro block\n");
-			continue;
-		}
-
-		if ( (sc_block_name(run->scblock) != NULL)
-		  && (strcmp(sc_block_name(run->scblock), "newpara") == 0) )
-		{
-			sc_block_delete(&fr->scblocks, run->scblock);
-			return;
-		}
-
-		/* Delete from the corresponding SC block */
-		scblock_delete_text(run->scblock, 0, run->len_bytes);
-
-		/* Fix up the offsets of the subsequent text runs */
-		size_t del_len = run->len_bytes;
-		run->len_bytes -= del_len;
-		for ( j=i+1; j<para->n_runs; j++ ) {
-			para->runs[j].para_offs_bytes -= del_len;
-		}
-
+	for ( i=start+1; i<para->n_runs; i++ ) {
+		para->runs[i].para_offs_bytes -= del;
 	}
 }
 
 
-static void delete_paragraph(struct frame *fr, int p)
+static size_t delete_run(Paragraph *para, int nrun)
+{
+	size_t del;
+
+	printf("deleting run %i of %i from para %p\n", nrun, para->n_runs, para);
+	del = para->runs[nrun].len_bytes;
+	memmove(&para->runs[nrun], &para->runs[nrun+1],
+	        (para->n_runs-1)*sizeof(struct text_run));
+	para->n_runs--;
+
+	return del;
+}
+
+
+static Paragraph *scan_runs_for_scblock(struct frame *fr, int pn1, int pn2,
+                                        SCBlock *bl, int *run)
 {
 	int i;
-	Paragraph *para = fr->paras[p];
-
-	if ( para->type != PARA_TYPE_TEXT ) {
-		if ( para->macro_real_scblock != NULL ) {
-			sc_block_delete(&fr->scblocks, para->macro_real_scblock);
-		} else {
-			sc_block_delete(&fr->scblocks, para->scblock);
+	for ( i=pn1; i<=pn2; i++ ) {
+		int j;
+		for ( j=0; j<fr->paras[i]->n_runs; j++ ) {
+			if ( fr->paras[i]->runs[j].rscblock == bl ) {
+				*run = j;
+				return fr->paras[i];
+			}
 		}
-	} else {
-		delete_text_paragraph(para, p, fr);
+	}
+	return NULL;
+}
+
+
+static Paragraph *find_run_for_scblock_next(struct frame *fr, int pn1, int pn2,
+                                            SCBlock *bl, int *run)
+{
+	if ( sc_block_child(bl) != NULL ) {
+		Paragraph *para;
+		para = find_run_for_scblock_next(fr, pn1, pn2,
+		                                 sc_block_child(bl), run);
+		if ( para != NULL ) return para;
 	}
 
-	/* Delete the paragraph from the frame */
-	free_paragraph(fr->paras[p]);
-	for ( i=p; i<fr->n_paras-1; i++ ) {
+	do {
+		Paragraph *para;
+		para = scan_runs_for_scblock(fr, pn1, pn2, bl, run);
+		if ( para != NULL ) return para;
+		bl = sc_block_next(bl);
+	} while ( bl != NULL );
+
+	return NULL;
+}
+
+
+/* Find the run which contains the text from "bl",
+ * taking into account that it might be a child block, for example:
+ *   {some text}
+ *   \italic          <---- bl points here
+ *      {more text}   <---- but this block is referenced by the run
+ *   {final text}
+ */
+static Paragraph *find_run_for_scblock(struct frame *fr, int pn1, int pn2,
+                                       SCBlock *bl, int *run)
+{
+	Paragraph *para;
+
+	show_sc_block(bl, "searching ");
+	para = scan_runs_for_scblock(fr, pn1, pn2, bl, run);
+	if ( para != NULL ) return para;
+
+	if ( sc_block_child(bl) != NULL ) {
+		para = find_run_for_scblock_next(fr, pn1, pn2, sc_block_child(bl), run);
+		if ( para != NULL ) return para;
+	}
+
+	return NULL;
+}
+
+
+static int paragraph_number(struct frame *fr, Paragraph *p, int *err)
+{
+	int i;
+	for ( i=0; i<fr->n_paras; i++ ) {
+		if ( fr->paras[i] == p ) return i;
+	}
+	fprintf(stderr, "Couldn't find paragraph %p\n", p);
+	*err = 1;
+	return 0;
+}
+
+
+static size_t delete_run_for_scblock(struct frame *fr,
+                                     Paragraph *p1, Paragraph *p2, SCBlock *bl)
+{
+	int pn1, pn2;
+	int err = 0;
+	size_t del;
+	Paragraph *para;
+	int run;
+
+	pn1 = paragraph_number(fr, p1, &err);
+	pn2 = paragraph_number(fr, p2, &err);
+	if ( err ) return 0;
+
+	para = find_run_for_scblock(fr, pn1, pn2, bl, &run);
+	if ( para == NULL ) {
+		fprintf(stderr, "Couldn't find block %p between paragraphs %p and %p\n",
+		        bl, p1, p2);
+		return 0;
+	}
+
+	del = delete_run(para, run);
+	update_subsq_para_offsets(para, run, del);
+
+	return del;
+}
+
+
+static signed int merge_paragraph_runs(Paragraph *p1, Paragraph *p2)
+{
+	struct text_run *runs_new;
+	int i, spos;
+
+	/* All the runs from p2 get added to p1 */
+	runs_new = realloc(p1->runs,
+	                   (p1->n_runs+p2->n_runs)*sizeof(struct text_run));
+	if ( runs_new == NULL ) {
+		fprintf(stderr, "Failed to allocate merged runs.\n");
+		return -1;
+	}
+	p1->runs = runs_new;
+
+	assert(p1->runs[p1->n_runs-1].scblock == get_newline_at_end(p1));
+	p1->n_runs--;  /* Chop off the run corresponding to \newpara */
+	spos = p1->n_runs;
+
+	/* The end of the united paragraph should now be the end of the
+	 * second one */
+	set_newline_at_end(p1, get_newline_at_end(p2));
+
+	for ( i=0; i<p2->n_runs; i++ ) {
+
+		size_t offs;
+
+		p1->runs[p1->n_runs] = p2->runs[i];
+
+		offs = p1->runs[p1->n_runs-1].para_offs_bytes;
+		offs += p1->runs[p1->n_runs-1].len_bytes;
+		p1->runs[p1->n_runs].para_offs_bytes = offs;
+
+		p1->n_runs++;
+
+	}
+	free(p2->runs);
+	free(p2);
+
+	return spos;
+}
+
+
+void merge_paragraphs(struct frame *fr, int para)
+{
+	Paragraph *p1, *p2;
+	int i;
+	SCBlock *n;
+
+	if ( para >= fr->n_paras-1 ) {
+		printf("Paragraph number too high to merge.\n");
+		return;
+	}
+
+	p1 = fr->paras[para];
+	p2 = fr->paras[para+1];
+
+	if ( (p1->type != PARA_TYPE_TEXT) || (p2->type != PARA_TYPE_TEXT) ) {
+		printf("Trying to merge non-text paragraphs.\n");
+		return;
+	}
+
+	/* Delete the \newpara block to unite the paragraphs */
+	n = get_newline_at_end(p1);
+	assert(n != NULL);
+
+	if ( sc_block_delete(&fr->scblocks, n) ) {
+		fprintf(stderr, "Failed to delete paragraph end sentinel.\n");
+		return;
+	}
+
+	merge_paragraph_runs(p1, p2);
+
+	for ( i=para+1; i<fr->n_paras-1; i++ ) {
 		fr->paras[i] = fr->paras[i+1];
 	}
 	fr->n_paras--;
+}
+
+
+
+static void merge_paragraphs_by_newpara(struct frame *fr, SCBlock *np)
+{
+	int i;
+	Paragraph *p1;
+	Paragraph *p2;
+
+	for ( i=0; i<fr->n_paras-1; i++ ) {
+		if ( fr->paras[i]->newline_at_end == np ) {
+
+			int j;
+			signed int spos;
+
+			p1 = fr->paras[i];
+			p2 = fr->paras[i+1];
+
+			printf("-------------------------------\n");
+			show_para(p1);
+			printf("---x--------x------------------\n");
+			show_para(p2);
+			spos = merge_paragraph_runs(p1, p2);
+			if ( spos < 0 ) {
+				fprintf(stderr, "Failed to merge paragraphs\n");
+				return;
+			}
+			printf("-------------------------------\n");
+			show_para(p1);
+
+			for ( j=i+1; j<fr->n_paras-1; j++ ) {
+				fr->paras[j] = fr->paras[j+1];
+			}
+			fr->n_paras--;
+
+			return;
+
+		}
+	}
+
+	fprintf(stderr, "Couldn't find paragraphs to merge by newpara\n");
+}
+
+
+static int find_block_inside(SCBlock *needle, SCBlock *bl)
+{
+	if ( needle == bl ) return 1;
+
+	if ( sc_block_child(bl) != NULL ) {
+		if ( find_block_inside(needle, sc_block_child(bl)) ) return 1;
+	}
+
+	if ( sc_block_next(bl) != NULL ) {
+		if ( find_block_inside(needle, sc_block_next(bl)) ) return 1;
+	}
+
+	return 0;
+}
+
+
+/* Return true if "top" either IS "child", or contains "child" somewhere
+ * underneath, even if via a macro expansion */
+static int block_is_under(SCBlock *needle, SCBlock *top)
+{
+	if ( needle == top ) return 1;
+
+	if ( sc_block_child(top) != NULL ) {
+		if ( find_block_inside(needle, sc_block_child(top)) ) return 1;
+	}
+
+	/* Do not look at top->next here */
+
+	return 0;
 }
 
 
@@ -1107,52 +1397,153 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
                             double wrapw)
 {
 	int i;
-	size_t del = 0;
+	SCBlock *p1scblock, *p2scblock;
+	SCBlock *p1rscblock, *p2rscblock;
+	enum para_type type1, type2;
+	SCBlock *scblock;
 
 	sort_positions(&p1, &p2);
 
 	printf("para %i offs %ld\n", p1.para, p1.pos);
 	printf("para %i offs %li\n", p2.para, p2.pos);
 
-	for ( i=p1.para; i<=p2.para; i++ ) {
+	/* Find SC positions for start and end */
+	p1scblock = pos_to_scblock(fr, p1, &type1);
+	p2scblock = pos_to_scblock(fr, p2, &type2);
+	p1rscblock = pos_to_rscblock(fr, p1);
+	p2rscblock = pos_to_rscblock(fr, p2);
 
-		size_t start;
-		ssize_t finis;
+	printf("SCBlocks %p to %p\n", p1scblock, p2scblock);
+	//show_sc_blocks(p1scblock);
 
-		printf("para %i\n", i);
+	if ( (p1scblock == p2scblock) && (type1 == PARA_TYPE_TEXT) ) {
 
-		Paragraph *para = fr->paras[i];
+		size_t del;
+		int p1run;
+		size_t p1offs, p2offs;
+		printf("Simple case, one SCBlock\n");
 
-		if ( i == p1.para ) {
-			start = pos_trail_to_offset(para, p1.pos, p1.trail);
-		} else {
-			start = 0;
-		}
+		assert(type1 == type2);
 
-		if ( i == p2.para ) {
-			finis = pos_trail_to_offset(para, p2.pos, p2.trail);
-		} else {
-			finis = -1;
-		}
+		/* Remove the text and update the run length */
+		p1offs = pos_to_offset(fr, p1);
+		p2offs = pos_to_offset(fr, p2);
+		del = scblock_delete_text(p1scblock, p1offs, p2offs);
 
-		if ( (start == 0) && (finis == -1) ) {
-			printf("deleting para %i\n", i);
-			delete_paragraph(fr, i);
-			p2.para--;
-			i--;
-		} else {
-			printf("deleting from %ld to %ld\n", start, finis);
-			del += delete_text_in_paragraph(fr, i, start, finis);
-			wrap_paragraph(para, NULL, wrapw, 0, 0);
-		}
+		p1run = pos_to_run_number(fr, p1);
+		fr->paras[p1.para]->runs[p1run].len_bytes -= del;
 
-	}
+		/* Update the paragraph offsets of subsequent runs */
+		update_subsq_para_offsets(fr->paras[p1.para], p1run, del);
 
-	/* If we deleted across a paragraph, merge paragraphs */
-	if ( p1.para != p2.para ) {
-		merge_paragraphs(fr, p1.para);
 		wrap_paragraph(fr->paras[p1.para], NULL, wrapw, 0, 0);
+
+		return;
 	}
+
+	/* Starting point for iteration over blocks in middle of range.
+	 * Record this now, because p1scblock might be about to get deleted */
+	scblock = sc_block_next(p1scblock);
+
+	/* First SCBlock in range: delete whole thing or second half */
+	printf("First block %p\n", p1scblock);
+	if ( type1 == PARA_TYPE_TEXT ) {
+
+		size_t p1offs = pos_to_offset(fr, p1);
+		int p1run = pos_to_run_number(fr, p1);
+		printf("  offs %li\n", (long int)p1offs);
+		if ( p1offs != 0 ) {
+			size_t del;
+			printf("Partial delete\n");
+			printf("contents '%s'\n", sc_block_contents(p1rscblock));
+			printf("from offs %li\n", (long int)p1offs);
+			del = scblock_delete_text(p1rscblock, p1offs, -1);
+			fr->paras[p1.para]->runs[p1run].len_bytes -= del;
+			update_subsq_para_offsets(fr->paras[p1.para], p1run, del);
+		} else {
+			printf("Deleting the whole text SCBlock\n");
+			sc_block_delete(&fr->scblocks, p1scblock);
+			delete_run(fr->paras[p1.para], p1run);
+		}
+
+	} else {
+		printf("Deleting the whole non-text SCBlock\n");
+		sc_block_delete(&fr->scblocks, p1scblock);
+	}
+
+	/* Delete all the complete SCBlocks in the middle of the range */
+	if ( !block_is_under(p2scblock, scblock) ) {
+		do {
+
+			SCBlock *next;
+
+			/* For each SC block in middle of range: */
+			printf("Deleting %p\n", scblock);
+			if ( scblock == NULL ) {
+				fprintf(stderr, "nothing?\n");
+				break;
+			}
+			printf("name is '%s'\n", sc_block_name(scblock));
+			if ( (sc_block_name(scblock) != NULL)
+			  && (strcmp(sc_block_name(scblock), "newpara") == 0) )
+			{
+				/* Deleting newpara block, merge the paragraphs */
+				merge_paragraphs_by_newpara(fr, scblock);
+
+			}
+
+			next = sc_block_next(scblock);
+			delete_run_for_scblock(fr, fr->paras[p1.para],
+			                       fr->paras[p2.para], scblock);
+			sc_block_delete(&fr->scblocks, scblock);
+
+			scblock = next;
+
+		} while ( !block_is_under(p2scblock, scblock) );
+	}
+
+	/* Last SCBlock in range: delete whole thing or first half */
+	printf("Last block %p (%s)\n", p2scblock, sc_block_name(p2scblock));
+	if ( type2 == PARA_TYPE_TEXT ) {
+		size_t len;
+		size_t p2offs = pos_to_offset(fr, p2);
+		int p2run = pos_to_run_number(fr, p2);
+		printf("  offs %li\n", (long int)p2offs);
+		if ( sc_block_contents(p2rscblock) != NULL ) {
+			len = strlen(sc_block_contents(p2rscblock));
+		} else {
+			len = 0;
+		}
+		printf("  len %li\n", (long int)len);
+		if ( (len > 0) && (p2offs == len) ) {
+			printf("Deleting the whole text SCBlock\n");
+			printf("deleting block %p\n", p2scblock);
+			show_sc_block(p2scblock, "");
+			sc_block_delete(&fr->scblocks, p2scblock);
+			delete_run(fr->paras[p2.para], p2run);
+		} else if ( p2offs > 0 ) {
+			size_t del;
+			printf("Partial delete\n");
+			printf("contents '%s'\n", sc_block_contents(p2rscblock));
+			printf("up to offs %li\n", (long int)p2offs);
+			del = scblock_delete_text(p2rscblock, 0, p2offs);
+			fr->paras[p2.para]->runs[p2run].len_bytes -= del;
+			update_subsq_para_offsets(fr->paras[p2.para], p2run, del);
+		} /* else do nothing */
+	} else {
+		printf("Deleting the whole non-text SCBlock\n");
+		sc_block_delete(&fr->scblocks, p2scblock);
+	}
+
+	/* If any paragraphs have been deleted, this will wrap too many
+	 * paragraphs, but it doesn't matter as long as we don't wrap
+	 * past the end of the frame's contents. */
+	for ( i=p1.para; i<=p2.para; i++ ) {
+		if ( i >= fr->n_paras ) break;
+		printf("Wrapping para %i (%p)\n", i, fr->paras[i]);
+		wrap_paragraph(fr->paras[i], NULL, wrapw, 0, 0);
+	}
+	printf("All done.\n");
 }
 
 
@@ -1200,13 +1591,6 @@ size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs1, ssize
 		assert(de >= 0);  /* Otherwise nrun2 was too big */
 		if ( ds == de ) continue;
 
-		if ( run->macro_real_block != NULL ) {
-			if ( !run->macro_editable ) {
-				printf("Not deleting inside macro block!\n");
-				continue;
-			}
-		}
-
 		/* Delete from the corresponding SC block */
 		scblock_offs1 = ds;
 		scblock_offs2 = de;
@@ -1231,7 +1615,7 @@ size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs1, ssize
 
 static char *run_text(struct text_run *run)
 {
-	return strndup(sc_block_contents(run->scblock), run->len_bytes);
+	return strndup(sc_block_contents(run->rscblock), run->len_bytes);
 }
 
 
@@ -1263,82 +1647,13 @@ void show_para(Paragraph *p)
 }
 
 
-void merge_paragraphs(struct frame *fr, int para)
-{
-	Paragraph *p1, *p2;
-	struct text_run *runs_new;
-	int i;
-	SCBlock *n;
-
-	if ( para >= fr->n_paras-1 ) {
-		printf("Paragraph number too high to merge.\n");
-		return;
-	}
-
-	p1 = fr->paras[para];
-	p2 = fr->paras[para+1];
-
-	if ( (p1->type != PARA_TYPE_TEXT) || (p2->type != PARA_TYPE_TEXT) ) {
-		printf("Trying to merge non-text paragraphs.\n");
-		return;
-	}
-
-	/* Delete the \newpara block to unite the paragraphs */
-	n = get_newline_at_end(p1);
-	assert(n != NULL);
-
-	if ( sc_block_delete(&fr->scblocks, n) ) {
-		if ( p1->runs[p1->n_runs-1].macro_contents != NULL ) {
-			if  ( sc_block_delete(&p1->runs[p1->n_runs-1].macro_contents, n) ) {
-				fprintf(stderr, "Failed to delete paragraph end sentinel.\n");
-				return;
-			}
-		}
-	}
-
-	/* All the runs from p2 get added to p1 */
-	runs_new = realloc(p1->runs,
-	                   (p1->n_runs+p2->n_runs)*sizeof(struct text_run));
-	if ( runs_new == NULL ) {
-		fprintf(stderr, "Failed to allocate merged runs.\n");
-		return;
-	}
-	p1->runs = runs_new;
-
-	/* The end of the united paragraph should now be the end of the
-	 * second one */
-	set_newline_at_end(p1, get_newline_at_end(p2));
-
-	for ( i=0; i<p2->n_runs; i++ ) {
-
-		size_t offs;
-
-		p1->runs[p1->n_runs] = p2->runs[i];
-
-		offs = p1->runs[p1->n_runs-1].para_offs_bytes;
-		offs += p1->runs[p1->n_runs-1].len_bytes;
-		p1->runs[p1->n_runs].para_offs_bytes = offs;
-
-		p1->n_runs++;
-
-	}
-	free(p2->runs);
-	free(p2);
-
-	for ( i=para+1; i<fr->n_paras-1; i++ ) {
-		fr->paras[i] = fr->paras[i+1];
-	}
-	fr->n_paras--;
-}
-
-
 static void check_para(Paragraph *para)
 {
 	int i;
 	for ( i=0; i<para->n_runs; i++ ) {
 		const char *run_text;
-		if ( sc_block_contents(para->runs[i].scblock) == NULL ) continue;
-		run_text = sc_block_contents(para->runs[i].scblock);
+		if ( sc_block_contents(para->runs[i].rscblock) == NULL ) continue;
+		run_text = sc_block_contents(para->runs[i].rscblock);
 		if ( strlen(run_text) < para->runs[i].len_bytes ) {
 			printf("found a wrong run\n");
 			printf("run %i, para offs %li text '%s'\n", i,
@@ -1397,7 +1712,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			printf("splitting at end of para\n");
 			pnew->runs[0].para_offs_bytes = 0;
 			pnew->runs[0].scblock = rr->scblock;
-			pnew->runs[0].macro_real_block = rr->macro_real_block;
+			pnew->runs[0].rscblock = rr->rscblock;
 			pnew->runs[0].para_offs_bytes = 0;
 			pnew->runs[0].len_bytes = 0;
 			pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
@@ -1424,7 +1739,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 		/* First run of the new paragraph contains the leftover text */
 		pnew->runs[0].scblock = rr->scblock;
-		pnew->runs[0].macro_real_block = rr->macro_real_block;
+		pnew->runs[0].rscblock = rr->rscblock;
 		pnew->runs[0].para_offs_bytes = 0;
 		pnew->runs[0].len_bytes = rr->len_bytes - run_offs;
 		printf("%i - %i\n", (int)rr->len_bytes, (int)run_offs);
@@ -1456,14 +1771,14 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	para->n_runs = run+1;
 
 	/* If the first and second paragraphs have the same SCBlock, split it */
-	if ( (rr->scblock != NULL) && (rr->scblock == pnew->runs[0].scblock) ) {
+	if ( (rr->rscblock != NULL) && (rr->rscblock == pnew->runs[0].rscblock) ) {
 
 		printf("splitting SCBlock at %i\n", (int)run_offs);
-		printf("old block: '%s'\n", sc_block_contents(rr->scblock));
-		pnew->runs[0].scblock = sc_block_split(rr->scblock, run_offs);
-		printf("new block 1: '%s'\n", sc_block_contents(rr->scblock));
-		printf("new block 2: '%s'\n", sc_block_contents(pnew->runs[0].scblock));
-		printf("run %p block %p\n", &pnew->runs[0], pnew->runs[0].scblock);
+		printf("old block: '%s'\n", sc_block_contents(rr->rscblock));
+		pnew->runs[0].rscblock = sc_block_split(rr->rscblock, run_offs);
+		printf("new block 1: '%s'\n", sc_block_contents(rr->rscblock));
+		printf("new block 2: '%s'\n", sc_block_contents(pnew->runs[0].rscblock));
+		printf("run %p block %p\n", &pnew->runs[0], pnew->runs[0].rscblock);
 
 		printf("run %i, para offs %li\n", 0,
 		       (long int)pnew->runs[0].para_offs_bytes);
@@ -1509,7 +1824,7 @@ SCBlock *block_at_cursor(struct frame *fr, int pn, size_t pos)
 
 	if ( para->type != PARA_TYPE_CALLBACK ) return NULL;
 
-	return para->macro_real_scblock;
+	return para->scblock;
 }
 
 

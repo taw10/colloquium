@@ -58,6 +58,7 @@ SCBlock *sc_block_new()
 
 SCBlock *sc_block_next(const SCBlock *bl)
 {
+	assert(bl != NULL);
 	return bl->next;
 }
 
@@ -734,23 +735,27 @@ void sc_insert_block(SCBlock *b1, int o1, SCBlock *ins)
 }
 
 
-void scblock_delete_text(SCBlock *b, size_t o1, size_t o2)
+/* Delete text from SCBlock contents.  o2=-1 means "to the end".
+ * Returns the number of bytes deleted. */
+size_t scblock_delete_text(SCBlock *b, ssize_t o1, ssize_t o2)
 {
-
 	size_t len;
 
 	if ( b->contents == NULL ) {
 		fprintf(stderr, "Deleting text from block \\%s\n", b->name);
-		return;
+		return 0;
 	}
 
 	len = strlen(b->contents);
+	if ( o2 < 0 ) o2 = len;
 	if ( (o1 >= o2) || (o1 > len) || (o2 > len) ) {
 		fprintf(stderr, "Invalid delete: %i %i %i\n",
 		        (int)o1, (int)o2, (int)len);
-		return;
+		return 0;
 	}
 	memmove(b->contents+o1, b->contents+o2, len-o2+1);
+
+	return o2-o1;
 }
 
 

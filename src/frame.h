@@ -62,7 +62,8 @@ typedef struct _paragraph Paragraph;
 struct edit_pos
 {
 	int para;    /* Paragraph number */
-	size_t pos;  /* Byte position within paragraph */
+	size_t pos;  /* Byte position within paragraph
+	              * Yes, really.  See pango_layout_xy_to_index */
 	int trail;
 };
 
@@ -135,15 +136,13 @@ extern void set_newline_at_end(Paragraph *para, SCBlock *bl);
 extern void check_run(struct frame *fr, int pn);
 extern void show_edit_pos(struct edit_pos a);
 
-extern void add_run(Paragraph *para, SCBlock *scblock,
-                    SCBlock *macro_real, SCBlock *contents_top,
+extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
                     size_t len_bytes,
-                    PangoFontDescription *fdesc, double col[4],
-                    int macro_editable);
+                    PangoFontDescription *fdesc, double col[4]);
 
 extern Paragraph *insert_paragraph(struct frame *fr, int pos);
 
-extern void add_callback_para(struct frame *fr, SCBlock *scblock, SCBlock *mr,
+extern void add_callback_para(struct frame *fr, SCBlock *scblock,
                               double w, double h,
                               SCCallbackDrawFunc draw_func,
                               SCCallbackClickFunc click_func, void *bvp,

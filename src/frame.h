@@ -137,7 +137,7 @@ extern void show_edit_pos(struct edit_pos a);
 
 extern void add_run(Paragraph *para, SCBlock *scblock,
                     SCBlock *macro_real, SCBlock *contents_top,
-                    size_t offs_bytes, size_t len_bytes,
+                    size_t len_bytes,
                     PangoFontDescription *fdesc, double col[4],
                     int macro_editable);
 
@@ -208,6 +208,6 @@ extern SCBlock *para_scblock(Paragraph *para);
 
 extern int para_debug_num_runs(Paragraph *para);
 extern int para_debug_run_info(Paragraph *para, int i, size_t *len, SCBlock **scblock,
-                               size_t *scblock_offs, size_t *para_offs);
+                               size_t *para_offs);
 
 #endif	/* FRAME_H */

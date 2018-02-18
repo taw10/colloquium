@@ -45,7 +45,6 @@ struct run_debug
 	int np;
 	size_t len;
 	void *scblock; /* Don't you dare try to dereference this */
-	size_t offs;
 	size_t para_offs;
 };
 
@@ -117,14 +116,14 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 	plot_text(cr, ypos, fontdesc, tmp);
 
 	for ( i=0; i<nrun; i++ ) {
-		size_t scblock_offs, para_offs, len;
+		size_t para_offs, len;
 		SCBlock *scblock;
-		if ( para_debug_run_info(para, i, &len, &scblock, &scblock_offs, &para_offs) ) {
+		if ( para_debug_run_info(para, i, &len, &scblock, &para_offs) ) {
 			plot_text(cr, ypos, fontdesc, "Error");
 		} else {
 
-			snprintf(tmp, 255, "  Run %i: len %li, SCBlock %p offs %li, para offs %li",
-			         i, len, scblock, scblock_offs, para_offs);
+			snprintf(tmp, 255, "  Run %i: len %li, SCBlock %p, para offs %li",
+			         i, len, scblock, para_offs);
 			plot_text(cr, ypos, fontdesc, tmp);
 			if ( len != rd[*dpos].len ) {
 				snprintf(tmp, 255, "   (len was %li)", rd[*dpos].len);
@@ -135,11 +134,6 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 				snprintf(tmp, 255, "   (para offs was %li)", rd[*dpos].para_offs);
 				plot_text(cr, ypos, fontdesc, tmp);
 				(*changesig) += i*(*dpos)*para_offs*(*ypos);
-			}
-			if ( scblock_offs != rd[*dpos].offs ) {
-				snprintf(tmp, 255, "   (offs was %li)", rd[*dpos].offs);
-				plot_text(cr, ypos, fontdesc, tmp);
-				(*changesig) += i*(*dpos)*scblock_offs*(*ypos);
 			}
 			(*dpos)++;
 
@@ -172,11 +166,11 @@ static void record_runs(struct debugwindow *dbgw)
 
 		for ( j=0; j<nrun; j++ ) {
 
-			size_t scblock_offs, para_offs, len;
+			size_t para_offs, len;
 			SCBlock *scblock;
 
 			if ( para_debug_run_info(para, j, &len, &scblock,
-			                         &scblock_offs, &para_offs) )
+			                         &para_offs) )
 			{
 				continue;
 			}
@@ -184,7 +178,6 @@ static void record_runs(struct debugwindow *dbgw)
 			dbgw->runs[n].np = i;
 			dbgw->runs[n].len = len;
 			dbgw->runs[n].scblock = scblock;
-			dbgw->runs[n].offs = scblock_offs;
 			dbgw->runs[n].para_offs = para_offs;
 			n++;
 

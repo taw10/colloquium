@@ -946,7 +946,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
                     PangoLanguage *lang, int editable, SCInterpreter *scin)
 {
 	const char *text = sc_block_contents(bl);
-	size_t start, len_bytes;
+	size_t len_bytes;
 	PangoFontDescription *fontdesc;
 	double *col;
 	struct sc_state *st = &scin->state[scin->j];
@@ -961,18 +961,10 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	mrb = sc_interp_get_macro_real_block(scin);
 
 	len_bytes = strlen(text);
-	start = 0;
-	do {
-
-		size_t len = strlen(text+start);
-
-		Paragraph *para = last_open_para(fr);
-		add_run(para, bl, mrb, st->macro_contents, start, len,
-		        fontdesc, col, st->macro_editable);
-		set_para_spacing(para, st->paraspace);
-		start += len;
-
-	} while ( start < len_bytes );
+	Paragraph *para = last_open_para(fr);
+	add_run(para, bl, mrb, st->macro_contents, len_bytes,
+	        fontdesc, col, st->macro_editable);
+	set_para_spacing(para, st->paraspace);
 
 	return 0;
 }
@@ -1032,7 +1024,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		Paragraph *para = last_open_para(fr);
 		struct sc_state *st = &scin->state[scin->j];
 		/* Add a dummy run which we can type into */
-		add_run(para, bl, st->macro_real_block, st->macro_contents, 0, 0,
+		add_run(para, bl, st->macro_real_block, st->macro_contents, 0,
 		        sc_interp_get_fontdesc(scin), fr->col, st->macro_editable);
 		set_newline_at_end(para, bl);
 		close_last_paragraph(fr);

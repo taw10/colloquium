@@ -228,10 +228,8 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
                                GApplication *papp)
 {
 	GtkWidget *window;
-	GtkWidget *scroll;
 	SlideWindow *sw;
 	SCBlock *stylesheets[2];
-	SCBlock *ch;
 	Colloquium *app = COLLOQUIUM(papp);
 
 	sw = calloc(1, sizeof(SlideWindow));

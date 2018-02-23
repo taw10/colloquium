@@ -1438,12 +1438,16 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
 		                     e->drag_corner_x - e->start_corner_x,
 		                     e->drag_corner_y - e->start_corner_y);
-		check_paragraph(fr, e->pc, sc_block_child(fr->scblocks));
-		e->selection = fr;
-		e->cursor_frame = fr;
-		e->cursor_para = 0;
-		e->cursor_pos = 0;
-		e->cursor_trail = 0;
+		if ( fr != NULL ) {
+			check_paragraph(fr, e->pc, sc_block_child(fr->scblocks));
+			e->selection = fr;
+			e->cursor_frame = fr;
+			e->cursor_para = 0;
+			e->cursor_pos = 0;
+			e->cursor_trail = 0;
+		} else {
+			fprintf(stderr, "Failed to create frame!\n");
+		}
 		break;
 
 		case DRAG_REASON_IMPORT :

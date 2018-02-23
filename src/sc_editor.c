@@ -459,7 +459,7 @@ void sc_editor_add_storycode(SCEditor *e, const char *sc)
 {
 	SCBlock *nf;
 	nf = sc_parse(sc);
-	sc_block_append_block(e->scblocks, nf);
+	sc_block_append_block(sc_block_child(e->scblocks), nf);
 	full_rerender(e);
 }
 

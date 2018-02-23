@@ -1362,7 +1362,7 @@ static struct frame *create_frame(SCEditor *e, double x, double y,
 	fr = add_subframe(parent);
 
 	/* Add to SC */
-	scblocks = sc_block_append_end(e->scblocks, "f", NULL, NULL);
+	scblocks = sc_block_append_end(sc_block_child(e->scblocks), "f", NULL, NULL);
 	fr->scblocks = scblocks;
 	sc_block_append_inside(scblocks, NULL, NULL, strdup(""));
 

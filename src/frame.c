@@ -928,12 +928,23 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	char *ptr;
 
 	nrun = which_run(para, offs);
+
+	if ( nrun == para->n_runs ) {
+		fprintf(stderr, "pos_trail_to_offset: Offset too high\n");
+		return 0;
+	}
+
 	run = &para->runs[nrun];
 
 	if ( para->type != PARA_TYPE_TEXT ) return 0;
 
 	if ( run == NULL ) {
 		fprintf(stderr, "pos_trail_to_offset: No run\n");
+		return 0;
+	}
+
+	if ( run->scblock == NULL ) {
+		fprintf(stderr, "pos_trail_to_offset: SCBlock = NULL?\n");
 		return 0;
 	}
 

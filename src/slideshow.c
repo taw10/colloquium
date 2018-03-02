@@ -127,7 +127,7 @@ static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
 
 	ss->blank_cursor = gdk_cursor_new_for_display(gdk_display_get_default(),
 	                                              GDK_BLANK_CURSOR);
-	gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
+	//gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
 
 	slideshow_rerender(ss);
 

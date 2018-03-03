@@ -1073,9 +1073,9 @@ static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
 			sc_interp_save(scin);
 			scin->state[scin->j].macro_real_block = bl;
 			scin->state[scin->j].macro_contents = child;
-			sc_interp_add_blocks(scin, st->macros[i].bl);
+			sc_interp_add_blocks(scin, scin->state[scin->j].macros[i].bl);
 			sc_interp_restore(scin);
-			break;
+			break; /* Stop iterating, because "st" is now invalid */
 		}
 	}
 }

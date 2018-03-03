@@ -746,6 +746,12 @@ size_t scblock_delete_text(SCBlock *b, ssize_t o1, ssize_t o2)
 		return 0;
 	}
 
+	if ( (o2 != -1) && (o1 > o2) ) {
+		ssize_t t = o2;
+		o2 = o1;
+		o1 = t;
+	}
+
 	len = strlen(b->contents);
 	if ( o2 < 0 ) o2 = len;
 	if ( (o1 >= o2) || (o1 > len) || (o2 > len) ) {

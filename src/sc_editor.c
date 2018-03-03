@@ -742,38 +742,23 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 	} else {
 
 		/* Delete one character */
-		size_t old_pos = e->cursor_pos;
-		int old_para = e->cursor_para;
-		int old_trail = e->cursor_trail;
+		struct edit_pos p1, p2;
 
-		int new_para = old_para;
-		size_t new_pos = old_pos;
-		int new_trail = old_trail;
+		p1.para = e->cursor_para;
+		p1.pos = e->cursor_pos;
+		p1.trail = e->cursor_trail;
 
-		Paragraph *para = e->cursor_frame->paras[old_para];
+		p2 = p1;
 
-		cursor_moveh(e->cursor_frame, &new_para, &new_pos, &new_trail, -1);
-		cursor_moveh(e->cursor_frame, &e->cursor_para, &e->cursor_pos, &e->cursor_trail, -1);
+		cursor_moveh(e->cursor_frame, &p2.para, &p2.pos, &p2.trail, -1);
+		show_edit_pos(p1);
+		show_edit_pos(p2);
 
-		if ( e->cursor_para != old_para ) {
+		delete_text_from_frame(e->cursor_frame, p1, p2, wrapw);
 
-			merge_paragraphs(e->cursor_frame, e->cursor_para);
-			wrap_paragraph(e->cursor_frame->paras[new_para], NULL, wrapw, 0, 0);
-
-		} else {
-
-			size_t offs_new, offs_old;
-
-			offs_new = pos_trail_to_offset(para, e->cursor_pos,
-			                               e->cursor_trail);
-			offs_old = pos_trail_to_offset(para, old_pos, old_trail);
-
-			delete_text_in_paragraph(e->cursor_frame, old_para,
-			                         offs_new, offs_old);
-			wrap_paragraph(para, NULL, wrapw, 0, 0);
-
-
-		}
+		e->cursor_para = p2.para;
+		e->cursor_pos = p2.pos;
+		e->cursor_trail = p2.trail;
 
 	}
 

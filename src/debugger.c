@@ -43,9 +43,7 @@ struct run_debug
 	enum para_type para_type;
 
 	int np;
-	size_t len;
 	void *scblock; /* Don't you dare try to dereference this */
-	size_t para_offs;
 };
 
 
@@ -116,25 +114,13 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 	plot_text(cr, ypos, fontdesc, tmp);
 
 	for ( i=0; i<nrun; i++ ) {
-		size_t para_offs, len;
 		SCBlock *scblock;
-		if ( para_debug_run_info(para, i, &len, &scblock, &para_offs) ) {
+		if ( para_debug_run_info(para, i, &scblock) ) {
 			plot_text(cr, ypos, fontdesc, "Error");
 		} else {
 
-			snprintf(tmp, 255, "  Run %i: len %li, SCBlock %p, para offs %li",
-			         i, len, scblock, para_offs);
+			snprintf(tmp, 255, "  Run %i: SCBlock %p", i, scblock);
 			plot_text(cr, ypos, fontdesc, tmp);
-			if ( len != rd[*dpos].len ) {
-				snprintf(tmp, 255, "   (len was %li)", rd[*dpos].len);
-				plot_text(cr, ypos, fontdesc, tmp);
-				(*changesig) += i*(*dpos)*len*(*ypos);
-			}
-			if ( para_offs != rd[*dpos].para_offs ) {
-				snprintf(tmp, 255, "   (para offs was %li)", rd[*dpos].para_offs);
-				plot_text(cr, ypos, fontdesc, tmp);
-				(*changesig) += i*(*dpos)*para_offs*(*ypos);
-			}
 			(*dpos)++;
 
 		}
@@ -166,19 +152,12 @@ static void record_runs(struct debugwindow *dbgw)
 
 		for ( j=0; j<nrun; j++ ) {
 
-			size_t para_offs, len;
 			SCBlock *scblock;
 
-			if ( para_debug_run_info(para, j, &len, &scblock,
-			                         &para_offs) )
-			{
-				continue;
-			}
+			if ( para_debug_run_info(para, j, &scblock) ) continue;
 
 			dbgw->runs[n].np = i;
-			dbgw->runs[n].len = len;
 			dbgw->runs[n].scblock = scblock;
-			dbgw->runs[n].para_offs = para_offs;
 			n++;
 
 			if ( n == MAX_DEBUG_RUNS ) {

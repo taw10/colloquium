@@ -1162,6 +1162,10 @@ static Paragraph *scan_runs_for_scblock(struct frame *fr, int pn1, int pn2,
 				*run = j;
 				return fr->paras[i];
 			}
+			if ( fr->paras[i]->runs[j].scblock == bl ) {
+				*run = j;
+				return fr->paras[i];
+			}
 		}
 	}
 	return NULL;

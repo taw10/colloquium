@@ -1146,7 +1146,7 @@ static void delete_run(Paragraph *para, int nrun)
 {
 	printf("deleting run %i of %i from para %p\n", nrun, para->n_runs, para);
 	memmove(&para->runs[nrun], &para->runs[nrun+1],
-	        (para->n_runs-1)*sizeof(struct text_run));
+	        (para->n_runs-nrun-1)*sizeof(struct text_run));
 	para->n_runs--;
 }
 

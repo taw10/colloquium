@@ -930,7 +930,7 @@ static int get_paragraph_offset(Paragraph *para, int nrun)
 }
 
 
-static int which_run(Paragraph *para, size_t offs, int inclusive)
+static int which_run(Paragraph *para, size_t offs)
 {
 	int i;
 	size_t t = 0;
@@ -939,8 +939,11 @@ static int which_run(Paragraph *para, size_t offs, int inclusive)
 		struct text_run *run = &para->runs[i];
 		t += run_text_len(run);
 		if ( t > offs ) return i;
-		if ( inclusive && t == offs ) return i;
 	}
+
+	/* Maybe offs points exactly to the end of the last run? */
+	if ( t == offs ) return para->n_runs-1;
+
 	return para->n_runs;
 }
 
@@ -955,7 +958,7 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	char *ptr;
 	size_t para_offset_of_run;
 
-	nrun = which_run(para, offs, 0);
+	nrun = which_run(para, offs);
 
 	if ( nrun == para->n_runs ) {
 		fprintf(stderr, "pos_trail_to_offset: Offset too high\n");
@@ -1019,7 +1022,7 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 	size_t run_offs;
 
 	/* Find which run we are in */
-	nrun = which_run(para, offs, 1);
+	nrun = which_run(para, offs);
 	if ( nrun == para->n_runs ) {
 		fprintf(stderr, "Couldn't find run to insert into.\n");
 		return;
@@ -1067,7 +1070,7 @@ static SCBlock *pos_to_rscblock(struct frame *fr, struct edit_pos p)
 
 	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
 
-	run = which_run(para, paraoffs, 1);
+	run = which_run(para, paraoffs);
 	assert(run < para->n_runs);
 
 	return para->runs[run].rscblock;
@@ -1093,7 +1096,7 @@ static SCBlock *pos_to_scblock(struct frame *fr, struct edit_pos p,
 
 	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
 
-	run = which_run(para, paraoffs, 1);
+	run = which_run(para, paraoffs);
 	assert(run < para->n_runs);
 
 	return para->runs[run].scblock;
@@ -1114,7 +1117,7 @@ static size_t pos_to_offset(struct frame *fr, struct edit_pos p)
 	/* Offset of this position into the paragraph */
 	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
 
-	run = which_run(para, paraoffs, 1);
+	run = which_run(para, paraoffs);
 	assert(run < para->n_runs);
 
 	/* Offset of this position into the run
@@ -1136,7 +1139,7 @@ static int pos_to_run_number(struct frame *fr, struct edit_pos p)
 
 	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
 
-	run = which_run(para, paraoffs, 1);
+	run = which_run(para, paraoffs);
 	assert(run < para->n_runs);
 
 	return run;
@@ -1576,7 +1579,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	}
 
 	/* Determine which run the cursor is in */
-	run = which_run(para, pos, 1);
+	run = which_run(para, pos);
 
 	pnew->type = PARA_TYPE_TEXT;
 	pnew->open = para->open;
@@ -1706,7 +1709,7 @@ int get_sc_pos(struct frame *fr, int pn, size_t pos,
 	int nrun;
 	struct text_run *run;
 
-	nrun = which_run(para, pos, 1);
+	nrun = which_run(para, pos);
 	if ( nrun == para->n_runs ) {
 		fprintf(stderr, "Couldn't find run to insert into.\n");
 		return 1;

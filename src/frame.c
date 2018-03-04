@@ -1577,6 +1577,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 {
 	Paragraph *pnew;
 	int i;
+	SCBlock *nnp;
 	size_t run_offs;
 	int run;
 	Paragraph *para = fr->paras[pn];
@@ -1614,10 +1615,16 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 		if ( run == para->n_runs-1 ) {
 
-			/* It's actually a paragraph boundary.  Even easier still... */
-			printf("splitting at end of para\n");
-			pnew->runs[0].scblock = rr->scblock;
-			pnew->runs[0].rscblock = rr->rscblock;
+			printf("Simple new para\n");
+
+			/* Right at the end of a paragraph:
+			 *  - don't touch the current paragraph
+			 *  - add a new paragraph after
+			 *  - .. containing just a \newpara block and run */
+
+			nnp = sc_block_append(rr->scblock, strdup("newpara"), NULL, NULL, NULL);
+			pnew->runs[0].scblock = nnp;
+			pnew->runs[0].rscblock = nnp;
 			pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
 			pnew->runs[0].col[0] = rr->col[0];
 			pnew->runs[0].col[1] = rr->col[1];
@@ -1625,6 +1632,14 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			pnew->runs[0].col[3] = rr->col[3];
 			pnew->n_runs = 1;
 
+			set_newline_at_end(pnew, nnp);
+
+			pnew->open = para->open;
+			para->open = 0;
+
+			wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
+
+			return nnp;
 
 		} else {
 
@@ -1676,9 +1691,9 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	}
 
 	/* Add a \newpara after the end of the first paragraph's SC */
-	set_newline_at_end(para,
-	                   sc_block_append(rr->scblock, strdup("newpara"),
-	                                   NULL, NULL, NULL));
+	nnp = sc_block_append(rr->scblock, strdup("newpara"), NULL, NULL, NULL);
+	add_run(para, nnp, nnp, 0, rr->fontdesc, rr->col);
+	set_newline_at_end(para, nnp);
 
 	pnew->open = para->open;
 	para->open = 0;

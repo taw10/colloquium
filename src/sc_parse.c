@@ -666,6 +666,10 @@ SCBlock *sc_parse(const char *sc)
 
 void sc_block_set_name(SCBlock *bl, char *nam)
 {
+	if ( bl == NULL ) {
+		fprintf(stderr, "sc_block_set_name: NULL block\n");
+		return;
+	}
 	free(bl->name);
 	bl->name = nam;
 }

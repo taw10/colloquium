@@ -408,7 +408,7 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 
 	if ( !para->open ) {
 		fprintf(stderr, "Adding a run to a closed paragraph!\n");
-		return;
+		//return;
 	}
 
 	runs_new = realloc(para->runs,
@@ -1029,29 +1029,40 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 	}
 	run = &para->runs[nrun];
 
-	if ( (sc_block_name(run->scblock) != NULL)
-	  && (strcmp(sc_block_name(run->scblock), "newpara") == 0) )
+	/* Translate paragraph offset for insertion into SCBlock offset */
+	run_offs = offs - get_paragraph_offset(para, nrun);
+
+	if ( (sc_block_name(run->rscblock) != NULL)
+	  && (strcmp(sc_block_name(run->rscblock), "newpara") == 0) )
 	{
 
-		SCBlock *nnp;
-		printf("Inserting into newpara block...\n");
+		if ( para->n_runs == 1 ) {
 
-		/* Add a new \newpara block after this one */
-		nnp = sc_block_append(run->scblock, "newpara",
-		                      NULL, NULL, NULL);
+			SCBlock *nnp;
+			printf("Inserting into newpara block...\n");
 
-		/* The first \newpara block becomes a normal anonymous block */
-		sc_block_set_name(run->scblock, NULL);
+			/* The first \newpara block becomes a normal anonymous block */
+			sc_block_set_name(run->rscblock, NULL);
+			sc_block_set_contents(run->rscblock, strdup(t));
 
-		if ( para->newline_at_end == run->scblock ) {
+			/* Add a new \newpara block after this one */
+			nnp = sc_block_append(run->rscblock, "newpara",
+			                      NULL, NULL, NULL);
+			add_run(para, nnp, nnp, 0, run->fontdesc, run->col);
+
 			para->newline_at_end = nnp;
-			printf("Replaced the newpara block\n");
+
+			return;
+
+		} else {
+
+			run = &para->runs[nrun-1];
+			run_offs = strlen(sc_block_contents(run->rscblock));
+
 		}
 
 	}
 
-	/* Translate paragraph offset for insertion into SCBlock offset */
-	run_offs = offs - get_paragraph_offset(para, nrun);
 	sc_insert_text(run->rscblock, run_offs, t);
 }
 

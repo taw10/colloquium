@@ -541,10 +541,19 @@ static void separate_newlines(SCBlock *bl)
 					bl->contents = NULL;
 					nb = bl;
 				} else {
-					sc_block_append(bl, strdup("newpara"), NULL, NULL, &nb);
+					sc_block_append(bl, strdup("newpara"),
+					                NULL, NULL, &nb);
 				}
+
+				/* Follow \newpara with an empty block so that
+				 * all paragraphs have at least one SCBlock */
+				sc_block_append(nb, NULL, NULL, strdup(""),
+				                NULL);
+
+				/* Add any text after the \n */
 				if ( strlen(npos+1) > 0 ) {
-					sc_block_append(nb, NULL, NULL, strdup(npos+1), &nb);
+					sc_block_append(nb, NULL, NULL,
+					                strdup(npos+1), &nb);
 				}
 				npos[0] = '\0';
 			}

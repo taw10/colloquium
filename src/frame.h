@@ -121,6 +121,7 @@ extern struct frame *find_frame_with_scblocks(struct frame *top,
 
 extern double total_height(struct frame *fr);
 
+extern void add_newpara(struct frame *fr, SCBlock *bl);
 extern Paragraph *last_open_para(struct frame *fr);
 extern Paragraph *current_para(struct frame *fr);
 extern void close_last_paragraph(struct frame *fr);

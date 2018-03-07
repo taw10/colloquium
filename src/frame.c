@@ -281,11 +281,6 @@ static size_t run_text_len(const struct text_run *run)
 	}
 
 	if ( sc_block_contents(run->rscblock) == NULL ) {
-		if ( sc_block_name(run->rscblock) != NULL ) {
-			if ( strcmp("newpara", sc_block_name(run->rscblock)) == 0 ) {
-				return 0;
-			}
-		}
 		fprintf(stderr, "NULL rscblock contents in run_text_len\n");
 		return 0;
 	}
@@ -342,8 +337,6 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 		guint16 r, g, b;
 
 		run_text = sc_block_contents(para->runs[i].rscblock);
-
-		if ( run_text == NULL ) continue;  /* Could be \newpara */
 		run_len = strlen(run_text);
 
 		attr = pango_attr_font_desc_new(para->runs[i].fontdesc);
@@ -572,6 +565,20 @@ Paragraph *last_open_para(struct frame *fr)
 	pnew->height = 0.0;
 
 	return pnew;
+}
+
+
+void add_newpara(struct frame *fr, SCBlock *bl)
+{
+	Paragraph *last_para;
+
+	if ( fr->paras == NULL ) return;
+	last_para = fr->paras[fr->n_paras-1];
+
+	if ( last_para->open ) {
+		set_newline_at_end(last_para, bl);
+		close_last_paragraph(fr);
+	} /* else do nothing */
 }
 
 
@@ -984,12 +991,6 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
-	if ( (sc_block_name(run->rscblock) != NULL)
-	  && (strcmp(sc_block_name(run->rscblock), "newpara") == 0) )
-	{
-		return 0;
-	}
-
 	if ( sc_block_contents(run->rscblock) == NULL ) {
 		fprintf(stderr, "pos_trail_to_offset: No contents "
 		        "(%p name=%s, options=%s)\n",
@@ -1023,8 +1024,6 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 {
 	int nrun;
-	struct text_run *run;
-	size_t run_offs;
 
 	/* Find which run we are in */
 	nrun = which_run(para, offs);
@@ -1032,43 +1031,16 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 		fprintf(stderr, "Couldn't find run to insert into.\n");
 		return;
 	}
-	run = &para->runs[nrun];
 
-	/* Translate paragraph offset for insertion into SCBlock offset */
-	run_offs = offs - get_paragraph_offset(para, nrun);
-
-	if ( (sc_block_name(run->rscblock) != NULL)
-	  && (strcmp(sc_block_name(run->rscblock), "newpara") == 0) )
-	{
-
-		if ( para->n_runs == 1 ) {
-
-			SCBlock *nnp;
-			printf("Inserting into newpara block...\n");
-
-			/* The first \newpara block becomes a normal anonymous block */
-			sc_block_set_name(run->rscblock, NULL);
-			sc_block_set_contents(run->rscblock, strdup(t));
-
-			/* Add a new \newpara block after this one */
-			nnp = sc_block_append(run->rscblock, "newpara",
-			                      NULL, NULL, NULL);
-			add_run(para, nnp, nnp, 0, run->fontdesc, run->col);
-
-			para->newline_at_end = nnp;
-
-			return;
-
-		} else {
-
-			run = &para->runs[nrun-1];
-			run_offs = strlen(sc_block_contents(run->rscblock));
-
-		}
-
+	if ( para->n_runs == 0 ) {
+		printf("No runs in paragraph?\n");
+	} else {
+		struct text_run *run;
+		size_t run_offs;
+		run = &para->runs[nrun];
+		run_offs = offs - get_paragraph_offset(para, nrun);
+		sc_insert_text(run->rscblock, run_offs, t);
 	}
-
-	sc_insert_text(run->rscblock, run_offs, t);
 }
 
 
@@ -1287,8 +1259,6 @@ static signed int merge_paragraph_runs(Paragraph *p1, Paragraph *p2)
 	}
 	p1->runs = runs_new;
 
-	assert(p1->runs[p1->n_runs-1].scblock == get_newline_at_end(p1));
-	p1->n_runs--;  /* Chop off the run corresponding to \newpara */
 	spos = p1->n_runs;
 
 	/* The end of the united paragraph should now be the end of the
@@ -1621,31 +1591,38 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 		if ( run == para->n_runs-1 ) {
 
+			SCBlock *end;
+
 			printf("Simple new para\n");
 
-			/* Right at the end of a paragraph:
-			 *  - don't touch the current paragraph
-			 *  - add a new paragraph after
-			 *  - .. containing just a \newpara block and run */
+			if ( get_newline_at_end(para) == NULL ) {
+				/* The current paragraph doesn't have
+				 * a \newpara yet */
+				end = sc_block_append(rr->scblock,
+				                      strdup("newpara"), NULL,
+				                      NULL, NULL);
+				set_newline_at_end(para, end);
+			} else {
+				/* If the current paragraph did have \newpara,
+				 * then the new one needs one too */
+				end = sc_block_append(rr->scblock,
+				                      strdup("newpara"),
+				                      NULL, NULL, NULL);
+				set_newline_at_end(pnew, end);
+			}
 
-			nnp = sc_block_append(rr->scblock, strdup("newpara"), NULL, NULL, NULL);
-			pnew->runs[0].scblock = nnp;
-			pnew->runs[0].rscblock = nnp;
-			pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
-			pnew->runs[0].col[0] = rr->col[0];
-			pnew->runs[0].col[1] = rr->col[1];
-			pnew->runs[0].col[2] = rr->col[2];
-			pnew->runs[0].col[3] = rr->col[3];
-			pnew->n_runs = 1;
-
-			set_newline_at_end(pnew, nnp);
+			/* Add an empty run + SCBlock to type into */
+			end = sc_block_append(end, NULL,
+			                      NULL, strdup(""), NULL);
+			pnew->n_runs = 0;
+			add_run(pnew, end, end, 0, fr->fontdesc, fr->col);
 
 			pnew->open = para->open;
 			para->open = 0;
 
 			wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 
-			return nnp;
+			return end;
 
 		} else {
 
@@ -1698,7 +1675,6 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 	/* Add a \newpara after the end of the first paragraph's SC */
 	nnp = sc_block_append(rr->scblock, strdup("newpara"), NULL, NULL, NULL);
-	add_run(para, nnp, nnp, 0, rr->fontdesc, rr->col);
 	set_newline_at_end(para, nnp);
 
 	pnew->open = para->open;

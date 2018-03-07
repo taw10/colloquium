@@ -1029,10 +1029,13 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "newpara")==0 ) {
+
 		struct frame *fr = sc_interp_get_frame(scin);
 		Paragraph *para = last_open_para(fr);
+
 		/* Add a dummy run which we can type into */
 		add_run(para, bl, bl, 0, sc_interp_get_fontdesc(scin), fr->col);
+
 		set_newline_at_end(para, bl);
 		close_last_paragraph(fr);
 

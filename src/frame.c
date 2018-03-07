@@ -1495,13 +1495,13 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 				break;
 			}
 			printf("name is '%s'\n", sc_block_name(scblock));
+
 			if ( (sc_block_name(scblock) != NULL)
 			  && (strcmp(sc_block_name(scblock), "newpara") == 0) )
 			{
 				/* Deleting newpara block, merge the paragraphs */
 				merge_paragraphs_by_newpara(fr, scblock);
 				p2.para--;
-
 			}
 
 			next = sc_block_next(scblock);
@@ -1530,7 +1530,8 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 			printf("deleting block %p\n", p2scblock);
 			show_sc_block(p2scblock, "");
 			sc_block_delete(&fr->scblocks, p2scblock);
-			delete_run_for_scblock(fr, fr->paras[p1.para], fr->paras[p2.para], p2scblock);
+			delete_run_for_scblock(fr, fr->paras[p1.para],
+			                       fr->paras[p2.para], p2scblock);
 		} else if ( p2offs > 0 ) {
 			printf("Partial delete\n");
 			printf("contents '%s'\n", sc_block_contents(p2rscblock));

@@ -946,7 +946,6 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
                     PangoLanguage *lang, int editable, SCInterpreter *scin)
 {
 	const char *text = sc_block_contents(bl);
-	size_t len_bytes;
 	PangoFontDescription *fontdesc;
 	double *col;
 	struct sc_state *st = &scin->state[scin->j];
@@ -958,7 +957,6 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
 
-	len_bytes = strlen(text);
 	Paragraph *para = last_open_para(fr);
 
 	rbl = bl;
@@ -966,7 +964,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 		bl = st->macro_real_block;
 	}
 
-	add_run(para, bl, rbl, len_bytes, fontdesc, col);
+	add_run(para, bl, rbl, fontdesc, col);
 	set_para_spacing(para, st->paraspace);
 
 	return 0;

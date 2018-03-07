@@ -138,7 +138,6 @@ extern void check_run(struct frame *fr, int pn);
 extern void show_edit_pos(struct edit_pos a);
 
 extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
-                    size_t len_bytes,
                     PangoFontDescription *fdesc, double col[4]);
 
 extern Paragraph *insert_paragraph(struct frame *fr, int pos);

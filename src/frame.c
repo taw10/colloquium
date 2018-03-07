@@ -394,8 +394,7 @@ void set_newline_at_end(Paragraph *para, SCBlock *bl)
 
 
 void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
-             size_t len_bytes, PangoFontDescription *fdesc,
-             double col[4])
+             PangoFontDescription *fdesc, double col[4])
 {
 	struct text_run *runs_new;
 
@@ -1615,7 +1614,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			end = sc_block_append(end, NULL,
 			                      NULL, strdup(""), NULL);
 			pnew->n_runs = 0;
-			add_run(pnew, end, end, 0, fr->fontdesc, fr->col);
+			add_run(pnew, end, end, fr->fontdesc, fr->col);
 
 			pnew->open = para->open;
 			para->open = 0;

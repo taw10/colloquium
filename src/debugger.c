@@ -262,6 +262,9 @@ void open_debugger(struct frame *fr)
 {
 	struct debugwindow *dbgw;
 	GtkWidget *scroll;
+
+	if ( fr == NULL ) return;
+
 	dbgw = calloc(1, sizeof(struct debugwindow));
 	if ( dbgw == NULL ) return;
 

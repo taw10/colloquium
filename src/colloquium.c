@@ -473,7 +473,7 @@ static void colloquium_startup(GApplication *papp)
 	if ( !g_file_test(app->mydir, G_FILE_TEST_IS_DIR) ) {
 
 		/* Folder not created yet */
-		GFile *file = g_file_new_for_path(DATADIR"/colloquium/demo.sc");
+		GFile *file = g_file_new_for_path(DATADIR"/demo.sc");
 		g_application_open(G_APPLICATION(app), &file, 1, "");
 		app->first_run = 1;
 		g_object_unref(file);

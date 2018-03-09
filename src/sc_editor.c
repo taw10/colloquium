@@ -2075,7 +2075,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->bg_pixbuf = NULL;
 
 	err = NULL;
-	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/colloquium/sky.png", &err);
+	sceditor->bg_pixbuf = gdk_pixbuf_new_from_file(DATADIR"/sky.png", &err);
 	if ( sceditor->bg_pixbuf == NULL ) {
 		fprintf(stderr, "Failed to load background: %s\n",
 		        err->message);

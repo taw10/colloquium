@@ -1757,6 +1757,7 @@ Paragraph *current_para(struct frame *fr)
 	return NULL;
 }
 
+
 void *get_para_bvp(Paragraph *para)
 {
 	if ( para->type != PARA_TYPE_CALLBACK ) return NULL;
@@ -1775,17 +1776,21 @@ enum para_type para_type(Paragraph *para)
 	return para->type;
 }
 
+
 int para_debug_num_runs(Paragraph *para)
 {
 	if ( para->type != PARA_TYPE_TEXT ) return 0;
 	return para->n_runs;
 }
 
-int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock)
+
+int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock,
+                        SCBlock **rscblock)
 {
 	if ( para->type != PARA_TYPE_TEXT ) return 1;
 	if ( i >= para->n_runs ) return 1;
 
 	*scblock = para->runs[i].scblock;
+	*rscblock = para->runs[i].rscblock;
 	return 0;
 }

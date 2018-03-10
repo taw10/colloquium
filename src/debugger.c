@@ -43,7 +43,8 @@ struct run_debug
 	enum para_type para_type;
 
 	int np;
-	void *scblock; /* Don't you dare try to dereference this */
+	void *scblock; /* Don't you dare try to dereference this. */
+	void *rscblock; /* Or this. */
 };
 
 
@@ -115,11 +116,13 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 
 	for ( i=0; i<nrun; i++ ) {
 		SCBlock *scblock;
-		if ( para_debug_run_info(para, i, &scblock) ) {
+		SCBlock *rscblock;
+		if ( para_debug_run_info(para, i, &scblock, &rscblock) ) {
 			plot_text(cr, ypos, fontdesc, "Error");
 		} else {
 
-			snprintf(tmp, 255, "  Run %i: SCBlock %p", i, scblock);
+			snprintf(tmp, 255, "  Run %i: SCBlock %p / %p", i,
+			         scblock, rscblock);
 			plot_text(cr, ypos, fontdesc, tmp);
 			(*dpos)++;
 
@@ -153,11 +156,13 @@ static void record_runs(struct debugwindow *dbgw)
 		for ( j=0; j<nrun; j++ ) {
 
 			SCBlock *scblock;
+			SCBlock *rscblock;
 
-			if ( para_debug_run_info(para, j, &scblock) ) continue;
+			if ( para_debug_run_info(para, j, &scblock, &rscblock) ) continue;
 
 			dbgw->runs[n].np = i;
 			dbgw->runs[n].scblock = scblock;
+			dbgw->runs[n].rscblock = rscblock;
 			n++;
 
 			if ( n == MAX_DEBUG_RUNS ) {

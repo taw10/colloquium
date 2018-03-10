@@ -206,6 +206,7 @@ extern enum para_type para_type(Paragraph *para);
 extern SCBlock *para_scblock(Paragraph *para);
 
 extern int para_debug_num_runs(Paragraph *para);
-extern int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock);
+extern int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock,
+                               SCBlock **rscblock);
 
 #endif	/* FRAME_H */

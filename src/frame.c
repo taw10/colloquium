@@ -1533,8 +1533,8 @@ void show_para(Paragraph *p)
 
 		printf("%i runs:\n", p->n_runs);
 		for ( i=0; i<p->n_runs; i++ ) {
-			printf("  Run %2i: SCBlock %p %s '%s'\n",
-			       i, p->runs[i].scblock,
+			printf("  Run %2i: SCBlock %p/%p %s '%s'\n",
+			       i, p->runs[i].scblock, p->runs[i].rscblock,
 			       pango_font_description_to_string(p->runs[i].fontdesc),
 			       sc_block_contents(p->runs[i].rscblock));
 		}

@@ -1557,7 +1557,6 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	int run;
 	Paragraph *para = fr->paras[pn];
 	struct text_run *rr;
-	int bf_pos;
 
 	pnew = insert_paragraph(fr, pn);
 	if ( pnew == NULL ) {
@@ -1568,26 +1567,20 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	/* Determine which run the cursor is in */
 	run = which_run(para, pos);
 
+	/* Create the new (second) paragraph */
 	pnew->type = PARA_TYPE_TEXT;
-	pnew->open = para->open;
-	pnew->n_runs = para->n_runs - run;
-	pnew->runs = malloc(pnew->n_runs * sizeof(struct text_run));
-	if ( pnew->runs == NULL ) {
-		fprintf(stderr, "Failed to allocate runs.\n");
-		return NULL; /* Badness is coming */
-	}
-
-	/* Copy spacing */
+	pnew->n_runs = 0;
+	pnew->runs = NULL;
 	for ( i=0; i<4; i++ ) pnew->space[i] = para->space[i];
 
 	rr = &para->runs[run];
 	run_offs = pos - get_paragraph_offset(para, run);
 	printf("split at run %i\n", run);
 
+	/* Easy case: splitting at a run boundary */
 	if ( run_offs == run_text_len(rr) ) {
 
-		/* We are splitting at a run boundary, so things are easy */
-
+		/* Even easier case: splitting at the end of the paragraph */
 		if ( run == para->n_runs-1 ) {
 
 			SCBlock *end;
@@ -1623,57 +1616,70 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 			return end;
 
-		} else {
-
-			pnew->runs[0] = para->runs[run+1];
-			pnew->n_runs = 1;
-
 		}
-
-		/* We start copying runs after the whole second one which we
-		 * just brought forward, i.e. we start at the THIRD run */
-		bf_pos = 2;
 
 	} else {
 
-		/* First run of the new paragraph contains the leftover text */
-		pnew->runs[0].scblock = rr->scblock;
-		pnew->runs[0].rscblock = rr->rscblock;
-		pnew->runs[0].fontdesc = pango_font_description_copy(rr->fontdesc);
-		pnew->runs[0].col[0] = rr->col[0];
-		pnew->runs[0].col[1] = rr->col[1];
-		pnew->runs[0].col[2] = rr->col[2];
-		pnew->runs[0].col[3] = rr->col[3];
-		pnew->n_runs = 1;
+		/* Split the run (and SCBlock) into two */
+		double col[4] = {0,0,0,0};
+		struct text_run *rn;
+		int macro = 0;
 
-		/* We start copying runs at the second run of the paragraph */
-		bf_pos = 1;
+		printf("Splitting run %i.  Before:\n", run);
+		show_para(para);
+
+		add_run(para, NULL, NULL, NULL, col);
+		/* -2 here because add_run increased para->n_runs by 1 */
+		memmove(&para->runs[run+2], &para->runs[run+1],
+		        (para->n_runs - run - 2)*sizeof(struct text_run));
+
+		rr = &para->runs[run]; /* Because add_run realloced the runs */
+		rn = &para->runs[run+1];
+
+		if ( rr->rscblock != rr->scblock) {
+			macro = 1;
+		}
+
+		rn->rscblock = sc_block_split(rr->rscblock, run_offs);
+
+		if ( !macro ) {
+			/* Literal text block */
+			rn->scblock = rn->rscblock;
+		} else {
+			/* Macro block */
+			rn->scblock = rr->scblock;
+		}
+
+		rn->fontdesc = pango_font_description_copy(rr->fontdesc);
+		rn->col[0] = rr->col[0];
+		rn->col[1] = rr->col[1];
+		rn->col[2] = rr->col[2];
+		rn->col[3] = rr->col[3];
+
+		printf("After:\n");
+		show_para(para);
 
 	}
 
 	/* All later runs just get moved to the new paragraph */
-	for ( i=run+bf_pos; i<para->n_runs; i++ ) {
-		pnew->runs[pnew->n_runs] = para->runs[i];
-		pnew->n_runs++;
+	for ( i=run+1; i<para->n_runs; i++ ) {
+		double col[4] = {0,0,0,0};
+		printf("Moving run %i to pos %i\n", i, pnew->n_runs);
+		add_run(pnew, NULL, NULL, NULL, col);
+		pnew->runs[pnew->n_runs-1] = para->runs[i];
 	}
 
 	/* Truncate the first paragraph at the appropriate position */
 	para->n_runs = run+1;
 
-	/* If the first and second paragraphs have the same SCBlock, split it */
-	if ( (rr->rscblock != NULL) && (rr->rscblock == pnew->runs[0].rscblock) ) {
-
-		printf("splitting SCBlock at %i\n", (int)run_offs);
-		printf("old block: '%s'\n", sc_block_contents(rr->rscblock));
-		pnew->runs[0].rscblock = sc_block_split(rr->rscblock, run_offs);
-		printf("new block 1: '%s'\n", sc_block_contents(rr->rscblock));
-		printf("new block 2: '%s'\n", sc_block_contents(pnew->runs[0].rscblock));
-		printf("run %p block %p\n", &pnew->runs[0], pnew->runs[0].rscblock);
-
-	}
+	printf("Final paragraphs:\n");
+	printf("First:\n");
+	show_para(para);
+	printf("Second:\n");
+	show_para(pnew);
 
 	/* Add a \newpara after the end of the first paragraph's SC */
-	nnp = sc_block_append(rr->scblock, strdup("newpara"), NULL, NULL, NULL);
+	nnp = sc_block_append(rr->rscblock, strdup("newpara"), NULL, NULL, NULL);
 	set_newline_at_end(para, nnp);
 
 	pnew->open = para->open;
@@ -1682,7 +1688,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 	wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 
-	return sc_block_next(rr->scblock);
+	return sc_block_next(nnp);
 }
 
 

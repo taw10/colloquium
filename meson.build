@@ -37,7 +37,8 @@ executable('colloquium',
            install : true)
 
 # Data files, icon, desktop file etc
-install_data(['data/demo.sc', 'data/sky.png', 'data/canvas.png'],
+install_data(['data/demo.sc', 'data/sky.png', 'data/canvas.png',
+              'data/alpha_warning.png'],
              install_dir : datadir)
 
 install_data(['data/colloquium.desktop'],

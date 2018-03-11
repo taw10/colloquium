@@ -6,7 +6,7 @@
 
 	\ss[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\contents}
 	\ss[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}
-	\ss[footer]{\f[600ux30u+500+740]{\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 25th September 2013} | \bold{Slide} \slidenumber}}}
+	\ss[footer]{\f[600ux30u+500+740]{\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 1 March 2018} | \bold{Slide} \slidenumber}}}
 	\ss[credit]{\f[600ux30u+700+700]{\fontsize[11]\contents}}
 	\ss[bp]{➤ }
 
@@ -38,4 +38,17 @@ What is the narrative window for?  Well, it's up to you!  Here are some suggesti
 If you have two screens connected to your computer at the moment, you could try a mock presentation now.
 Besides this, Colloquium has some features which will help you when you come to give your presentation.  In the "Tools" menu, you'll find the presentation clock and the test card.
 Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
+Now, a short warning:
+\slide{\slidetitle{Alpha test software}\footer\f[389.2ux345.2u+98.1+198.1]{\image[1fx1f+0+0,filename="alpha_warning.png"]{}}\f[415.5ux432.1u+564.7+185.0]{Colloquium is "alpha test" software.
+
+It will probably crash on you and eat your work.
+
+Save and back up your work as frequently as possible.
+
+That said, it has never crashed on me in front of a live audience.  You will find most bugs in the editing features, not playback.
+
+Nevertheless, creating a backup slide deck in PDF format (File->Export slides as PDF) is wise.
+
+Please report all bugs here:
+https://www.bitwiz.me.uk/tracker}}
 That's enough to get you started.  I hope you enjoy using Colloquium!

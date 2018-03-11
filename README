@@ -1,0 +1,78 @@
+--------------------------------------------------------------------------------
+
+Colloquium: Narrative-based presentation system
+
+Copyright © 2017-2018 Thomas White
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Author: Thomas White <taw@bitwiz.org.uk>
+See the COPYING file for full licence conditions.
+
+--------------------------------------------------------------------------------
+
+Summary
+-------
+
+Colloquium is a presentation program that is more than just "slideware".
+Instead of concentrating on slides, Colloquium makes the "narrative" of your
+presentation the most important thing.  Slides are embedded in your narrative,
+forming part of the flow of your talk.
+
+
+Installation instructions
+-------------------------
+
+Colloquium uses the Meson build system (http://mesonbuild.com).  You will need
+to install Meson, which is probably in your distribution package manager.
+For example:
+$ sudo dnf install meson
+or
+$ sudo apt install meson
+
+You will also need the GTK 3 development files, which are also probably in your
+distribution if they are not already installed:
+$ sudo dnf install  gtk3-devel
+or
+$ sudo apt install libgtk-3-dev
+
+Then set up the build directory using Meson:
+$ meson builddir   # where "builddir" is your name for the build directory
+
+Meson will (by default) create Ninja files which behave like makefiles.
+Compile Colloquium using Ninja:
+$ ninja -C builddir  # where "builddir" matches the previous step
+
+To install:
+$ sudo ninja -C builddir install
+
+You can have multiple build directories, perhaps with different configurations.
+
+
+Running the program
+-------------------
+
+Colloquium should appear in your desktop environment's menus.  Alternatively,
+it can be started from the command line:
+$ colloquium
+
+The first time Colloquium runs, it will show an introduction document.
+
+
+Contributing
+------------
+
+Bug tracker:  https://www.bitwiz.me.uk/tracker
+Git repository:  git://git.bitwiz.me.uk/colloquium.git
+                 https://git.bitwiz.me.uk/?p=colloquium.git

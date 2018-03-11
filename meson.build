@@ -32,6 +32,7 @@ executable('colloquium',
             'src/imagestore.c',
             'src/print.c',
             'src/sc_parse.c',
+            'src/utils.c',
 	   ],
            dependencies : [gtkdep, mdep],
            install : true)

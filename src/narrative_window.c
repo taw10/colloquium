@@ -489,8 +489,8 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
 
 
 
-static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
-                                 NarrativeWindow *nw)
+static gboolean nw_button_press_sig(GtkWidget *da, GdkEventButton *event,
+                                    NarrativeWindow *nw)
 {
 	return 0;
 }
@@ -515,15 +515,15 @@ static void scroll_down(NarrativeWindow *nw)
 }
 
 
-static gboolean destroy_sig(GtkWidget *da, NarrativeWindow *nw)
+static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
 	g_application_release(nw->app);
 	return FALSE;
 }
 
 
-static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
-                              NarrativeWindow *nw)
+static gboolean nw_key_press_sig(GtkWidget *da, GdkEventKey *event,
+                                 NarrativeWindow *nw)
 {
 	switch ( event->keyval ) {
 
@@ -597,7 +597,7 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 	if ( nw->show == NULL ) return;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
-		 G_CALLBACK(key_press_sig), nw);
+		 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->show), "destroy",
 		 G_CALLBACK(ss_destroy_sig), nw);
 	sc_slideshow_set_slide(nw->show, bvp);
@@ -618,7 +618,7 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 	if ( nw->show == NULL ) return;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
-		 G_CALLBACK(key_press_sig), nw);
+		 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->show), "destroy",
 		 G_CALLBACK(ss_destroy_sig), nw);
 	sc_slideshow_set_slide(nw->show, first_slide(nw->p));
@@ -639,7 +639,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 	if ( nw->show == NULL ) return;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
-		 G_CALLBACK(key_press_sig), nw);
+		 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->show), "destroy",
 		 G_CALLBACK(ss_destroy_sig), nw);
 	sc_slideshow_set_slide(nw->show, first_slide(nw->p));
@@ -890,13 +890,13 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	sc_editor_set_top_frame_editable(nw->sceditor, 1);
 
 	g_signal_connect(G_OBJECT(nw->sceditor), "button-press-event",
-	                 G_CALLBACK(button_press_sig), nw);
+	                 G_CALLBACK(nw_button_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->sceditor), "changed",
 	                 G_CALLBACK(changed_sig), nw);
 	g_signal_connect(G_OBJECT(nw->sceditor), "key-press-event",
-			 G_CALLBACK(key_press_sig), nw);
+			 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->window), "destroy",
-			 G_CALLBACK(destroy_sig), nw);
+			 G_CALLBACK(nw_destroy_sig), nw);
 
 	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);

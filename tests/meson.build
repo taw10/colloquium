@@ -1,6 +1,6 @@
 basic_rendering = ['../src/render.c', '../src/frame.c',
                    '../src/sc_parse.c', '../src/imagestore.c',
-                   '../src/sc_interp.c']
+                   '../src/sc_interp.c', '../src/utils.c']
 
 e = executable('storycode_test', 'storycode_test.c', '../src/sc_parse.c',
                dependencies : [gtkdep])

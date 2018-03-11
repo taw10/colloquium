@@ -43,6 +43,7 @@
 #include "sc_editor.h"
 #include "slideshow.h"
 #include "debugger.h"
+#include "utils.h"
 
 
 static void scroll_interface_init(GtkScrollable *iface)
@@ -1679,21 +1680,6 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
 	}
 
 	return TRUE;
-}
-
-
-static void chomp(char *s)
-{
-	size_t i;
-
-	if ( !s ) return;
-
-	for ( i=0; i<strlen(s); i++ ) {
-		if ( (s[i] == '\n') || (s[i] == '\r') ) {
-			s[i] = '\0';
-			return;
-		}
-	}
 }
 
 

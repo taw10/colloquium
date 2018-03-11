@@ -36,6 +36,7 @@
 #include "colloquium.h"
 #include "presentation.h"
 #include "narrative_window.h"
+#include "utils.h"
 
 
 struct _colloquium
@@ -233,21 +234,6 @@ static void create_config(const char *filename)
 	        g_get_user_special_dir(G_USER_DIRECTORY_PICTURES));
 
 	fclose(fh);
-}
-
-
-static void chomp(char *s)
-{
-	size_t i;
-
-	if ( !s ) return;
-
-	for ( i=0; i<strlen(s); i++ ) {
-		if ( (s[i] == '\n') || (s[i] == '\r') ) {
-			s[i] = '\0';
-			return;
-		}
-	}
 }
 
 

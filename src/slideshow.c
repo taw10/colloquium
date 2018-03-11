@@ -78,7 +78,7 @@ static void slideshow_rerender(SCSlideshow *ss)
 }
 
 
-static gint ss_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
+static gint ssh_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 {
 	if ( ss->blank_cursor != NULL ) {
 		g_object_unref(ss->blank_cursor);
@@ -192,7 +192,7 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 	                      GDK_KEY_PRESS_MASK);
 
 	g_signal_connect(G_OBJECT(ss), "destroy",
-	                 G_CALLBACK(ss_destroy_sig), ss);
+	                 G_CALLBACK(ssh_destroy_sig), ss);
 	g_signal_connect(G_OBJECT(ss), "realize",
 	                 G_CALLBACK(ss_realize_sig), ss);
 	g_signal_connect(G_OBJECT(ss), "size-allocate",

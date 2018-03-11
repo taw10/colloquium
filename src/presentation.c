@@ -36,6 +36,7 @@
 #include "imagestore.h"
 #include "render.h"
 #include "sc_interp.h"
+#include "utils.h"
 
 
 void free_presentation(struct presentation *p)
@@ -200,14 +201,6 @@ static char *fgets_long(FILE *fh, size_t *lp)
 		}
 
 	} while ( 1 );
-}
-
-
-static int safe_strcmp(const char *a, const char *b)
-{
-	if ( a == NULL ) return 1;
-	if ( b == NULL ) return 1;
-	return strcmp(a, b);
 }
 
 

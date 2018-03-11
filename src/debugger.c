@@ -178,7 +178,7 @@ static void record_runs(struct debugwindow *dbgw)
 }
 
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
+static gboolean dbg_draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbgw)
 {
 	int width, height;
 	char tmp[256];
@@ -292,7 +292,7 @@ void open_debugger(struct frame *fr)
 	gtk_widget_set_size_request(dbgw->drawingarea, 100, 8000);
 
 	g_signal_connect(G_OBJECT(dbgw->drawingarea), "draw",
-			 G_CALLBACK(draw_sig), dbgw);
+			 G_CALLBACK(dbg_draw_sig), dbgw);
 
 	g_signal_connect(G_OBJECT(dbgw->window), "delete-event",
 			 G_CALLBACK(close_sig), dbgw);

@@ -41,6 +41,7 @@
 #include "frame.h"
 #include "render.h"
 #include "imagestore.h"
+#include "utils.h"
 
 
 static void do_background(cairo_t *cr, struct frame *fr)
@@ -271,14 +272,6 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	*ptop = top;
 
 	return surf;
-}
-
-
-static int safe_strcmp(const char *a, const char *b)
-{
-	if ( a == NULL ) return 1;
-	if ( b == NULL ) return 1;
-	return strcmp(a, b);
 }
 
 

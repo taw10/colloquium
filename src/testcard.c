@@ -44,7 +44,7 @@ struct testcard
 	struct presentation *p;
 };
 
-static gint destroy_sig(GtkWidget *widget, struct testcard *tc)
+static gint tc_destroy_sig(GtkWidget *widget, struct testcard *tc)
 {
 	free(tc);
 	return FALSE;
@@ -105,7 +105,7 @@ static void colour_box(cairo_t *cr, double x, double y,
 }
 
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
+static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 {
 	double xoff, yoff;
 	double width, height;
@@ -224,8 +224,8 @@ static void size_sig(GtkWidget *widget, GdkRectangle *rect, struct testcard *ss)
 
 
 
-static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
-                              struct testcard *tc)
+static gboolean tc_key_press_sig(GtkWidget *da, GdkEventKey *event,
+                                 struct testcard *tc)
 {
 	if ( !event->is_modifier ) gtk_widget_destroy(tc->window);
 	return FALSE;
@@ -252,13 +252,13 @@ void show_testcard(struct presentation *p)
 	gtk_widget_add_events(GTK_WIDGET(tc->drawingarea), GDK_KEY_PRESS_MASK);
 
 	g_signal_connect(G_OBJECT(tc->drawingarea), "key-press-event",
-			 G_CALLBACK(key_press_sig), tc);
+			 G_CALLBACK(tc_key_press_sig), tc);
 	g_signal_connect(G_OBJECT(tc->window), "destroy",
-	                 G_CALLBACK(destroy_sig), tc);
+	                 G_CALLBACK(tc_destroy_sig), tc);
 	g_signal_connect(G_OBJECT(tc->window), "size-allocate",
 	                 G_CALLBACK(size_sig), tc);
 	g_signal_connect(G_OBJECT(tc->drawingarea), "draw",
-			 G_CALLBACK(draw_sig), tc);
+			 G_CALLBACK(tc_draw_sig), tc);
 
 	gtk_widget_grab_focus(GTK_WIDGET(tc->drawingarea));
 

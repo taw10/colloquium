@@ -185,15 +185,15 @@ void slidewindow_redraw(SlideWindow *sw)
 }
 
 
-static gboolean close_sig(GtkWidget *w, SlideWindow *sw)
+static gboolean sw_close_sig(GtkWidget *w, SlideWindow *sw)
 {
 	sw->p->slidewindow = NULL;
 	return FALSE;
 }
 
 
-static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
-                              SlideWindow *sw)
+static gboolean sw_key_press_sig(GtkWidget *da, GdkEventKey *event,
+                                 SlideWindow *sw)
 {
 	switch ( event->keyval ) {
 
@@ -244,7 +244,7 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	                                G_N_ELEMENTS(sw_entries), sw);
 
 	g_signal_connect(G_OBJECT(window), "destroy",
-	                 G_CALLBACK(close_sig), sw);
+	                 G_CALLBACK(sw_close_sig), sw);
 
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
@@ -263,7 +263,7 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 //	gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(sw->sceditor));
 //	gtk_window_set_focus(GTK_WINDOW(window), GTK_WIDGET(sw->sceditor));
 	g_signal_connect(G_OBJECT(sw->sceditor), "key-press-event",
-			 G_CALLBACK(key_press_sig), sw);
+			 G_CALLBACK(sw_key_press_sig), sw);
 
 	sc_editor_set_logical_size(sw->sceditor,
 	                           p->slide_width, p->slide_height);

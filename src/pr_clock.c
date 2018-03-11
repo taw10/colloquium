@@ -222,7 +222,7 @@ static gint close_clock_sig(GtkWidget *w, PRClock *n)
 }
 
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
+static gboolean clock_draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
 {
 	int width, height;
 	double s;
@@ -387,7 +387,7 @@ PRClock *pr_clock_new()
 
 	n->da = gtk_drawing_area_new();
 	gtk_box_pack_start(GTK_BOX(vbox), n->da, TRUE, TRUE, 0);
-	g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(draw_sig), n);
+	g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(clock_draw_sig), n);
 	g_signal_connect(G_OBJECT(n->window), "destroy",
 	                 G_CALLBACK(close_clock_sig), n); /* FIXME: Uniqueness */
 

@@ -746,24 +746,33 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 
 	} else {
 
-		/* Delete one character */
-		struct edit_pos p1, p2;
+		if ( para_type(e->cursor_frame->paras[e->cursor_para]) == PARA_TYPE_TEXT ) {
 
-		p1.para = e->cursor_para;
-		p1.pos = e->cursor_pos;
-		p1.trail = e->cursor_trail;
+			/* Delete one character */
+			struct edit_pos p1, p2;
 
-		p2 = p1;
+			p1.para = e->cursor_para;
+			p1.pos = e->cursor_pos;
+			p1.trail = e->cursor_trail;
 
-		cursor_moveh(e->cursor_frame, &p2.para, &p2.pos, &p2.trail, -1);
-		show_edit_pos(p1);
-		show_edit_pos(p2);
+			p2 = p1;
 
-		delete_text_from_frame(e->cursor_frame, p1, p2, wrapw);
+			cursor_moveh(e->cursor_frame, &p2.para, &p2.pos, &p2.trail, -1);
+			show_edit_pos(p1);
+			show_edit_pos(p2);
 
-		e->cursor_para = p2.para;
-		e->cursor_pos = p2.pos;
-		e->cursor_trail = p2.trail;
+			delete_text_from_frame(e->cursor_frame, p1, p2, wrapw);
+
+			e->cursor_para = p2.para;
+			e->cursor_pos = p2.pos;
+			e->cursor_trail = p2.trail;
+
+		} else {
+
+			/* FIXME: Implement this */
+			fprintf(stderr, "Deleting non-text paragraph\n");
+
+		}
 
 	}
 

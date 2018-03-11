@@ -15,6 +15,7 @@ gtkdep = dependency('gtk+-3.0')
 cc = meson.get_compiler('c')
 mdep = cc.find_library('m', required : false)
 
+# Main program
 executable('colloquium',
            ['src/colloquium.c',
             'src/narrative_window.c',
@@ -35,5 +36,15 @@ executable('colloquium',
            dependencies : [gtkdep, mdep],
            install : true)
 
+# Data files, icon, desktop file etc
 install_data(['data/demo.sc', 'data/sky.png', 'data/canvas.png'],
              install_dir : datadir)
+
+install_data(['data/colloquium.desktop'],
+             install_dir : get_option('datadir')+'/applications')
+
+install_data(['data/colloquium.svg'],
+             install_dir : get_option('datadir')+'/icons/hicolor/scalable/apps')
+
+# Tests
+subdir('tests')

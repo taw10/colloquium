@@ -659,10 +659,15 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, SCEditor *e)
 {
 	/* Ultimate background */
-	gdk_cairo_set_source_pixbuf(cr, e->bg_pixbuf, 0.0, 0.0);
-	cairo_pattern_t *patt = cairo_get_source(cr);
-	cairo_pattern_set_extend(patt, CAIRO_EXTEND_REPEAT);
-	cairo_paint(cr);
+	if ( e->bg_pixbuf != NULL ) {
+		gdk_cairo_set_source_pixbuf(cr, e->bg_pixbuf, 0.0, 0.0);
+		cairo_pattern_t *patt = cairo_get_source(cr);
+		cairo_pattern_set_extend(patt, CAIRO_EXTEND_REPEAT);
+		cairo_paint(cr);
+	} else {
+		cairo_set_source_rgba(cr, 0.8, 0.8, 1.0, 1.0);
+		cairo_paint(cr);
+	}
 
 	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
 	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);

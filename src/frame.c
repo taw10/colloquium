@@ -505,6 +505,11 @@ void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
 	Paragraph *pnew;
 	int wi, hi;
 
+	if ( is == NULL ) {
+		fprintf(stderr, "Adding image without ImageStore!\n");
+		return;
+	}
+
 	pnew = create_paragraph(fr);
 	if ( pnew == NULL ) {
 		fprintf(stderr, "Failed to add image paragraph\n");

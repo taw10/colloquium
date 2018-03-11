@@ -820,6 +820,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
 	                              render_thumbnail, click_thumbnail, p);
 	sc_editor_set_callbacks(nw->sceditor, cbl);
+	sc_editor_set_imagestore(nw->sceditor, p->is);
 
 	toolbar = gtk_toolbar_new();
 	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);

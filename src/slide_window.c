@@ -254,6 +254,7 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	                             colloquium_get_imagestore(app));
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, scblocks));
 	sc_editor_set_scale(sw->sceditor, 1);
+	sc_editor_set_imagestore(sw->sceditor, p->is);
 
 //	scroll = gtk_scrolled_window_new(NULL, NULL);
 //	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),

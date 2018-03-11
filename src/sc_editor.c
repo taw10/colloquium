@@ -2041,6 +2041,15 @@ void sc_editor_set_scale(SCEditor *e, int scale)
 }
 
 
+void sc_editor_set_imagestore(SCEditor *e, ImageStore *is)
+{
+	if ( e->is != NULL ) {
+		fprintf(stderr, "WARNING: Changing imagestore\n");
+	}
+	e->is = is;
+}
+
+
 SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
                         PangoLanguage *lang, const char *storename)
 {
@@ -2057,7 +2066,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->log_h = 100;
 	sceditor->border_offs_x = 0;
 	sceditor->border_offs_y = 0;
-	sceditor->is = imagestore_new(storename);
+	sceditor->is = NULL;
 	sceditor->slidenum = 0;
 	sceditor->min_border = 0.0;
 	sceditor->top_editable = 0;

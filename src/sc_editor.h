@@ -193,6 +193,7 @@ extern void sc_editor_delete_selected_frame(SCEditor *e);
 extern void sc_editor_remove_cursor(SCEditor *e);
 extern SCBlock *split_paragraph_at_cursor(SCEditor *e);
 
+extern void sc_editor_set_imagestore(SCEditor *e, ImageStore *is);
 extern void sc_editor_set_para_highlight(SCEditor *e, int para_highlight);
 extern int sc_editor_get_cursor_para(SCEditor *e);
 extern void *sc_editor_get_cursor_bvp(SCEditor *e);

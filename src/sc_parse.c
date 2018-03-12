@@ -545,11 +545,6 @@ static void separate_newlines(SCBlock *bl)
 					                NULL, NULL, &nb);
 				}
 
-				/* Follow \newpara with an empty block so that
-				 * all paragraphs have at least one SCBlock */
-				sc_block_append(nb, NULL, NULL, strdup(""),
-				                NULL);
-
 				/* Add any text after the \n */
 				if ( strlen(npos+1) > 0 ) {
 					sc_block_append(nb, NULL, NULL,

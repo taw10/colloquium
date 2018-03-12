@@ -155,10 +155,7 @@ extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 extern size_t end_offset_of_para(struct frame *fr, int pn);
 
 extern int find_cursor(struct frame *fr, double x, double y,
-                       int *ppara, size_t *ppos, int *ptrail);
-
-extern int find_cursor_2(struct frame *fr, double x, double y,
-                         struct edit_pos *pos);
+                       struct edit_pos *pos);
 
 extern void sort_positions(struct edit_pos *a, struct edit_pos *b);
 
@@ -170,11 +167,9 @@ extern int get_para_highlight(struct frame *fr, int cursor_para,
 extern int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
                           double *cx, double *cy, double *ch);
 
-extern void cursor_moveh(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
-                         signed int dir);
+extern void cursor_moveh(struct frame *fr, struct edit_pos *cp, signed int dir);
 
-extern void cursor_movev(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
-                         signed int dir);
+extern void cursor_movev(struct frame *fr, struct edit_pos *cp, signed int dir);
 
 extern void check_callback_click(struct frame *fr, int para);
 

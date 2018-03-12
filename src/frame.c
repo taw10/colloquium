@@ -697,8 +697,7 @@ void sort_positions(struct edit_pos *a, struct edit_pos *b)
 }
 
 
-int find_cursor_2(struct frame *fr, double x, double y,
-                  struct edit_pos *pos)
+int find_cursor(struct frame *fr, double x, double y, struct edit_pos *pos)
 {
 	double pad = fr->pad_t;
 	int i;
@@ -735,20 +734,6 @@ int find_cursor_2(struct frame *fr, double x, double y,
 	pos->para = fr->n_paras - 1;
 	pos->pos = text_para_pos(fr->paras[fr->n_paras-1],
 	                         x - fr->pad_l, y - pad, &pos->trail);
-	return 0;
-}
-
-
-int find_cursor(struct frame *fr, double x, double y,
-                int *ppara, size_t *ppos, int *ptrail)
-{
-	struct edit_pos p;
-	int r;
-	r = find_cursor_2(fr, x, y, &p);
-	if ( r ) return r;
-	*ppara = p.para;
-	*ppos = p.pos;
-	*ptrail = p.trail;
 	return 0;
 }
 
@@ -819,26 +804,26 @@ int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 }
 
 
-void cursor_moveh(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
-                  signed int dir)
+//void cursor_moveh(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
+void cursor_moveh(struct frame *fr, struct edit_pos *cp, signed int dir)
 {
-	Paragraph *para = fr->paras[*cpara];
-	int np = *cpos;
+	Paragraph *para = fr->paras[cp->para];
+	int np = cp->pos;
 
-	pango_layout_move_cursor_visually(para->layout, 1, *cpos, *ctrail,
-	                                  dir, &np, ctrail);
+	pango_layout_move_cursor_visually(para->layout, 1, cp->pos, cp->trail,
+	                                  dir, &np, &cp->trail);
 	if ( np == -1 ) {
-		if ( *cpara > 0 ) {
+		if ( cp->para > 0 ) {
 			size_t end_offs;
-			(*cpara)--;
-			end_offs = end_offset_of_para(fr, *cpara);
+			cp->para--;
+			end_offs = end_offset_of_para(fr, cp->para);
 			if ( end_offs > 0 ) {
-				*cpos = end_offs - 1;
-				*ctrail = 1;
+				cp->pos = end_offs - 1;
+				cp->trail = 1;
 			} else {
 				/* Jumping into an empty paragraph */
-				*cpos = 0;
-				*ctrail = 0;
+				cp->pos = 0;
+				cp->trail = 0;
 			}
 			return;
 		} else {
@@ -848,10 +833,10 @@ void cursor_moveh(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
 	}
 
 	if ( np == G_MAXINT ) {
-		if ( *cpara < fr->n_paras-1 ) {
-			(*cpara)++;
-			*cpos = 0;
-			*ctrail = 0;
+		if ( cp->para < fr->n_paras-1 ) {
+			cp->para++;
+			cp->pos = 0;
+			cp->trail = 0;
 			return;
 		} else {
 			/* Can't move any further */
@@ -859,12 +844,11 @@ void cursor_moveh(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
 		}
 	}
 
-	*cpos = np;
+	cp->pos = np;
 }
 
 
-void cursor_movev(struct frame *fr, int *cpara, size_t *cpos, int *ctrail,
-                  signed int dir)
+void cursor_movev(struct frame *fr, struct edit_pos *cp, signed int dir)
 {
 }
 

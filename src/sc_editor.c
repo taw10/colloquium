@@ -77,15 +77,6 @@ static void debug_paragraphs(SCEditor *e)
 }
 
 
-static void show_cursor_pos(SCEditor *e)
-{
-	fprintf(stderr, "Cursor: fr %p, para %i, pos %li, trail %i\n",
-	        e->cursor_frame, e->cursor_para, (long int)e->cursor_pos,
-		e->cursor_trail);
-}
-
-
-
 static void horizontal_adjust(GtkAdjustment *adj, SCEditor *e)
 {
 	e->h_scroll_pos = gtk_adjustment_get_value(adj);
@@ -385,9 +376,9 @@ void sc_editor_set_background(SCEditor *e, double r, double g, double b)
 void sc_editor_remove_cursor(SCEditor *e)
 {
 	e->cursor_frame = NULL;
-	e->cursor_para = 0;
-	e->cursor_pos = 0;
-	e->cursor_trail = 0;
+	e->cpos.para = 0;
+	e->cpos.pos = 0;
+	e->cpos.trail = 0;
 	e->selection = NULL;
 }
 
@@ -548,8 +539,8 @@ static void draw_para_highlight(cairo_t *cr, struct frame *fr, int cursor_para)
 }
 
 
-static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
-                       size_t cursor_pos, int cursor_trail, int hgh)
+static void draw_caret(cairo_t *cr, struct frame *fr, struct edit_pos cpos,
+                       int hgh)
 {
 	double cx, clow, chigh, h;
 	const double t = 1.8;
@@ -557,20 +548,20 @@ static void draw_caret(cairo_t *cr, struct frame *fr, int cursor_para,
 	Paragraph *para;
 
 	if ( hgh ) {
-		draw_para_highlight(cr, fr, cursor_para);
+		draw_para_highlight(cr, fr, cpos.para);
 		return;
 	}
 
 	assert(fr != NULL);
 
-	para = fr->paras[cursor_para];
+	para = fr->paras[cpos.para];
 	if ( para_type(para) != PARA_TYPE_TEXT ) {
-		draw_para_highlight(cr, fr, cursor_para);
+		draw_para_highlight(cr, fr, cpos.para);
 		return;
 	}
 
-	offs = pos_trail_to_offset(para, cursor_pos, cursor_trail);
-	get_cursor_pos(fr, cursor_para, offs, &cx, &clow, &h);
+	offs = pos_trail_to_offset(para, cpos.pos, cpos.trail);
+	get_cursor_pos(fr, cpos.para, offs, &cx, &clow, &h);
 
 	cx += fr->x;
 	clow += fr->y;
@@ -625,8 +616,7 @@ static void draw_overlay(cairo_t *cr, SCEditor *e)
 			draw_resize_handle(cr, x+w-20.0, y+h-20.0);
 		}
 
-		draw_caret(cr, e->cursor_frame, e->cursor_para, e->cursor_pos,
-		           e->cursor_trail, e->para_highlight);
+		draw_caret(cr, e->cursor_frame, e->cpos, e->para_highlight);
 
 	}
 
@@ -698,9 +688,9 @@ SCBlock *split_paragraph_at_cursor(SCEditor *e)
 
 	if ( e->cursor_frame == NULL ) return NULL;
 
-	para = e->cursor_frame->paras[e->cursor_para];
-	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
-	return split_paragraph(e->cursor_frame, e->cursor_para, offs, e->pc);
+	para = e->cursor_frame->paras[e->cpos.para];
+	offs = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
+	return split_paragraph(e->cursor_frame, e->cpos.para, offs, e->pc);
 }
 
 
@@ -712,9 +702,9 @@ static void check_cursor_visible(SCEditor *e)
 
 	if ( e->cursor_frame == NULL ) return;
 
-	para = e->cursor_frame->paras[e->cursor_para];
-	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
-	get_cursor_pos(e->cursor_frame, e->cursor_para, offs, &x, &y, &h);
+	para = e->cursor_frame->paras[e->cpos.para];
+	offs = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
+	get_cursor_pos(e->cursor_frame, e->cpos.para, offs, &x, &y, &h);
 
 	/* Off the bottom? */
 	if ( y - e->scroll_pos + h > e->visible_height ) {
@@ -740,33 +730,27 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 
 		/* Cursor goes at start of deletion */
 		sort_positions(&e->sel_start, &e->sel_end);
-		e->cursor_para = e->sel_start.para;
-		e->cursor_pos = e->sel_start.pos;
-		e->cursor_trail = e->sel_start.trail;
+		e->cpos = e->sel_start;
 		e->sel_active = 0;
 
 	} else {
 
-		if ( para_type(e->cursor_frame->paras[e->cursor_para]) == PARA_TYPE_TEXT ) {
+		if ( para_type(e->cursor_frame->paras[e->cpos.para]) == PARA_TYPE_TEXT ) {
 
 			/* Delete one character */
 			struct edit_pos p1, p2;
 
-			p1.para = e->cursor_para;
-			p1.pos = e->cursor_pos;
-			p1.trail = e->cursor_trail;
+			p1 = e->cpos;
 
 			p2 = p1;
 
-			cursor_moveh(e->cursor_frame, &p2.para, &p2.pos, &p2.trail, -1);
+			cursor_moveh(e->cursor_frame, &p2, -1);
 			show_edit_pos(p1);
 			show_edit_pos(p2);
 
 			delete_text_from_frame(e->cursor_frame, p1, p2, wrapw);
 
-			e->cursor_para = p2.para;
-			e->cursor_pos = p2.pos;
-			e->cursor_trail = p2.trail;
+			e->cpos = p2;
 
 		} else {
 
@@ -791,7 +775,7 @@ static void insert_text(char *t, SCEditor *e)
 	        return;
 	}
 
-	if ( e->cursor_para >= e->cursor_frame->n_paras ) {
+	if ( e->cpos.para >= e->cursor_frame->n_paras ) {
 		fprintf(stderr, "Cursor paragraph number is too high!\n");
 		return;
 	}
@@ -803,15 +787,14 @@ static void insert_text(char *t, SCEditor *e)
 	if ( strcmp(t, "\n") == 0 ) {
 		split_paragraph_at_cursor(e);
 		if ( e->flow ) update_size(e);
-		cursor_moveh(e->cursor_frame, &e->cursor_para,
-		             &e->cursor_pos, &e->cursor_trail, +1);
+		cursor_moveh(e->cursor_frame, &e->cpos, +1);
 		check_cursor_visible(e);
 		emit_change_sig(e);
 		sc_editor_redraw(e);
 		return;
 	}
 
-	para = e->cursor_frame->paras[e->cursor_para];
+	para = e->cursor_frame->paras[e->cpos.para];
 
 	/* Is this paragraph even a text one? */
 	if ( para_type(para) == PARA_TYPE_TEXT ) {
@@ -819,15 +802,14 @@ static void insert_text(char *t, SCEditor *e)
 		size_t off;
 
 		/* Yes. The "easy" case */
-		off = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
+		off = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
 		insert_text_in_paragraph(para, off, t);
 		wrap_paragraph(para, NULL,
 		               e->cursor_frame->w - e->cursor_frame->pad_l
 		                            - e->cursor_frame->pad_r, 0, 0);
 		if ( e->flow ) update_size(e);
 
-		cursor_moveh(e->cursor_frame, &e->cursor_para,
-		             &e->cursor_pos, &e->cursor_trail, +1);
+		cursor_moveh(e->cursor_frame, &e->cpos, +1);
 
 	} else {
 
@@ -848,7 +830,7 @@ static void insert_text(char *t, SCEditor *e)
 			return;
 		}
 
-		pnew = insert_paragraph(e->cursor_frame, e->cursor_para);
+		pnew = insert_paragraph(e->cursor_frame, e->cpos.para);
 		if ( pnew == NULL ) {
 			fprintf(stderr, "Failed to insert paragraph\n");
 			return;
@@ -858,9 +840,9 @@ static void insert_text(char *t, SCEditor *e)
 
 		wrap_frame(e->cursor_frame, e->pc);
 
-		e->cursor_para += 1;
-		e->cursor_pos = 0;
-		e->cursor_trail = 1;
+		e->cpos.para += 1;
+		e->cpos.pos = 0;
+		e->cpos.trail = 1;
 
 	}
 
@@ -1204,15 +1186,17 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 			/* Position cursor and prepare for possible drag */
 			e->cursor_frame = clicked;
+			printf("position cursor...\n");
 			check_paragraph(e->cursor_frame, e->pc, sc_block_child(fr->scblocks));
-			find_cursor(clicked, x-fr->x, y-fr->y,
-			            &e->cursor_para, &e->cursor_pos, &e->cursor_trail);
+			printf("find..\n");
+			find_cursor(clicked, x-fr->x, y-fr->y, &e->cpos);
+			printf("done\n");
 
 			e->start_corner_x = x;
 			e->start_corner_y = y;
 
 			if ( event->type == GDK_2BUTTON_PRESS ) {
-				check_callback_click(e->cursor_frame, e->cursor_para);
+				check_callback_click(e->cursor_frame, e->cpos.para);
 			}
 
 			if ( fr->resizable && shift ) {
@@ -1222,7 +1206,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_TEXTSEL;
 				unset_selection(e);
-				find_cursor_2(clicked, x-fr->x, y-fr->y, &e->sel_start);
+				find_cursor(clicked, x-fr->x, y-fr->y, &e->sel_start);
 			}
 
 		}
@@ -1251,10 +1235,10 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		e->drag_status = DRAG_STATUS_COULD_DRAG;
 		e->drag_reason = DRAG_REASON_TEXTSEL;
 		unset_selection(e);
-		find_cursor_2(clicked, x-clicked->x, y-clicked->y,
-		              &e->sel_start);
-		find_cursor_2(clicked, x-clicked->x, y-clicked->y,
-		              &e->sel_end);
+		find_cursor(clicked, x-clicked->x, y-clicked->y,
+		            &e->sel_start);
+		find_cursor(clicked, x-clicked->x, y-clicked->y,
+		            &e->sel_end);
 		e->selection = clicked;
 		e->cursor_frame = clicked;
 		if ( clicked == e->top ) {
@@ -1263,8 +1247,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			check_paragraph(e->cursor_frame, e->pc,
 			                sc_block_child(clicked->scblocks));
 		}
-		find_cursor(clicked, x-clicked->x, y-clicked->y,
-		            &e->cursor_para, &e->cursor_pos, &e->cursor_trail);
+		find_cursor(clicked, x-clicked->x, y-clicked->y, &e->cpos);
 
 	}
 
@@ -1323,11 +1306,10 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 		case DRAG_REASON_TEXTSEL :
 		unset_selection(e);
-		find_cursor_2(fr, x-fr->x, y-fr->y, &e->sel_end);
+		find_cursor(fr, x-fr->x, y-fr->y, &e->sel_end);
 		rewrap_paragraph_range(fr, e->sel_start.para, e->sel_end.para,
 		                       e->sel_start, e->sel_end, 1);
-		find_cursor(fr, x-fr->x, y-fr->y, &e->cursor_para,
-		            &e->cursor_pos, &e->cursor_trail);
+		find_cursor(fr, x-fr->x, y-fr->y, &e->cpos);
 		e->sel_active = !positions_equal(e->sel_start, e->sel_end);
 		sc_editor_redraw(e);
 		break;
@@ -1442,9 +1424,9 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 			check_paragraph(fr, e->pc, sc_block_child(fr->scblocks));
 			e->selection = fr;
 			e->cursor_frame = fr;
-			e->cursor_para = 0;
-			e->cursor_pos = 0;
-			e->cursor_trail = 0;
+			e->cpos.para = 0;
+			e->cpos.pos = 0;
+			e->cpos.trail = 0;
 		} else {
 			fprintf(stderr, "Failed to create frame!\n");
 		}
@@ -1482,7 +1464,7 @@ static void copy_selection(SCEditor *e)
 	char *storycode;
 	SCBlock *bl;
 
-	bl = block_at_cursor(e->cursor_frame, e->cursor_para, 0);
+	bl = block_at_cursor(e->cursor_frame, e->cpos.para, 0);
 	if ( bl == NULL ) return;
 
 	storycode = serialise_sc_block(bl);
@@ -1502,10 +1484,10 @@ static void paste_callback(GtkClipboard *cb, const gchar *text, void *vp)
 	size_t offs;
 	Paragraph *para;
 
-	para = e->cursor_frame->paras[e->cursor_para];
-	offs = pos_trail_to_offset(para, e->cursor_pos, e->cursor_trail);
+	para = e->cursor_frame->paras[e->cpos.para];
+	offs = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
 
-	get_sc_pos(e->cursor_frame, e->cursor_para, offs, &cur_bl, &cur_sc_pos);
+	get_sc_pos(e->cursor_frame, e->cpos.para, offs, &cur_bl, &cur_sc_pos);
 	sc_insert_block(cur_bl, cur_sc_pos, bl);
 	full_rerender(e);
 }
@@ -1543,8 +1525,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Left :
 		if ( e->selection != NULL ) {
-			cursor_moveh(e->cursor_frame, &e->cursor_para,
-			            &e->cursor_pos, &e->cursor_trail, -1);
+			cursor_moveh(e->cursor_frame, &e->cpos, -1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;
@@ -1552,8 +1533,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Right :
 		if ( e->selection != NULL ) {
-			cursor_moveh(e->cursor_frame, &e->cursor_para,
-			            &e->cursor_pos, &e->cursor_trail, +1);
+			cursor_moveh(e->cursor_frame, &e->cpos, +1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;
@@ -1561,8 +1541,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Up :
 		if ( e->selection != NULL ) {
-			cursor_movev(e->cursor_frame, &e->cursor_para,
-			            &e->cursor_pos, &e->cursor_trail, -1);
+			cursor_moveh(e->cursor_frame, &e->cpos, -1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;
@@ -1570,8 +1549,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Down :
 		if ( e->selection != NULL ) {
-			cursor_movev(e->cursor_frame, &e->cursor_para,
-			            &e->cursor_pos, &e->cursor_trail, +1);
+			cursor_moveh(e->cursor_frame, &e->cpos, +1);
 			sc_editor_redraw(e);
 		}
 		claim = 1;
@@ -1595,7 +1573,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_F6 :
-		show_cursor_pos(e);
+		show_edit_pos(e->cpos);
 		break;
 
 		case GDK_KEY_F7 :
@@ -1818,10 +1796,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			fr->empty = 0;
 			sc_block_append_inside(fr->scblocks, "image", opts, "");
 			full_rerender(e); /* FIXME: No need for full */
-			e->selection = NULL;
-			e->cursor_frame = NULL;
-			e->cursor_para = 0;
-			e->cursor_pos = 0;
+			sc_editor_remove_cursor(e);
 			sc_editor_redraw(e);
 			free(filename);
 
@@ -1975,7 +1950,7 @@ void sc_editor_set_para_highlight(SCEditor *e, int para_highlight)
 int sc_editor_get_cursor_para(SCEditor *e)
 {
 	if ( e->cursor_frame == NULL ) return 0;
-	return e->cursor_para;
+	return e->cpos.para;
 }
 
 
@@ -1983,7 +1958,7 @@ void *sc_editor_get_cursor_bvp(SCEditor *e)
 {
 	Paragraph *para;
 	if ( e->cursor_frame == NULL ) return 0;
-	para = e->cursor_frame->paras[e->cursor_para];
+	para = e->cursor_frame->paras[e->cpos.para];
 	return get_para_bvp(para);
 }
 
@@ -1999,20 +1974,20 @@ void sc_editor_set_cursor_para(SCEditor *e, signed int pos)
 	}
 
 	if ( pos < 0 ) {
-		e->cursor_para = e->cursor_frame->n_paras - 1;
+		e->cpos.para = e->cursor_frame->n_paras - 1;
 	} else if ( pos >= e->cursor_frame->n_paras ) {
-		e->cursor_para = e->cursor_frame->n_paras - 1;
+		e->cpos.para = e->cursor_frame->n_paras - 1;
 	} else {
-		e->cursor_para = pos;
+		e->cpos.para = pos;
 	}
-	e->cursor_pos = 0;
-	e->cursor_trail = 0;
+	e->cpos.pos = 0;
+	e->cpos.trail = 0;
 
 	h = 0;
-	for ( i=0; i<e->cursor_para; i++ ) {
+	for ( i=0; i<e->cpos.para; i++ ) {
 		h += paragraph_height(e->cursor_frame->paras[i]);
 	}
-	h += (paragraph_height(e->cursor_frame->paras[e->cursor_para]))/2;
+	h += (paragraph_height(e->cursor_frame->paras[e->cpos.para]))/2;
 	e->scroll_pos = h - (e->visible_height/2);
 	set_vertical_params(e);
 
@@ -2073,11 +2048,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->lang = lang;
 
 	sceditor->para_highlight = 0;
-	sceditor->cursor_frame = NULL;
-	sceditor->cursor_para = 0;
-	sceditor->cursor_pos = 0;
-	sceditor->cursor_trail = 0;
-	sceditor->selection = NULL;
+	sc_editor_remove_cursor(sceditor);
 
 	sceditor->stylesheets = copy_ss_list(stylesheets);
 

@@ -121,8 +121,13 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 			plot_text(cr, ypos, fontdesc, "Error");
 		} else {
 
-			snprintf(tmp, 255, "  Run %i: SCBlock %p / %p", i,
-			         scblock, rscblock);
+			if ( scblock != rscblock ) {
+				snprintf(tmp, 255, "  Run %i: SCBlock %p / %p", i,
+				         scblock, rscblock);
+			} else {
+				snprintf(tmp, 255, "  Run %i: SCBlock %p", i,
+				         scblock);
+			}
 			plot_text(cr, ypos, fontdesc, tmp);
 			(*dpos)++;
 
@@ -130,6 +135,23 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 	}
 
 	snprintf(tmp, 255, "Newline at end: %p\n", get_newline_at_end(para));
+	plot_text(cr, ypos, fontdesc, tmp);
+}
+
+
+static void debug_other_para(Paragraph *para, cairo_t *cr, double *ypos,
+                             PangoFontDescription *fontdesc)
+{
+	char tmp[256];
+	SCBlock *scblock = para_scblock(para);
+	SCBlock *rscblock = para_rscblock(para);
+
+	if ( scblock == rscblock ) {
+		snprintf(tmp, 255, "SCBlock %p\n", scblock);
+	} else {
+		snprintf(tmp, 255, "SCBlock %p / %p\n", scblock, rscblock);
+	}
+
 	plot_text(cr, ypos, fontdesc, tmp);
 }
 
@@ -222,7 +244,7 @@ static gboolean dbg_draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbg
 			debug_text_para(dbgw->fr->paras[i], cr, &ypos, fontdesc,
 			                dbgw->runs, &dpos, &changesig);
 		} else {
-			dpos++;
+			debug_other_para(dbgw->fr->paras[i], cr, &ypos, fontdesc);
 		}
 
 	}

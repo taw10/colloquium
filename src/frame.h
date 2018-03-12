@@ -121,11 +121,7 @@ extern struct frame *find_frame_with_scblocks(struct frame *top,
 
 extern double total_height(struct frame *fr);
 
-extern void add_newpara(struct frame *fr, SCBlock *bl);
-extern Paragraph *last_open_para(struct frame *fr);
-extern Paragraph *current_para(struct frame *fr);
-extern void close_last_paragraph(struct frame *fr);
-extern int last_para_available_for_text(struct frame *fr);
+extern Paragraph *last_para(struct frame *fr);
 extern void show_para(Paragraph *p);
 extern void set_para_spacing(Paragraph *para, float space[4]);
 
@@ -202,6 +198,7 @@ extern int get_sc_pos(struct frame *fr, int pn, size_t pos,
 extern void *get_para_bvp(Paragraph *para);
 
 extern void merge_paragraphs(struct frame *fr, int para);
+extern Paragraph *create_paragraph(struct frame *fr);
 
 extern enum para_type para_type(Paragraph *para);
 extern SCBlock *para_scblock(Paragraph *para);

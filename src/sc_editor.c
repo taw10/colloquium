@@ -1061,7 +1061,7 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
                             SCBlock *scblocks)
 {
 	if ( fr->n_paras > 0 ) return;
-	Paragraph *para = last_open_para(fr);
+	Paragraph *para = last_para(fr);
 
 	if ( scblocks == NULL ) {
 		/* We have no SCBlocks at all!  Better create one... */

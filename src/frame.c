@@ -53,7 +53,6 @@ struct _paragraph
 	/* For PARA_TYPE_TEXT */
 	int              n_runs;
 	struct text_run *runs;
-	int              open;
 	PangoLayout     *layout;
 
 	/* For anything other than PARA_TYPE_TEXT
@@ -399,11 +398,6 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 {
 	struct text_run *runs_new;
 
-	if ( !para->open ) {
-		fprintf(stderr, "Adding a run to a closed paragraph!\n");
-		//return;
-	}
-
 	runs_new = realloc(para->runs,
 	                   (para->n_runs+1)*sizeof(struct text_run));
 	if ( runs_new == NULL ) {
@@ -423,7 +417,7 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 }
 
 
-static Paragraph *create_paragraph(struct frame *fr)
+Paragraph *create_paragraph(struct frame *fr)
 {
 	Paragraph **paras_new;
 	Paragraph *pnew;
@@ -436,6 +430,14 @@ static Paragraph *create_paragraph(struct frame *fr)
 
 	fr->paras = paras_new;
 	fr->paras[fr->n_paras++] = pnew;
+
+	/* For now, assume the paragraph is going to be for text.
+	 * However, this can easily be changed */
+	pnew->type = PARA_TYPE_TEXT;
+	pnew->n_runs = 0;
+	pnew->runs = NULL;
+	pnew->layout = NULL;
+	pnew->height = 0.0;
 
 	return pnew;
 }
@@ -458,8 +460,6 @@ Paragraph *insert_paragraph(struct frame *fr, int pos)
 
 	pnew = calloc(1, sizeof(struct _paragraph));
 	if ( pnew == NULL ) return NULL;
-
-	pnew->open = 1;
 
 	fr->paras = paras_new;
 	fr->n_paras++;
@@ -497,7 +497,6 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 	pnew->bvp = bvp;
 	pnew->vp = vp;
 	pnew->height = h;
-	pnew->open = 0;
 }
 
 
@@ -534,7 +533,6 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 	pnew->image_real_w = wi;
 	pnew->image_real_h = hi;
 	pnew->height = h;
-	pnew->open = 0;
 	pnew->space[0] = 0.0;
 	pnew->space[1] = 0.0;
 	pnew->space[2] = 0.0;
@@ -553,62 +551,10 @@ double total_height(struct frame *fr)
 }
 
 
-Paragraph *last_open_para(struct frame *fr)
+Paragraph *last_para(struct frame *fr)
 {
-	Paragraph *pnew;
-
-	if ( (fr->paras != NULL) && (fr->paras[fr->n_paras-1]->open) ) {
-		return fr->paras[fr->n_paras-1];
-	}
-
-	/* No open paragraph found, create a new one */
-	pnew = create_paragraph(fr);
-	if ( pnew == NULL ) return NULL;
-
-	pnew->type = PARA_TYPE_TEXT;
-	pnew->open = 1;
-	pnew->n_runs = 0;
-	pnew->runs = NULL;
-	pnew->layout = NULL;
-	pnew->height = 0.0;
-
-	return pnew;
-}
-
-
-void add_newpara(struct frame *fr, SCBlock *bl)
-{
-	Paragraph *last_para;
-
-	if ( fr->paras == NULL ) return;
-	last_para = fr->paras[fr->n_paras-1];
-
-	if ( last_para->open ) {
-		set_newline_at_end(last_para, bl);
-		close_last_paragraph(fr);
-	} /* else do nothing */
-}
-
-
-void close_last_paragraph(struct frame *fr)
-{
-	if ( fr->paras == NULL ) return;
-	if ( fr->paras[fr->n_paras-1]->type != PARA_TYPE_TEXT ) {
-		printf("Closing a non-text paragraph!\n");
-	}
-	fr->paras[fr->n_paras-1]->open = 0;
-}
-
-
-int last_para_available_for_text(struct frame *fr)
-{
-	Paragraph *last_para;
-	if ( fr->paras == NULL ) return 0;
-	last_para = fr->paras[fr->n_paras-1];
-	if ( last_para->type == PARA_TYPE_TEXT ) {
-		if ( last_para->open ) return 1;
-	}
-	return 0;
+	if ( fr->paras == NULL ) return NULL;
+	return fr->paras[fr->n_paras-1];
 }
 
 
@@ -1671,9 +1617,6 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			pnew->n_runs = 0;
 			add_run(pnew, end, end, fr->fontdesc, fr->col);
 
-			pnew->open = para->open;
-			para->open = 0;
-
 			wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 
 			return end;
@@ -1744,9 +1687,6 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	nnp = sc_block_append(rr->rscblock, strdup("newpara"), NULL, NULL, NULL);
 	set_newline_at_end(para, nnp);
 
-	pnew->open = para->open;
-	para->open = 0;
-
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 	wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 
@@ -1805,18 +1745,6 @@ void set_para_spacing(Paragraph *para, float space[4])
 	para->space[1] = space[1];
 	para->space[2] = space[2];
 	para->space[3] = space[3];
-}
-
-
-Paragraph *current_para(struct frame *fr)
-{
-	if ( fr == NULL ) return NULL;
-
-	if ( (fr->paras != NULL) && (fr->paras[fr->n_paras-1]->open) ) {
-		return fr->paras[fr->n_paras-1];
-	}
-
-	return NULL;
 }
 
 

@@ -695,7 +695,7 @@ static void set_paraspace(SCInterpreter *scin, const char *opts)
 	st->paraspace[2] = p[2];
 	st->paraspace[3] = p[3];
 
-	set_para_spacing(current_para(sc_interp_get_frame(scin)), p);
+	set_para_spacing(last_para(sc_interp_get_frame(scin)), p);
 }
 
 
@@ -943,6 +943,19 @@ static int in_macro(SCInterpreter *scin)
 }
 
 
+static void add_newpara(struct frame *fr, SCBlock *bl)
+{
+	Paragraph *last_para;
+
+	if ( fr->paras == NULL ) return;
+	last_para = fr->paras[fr->n_paras-1];
+
+	set_newline_at_end(last_para, bl);
+
+	create_paragraph(fr);
+}
+
+
 /* Add the SCBlock to the text in 'frame', at the end */
 static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
                     PangoLanguage *lang, int editable, SCInterpreter *scin)
@@ -952,6 +965,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	double *col;
 	struct sc_state *st = &scin->state[scin->j];
 	SCBlock *rbl;
+	Paragraph *para;
 
 	/* Empty block? */
 	if ( text == NULL ) return 1;
@@ -959,13 +973,18 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
 
-	Paragraph *para = last_open_para(fr);
+	para = last_para(fr);
+	if ( (para == NULL) || (para_type(para) != PARA_TYPE_TEXT) ) {
+		/* Last paragraph is not text.
+		 *  or: no paragraphs yet.
+		 *    Either way: Create the first one */
+		para = create_paragraph(fr);
+	}
 
 	rbl = bl;
 	if ( st->macro_real_block != NULL ) {
 		bl = st->macro_real_block;
 	}
-
 	add_run(para, bl, rbl, fontdesc, col);
 	set_para_spacing(para, st->paraspace);
 

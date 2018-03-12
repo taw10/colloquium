@@ -7,9 +7,9 @@ e = executable('storycode_test', 'storycode_test.c', '../src/sc_parse.c',
 test('Simple StoryCode parsing', e)
 
 e = executable('render_test', 'render_test.c', basic_rendering,
-               dependencies : [gtkdep])
+               dependencies : [gtkdep, mdep])
 test('Simple rendering', e)
 
 e = executable('render_test_sc1', 'render_test_sc1.c', basic_rendering,
-               dependencies : [gtkdep])
+               dependencies : [gtkdep, mdep])
 test('Simple StoryCode rendering', e)

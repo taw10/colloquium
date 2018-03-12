@@ -1155,8 +1155,22 @@ static Paragraph *scan_runs_for_scblock(struct frame *fr, int pn1, int pn2,
                                         SCBlock *bl, int *run)
 {
 	int i;
+
 	for ( i=pn1; i<=pn2; i++ ) {
+
 		int j;
+
+		/* Non-text paragraph - just one thing to check */
+		if ( fr->paras[i]->scblock == bl ) {
+			*run = 0;
+			return fr->paras[i];
+		}
+		if ( fr->paras[i]->rscblock == bl ) {
+			*run = 0;
+			return fr->paras[i];
+		}
+
+		/* Check all runs */
 		for ( j=0; j<fr->paras[i]->n_runs; j++ ) {
 			if ( fr->paras[i]->runs[j].rscblock == bl ) {
 				*run = j;
@@ -1230,8 +1244,41 @@ static int paragraph_number(struct frame *fr, Paragraph *p, int *err)
 }
 
 
+static int find_para(struct frame *fr, Paragraph *para)
+{
+	int i;
+
+	for ( i=0; i<fr->n_paras; i++ ) {
+		if ( fr->paras[i] == para ) return i;
+	}
+
+	return fr->n_paras;
+}
+
+
+static void delete_paragraph(struct frame *fr, Paragraph *para, int *pnp)
+{
+	int pn = find_para(fr, para);
+	if ( pn == fr->n_paras ) {
+		fprintf(stderr, "Couldn't find paragraph to delete (%p)\n", para);
+		return;
+	}
+
+	printf("deleting paragraph %i (%p)\n", pn, para);
+
+	memmove(&fr->paras[pn], &fr->paras[pn+1],
+	        (fr->n_paras-pn-1)*sizeof(Paragraph *));
+	fr->n_paras--;
+
+	if ( (pnp != NULL) && (*pnp > pn) ) {
+		(*pnp)--;
+	}
+}
+
+
 static void delete_run_for_scblock(struct frame *fr,
-                                   Paragraph *p1, Paragraph *p2, SCBlock *bl)
+                                   Paragraph *p1, Paragraph *p2, SCBlock *bl,
+                                   int *pnp)
 {
 	int pn1, pn2;
 	int err = 0;
@@ -1249,7 +1296,11 @@ static void delete_run_for_scblock(struct frame *fr,
 		return;
 	}
 
-	delete_run(para, run);
+	if ( (run==0) && (para->scblock == bl ) ) {
+		delete_paragraph(fr, para, pnp);
+	} else {
+		delete_run(para, run);
+	}
 }
 
 
@@ -1484,7 +1535,8 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 
 			next = sc_block_next(scblock);
 			delete_run_for_scblock(fr, fr->paras[p1.para],
-			                       fr->paras[p2.para], scblock);
+			                       fr->paras[p2.para], scblock,
+			                       &p2.para);
 			sc_block_delete(&fr->scblocks, scblock);
 
 			scblock = next;
@@ -1509,7 +1561,8 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 			show_sc_block(p2scblock, "");
 			sc_block_delete(&fr->scblocks, p2scblock);
 			delete_run_for_scblock(fr, fr->paras[p1.para],
-			                       fr->paras[p2.para], p2scblock);
+			                       fr->paras[p2.para], p2scblock,
+			                       NULL);
 		} else if ( p2offs > 0 ) {
 			printf("Partial delete\n");
 			printf("contents '%s'\n", sc_block_contents(p2rscblock));

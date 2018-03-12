@@ -143,13 +143,14 @@ extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 extern Paragraph *insert_paragraph(struct frame *fr, int pos);
 
 extern void add_callback_para(struct frame *fr, SCBlock *scblock,
+                              SCBlock *rscblock,
                               double w, double h,
                               SCCallbackDrawFunc draw_func,
                               SCCallbackClickFunc click_func, void *bvp,
                               void *vp);
 
 extern void add_image_para(struct frame *fr, SCBlock *scblock,
-                           const char *filename,
+                           SCBlock *rscblock, const char *filename,
                            ImageStore *is, double w, double h, int editable);
 
 extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
@@ -204,6 +205,7 @@ extern void merge_paragraphs(struct frame *fr, int para);
 
 extern enum para_type para_type(Paragraph *para);
 extern SCBlock *para_scblock(Paragraph *para);
+extern SCBlock *para_rscblock(Paragraph *para);
 
 extern int para_debug_num_runs(Paragraph *para);
 extern int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock,

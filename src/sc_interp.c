@@ -231,15 +231,17 @@ static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 		double w, h;
 		int r;
 		void *bvp;
-		SCBlock *mr;
+		SCBlock *rbl;
 
-		mr = sc_interp_get_macro_real_block(scin);
-		if ( mr == NULL ) mr = bl;
+		rbl = bl;
+		if ( sc_interp_get_macro_real_block(scin) != NULL ) {
+			bl = sc_interp_get_macro_real_block(scin);
+		}
 
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
 		if ( !r ) return;
-		add_callback_para(sc_interp_get_frame(scin), bl, w, h,
+		add_callback_para(sc_interp_get_frame(scin), bl, rbl, w, h,
 		                  cbl->draw_funcs[i], cbl->click_funcs[i],
 		                  bvp, cbl->vps[i]);
 
@@ -988,11 +990,11 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		if ( parse_image_options(options, sc_interp_get_frame(scin),
 		                         &w, &h, &filename) == 0 )
 		{
-			SCBlock *ebl = bl;
+			SCBlock *rbl = bl;
 			if ( st->macro_real_block != NULL ) {
-				ebl = st->macro_real_block;
+				rbl = st->macro_real_block;
 			}
-			add_image_para(sc_interp_get_frame(scin), ebl,
+			add_image_para(sc_interp_get_frame(scin), bl, rbl,
 			               filename, scin->is, w, h, 1);
 			free(filename);
 		} else {

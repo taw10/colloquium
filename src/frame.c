@@ -59,6 +59,7 @@ struct _paragraph
 	/* For anything other than PARA_TYPE_TEXT
 	 * (for text paragraphs, these things are in the runs) */
 	SCBlock         *scblock;
+	SCBlock         *rscblock;
 
 	/* For PARA_TYPE_IMAGE */
 	char            *filename;
@@ -472,7 +473,7 @@ Paragraph *insert_paragraph(struct frame *fr, int pos)
 }
 
 
-void add_callback_para(struct frame *fr, SCBlock *bl,
+void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
                        double w, double h,
                        SCCallbackDrawFunc draw_func,
                        SCCallbackClickFunc click_func, void *bvp,
@@ -488,6 +489,7 @@ void add_callback_para(struct frame *fr, SCBlock *bl,
 
 	pnew->type = PARA_TYPE_CALLBACK;
 	pnew->scblock = bl;
+	pnew->rscblock = rbl;
 	pnew->cb_w = w;
 	pnew->cb_h = h;
 	pnew->draw_func = draw_func;
@@ -499,7 +501,8 @@ void add_callback_para(struct frame *fr, SCBlock *bl,
 }
 
 
-void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
+void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
+                    const char *filename,
                     ImageStore *is, double w, double h, int editable)
 {
 	Paragraph *pnew;
@@ -524,6 +527,7 @@ void add_image_para(struct frame *fr, SCBlock *scblock, const char *filename,
 
 	pnew->type = PARA_TYPE_IMAGE;
 	pnew->scblock = scblock;
+	pnew->rscblock = rscblock;
 	pnew->filename = strdup(filename);
 	pnew->image_w = w;
 	pnew->image_h = h;
@@ -1773,6 +1777,12 @@ void *get_para_bvp(Paragraph *para)
 SCBlock *para_scblock(Paragraph *para)
 {
 	return para->scblock;
+}
+
+
+SCBlock *para_rscblock(Paragraph *para)
+{
+	return para->rscblock;
 }
 
 

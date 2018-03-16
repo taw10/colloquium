@@ -943,7 +943,7 @@ static int in_macro(SCInterpreter *scin)
 }
 
 
-static void add_newpara(struct frame *fr, SCBlock *bl)
+static void add_newpara(struct frame *fr, SCBlock *bl, SCBlock *mrb)
 {
 	Paragraph *last_para;
 
@@ -952,7 +952,9 @@ static void add_newpara(struct frame *fr, SCBlock *bl)
 
 	set_newline_at_end(last_para, bl);
 
-	create_paragraph(fr);
+	/* The block after the \newpara will always be the first one of the
+	 * next paragraph, by definition, even if it's \f or another \newpara */
+	create_paragraph(fr, sc_block_next(mrb), sc_block_next(bl));
 }
 
 
@@ -973,18 +975,19 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
 
+	rbl = bl;
+	if ( st->macro_real_block != NULL ) {
+		bl = st->macro_real_block;
+	}
+
 	para = last_para(fr);
 	if ( (para == NULL) || (para_type(para) != PARA_TYPE_TEXT) ) {
 		/* Last paragraph is not text.
 		 *  or: no paragraphs yet.
 		 *    Either way: Create the first one */
-		para = create_paragraph(fr);
+		para = create_paragraph(fr, bl, rbl);
 	}
 
-	rbl = bl;
-	if ( st->macro_real_block != NULL ) {
-		bl = st->macro_real_block;
-	}
 	add_run(para, bl, rbl, fontdesc, col);
 	set_para_spacing(para, st->paraspace);
 
@@ -1011,7 +1014,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		{
 			SCBlock *rbl = bl;
 			if ( st->macro_real_block != NULL ) {
-				rbl = st->macro_real_block;
+				bl = st->macro_real_block;
 			}
 			add_image_para(sc_interp_get_frame(scin), bl, rbl,
 			               filename, scin->is, w, h, 1);
@@ -1048,7 +1051,11 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 	} else if ( strcmp(name, "newpara")==0 ) {
 
 		struct frame *fr = sc_interp_get_frame(scin);
-		add_newpara(fr, bl);
+		SCBlock *rbl = bl;
+		if ( st->macro_real_block != NULL ) {
+			bl = st->macro_real_block;
+		}
+		add_newpara(fr, bl, rbl);
 
 	} else {
 		return 0;

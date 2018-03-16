@@ -417,7 +417,7 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 }
 
 
-Paragraph *create_paragraph(struct frame *fr)
+Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl)
 {
 	Paragraph **paras_new;
 	Paragraph *pnew;
@@ -434,6 +434,8 @@ Paragraph *create_paragraph(struct frame *fr)
 	/* For now, assume the paragraph is going to be for text.
 	 * However, this can easily be changed */
 	pnew->type = PARA_TYPE_TEXT;
+	pnew->scblock = bl;
+	pnew->rscblock = rbl;
 	pnew->n_runs = 0;
 	pnew->runs = NULL;
 	pnew->layout = NULL;
@@ -481,7 +483,7 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 {
 	Paragraph *pnew;
 
-	pnew = create_paragraph(fr);
+	pnew = create_paragraph(fr, bl, rbl);
 	if ( pnew == NULL ) {
 		fprintf(stderr, "Failed to add callback paragraph\n");
 		return;
@@ -512,7 +514,7 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 		return;
 	}
 
-	pnew = create_paragraph(fr);
+	pnew = create_paragraph(fr, scblock, rscblock);
 	if ( pnew == NULL ) {
 		fprintf(stderr, "Failed to add image paragraph\n");
 		return;
@@ -1385,6 +1387,7 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	enum para_type type1, type2;
 	size_t p2offs;
 	SCBlock *scblock;
+	int wrap_end;
 
 	sort_positions(&p1, &p2);
 
@@ -1394,6 +1397,7 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	p1rscblock = pos_to_rscblock(fr, p1);
 	p2rscblock = pos_to_rscblock(fr, p2);
 	p2offs = pos_to_offset(fr, p2);
+	wrap_end = p2.para;
 
 	printf("SCBlocks %p to %p\n", p1scblock, p2scblock);
 	//show_sc_blocks(p1scblock);
@@ -1507,7 +1511,7 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	/* If any paragraphs have been deleted, this will wrap too many
 	 * paragraphs, but it doesn't matter as long as we don't wrap
 	 * past the end of the frame's contents. */
-	for ( i=p1.para; i<=p2.para; i++ ) {
+	for ( i=p1.para; i<=wrap_end; i++ ) {
 		if ( i >= fr->n_paras ) break;
 		printf("Wrapping para %i (%p)\n", i, fr->paras[i]);
 		wrap_paragraph(fr->paras[i], NULL, wrapw, 0, 0);

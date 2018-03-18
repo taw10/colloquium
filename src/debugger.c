@@ -38,26 +38,12 @@
 
 #define MAX_DEBUG_RUNS (1024)
 
-struct run_debug
-{
-	enum para_type para_type;
-
-	int np;
-	void *scblock; /* Don't you dare try to dereference this. */
-	void *rscblock; /* Or this. */
-};
-
-
 struct debugwindow
 {
 	GtkWidget *window;
 	GtkWidget *drawingarea;
 	struct frame *fr;
 	guint timeout;
-
-	int n_changed;
-	int changesig;
-	struct run_debug *runs;
 };
 
 
@@ -104,8 +90,7 @@ static const char *str_type(enum para_type t)
 }
 
 static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
-                            PangoFontDescription *fontdesc,
-                            struct run_debug *rd, int *dpos, int *changesig)
+                            PangoFontDescription *fontdesc)
 {
 	int i, nrun;
 	char tmp[256];
@@ -129,74 +114,12 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 				         scblock);
 			}
 			plot_text(cr, ypos, fontdesc, tmp);
-			(*dpos)++;
 
 		}
 	}
 
-	snprintf(tmp, 255, "Newline at end: %p\n", get_newline_at_end(para));
+	snprintf(tmp, 255, "Newline at end: %p", get_newline_at_end(para));
 	plot_text(cr, ypos, fontdesc, tmp);
-}
-
-
-static void debug_other_para(Paragraph *para, cairo_t *cr, double *ypos,
-                             PangoFontDescription *fontdesc)
-{
-	char tmp[256];
-	SCBlock *scblock = para_scblock(para);
-	SCBlock *rscblock = para_rscblock(para);
-
-	if ( scblock == rscblock ) {
-		snprintf(tmp, 255, "SCBlock %p\n", scblock);
-	} else {
-		snprintf(tmp, 255, "SCBlock %p / %p\n", scblock, rscblock);
-	}
-
-	plot_text(cr, ypos, fontdesc, tmp);
-}
-
-
-static void record_runs(struct debugwindow *dbgw)
-{
-	int i;
-	int n = 0;
-
-	for ( i=0; i<dbgw->fr->n_paras; i++ ) {
-
-		int j, nrun;
-		Paragraph *para = dbgw->fr->paras[i];
-
-		dbgw->runs[n].para_type = para_type(para);
-
-		if ( para_type(para) != PARA_TYPE_TEXT ) {
-			n++;
-			continue;
-		}
-
-		nrun = para_debug_num_runs(para);
-
-		for ( j=0; j<nrun; j++ ) {
-
-			SCBlock *scblock;
-			SCBlock *rscblock;
-
-			if ( para_debug_run_info(para, j, &scblock, &rscblock) ) continue;
-
-			dbgw->runs[n].np = i;
-			dbgw->runs[n].scblock = scblock;
-			dbgw->runs[n].rscblock = rscblock;
-			n++;
-
-			if ( n == MAX_DEBUG_RUNS ) {
-				printf("Too many runs to debug\n");
-				return;
-			}
-
-		}
-
-	}
-
-	dbgw->changesig = 0;
 }
 
 
@@ -207,9 +130,6 @@ static gboolean dbg_draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbg
 	PangoFontDescription *fontdesc;
 	int i;
 	double ypos = 10.0;
-	int dpos = 0;
-	int changesig = 0;
-	int npr = 10;  /* Not zero */
 
 	/* Background */
 	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
@@ -231,33 +151,26 @@ static gboolean dbg_draw_sig(GtkWidget *da, cairo_t *cr, struct debugwindow *dbg
 	for ( i=0; i<dbgw->fr->n_paras; i++ ) {
 
 		enum para_type t = para_type(dbgw->fr->paras[i]);
-
-		/* Jump the "old values" pointer forward to the next paragraph start */
-		while ( dbgw->runs[dpos].np == npr ) dpos++;
-		npr = dbgw->runs[dpos].np;
+		SCBlock *scblock = para_scblock(dbgw->fr->paras[i]);
+		SCBlock *rscblock = para_rscblock(dbgw->fr->paras[i]);
 
 		plot_hr(cr, &ypos, width);
 		snprintf(tmp, 255, "Paragraph %i: type %s", i, str_type(t));
 		plot_text(cr, &ypos, fontdesc, tmp);
 
-		if ( t == PARA_TYPE_TEXT ) {
-			debug_text_para(dbgw->fr->paras[i], cr, &ypos, fontdesc,
-			                dbgw->runs, &dpos, &changesig);
+		if ( scblock == rscblock ) {
+			snprintf(tmp, 255, "SCBlock %p", scblock);
 		} else {
-			debug_other_para(dbgw->fr->paras[i], cr, &ypos, fontdesc);
+			snprintf(tmp, 255, "SCBlock %p / %p", scblock, rscblock);
+		}
+		plot_text(cr, &ypos, fontdesc, tmp);
+
+		if ( t == PARA_TYPE_TEXT ) {
+			debug_text_para(dbgw->fr->paras[i], cr, &ypos, fontdesc);
 		}
 
-	}
+		plot_text(cr, &ypos, fontdesc, "");
 
-	if ( changesig == dbgw->changesig ) {
-		dbgw->n_changed++;
-		if ( dbgw->n_changed >= 5 ) {
-			record_runs(dbgw);
-			dbgw->n_changed = 0;
-		}
-	} else {
-		dbgw->changesig = changesig;
-		dbgw->n_changed = 0;
 	}
 
 	pango_font_description_free(fontdesc);
@@ -296,11 +209,6 @@ void open_debugger(struct frame *fr)
 	if ( dbgw == NULL ) return;
 
 	dbgw->fr = fr;
-	dbgw->runs = malloc(MAX_DEBUG_RUNS * sizeof(struct run_debug));
-	if ( dbgw->runs == NULL ) return;
-
-	dbgw->n_changed = 0;
-	record_runs(dbgw);
 
 	dbgw->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_role(GTK_WINDOW(dbgw->window), "debugger");

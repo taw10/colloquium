@@ -699,6 +699,44 @@ void sort_positions(struct edit_pos *a, struct edit_pos *b)
 }
 
 
+void ensure_run(struct frame *fr, struct edit_pos cpos)
+{
+	SCBlock *bl;
+	Paragraph *para = fr->paras[cpos.para];
+	if ( para->n_runs > 0 ) return;
+
+	if ( para->type != PARA_TYPE_TEXT ) return;
+
+	if ( para->scblock != para->rscblock ) {
+		fprintf(stderr, "Need to add run, but paragraph not editable\n");
+		return;
+	}
+
+	if ( para->scblock != NULL ) {
+
+		bl = sc_block_prepend(para->scblock, fr->scblocks);
+		if ( bl == NULL ) {
+			fprintf(stderr, "Couldn't prepend block\n");
+			return;
+		}
+		sc_block_set_contents(bl, strdup(""));
+
+	} else {
+
+		/* If the paragraph's SCBlock is NULL, it means this paragraph
+		 * is right at the end of the document.  The last thing in the
+		 * document is something like \newpara. */
+		bl = sc_block_append_end(fr->scblocks, NULL, NULL, strdup(""));
+
+	}
+
+	para->scblock = bl;
+	para->rscblock = bl;
+	add_run(para, bl, bl, fr->fontdesc, fr->col);
+	wrap_paragraph(para, NULL, fr->w - fr->pad_l - fr->pad_r, 0, 0);
+}
+
+
 int find_cursor(struct frame *fr, double x, double y, struct edit_pos *pos)
 {
 	double pad = fr->pad_t;

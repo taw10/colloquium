@@ -1188,11 +1188,9 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 			/* Position cursor and prepare for possible drag */
 			e->cursor_frame = clicked;
-			printf("position cursor...\n");
 			check_paragraph(e->cursor_frame, e->pc, sc_block_child(fr->scblocks));
-			printf("find..\n");
 			find_cursor(clicked, x-fr->x, y-fr->y, &e->cpos);
-			printf("done\n");
+			ensure_run(e->cursor_frame, e->cpos);
 
 			e->start_corner_x = x;
 			e->start_corner_y = y;
@@ -1250,6 +1248,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			                sc_block_child(clicked->scblocks));
 		}
 		find_cursor(clicked, x-clicked->x, y-clicked->y, &e->cpos);
+		ensure_run(e->cursor_frame, e->cpos);
 
 	}
 

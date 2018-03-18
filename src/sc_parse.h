@@ -50,6 +50,8 @@ extern SCBlock *sc_block_append(SCBlock *bl,
 
 extern SCBlock *sc_block_new_parent(SCBlock *bl, const char *name);
 
+extern SCBlock *sc_block_prepend(SCBlock *bl, SCBlock *top);
+
 extern void sc_block_append_p(SCBlock *bl, SCBlock *bln);
 
 extern void sc_block_append_block(SCBlock *bl, SCBlock *bln);

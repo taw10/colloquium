@@ -87,6 +87,43 @@ const char *sc_block_contents(const SCBlock *bl)
 }
 
 
+static SCBlock *sc_find_previous(SCBlock *top, SCBlock *find)
+{
+	if ( top->next == find ) return top;
+
+	if ( top->child != NULL ) {
+		SCBlock *t = sc_find_previous(top->child, find);
+		if ( t != NULL ) return t;
+	}
+	if ( top->next != NULL ) {
+		SCBlock *t = sc_find_previous(top->next, find);
+		if ( t != NULL ) return t;
+	}
+	return NULL;
+}
+
+
+/* Add a new block before "bl" */
+SCBlock *sc_block_prepend(SCBlock *bl, SCBlock *top)
+{
+	SCBlock *bln;
+	SCBlock *prev;
+
+	prev = sc_find_previous(top, bl);
+	if ( prev == NULL ) {
+		fprintf(stderr, "Couldn't find previous\n");
+		return NULL;
+	}
+
+	bln = sc_block_new();
+	if ( bln == NULL ) return NULL;
+
+	prev->next = bln;
+	bln->next = bl;
+	return bln;
+}
+
+
 /* Append "bln" after "bl" */
 void sc_block_append_p(SCBlock *bl, SCBlock *bln)
 {

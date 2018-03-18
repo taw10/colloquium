@@ -243,7 +243,7 @@ static int check_callback(SCInterpreter *scin, SCBlock *bl)
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
 		if ( r )  {
-			add_callback_para(sc_interp_get_frame(scin), bl, w, h,
+			add_callback_para(sc_interp_get_frame(scin), bl, rbl, w, h,
 			                  cbl->draw_funcs[i], cbl->click_funcs[i],
 			                  bvp, cbl->vps[i]);
 		}

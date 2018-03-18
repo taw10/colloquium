@@ -164,6 +164,8 @@ extern int positions_equal(struct edit_pos a, struct edit_pos b);
 extern int get_para_highlight(struct frame *fr, int cursor_para,
                               double *cx, double *cy, double *cw, double *ch);
 
+extern int position_editable(struct frame *fr, struct edit_pos cp);
+
 extern int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
                           double *cx, double *cy, double *ch);
 

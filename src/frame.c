@@ -961,6 +961,40 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 }
 
 
+int position_editable(struct frame *fr, struct edit_pos cp)
+{
+	Paragraph *para;
+	int run;
+	size_t paraoffs;
+
+	if ( fr == NULL ) {
+		fprintf(stderr, "Frame is NULL.\n");
+		return 0;
+	}
+
+	if ( cp.para >= fr->n_paras ) {
+		fprintf(stderr, "Paragraph number is too high!\n");
+		return 0;
+	}
+
+	para = fr->paras[cp.para];
+
+	if ( para->scblock != para->rscblock ) {
+		fprintf(stderr, "Paragraph is not editable.\n");
+		return 0;
+	}
+
+	paraoffs = pos_trail_to_offset(para, cp.pos, cp.trail);
+	run = which_run(para, paraoffs);
+	if ( run == para->n_runs ) {
+		fprintf(stderr, "Couldn't find run!\n");
+		return 0;
+	}
+
+	return (para->runs[run].scblock == para->runs[run].rscblock);
+}
+
+
 void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 {
 	int nrun;
@@ -1390,6 +1424,11 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	int wrap_end;
 
 	sort_positions(&p1, &p2);
+
+	if ( !position_editable(fr, p1) || !position_editable(fr, p2) ) {
+		fprintf(stderr, "Block delete outside editable region\n");
+		return;
+	}
 
 	/* Find SC positions for start and end */
 	p1scblock = pos_to_scblock(fr, p1, &type1);

@@ -216,15 +216,17 @@ void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl)
 }
 
 
-static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
+static int check_callback(SCInterpreter *scin, SCBlock *bl)
 {
 	int i;
+	const char *name = sc_block_name(bl);
 	SCCallbackList *cbl = scin->cbl;
 
-	if ( cbl == NULL ) {
-		fprintf(stderr, "No callback list.\n");
-		return;
-	}
+	/* No callback list -> easy */
+	if ( cbl == NULL ) return 0;
+
+	/* No name -> definitely not a callback */
+	if ( name == NULL ) return 0;
 
 	for ( i=0; i<cbl->n_callbacks; i++ ) {
 
@@ -240,15 +242,16 @@ static void do_callback(SCInterpreter *scin, SCBlock *bl, const char *name)
 
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
-		if ( !r ) return;
-		add_callback_para(sc_interp_get_frame(scin), bl, rbl, w, h,
-		                  cbl->draw_funcs[i], cbl->click_funcs[i],
-		                  bvp, cbl->vps[i]);
+		if ( r )  {
+			add_callback_para(sc_interp_get_frame(scin), bl, w, h,
+			                  cbl->draw_funcs[i], cbl->click_funcs[i],
+			                  bvp, cbl->vps[i]);
+		}
+		return 1;
 
-		return;
 	}
 
-	fprintf(stderr, "Unknown callback '%s'\n", name);
+	return 0;
 }
 
 
@@ -1143,6 +1146,9 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			exec_macro(bl, scin, child);
 			sc_interp_restore(scin);
 
+		} else if ( check_callback(scin, bl) ) {
+			/* Handled in check_callback, don't do anything else */
+
 		} else if ((sc_interp_get_frame(scin) != NULL)
 		  && check_outputs(bl, scin) ) {
 			/* Block handled as output thing */
@@ -1208,9 +1214,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			maybe_recurse_before(scin, child);
 			set_paraspace(scin, options);
 			maybe_recurse_after(scin, child);
-
-		} else if ( strcmp(name, "callback") == 0 ) {
-			do_callback(scin, bl, options);
 
 		} else {
 

@@ -225,14 +225,6 @@ static SCBlock *get_slide_template(SCBlock *ss)
 }
 
 
-static SCBlock *narrative_stylesheet()
-{
-	return sc_parse("\\stylesheet{"
-	                "\\ss[slide]{\\callback[sthumb]}"
-	                "}");
-}
-
-
 static SCBlock **get_ss_list(struct presentation *p)
 {
 	SCBlock **stylesheets;
@@ -242,11 +234,9 @@ static SCBlock **get_ss_list(struct presentation *p)
 
 	if ( p->stylesheet != NULL ) {
 		stylesheets[0] = p->stylesheet;
-		stylesheets[1] = narrative_stylesheet();
-		stylesheets[2] = NULL;
-	} else {
-		stylesheets[0] = narrative_stylesheet();
 		stylesheets[1] = NULL;
+	} else {
+		stylesheets[0] = NULL;
 	}
 
 	return stylesheets;
@@ -672,13 +662,10 @@ static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
                             double *w, double *h, void **bvp, void *vp)
 {
 	struct presentation *p = vp;
-	SCBlock *b;
 
 	*w = 270.0*(p->slide_width / p->slide_height);
 	*h = 270.0;
-	b = sc_interp_get_macro_real_block(scin);
-
-	*bvp = b;
+	*bvp = bl;
 
 	return 1;
 }
@@ -817,7 +804,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	                             colloquium_get_imagestore(app));
 	free(stylesheets);
 	cbl = sc_callback_list_new();
-	sc_callback_list_add_callback(cbl, "sthumb", create_thumbnail,
+	sc_callback_list_add_callback(cbl, "slide", create_thumbnail,
 	                              render_thumbnail, click_thumbnail, p);
 	sc_editor_set_callbacks(nw->sceditor, cbl);
 	sc_editor_set_imagestore(nw->sceditor, p->is);

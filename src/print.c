@@ -186,14 +186,6 @@ static cairo_surface_t *print_render_thumbnail(int w, int h, void *bvp, void *vp
 }
 
 
-static SCBlock *print_narrative_stylesheet()
-{
-	return sc_parse("\\stylesheet{"
-	                "\\ss[slide]{\\callback[sthumb]}"
-	                "}");
-}
-
-
 static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
                                   struct print_stuff *ps)
 {
@@ -205,18 +197,16 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 
 	cbl = sc_callback_list_new();
 	ps->slide_number = 1;
-	sc_callback_list_add_callback(cbl, "sthumb", print_create_thumbnail,
+	sc_callback_list_add_callback(cbl, "slide", print_create_thumbnail,
 	                              print_render_thumbnail, NULL, ps);
 
 	ps->is = imagestore_new(ps->storename);
 
 	if ( ps->p->stylesheet != NULL ) {
 		stylesheets[0] = ps->p->stylesheet;
-		stylesheets[1] = print_narrative_stylesheet();
-		stylesheets[2] = NULL;
-	} else {
-		stylesheets[0] = print_narrative_stylesheet();
 		stylesheets[1] = NULL;
+	} else {
+		stylesheets[0] = NULL;
 	}
 
 	pc = gtk_print_context_create_pango_context(ctx);

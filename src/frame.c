@@ -1681,6 +1681,8 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			                      NULL, strdup(""), NULL);
 			pnew->n_runs = 0;
 			add_run(pnew, end, end, fr->fontdesc, fr->col);
+			pnew->scblock = end;
+			pnew->rscblock = end;
 
 			wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 
@@ -1738,6 +1740,8 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		add_run(pnew, NULL, NULL, NULL, col);
 		pnew->runs[pnew->n_runs-1] = para->runs[i];
 	}
+	pnew->scblock = pnew->runs[0].scblock;
+	pnew->rscblock = pnew->runs[0].rscblock;
 
 	/* Truncate the first paragraph at the appropriate position */
 	para->n_runs = run+1;

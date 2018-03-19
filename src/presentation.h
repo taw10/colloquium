@@ -27,9 +27,6 @@
 #include <config.h>
 #endif
 
-#include <cairo.h>
-#include <gtk/gtk.h>
-
 struct presentation;
 
 #include "imagestore.h"

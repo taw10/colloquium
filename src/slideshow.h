@@ -27,6 +27,8 @@
 #include <config.h>
 #endif
 
+#include <gtk/gtk.h>
+
 #define SC_TYPE_SLIDESHOW            (sc_slideshow_get_type())
 
 #define SC_SLIDESHOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), \

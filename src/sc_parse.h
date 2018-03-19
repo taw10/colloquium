@@ -33,6 +33,7 @@ typedef struct _scblock SCBlock;
 
 extern SCBlock *sc_parse(const char *sc);
 
+extern SCBlock *sc_block_new(void);
 extern void sc_block_free(SCBlock *bl);
 
 extern SCBlock *sc_block_copy(const SCBlock *bl);

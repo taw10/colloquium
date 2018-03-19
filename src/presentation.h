@@ -31,7 +31,6 @@
 #include <gtk/gtk.h>
 
 struct presentation;
-struct slide;
 
 #include "imagestore.h"
 #include "sc_parse.h"
@@ -55,7 +54,6 @@ struct presentation
 	SlideWindow      *slidewindow;
 
 	struct pr_clock  *clock;
-	struct slide_sorter *slide_sorter;
 
 	/* This is the "native" size of the slide.  It only exists to give
 	 * font size some meaning in the context of a somewhat arbitrary DPI */
@@ -84,8 +82,6 @@ extern SCBlock *prev_slide(struct presentation *p, SCBlock *sl);
 
 extern int load_presentation(struct presentation *p, const char *filename);
 extern int save_presentation(struct presentation *p, const char *filename);
-
-extern void set_edit(struct presentation *p, struct slide *s);
 
 #define UNUSED __attribute__((unused))
 

@@ -39,6 +39,7 @@
 #include "testcard.h"
 #include "pr_clock.h"
 #include "print.h"
+#include "utils.h"
 
 
 struct _narrative_window

@@ -368,7 +368,6 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 
 	if ( para->layout == NULL ) {
 		para->layout = pango_layout_new(pc);
-		pango_layout_set_spacing(para->layout, 5000);
 	}
 	pango_layout_set_width(para->layout, pango_units_from_double(w));
 	pango_layout_set_text(para->layout, text, total_len);

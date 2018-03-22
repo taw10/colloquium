@@ -1581,7 +1581,9 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		if ( event->state & GDK_CONTROL_MASK ) {
 			debug_paragraphs(e);
 		} else if ( event->state & GDK_SHIFT_MASK ) {
-			show_sc_blocks(e->scblocks);
+			if ( e->cursor_frame != NULL ) {
+				show_sc_blocks(e->cursor_frame->scblocks);
+			}
 		} else {
 			open_debugger(e->cursor_frame);
 		}

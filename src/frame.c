@@ -1655,29 +1655,40 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		/* Even easier case: splitting at the end of the paragraph */
 		if ( run == para->n_runs-1 ) {
 
+			SCBlock *np;
 			SCBlock *end;
 
 			printf("Simple new para\n");
 
 			if ( get_newline_at_end(para) == NULL ) {
+
 				/* The current paragraph doesn't have
 				 * a \newpara yet */
-				end = sc_block_append(rr->scblock,
-				                      strdup("newpara"), NULL,
-				                      NULL, NULL);
-				set_newline_at_end(para, end);
+
+				np = sc_block_append(rr->scblock,
+				                     strdup("newpara"), NULL,
+				                     NULL, NULL);
+				set_newline_at_end(para, np);
+
 			} else {
+
+				SCBlock *op;
+
 				/* If the current paragraph did have \newpara,
 				 * then the new one needs one too */
-				end = sc_block_append(rr->scblock,
-				                      strdup("newpara"),
-				                      NULL, NULL, NULL);
-				set_newline_at_end(pnew, end);
+				np = sc_block_append(rr->scblock,
+				                     strdup("newpara"),
+				                     NULL, NULL, NULL);
+				op = get_newline_at_end(para);
+				set_newline_at_end(para, np);
+				set_newline_at_end(pnew, op);
+
+
 			}
 
 			/* Add an empty run + SCBlock to type into */
-			end = sc_block_append(end, NULL,
-			                      NULL, strdup(""), NULL);
+			end = sc_block_append(np, NULL, NULL, strdup(""), NULL);
+
 			pnew->n_runs = 0;
 			add_run(pnew, end, end, fr->fontdesc, fr->col);
 			pnew->scblock = end;

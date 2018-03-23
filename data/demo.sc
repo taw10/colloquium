@@ -4,9 +4,10 @@
 	\bggradv[#333333,#000055]
 	\fgcol[#c5c5c5]
 
+	\slidesize[1024x768]
 	\ss[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\contents}
 	\ss[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}
-	\ss[footer]{\f[600ux30u+500+740]{\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 1 March 2018} | \bold{Slide} \slidenumber}}}
+	\ss[footer]{\f[0.97fx30u+0+740]{\ralign\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 1 March 2018} | \bold{Slide} \slidenumber}}}
 	\ss[credit]{\f[600ux30u+700+700]{\fontsize[11]\contents}}
 	\ss[bp]{➤ }
 

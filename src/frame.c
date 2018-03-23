@@ -54,6 +54,7 @@ struct _paragraph
 	int              n_runs;
 	struct text_run *runs;
 	PangoLayout     *layout;
+	PangoAlignment   alignment;
 
 	/* For anything other than PARA_TYPE_TEXT
 	 * (for text paragraphs, these things are in the runs) */
@@ -371,6 +372,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 	}
 	pango_layout_set_width(para->layout, pango_units_from_double(w));
 	pango_layout_set_text(para->layout, text, total_len);
+	pango_layout_set_alignment(para->layout, para->alignment);
 	pango_layout_set_attributes(para->layout, attrs);
 	free(text);
 	pango_attr_list_unref(attrs);
@@ -439,6 +441,7 @@ Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl)
 	pnew->runs = NULL;
 	pnew->layout = NULL;
 	pnew->height = 0.0;
+	pnew->alignment = PANGO_ALIGN_LEFT;
 
 	return pnew;
 }
@@ -1824,6 +1827,13 @@ void set_para_spacing(Paragraph *para, float space[4])
 	para->space[1] = space[1];
 	para->space[2] = space[2];
 	para->space[3] = space[3];
+}
+
+
+void set_para_alignment(Paragraph *para, PangoAlignment align)
+{
+	if ( para == NULL ) return;
+	para->alignment = align;
 }
 
 

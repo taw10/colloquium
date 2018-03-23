@@ -124,6 +124,7 @@ extern double total_height(struct frame *fr);
 extern Paragraph *last_para(struct frame *fr);
 extern void show_para(Paragraph *p);
 extern void set_para_spacing(Paragraph *para, float space[4]);
+extern void set_para_alignment(Paragraph *para, PangoAlignment align);
 
 extern double paragraph_height(Paragraph *para);
 extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is);

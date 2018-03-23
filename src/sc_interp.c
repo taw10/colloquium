@@ -56,6 +56,7 @@ struct sc_state
 {
 	PangoFontDescription *fontdesc;
 	PangoFont *font;
+	PangoAlignment alignment;
 	double col[4];
 	int ascent;
 	int height;
@@ -408,6 +409,13 @@ static void set_italic(SCInterpreter *scin)
 }
 
 
+static void set_alignment(SCInterpreter *scin, PangoAlignment align)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	st->alignment = align;
+}
+
+
 /* This sets the colour for the font at the top of the stack */
 static void set_colour(SCInterpreter *scin, const char *colour)
 {
@@ -613,6 +621,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->paraspace[3] = 0.0;
 	st->fontdesc = NULL;
 	st->have_size = 0;
+	st->alignment = PANGO_ALIGN_LEFT;
 
 	scin->lang = lang;
 
@@ -991,6 +1000,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 		para = create_paragraph(fr, bl, rbl);
 	}
 
+	set_para_alignment(para, st->alignment);
 	add_run(para, bl, rbl, fontdesc, col);
 	set_para_spacing(para, st->paraspace);
 
@@ -1179,6 +1189,11 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "italic") == 0 ) {
 			maybe_recurse_before(scin, child);
 			set_italic(scin);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "ralign") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_alignment(scin, PANGO_ALIGN_RIGHT);
 			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {

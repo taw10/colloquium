@@ -20,7 +20,7 @@ Colloquium works differently to other presentation programs. Colloquium makes \i
 \slide{
 \prestitle{Presentation title!}
 \f[836.7ux156.5u+100.3+565.5]{hel\fontsize[40]{lo?}}
-}
+\f[506.3ux520.3u+448.1+150.6]{\image[1fx1f+0+0,filename="colloquium.svg"]{}}}
 As you can probably tell, the above slide happens to be the title page for the presentation.
 To edit a slide, simply double-click on it.  Try it on this next slide:
 \slide{
@@ -39,7 +39,7 @@ If you have two screens connected to your computer at the moment, you could try 
 Besides this, Colloquium has some features which will help you when you come to give your presentation.  In the "Tools" menu, you'll find the presentation clock and the test card.
 Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
 Now, a short warning:
-\slide{\slidetitle{Alpha test software}\footer\f[389.2ux345.2u+98.1+198.1]{\image[1fx1f+0+0,filename="alpha_warning.png"]{}}\f[415.5ux432.1u+564.7+185.0]{Colloquium is "alpha test" software.
+\slide{\slidetitle{Alpha test software}\footer\f[415.5ux432.1u+564.7+185.0]{Colloquium is "alpha test" software.
 
 It will probably crash on you and eat your work.
 
@@ -50,5 +50,5 @@ That said, it has never crashed on me in front of a live audience.  You will fin
 Nevertheless, creating a backup slide deck in PDF format (File->Export slides as PDF) is wise.
 
 Please report all bugs here:
-https://www.bitwiz.me.uk/tracker}}
+https://www.bitwiz.me.uk/tracker}\f[452.2ux431.0u+53.4+144.1]{\image[1fx1f+0+0,filename="alpha_warning.svg"]{}}}
 That's enough to get you started.  I hope you enjoy using Colloquium!

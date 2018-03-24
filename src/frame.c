@@ -1341,44 +1341,6 @@ static signed int merge_paragraph_runs(Paragraph *p1, Paragraph *p2)
 }
 
 
-void merge_paragraphs(struct frame *fr, int para)
-{
-	Paragraph *p1, *p2;
-	int i;
-	SCBlock *n;
-
-	if ( para >= fr->n_paras-1 ) {
-		printf("Paragraph number too high to merge.\n");
-		return;
-	}
-
-	p1 = fr->paras[para];
-	p2 = fr->paras[para+1];
-
-	if ( (p1->type != PARA_TYPE_TEXT) || (p2->type != PARA_TYPE_TEXT) ) {
-		printf("Trying to merge non-text paragraphs.\n");
-		return;
-	}
-
-	/* Delete the \newpara block to unite the paragraphs */
-	n = get_newline_at_end(p1);
-	assert(n != NULL);
-
-	if ( sc_block_delete(&fr->scblocks, n) ) {
-		fprintf(stderr, "Failed to delete paragraph end sentinel.\n");
-		return;
-	}
-
-	merge_paragraph_runs(p1, p2);
-
-	for ( i=para+1; i<fr->n_paras-1; i++ ) {
-		fr->paras[i] = fr->paras[i+1];
-	}
-	fr->n_paras--;
-}
-
-
-
 static void merge_paragraphs_by_newpara(struct frame *fr, SCBlock *np)
 {
 	int i;

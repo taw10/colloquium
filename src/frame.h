@@ -197,7 +197,6 @@ extern int get_sc_pos(struct frame *fr, int pn, size_t pos,
 
 extern void *get_para_bvp(Paragraph *para);
 
-extern void merge_paragraphs(struct frame *fr, int para);
 extern Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl);
 
 extern enum para_type para_type(Paragraph *para);

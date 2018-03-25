@@ -5,7 +5,7 @@
 	\fgcol[#c5c5c5]
 
 	\slidesize[1024x768]
-	\ss[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\contents}
+	\ss[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\center\contents}
 	\ss[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}
 	\ss[footer]{\f[0.97fx30u+0+740]{\ralign\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 1 March 2018} | \bold{Slide} \slidenumber}}}
 	\ss[credit]{\f[600ux30u+700+700]{\fontsize[11]\contents}}
@@ -20,7 +20,7 @@
 Colloquium works differently to other presentation programs. Colloquium makes \italic{narrative, not slides,} the centre of attention.  Slides come when you need to illustrate something.  This window is called the \oblique{narrative editor}.  Your slides are embedded into the narrative text, like this:\slide{
 \prestitle{Welcome to Colloquium}
 
-\f[506.3ux520.3u+244.5+141.3]{\image[1fx1f+0+0,filename="colloquium.svg"]{}}\f[537.4ux62.0u+257.8+692.6]{This is the presentation title slide, in case you hadn't noticed.}}
+\f[506.3ux520.3u+244.5+141.3]{\image[1fx1f+0+0,filename="colloquium.svg"]{}}\f[983.9ux75.4u+21.1+673.0]{\center This is the presentation title slide, in case you hadn't noticed.}}
 As you can probably tell, the above slide happens to be the title page for the presentation.
 To edit a slide, simply double-click on it.  Try it on this next slide:\slide{
 \slidetitle{Here is the slide title!}

@@ -1191,9 +1191,19 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 			set_italic(scin);
 			maybe_recurse_after(scin, child);
 
+		} else if ( strcmp(name, "lalign") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_alignment(scin, PANGO_ALIGN_LEFT);
+			maybe_recurse_after(scin, child);
+
 		} else if ( strcmp(name, "ralign") == 0 ) {
 			maybe_recurse_before(scin, child);
 			set_alignment(scin, PANGO_ALIGN_RIGHT);
+			maybe_recurse_after(scin, child);
+
+		} else if ( strcmp(name, "center") == 0 ) {
+			maybe_recurse_before(scin, child);
+			set_alignment(scin, PANGO_ALIGN_CENTER);
 			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "fgcol") == 0 ) {

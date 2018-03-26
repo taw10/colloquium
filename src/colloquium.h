@@ -36,6 +36,9 @@ typedef struct _colloquium Colloquium;
                                    GTK_TYPE_APPLICATION, Colloquium))
 
 
-const char *colloquium_get_imagestore(Colloquium *app);
+extern const char *colloquium_get_imagestore(Colloquium *app);
+
+extern int colloquium_get_hidepointer(Colloquium *app);
+
 
 #endif	/* COLLOQUIUM_H */

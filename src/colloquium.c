@@ -45,6 +45,7 @@ struct _colloquium
 	char *mydir;
 	int first_run;
 	char *imagestore;
+	int hidepointer;
 };
 
 
@@ -232,8 +233,26 @@ static void create_config(const char *filename)
 
 	fprintf(fh, "imagestore: %s\n",
 	        g_get_user_special_dir(G_USER_DIRECTORY_PICTURES));
+	fprintf(fh, "hidepointer: no\n");
 
 	fclose(fh);
+}
+
+
+static int yesno(const char *a)
+{
+	if ( a == NULL ) return 0;
+
+	if ( strcmp(a, "1") == 0 ) return 1;
+	if ( strcasecmp(a, "yes") == 0 ) return 1;
+	if ( strcasecmp(a, "true") == 0 ) return 1;
+
+	if ( strcasecmp(a, "0") == 0 ) return 0;
+	if ( strcasecmp(a, "no") == 0 ) return 0;
+	if ( strcasecmp(a, "false") == 0 ) return 0;
+
+	fprintf(stderr, "Don't understand '%s', assuming false\n", a);
+	return 0;
 }
 
 
@@ -248,15 +267,19 @@ static void read_config(const char *filename, Colloquium *app)
 		return;
 	}
 
-	if ( fgets(line, 1024, fh) == NULL ) {
-		fprintf(stderr, "Failed to read from config\n");
-		return;
-	}
-	chomp(line);
+	do {
 
-	if ( strncmp(line, "imagestore: ", 11) == 0 ) {
-		app->imagestore = strdup(line+12);
-	}
+		if ( fgets(line, 1024, fh) == NULL ) break;
+		chomp(line);
+
+		if ( strncmp(line, "imagestore: ", 11) == 0 ) {
+			app->imagestore = strdup(line+12);
+		}
+
+		if ( strncmp(line, "hidepointer: ", 12) == 0 ) {
+			app->hidepointer = yesno(line+13);
+		}
+	} while ( !feof(fh) );
 
 	fclose(fh);
 }
@@ -265,6 +288,12 @@ static void read_config(const char *filename, Colloquium *app)
 const char *colloquium_get_imagestore(Colloquium *app)
 {
 	return app->imagestore;
+}
+
+
+int colloquium_get_hidepointer(Colloquium *app)
+{
+	return app->hidepointer;
 }
 
 
@@ -510,6 +539,8 @@ static void colloquium_class_init(ColloquiumClass *class)
 
 static void colloquium_init(Colloquium *app)
 {
+	app->imagestore = NULL;
+	app->hidepointer = 0;
 }
 
 

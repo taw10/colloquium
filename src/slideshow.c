@@ -31,6 +31,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "colloquium.h"
 #include "presentation.h"
 #include "render.h"
 #include "pr_clock.h"
@@ -86,7 +87,7 @@ static gint ssh_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 	if ( ss->surface != NULL ) {
 		cairo_surface_destroy(ss->surface);
 	}
-	if ( ss->app != NULL ) {
+	if ( ss->inhibit_cookie ) {
 		gtk_application_uninhibit(ss->app, ss->inhibit_cookie);
 	}
 	return FALSE;
@@ -121,13 +122,18 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
 
 static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
 {
-	GdkWindow *win;
+	if ( (ss->app == NULL) || colloquium_get_hidepointer(COLLOQUIUM(ss->app)) ) {
 
-	win = gtk_widget_get_window(w);
+		/* Hide the pointer */
+		GdkWindow *win;
+		win = gtk_widget_get_window(w);
+		ss->blank_cursor = gdk_cursor_new_for_display(gdk_display_get_default(),
+		                                              GDK_BLANK_CURSOR);
+		gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
 
-	ss->blank_cursor = gdk_cursor_new_for_display(gdk_display_get_default(),
-	                                              GDK_BLANK_CURSOR);
-	//gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
+	} else {
+		ss->blank_cursor = NULL;
+	}
 
 	slideshow_rerender(ss);
 
@@ -183,6 +189,7 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 	ss->cur_slide = NULL;
 	ss->blank_cursor = NULL;
 	ss->surface = NULL;
+	ss->app = app;
 
 	ss->drawingarea = gtk_drawing_area_new();
 	gtk_container_add(GTK_CONTAINER(ss), ss->drawingarea);
@@ -229,7 +236,6 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 		ss->inhibit_cookie = gtk_application_inhibit(app, GTK_WINDOW(ss),
 		                                             GTK_APPLICATION_INHIBIT_IDLE,
 		                                             "Presentation slide show is running");
-		ss->app = app;
 	}
 
 	return ss;

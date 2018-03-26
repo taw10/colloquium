@@ -748,16 +748,8 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 			show_edit_pos(p1);
 			show_edit_pos(p2);
 
-			if ( position_editable(e->cursor_frame, p1)
-			  && position_editable(e->cursor_frame, p2) )
-			{
-
-				delete_text_from_frame(e->cursor_frame, p1, p2, wrapw);
-				e->cpos = p2;
-
-			} else {
-				fprintf(stderr, "Deleting not editable.\n");
-			}
+			delete_text_from_frame(e->cursor_frame, p1, p2, wrapw);
+			e->cpos = p2;
 
 		} else {
 

@@ -1427,8 +1427,19 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 
 	sort_positions(&p1, &p2);
 
+	/* To make sure there are no nasty surprises ahead, run through the
+	 * paragraphs we're about to touch, and make sure they all have at least
+	 * an empty dummy run */
+	for ( i=p1.para; i<=p2.para; i++ ) {
+		struct edit_pos ep;
+		ep.para = i;
+		ep.pos = 0;
+		ep.trail = 0;
+		ensure_run(fr, ep);
+	}
+
 	if ( !position_editable(fr, p1) || !position_editable(fr, p2) ) {
-		fprintf(stderr, "Block delete outside editable region\n");
+		fprintf(stderr, "Delete outside editable region\n");
 		return;
 	}
 

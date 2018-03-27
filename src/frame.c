@@ -1740,6 +1740,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 	/* Add a \newpara after the end of the first paragraph's SC */
 	nnp = sc_block_append(rr->rscblock, strdup("newpara"), NULL, NULL, NULL);
+	set_newline_at_end(pnew, get_newline_at_end(para));
 	set_newline_at_end(para, nnp);
 
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);

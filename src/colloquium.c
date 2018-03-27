@@ -301,6 +301,8 @@ static void colloquium_startup(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);
 	GtkBuilder *builder;
+	GtkSettings *settings;
+	gboolean app_menu_shown;
 	const char *configdir;
 	char *tmp;
 
@@ -321,12 +323,12 @@ static void colloquium_startup(GApplication *papp)
 	    "        <attribute name='accel'>&lt;Primary&gt;n</attribute>"
 	    "      </item>"
 	    "      <item>"
-	    "        <attribute name='label'>_Open</attribute>"
+	    "        <attribute name='label'>_Open...</attribute>"
 	    "        <attribute name='action'>app.open</attribute>"
 	    "        <attribute name='accel'>&lt;Primary&gt;o</attribute>"
 	    "      </item>"
 	    "      <item>"
-	    "        <attribute name='label'>Preferences...</attribute>"
+	    "        <attribute name='label'>Preferences</attribute>"
 	    "        <attribute name='action'>app.prefs</attribute>"
 	    "      </item>"
 	    "    </section>"
@@ -346,6 +348,19 @@ static void colloquium_startup(GApplication *papp)
 	    "  <menu id='menubar'>"
 	    "    <submenu>"
 	    "      <attribute name='label' translatable='yes'>File</attribute>"
+
+	    "      <section>"
+	    "        <item>"
+	    "          <attribute name='label'>_New</attribute>"
+	    "          <attribute name='action'>app.new</attribute>"
+	    "          <attribute name='accel'>&lt;Primary&gt;n</attribute>"
+	    "        </item>"
+	    "        <item>"
+	    "          <attribute name='label'>_Open...</attribute>"
+	    "          <attribute name='action'>app.open</attribute>"
+	    "          <attribute name='accel'>&lt;Primary&gt;o</attribute>"
+	    "        </item>"
+	    "      </section>"
 	    "      <section>"
 	    "        <item>"
 	    "          <attribute name='label'>_Save</attribute>"
@@ -369,12 +384,19 @@ static void colloquium_startup(GApplication *papp)
 	    "      </section>"
 	    "      <section>"
 	    "        <item>"
-	    "          <attribute name='label'>Load stylesheet</attribute>"
+	    "          <attribute name='label'>Load stylesheet...</attribute>"
 	    "          <attribute name='action'>win.loadstyle</attribute>"
 	    "        </item>"
 	    "        <item>"
-	    "          <attribute name='label'>Save stylesheet</attribute>"
+	    "          <attribute name='label'>Save stylesheet...</attribute>"
 	    "          <attribute name='action'>win.savestyle</attribute>"
+	    "        </item>"
+	    "      </section>"
+	    "      <section>"
+	    "        <item>"
+	    "          <attribute name='label'>_Quit</attribute>"
+	    "          <attribute name='action'>app.quit</attribute>"
+	    "          <attribute name='accel'>&lt;Primary&gt;q</attribute>"
 	    "        </item>"
 	    "      </section>"
 	    "    </submenu>"
@@ -424,9 +446,11 @@ static void colloquium_startup(GApplication *papp)
 	    "          <attribute name='label'>Edit stylesheet...</attribute>"
 	    "          <attribute name='action'>win.stylesheet</attribute>"
 	    "        </item>"
+	    "      </section>"
+	    "      <section>"
 	    "        <item>"
-	    "          <attribute name='label'>Change stylesheet...</attribute>"
-	    "          <attribute name='action'>win.loadstylesheet</attribute>"
+	    "          <attribute name='label'>Preferences</attribute>"
+	    "          <attribute name='action'>app.prefs</attribute>"
 	    "        </item>"
 	    "      </section>"
 	    "    </submenu>"
@@ -461,7 +485,7 @@ static void colloquium_startup(GApplication *papp)
 	    "          <attribute name='action'>win.startslideshownoslides</attribute>"
 	    "        </item>"
 	    "        <item>"
-	    "          <attribute name='label'>Presentation clock...</attribute>"
+	    "          <attribute name='label'>Presentation clock</attribute>"
 	    "          <attribute name='action'>win.clock</attribute>"
 	    "        </item>"
 	    "        <item>"
@@ -470,15 +494,34 @@ static void colloquium_startup(GApplication *papp)
 	    "        </item>"
 	    "      </section>"
 	    "    </submenu>"
+
+	    "    <submenu>"
+	    "      <attribute name='label' translatable='yes'>Help</attribute>"
+	    "      <section>"
+	    "        <item>"
+	    "          <attribute name='label'>About</attribute>"
+	    "          <attribute name='action'>app.about</attribute>"
+	    "        </item>"
+	    "      </section>"
+	    "    </submenu>"
 	    "  </menu>"
 
 	    "</interface>", -1, NULL);
 
-	gtk_application_set_app_menu(GTK_APPLICATION(app),
-	    G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu")));
 	gtk_application_set_menubar(GTK_APPLICATION(app),
 	    G_MENU_MODEL(gtk_builder_get_object(builder, "menubar")));
 	g_object_unref(builder);
+
+	settings = gtk_settings_get_for_screen(gdk_screen_get_default());
+	g_object_get(G_OBJECT(settings), "gtk-shell-shows-app-menu", &app_menu_shown, NULL);
+	if ( app_menu_shown ) {
+		/* Set the application menu only if it will be shown by the
+		 * desktop environment.  All the entries are already in the
+		 * normal menus, so don't let GTK create a fallback menu in the
+		 * menu bar. */
+		GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu"));
+		gtk_application_set_app_menu(GTK_APPLICATION(app), mmodel);
+	}
 
 	configdir = g_get_user_config_dir();
 	app->mydir = malloc(strlen(configdir)+14);

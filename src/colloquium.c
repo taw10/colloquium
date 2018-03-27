@@ -86,16 +86,34 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 
 	gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(window),
 	    "Colloquium");
+	gtk_about_dialog_set_logo_icon_name(GTK_ABOUT_DIALOG(window),
+	    "colloquium");
 	gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(window),
 	    PACKAGE_VERSION);
 	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
-	    "© 2017-2018 Thomas White <taw@bitwiz.org.uk>");
+	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
 	    "Narrative-based presentation system");
 	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
-	    "© 2017-2018 Thomas White <taw@bitwiz.org.uk>\n");
+	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>\n"
+	    "\n"
+	    "Colloquium is free software: you can redistribute it and/or modify "
+	    "it under the terms of the GNU General Public License as published by "
+	    "the Free Software Foundation, either version 3 of the License, or "
+	    "(at your option) any later version.\n"
+	    "\n"
+	    "This program is distributed in the hope that it will be useful, "
+	    "but WITHOUT ANY WARRANTY; without even the implied warranty of "
+	    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+	    "GNU General Public License for more details.\n"
+	    "\n"
+	    "You should have received a copy of the GNU General Public License "
+	    "along with this program.  If not, see <http://www.gnu.org/licenses/>.\n");
+	gtk_about_dialog_set_wrap_license(GTK_ABOUT_DIALOG(window), TRUE);
 	gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(window),
-	    "https://www.bitwiz.org.uk/");
+	    "https://www.bitwiz.me.uk/");
+	gtk_about_dialog_set_website_label(GTK_ABOUT_DIALOG(window),
+	    "https://www.bitwiz.me.uk/");
 	gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(window), authors);
 
 	g_signal_connect(window, "response", G_CALLBACK(gtk_widget_destroy),

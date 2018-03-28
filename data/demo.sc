@@ -20,7 +20,7 @@
 Colloquium works differently to other presentation programs. Colloquium makes \italic{narrative, not slides,} the centre of attention.  Slides come when you need to illustrate something.  This window is called the \oblique{narrative editor}.  Your slides are embedded into the narrative text, like this:\slide{
 \prestitle{Welcome to Colloquium}
 
-\f[506.3ux520.3u+244.5+141.3]{\image[1fx1f+0+0,filename="colloquium.svg"]{}}\f[983.9ux75.4u+21.1+673.0]{\center This is the presentation title slide, in case you hadn't noticed.}}
+\f[506.3ux520.3u+244.5+141.3]{\image[1fx1f+0+0,filename="colloquium.svg"]{}}\f[983.9ux75.4u+21.1+673.0]{\center{This is the presentation title slide, in case you hadn't noticed.}}}
 As you can probably tell, the above slide happens to be the title page for the presentation.
 To edit a slide, simply double-click on it.  Try it on this next slide:\slide{
 \slidetitle{Here is the slide title!}
@@ -38,7 +38,7 @@ Besides this, Colloquium has some features which will help you when you come to 
 Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
 Now, a short warning:\slide{\slidetitle{Alpha test software}\footer\f[394.9ux428.0u+571.9+178.8]{Colloquium is "alpha test" software.
 
-It will probably crash on you and eat your work a few times.  Save and back up your work as frequently as possible.
+It will probably crash and lose your work a few times.  Save and back up your work as frequently as possible.
 
 However, in years of use it has \bold{never} crashed on me in front of an audience.  You will find most bugs in the editing features, not playback.
 

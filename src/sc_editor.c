@@ -199,6 +199,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 		                          e->stylesheets, e->cbl,
 		                          e->is, e->slidenum, pc,
 		                          w, h, e->lang);
+		e->top->scblocks = e->scblocks;
 		recursive_wrap(e->top, pc);
 	}
 

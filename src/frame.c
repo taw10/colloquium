@@ -1024,6 +1024,11 @@ int position_editable(struct frame *fr, struct edit_pos cp)
 		return 0;
 	}
 
+	if ( para->type != PARA_TYPE_TEXT ) {
+		fprintf(stderr, "Paragraph is not text.\n");
+		return 0;
+	}
+
 	paraoffs = pos_trail_to_offset(para, cp.pos, cp.trail);
 	run = which_run(para, paraoffs);
 	if ( run == para->n_runs ) {

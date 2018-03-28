@@ -769,11 +769,6 @@ static void insert_text(char *t, SCEditor *e)
 {
 	Paragraph *para;
 
-	if ( !position_editable(e->cursor_frame, e->cpos) ) {
-		fprintf(stderr, "Position not editable\n");
-		return;
-	}
-
 	if ( e->sel_active ) {
 		do_backspace(e->cursor_frame, e);
 	}
@@ -796,6 +791,12 @@ static void insert_text(char *t, SCEditor *e)
 		size_t off;
 
 		/* Yes. The "easy" case */
+
+		if ( !position_editable(e->cursor_frame, e->cpos) ) {
+			fprintf(stderr, "Position not editable\n");
+			return;
+		}
+
 		off = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
 		insert_text_in_paragraph(para, off, t);
 		wrap_paragraph(para, NULL,

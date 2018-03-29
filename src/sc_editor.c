@@ -770,6 +770,8 @@ static void insert_text(char *t, SCEditor *e)
 {
 	Paragraph *para;
 
+	if ( e->cursor_frame == NULL ) return;
+
 	if ( e->sel_active ) {
 		do_backspace(e->cursor_frame, e);
 	}

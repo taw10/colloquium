@@ -195,7 +195,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 			w = e->log_w;
 			h = e->log_h;
 		}
-		e->top = interp_and_shape(sc_block_child(e->scblocks),
+		e->top = interp_and_shape(e->scblocks,
 		                          e->stylesheets, e->cbl,
 		                          e->is, e->slidenum, pc,
 		                          w, h, e->lang);
@@ -396,7 +396,7 @@ static void full_rerender(SCEditor *e)
 
 	pc = gdk_pango_context_get();
 
-	e->top = interp_and_shape(sc_block_child(e->scblocks),
+	e->top = interp_and_shape(e->scblocks,
 	                          e->stylesheets, e->cbl,
 	                          e->is, e->slidenum,
 	                          pc, e->log_w, 0.0, e->lang);

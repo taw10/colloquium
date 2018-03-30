@@ -159,8 +159,7 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 	sc_block_delete(&nw->dummy_top, ns);
 
 	/* Full rerender */
-	sc_editor_set_scblock(nw->sceditor,
-	                      sc_editor_get_scblock(nw->sceditor));
+	sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
 	nw->p->saved = 0;
 	update_titlebar(nw);
 }
@@ -339,8 +338,7 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 		fprintf(stderr, "Failed to split paragraph\n");
 	}
 
-	sc_editor_set_scblock(nw->sceditor,
-	                      sc_editor_get_scblock(nw->sceditor));
+	sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
 	nw->p->saved = 0;
 	update_titlebar(nw);
 }
@@ -681,7 +679,6 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	struct frame *top;
 	int sn = slide_number(p, scblocks);
 
-	scblocks = sc_block_child(scblocks);
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
 

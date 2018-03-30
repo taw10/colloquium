@@ -215,7 +215,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	top->col[2] = sc_interp_get_fgcol(scin)[2];
 	top->col[3] = sc_interp_get_fgcol(scin)[3];
 
-	sc_interp_add_blocks(scin, scblocks);
+	sc_interp_add_blocks(scin, sc_block_child(scblocks));
 
 	sc_interp_destroy(scin);
 
@@ -320,9 +320,9 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 		cairo_fill(cr);
 
-		render_sc_with_context(sc_block_child(bl), cr, p->slide_width,
-		                     p->slide_height, stylesheets, NULL,
-		                     p->is, i, p->lang, pc);
+		render_sc_with_context(bl, cr, p->slide_width,
+		                       p->slide_height, stylesheets, NULL,
+		                       p->is, i, p->lang, pc);
 
 		cairo_restore(cr);
 

@@ -135,7 +135,7 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 
 	printf("%f x %f ---> %f x %f\n", w, h, slide_width, slide_height);
 
-	top = interp_and_shape(sc_block_child(ps->slide), stylesheets, NULL,
+	top = interp_and_shape(ps->slide, stylesheets, NULL,
 	                       ps->p->is, page+1, pc, sw, sh, ps->p->lang);
 
 	recursive_wrap(top, pc);
@@ -175,7 +175,6 @@ static cairo_surface_t *print_render_thumbnail(int w, int h, void *bvp, void *vp
 	SCBlock *stylesheets[2];
 	struct frame *top;
 
-	scblocks = sc_block_child(scblocks);
 	stylesheets[0] = p->stylesheet;
 	stylesheets[1] = NULL;
 	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height, stylesheets, NULL,
@@ -194,6 +193,7 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 	PangoContext *pc;
 	int i, n_pages;
 	double h, page_height;
+	SCBlock *dummy_top;
 
 	cbl = sc_callback_list_new();
 	ps->slide_number = 1;
@@ -211,7 +211,8 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 
 	pc = gtk_print_context_create_pango_context(ctx);
 
-	ps->top = interp_and_shape(ps->p->scblocks, stylesheets, cbl,
+	dummy_top = sc_block_new_parent(ps->p->scblocks, "presentation");
+	ps->top = interp_and_shape(dummy_top, stylesheets, cbl,
 	                           ps->is, 0, pc,
 	                           gtk_print_context_get_width(ctx),
 	                           gtk_print_context_get_height(ctx),

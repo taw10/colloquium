@@ -158,7 +158,7 @@ static int print_create_thumbnail(SCInterpreter *scin, SCBlock *bl,
 
 	*w = 270.0*(p->slide_width / p->slide_height);
 	*h = 270.0;
-	b = sc_interp_get_macro_real_block(scin);
+	b = bl;
 
 	*bvp = b;
 

@@ -528,7 +528,6 @@ static void colloquium_startup(GApplication *papp)
 
 	gtk_application_set_menubar(GTK_APPLICATION(app),
 	    G_MENU_MODEL(gtk_builder_get_object(builder, "menubar")));
-	g_object_unref(builder);
 
 	settings = gtk_settings_get_for_screen(gdk_screen_get_default());
 	g_object_get(G_OBJECT(settings), "gtk-shell-shows-app-menu", &app_menu_shown, NULL);
@@ -540,6 +539,7 @@ static void colloquium_startup(GApplication *papp)
 		GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu"));
 		gtk_application_set_app_menu(GTK_APPLICATION(app), mmodel);
 	}
+	g_object_unref(builder);
 
 	configdir = g_get_user_config_dir();
 	app->mydir = malloc(strlen(configdir)+14);

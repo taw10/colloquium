@@ -319,8 +319,6 @@ static void colloquium_startup(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);
 	GtkBuilder *builder;
-	GtkSettings *settings;
-	gboolean app_menu_shown;
 	const char *configdir;
 	char *tmp;
 
@@ -529,14 +527,13 @@ static void colloquium_startup(GApplication *papp)
 	gtk_application_set_menubar(GTK_APPLICATION(app),
 	    G_MENU_MODEL(gtk_builder_get_object(builder, "menubar")));
 
-	settings = gtk_settings_get_for_screen(gdk_screen_get_default());
-	g_object_get(G_OBJECT(settings), "gtk-shell-shows-app-menu", &app_menu_shown, NULL);
-	if ( app_menu_shown ) {
+	if ( gtk_application_prefers_app_menu(GTK_APPLICATION(app)) ) {
 		/* Set the application menu only if it will be shown by the
 		 * desktop environment.  All the entries are already in the
 		 * normal menus, so don't let GTK create a fallback menu in the
 		 * menu bar. */
 		GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu"));
+		printf("Using app menu\n");
 		gtk_application_set_app_menu(GTK_APPLICATION(app), mmodel);
 	}
 	g_object_unref(builder);

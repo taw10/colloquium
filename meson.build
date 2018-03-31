@@ -4,6 +4,8 @@ project('colloquium', 'c',
         license : 'GPL3+',
         default_options : ['buildtype=debugoptimized'])
 
+gnome = import('gnome')
+
 datadir=join_paths(get_option('datadir'), 'colloquium')
 
 add_project_arguments('-DPACKAGE_VERSION="'+meson.project_version()+'"', language : 'c')
@@ -14,6 +16,10 @@ add_project_arguments('-DDATADIR="'+join_paths(get_option('prefix'), datadir)+'"
 gtkdep = dependency('gtk+-3.0')
 cc = meson.get_compiler('c')
 mdep = cc.find_library('m', required : false)
+
+gresources = gnome.compile_resources('colloquium-resources',
+                                     'data/colloquium.gresource.xml',
+                                     source_dir: 'data', c_name: 'colloquium')
 
 # Main program
 executable('colloquium',
@@ -33,12 +39,13 @@ executable('colloquium',
             'src/print.c',
             'src/sc_parse.c',
             'src/utils.c',
-	   ],
+           ],
+           gresources,
            dependencies : [gtkdep, mdep],
            install : true)
 
 # Data files, icon, desktop file etc
-install_data(['data/demo.sc', 'data/sky.png', 'data/canvas.png',
+install_data(['data/demo.sc', 'data/canvas.png',
               'data/alpha_warning.svg'],
              install_dir : datadir)
 

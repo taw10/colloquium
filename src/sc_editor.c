@@ -374,6 +374,17 @@ void sc_editor_set_background(SCEditor *e, double r, double g, double b)
 }
 
 
+void sc_editor_ensure_cursor(SCEditor *e)
+{
+	if ( e->cursor_frame != NULL ) return;
+	e->cursor_frame = e->top;
+	e->cpos.para = 0;
+	e->cpos.pos = 0;
+	e->cpos.trail = 0;
+	e->selection = NULL;
+}
+
+
 void sc_editor_remove_cursor(SCEditor *e)
 {
 	e->cursor_frame = NULL;

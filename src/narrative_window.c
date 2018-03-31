@@ -324,6 +324,8 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 	SCBlock *templ;
 	NarrativeWindow *nw = vp;
 
+	sc_editor_ensure_cursor(nw->sceditor);
+
 	/* Split the current paragraph */
 	nsblock = split_paragraph_at_cursor(nw->sceditor);
 

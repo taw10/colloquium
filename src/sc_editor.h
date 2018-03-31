@@ -189,6 +189,7 @@ extern void sc_editor_add_storycode(SCEditor *e, const char *sc);
 extern void sc_editor_copy_selected_frame(SCEditor *e);
 extern void sc_editor_delete_selected_frame(SCEditor *e);
 extern void sc_editor_remove_cursor(SCEditor *e);
+extern void sc_editor_ensure_cursor(SCEditor *e);
 extern SCBlock *split_paragraph_at_cursor(SCEditor *e);
 
 extern void sc_editor_set_imagestore(SCEditor *e, ImageStore *is);

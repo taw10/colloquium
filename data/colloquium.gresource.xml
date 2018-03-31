@@ -2,5 +2,7 @@
 <gresources>
 	<gresource prefix="/uk/me/bitwiz/Colloquium">
 		<file>sky.png</file>
+		<file>app-menu.ui</file>
+		<file>menu-bar.ui</file>
 	</gresource>
 </gresources>

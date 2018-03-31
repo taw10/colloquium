@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<interface>
+  <menu id='app-menu'>
+    <section>
+      <item>
+        <attribute name='label'>_New</attribute>
+        <attribute name='action'>app.new</attribute>
+        <attribute name='accel'>&lt;Primary&gt;n</attribute>
+      </item>
+      <item>
+        <attribute name='label'>_Open...</attribute>
+        <attribute name='action'>app.open</attribute>
+        <attribute name='accel'>&lt;Primary&gt;o</attribute>
+      </item>
+      <item>
+        <attribute name='label'>Preferences</attribute>
+        <attribute name='action'>app.prefs</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label'>_About</attribute>
+        <attribute name='action'>app.about</attribute>
+      </item>
+      <item>
+        <attribute name='label'>_Quit</attribute>
+        <attribute name='action'>app.quit</attribute>
+        <attribute name='accel'>&lt;Primary&gt;q</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

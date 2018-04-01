@@ -28,22 +28,16 @@
 #endif
 
 #include <cairo.h>
-
+#include <gio/gio.h>
 
 typedef struct _imagestore ImageStore;
 
 extern ImageStore *imagestore_new(const char *storename);
-
 extern void imagestore_destroy(ImageStore *is);
-
-extern void imagestore_set_presentation_file(ImageStore *is,
-                                             const char *filename);
-
-extern cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w);
-
-extern int imagestore_get_size(ImageStore *is, const char *filename,
-                               int *w, int *h);
-
+extern void imagestore_set_parent(ImageStore *is, GFile *parent);
 extern void show_imagestore(ImageStore *is);
+
+extern cairo_surface_t *lookup_image(ImageStore *is, const char *uri, int w);
+extern int imagestore_get_size(ImageStore *is, const char *uri, int *w, int *h);
 
 #endif	/* IMAGESTORE_H */

@@ -86,15 +86,13 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 {
 	if ( response == GTK_RESPONSE_ACCEPT ) {
 
-		char *filename;
+		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
 
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-
-		if ( save_presentation(nw->p, filename) ) {
+		if ( save_presentation(nw->p, file) ) {
 			//show_error(sw, "Failed to save presentation");
 		}
 
-		g_free(filename);
+		g_object_unref(file);
 
 	}
 
@@ -128,12 +126,16 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
+	GFile *file;
 
 	if ( nw->p->filename == NULL ) {
 		return saveas_sig(NULL, NULL, nw);
 	}
 
-	save_presentation(nw->p, nw->p->filename);
+	/* FIXME: Do this properly with GFile */
+	file = g_file_new_for_path(nw->p->filename);
+	save_presentation(nw->p, file);
+	g_object_unref(file);
 }
 
 

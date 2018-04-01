@@ -31,6 +31,7 @@
 #include <libgen.h>
 #include <cairo.h>
 #include <glib.h>
+#include <gio/gio.h>
 #include <gdk/gdk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
@@ -54,7 +55,8 @@ struct _imagestore
 	int n_images;
 	struct image_record *images;
 	int max_images;
-	char *dname;
+	GFile *pparent;
+	GFile *iparent;
 	const char *storename;
 };
 
@@ -81,8 +83,12 @@ ImageStore *imagestore_new(const char *storename)
 	if ( is == NULL ) return NULL;
 
 	is->images = NULL;
-	is->dname = NULL;
-	is->storename = storename;
+	is->pparent = NULL;
+	if ( storename != NULL ) {
+		is->iparent = g_file_new_for_uri(storename);
+	} else {
+		is->iparent = NULL;
+	}
 	is->n_images = 0;
 	is->max_images = 0;
 	if ( alloc_images(is, 32) ) {
@@ -94,17 +100,12 @@ ImageStore *imagestore_new(const char *storename)
 }
 
 
-void imagestore_set_presentation_file(ImageStore *is, const char *filename)
+void imagestore_set_parent(ImageStore *is, GFile *parent)
 {
-	const char *dname;
-	char *cpy;
-
-	/* dirname() is yukky */
-	cpy = strdup(filename);
-	dname = dirname(cpy);
-	free(is->dname);
-	is->dname = strdup(dname);
-	free(cpy);
+	if ( is->pparent != NULL ) {
+		g_object_unref(is->pparent);
+	}
+	is->pparent = parent;
 }
 
 
@@ -121,6 +122,8 @@ void imagestore_destroy(ImageStore *is)
 			}
 		}
 	}
+	g_object_unref(is->pparent);
+	g_object_unref(is->iparent);
 	free(is->images);
 	free(is);
 }
@@ -154,39 +157,46 @@ static cairo_surface_t *pixbuf_to_surface(GdkPixbuf *t)
 }
 
 
-static char *try_all_locations(const char *filename,
-                               const char *dname, const char *iname)
+static int try_load(GFile *file, GdkPixbuf **pixbuf, gint w, gint h)
 {
-	if ( g_file_test(filename, G_FILE_TEST_EXISTS) ) {
-		return strdup(filename);
+	GFileInputStream *stream;
+	GError *error = NULL;
+
+	stream = g_file_read(file, NULL, &error);
+	if ( stream != NULL ) {
+		GError *pberr = NULL;
+		*pixbuf = gdk_pixbuf_new_from_stream_at_scale(G_INPUT_STREAM(stream),
+		                                              w, h, TRUE,
+		                                              NULL, &pberr);
+		g_object_unref(stream);
+		g_object_unref(file);
+		return 1;
 	}
 
+	return 0;
+}
+
+
+static GdkPixbuf *load_image(const char *uri, GFile *pparent, GFile *iparent,
+                             gint w, gint h)
+{
+	GFile *file;
+	GdkPixbuf *pixbuf;
+
+	/* Literal pathname */
+	file = g_file_new_for_path(uri);
+	if ( try_load(file, &pixbuf, w, h) ) return pixbuf;
+
 	/* Try the file prefixed with the directory the presentation is in */
-	if ( dname != NULL ) {
-		char *tmp;
-		tmp = malloc(strlen(filename) + strlen(dname) + 2);
-		if ( tmp == NULL ) return NULL;
-		strcpy(tmp, dname);
-		strcat(tmp, "/");
-		strcat(tmp, filename);
-		if ( g_file_test(tmp, G_FILE_TEST_EXISTS) ) {
-			return tmp;
-		}
-		free(tmp);
+	if ( pparent != NULL ) {
+		file = g_file_get_child(pparent, uri);
+		if ( try_load(file, &pixbuf, w, h) ) return pixbuf;
 	}
 
 	/* Try prefixing with imagestore folder */
-	if ( iname != NULL ) {
-		char *tmp;
-		tmp = malloc(strlen(filename) + strlen(iname) + 2);
-		if ( tmp == NULL ) return NULL;
-		strcpy(tmp, iname);
-		strcat(tmp, "/");
-		strcat(tmp, filename);
-		if ( g_file_test(tmp, G_FILE_TEST_EXISTS) ) {
-			return tmp;
-		}
-		free(tmp);
+	if ( iparent != NULL ) {
+		file = g_file_get_child(iparent, uri);
+		if ( try_load(file, &pixbuf, w, h) ) return pixbuf;
 	}
 
 	return NULL;
@@ -196,12 +206,14 @@ static char *try_all_locations(const char *filename,
 int imagestore_get_size(ImageStore *is, const char *filename,
                         int *w, int *h)
 {
-	char *fullfn;
+	GdkPixbuf *pixbuf;
 
-	fullfn = try_all_locations(filename, is->dname, is->storename);
-	if ( gdk_pixbuf_get_file_info(fullfn, w, h) == NULL ) {
-		return 1;
-	}
+	pixbuf = load_image(filename, is->pparent, is->iparent, -1, -1);
+	if ( pixbuf == NULL ) return 1;
+
+	*w = gdk_pixbuf_get_width(pixbuf);
+	*h = gdk_pixbuf_get_height(pixbuf);
+
 	return 0;
 }
 
@@ -230,21 +242,15 @@ static int find_earliest(struct image_record *im)
 
 static cairo_surface_t *add_image_size(struct image_record *im,
                                        const char *filename,
-                                       const char *dname, const char *iname,
+                                       GFile *pparent, GFile *iparent,
                                        int w)
 {
-	char *fullfn;
 	cairo_surface_t *surf;
 	GdkPixbuf *t;
-	GError *error = NULL;
 	int pos;
 
-	fullfn = try_all_locations(filename, dname, iname);
-	if ( fullfn == NULL ) return NULL;
-
-	t = gdk_pixbuf_new_from_file_at_size(fullfn, w, -1, &error);
-	free(fullfn);
-
+	t = load_image(filename, pparent, iparent, w, -1);
+	if ( t == NULL ) return NULL;
 	surf = pixbuf_to_surface(t);
 	g_object_unref(t);
 
@@ -280,8 +286,8 @@ static cairo_surface_t *add_new_image(ImageStore *is, const char *filename, int 
 	is->images[idx].filename = strdup(filename);
 	is->images[idx].h_last_used = 0;
 
-	return add_image_size(&is->images[idx], filename, is->dname,
-	                      is->storename, w);
+	return add_image_size(&is->images[idx], filename, is->pparent,
+	                      is->iparent, w);
 }
 
 
@@ -324,7 +330,7 @@ cairo_surface_t *lookup_image(ImageStore *is, const char *filename, int w)
 	}
 
 	/* We don't have this size yet */
-	surf = add_image_size(&is->images[i], filename, is->dname,
-	                      is->storename, w);
+	surf = add_image_size(&is->images[i], filename, is->pparent,
+	                      is->iparent, w);
 	return surf;
 }

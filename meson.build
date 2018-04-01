@@ -44,14 +44,11 @@ executable('colloquium',
            dependencies : [gtkdep, mdep],
            install : true)
 
-# Data files, icon, desktop file etc
-install_data(['data/demo.sc', 'data/canvas.png',
-              'data/alpha_warning.svg'],
-             install_dir : datadir)
-
+# Desktop file
 install_data(['data/colloquium.desktop'],
              install_dir : get_option('datadir')+'/applications')
 
+# Icon
 install_data(['data/colloquium.svg'],
              install_dir : get_option('datadir')+'/icons/hicolor/scalable/apps')
 

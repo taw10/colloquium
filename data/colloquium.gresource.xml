@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-	<gresource prefix="/uk/me/bitwiz/Colloquium">
-		<file>sky.png</file>
-		<file>app-menu.ui</file>
-		<file>menu-bar.ui</file>
-	</gresource>
+  <gresource prefix="/uk/me/bitwiz/Colloquium">
+    <file>sky.png</file>
+    <file>app-menu.ui</file>
+    <file>menu-bar.ui</file>
+    <file>demo.sc</file>
+    <file>canvas.png</file>
+    <file>alpha_warning.svg</file>
+    <file>colloquium.svg</file>
+  </gresource>
 </gresources>

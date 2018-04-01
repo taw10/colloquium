@@ -125,22 +125,22 @@ struct presentation *new_presentation(const char *imagestore)
 }
 
 
-int save_presentation(struct presentation *p, const char *filename)
+int save_presentation(struct presentation *p, GFile *file)
 {
 	FILE *fh;
-	char *old_fn;
+	char *filename;
+
+	/* FIXME: Do this properly using GFile */
+	filename = g_file_get_path(file);
+	printf("Saving to %s\n", filename);
 
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) return 1;
 
 	save_sc_block(fh, p->scblocks);
 
-	/* Slightly fiddly because someone might
-	 * do save_presentation(p, p->filename) */
-	old_fn = p->filename;
-	imagestore_set_presentation_file(p->is, filename);
+	imagestore_set_parent(p->is, g_file_get_parent(file));
 	p->filename = strdup(filename);
-	if ( old_fn != NULL ) free(old_fn);
 
 	fclose(fh);
 	p->saved = 1;
@@ -331,21 +331,20 @@ static void set_slide_size_from_stylesheet(struct presentation *p)
 }
 
 
-int load_presentation(struct presentation *p, const char *filename)
+int load_presentation(struct presentation *p, GFile *file)
 {
 	int r = 0;
 	char *everything;
 
 	assert(p->completely_empty);
 
-	everything = load_everything(filename);
-	if ( everything == NULL ) {
-		fprintf(stderr, "Failed to load '%s'\n", filename);
+	if ( !g_file_load_contents(file, NULL, &everything, NULL, NULL, NULL) ) {
+		fprintf(stderr, "Failed to load '%s'\n", g_file_get_uri(file));
 		return 1;
 	}
 
 	p->scblocks = sc_parse(everything);
-	free(everything);
+	g_free(everything);
 
 	p->lang = pango_language_get_default();
 
@@ -361,8 +360,8 @@ int load_presentation(struct presentation *p, const char *filename)
 	set_slide_size_from_stylesheet(p);
 
 	assert(p->filename == NULL);
-	p->filename = strdup(filename);
-	imagestore_set_presentation_file(p->is, filename);
+	p->filename = g_file_get_uri(file);
+	imagestore_set_parent(p->is, g_file_get_parent(file));
 
 	return 0;
 }

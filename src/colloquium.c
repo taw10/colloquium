@@ -220,15 +220,14 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 
 	for ( i = 0; i<n_files; i++ ) {
 		struct presentation *p;
-		char *uri = g_file_get_path(files[i]);
-		/* FIXME: Use GFile properly, hence support weird URIs etc */
 		p = new_presentation(app->imagestore);
-		if ( load_presentation(p, uri) == 0 ) {
+		if ( load_presentation(p, files[i]) == 0 ) {
 			narrative_window_new(p, papp);
 		} else {
+			char *uri = g_file_get_uri(files[i]);
 			fprintf(stderr, "Failed to load '%s'\n", uri);
+			g_free(uri);
 		}
-		g_free(uri);
 	}
 }
 
@@ -352,7 +351,7 @@ static void colloquium_startup(GApplication *papp)
 	if ( !g_file_test(app->mydir, G_FILE_TEST_IS_DIR) ) {
 
 		/* Folder not created yet */
-		GFile *file = g_file_new_for_path(DATADIR"/demo.sc");
+		GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
 		g_application_open(G_APPLICATION(app), &file, 1, "");
 		app->first_run = 1;
 		g_object_unref(file);

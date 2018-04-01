@@ -77,8 +77,8 @@ extern SCBlock *last_slide(struct presentation *p);
 extern SCBlock *next_slide(struct presentation *p, SCBlock *sl);
 extern SCBlock *prev_slide(struct presentation *p, SCBlock *sl);
 
-extern int load_presentation(struct presentation *p, const char *filename);
-extern int save_presentation(struct presentation *p, const char *filename);
+extern int load_presentation(struct presentation *p, GFile *file);
+extern int save_presentation(struct presentation *p, GFile *file);
 
 #define UNUSED __attribute__((unused))
 

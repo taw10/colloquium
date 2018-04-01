@@ -127,22 +127,22 @@ struct presentation *new_presentation(const char *imagestore)
 
 int save_presentation(struct presentation *p, GFile *file)
 {
-	FILE *fh;
-	char *filename;
+	GFileOutputStream *fh;
+	int r;
+	GError *error = NULL;
 
-	/* FIXME: Do this properly using GFile */
-	filename = g_file_get_path(file);
-	printf("Saving to %s\n", filename);
+	fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
+	if ( fh == NULL ) {
+		fprintf(stderr, "Open failed: %s\n", error->message);
+		return 1;
+	}
+	r = save_sc_block(G_OUTPUT_STREAM(fh), p->scblocks);
+	g_object_unref(fh);
 
-	fh = fopen(filename, "w");
-	if ( fh == NULL ) return 1;
-
-	save_sc_block(fh, p->scblocks);
+	if ( r ) return 1;
 
 	imagestore_set_parent(p->is, g_file_get_parent(file));
-	p->filename = strdup(filename);
-
-	fclose(fh);
+	p->filename = g_file_get_uri(file);
 	p->saved = 1;
 	update_titlebar(p->narrative_window);
 	return 0;

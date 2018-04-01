@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <glib.h>
+#include <gio/gio.h>
 
 #include "sc_parse.h"
 
@@ -410,18 +411,25 @@ char *serialise_sc_block(const SCBlock *bl)
 }
 
 
-void save_sc_block(FILE *fh, const SCBlock *bl)
+int save_sc_block(GOutputStream *fh, const SCBlock *bl)
 {
 	while ( bl != NULL ) {
+		GError *error = NULL;
 		char *a = serialise_sc_block(bl);
+		gssize r;
 		if ( a == NULL ) {
 			fprintf(stderr, "Failed to serialise block\n");
-			return;
+			return 1;
 		}
-		fputs(a, fh);
+		r = g_output_stream_write(fh, a, strlen(a), NULL, &error);
+		if ( r == -1 ) {
+			fprintf(stderr, "Write failed: %s\n", error->message);
+			return 1;
+		}
 		free(a);
 		bl = bl->next;
 	}
+	return 0;
 }
 
 

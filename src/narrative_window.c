@@ -58,6 +58,22 @@ struct _narrative_window
 };
 
 
+static void show_error(NarrativeWindow *nw, const char *err)
+{
+	GtkWidget *mw;
+
+	mw = gtk_message_dialog_new(GTK_WINDOW(nw->window),
+	                            GTK_DIALOG_DESTROY_WITH_PARENT,
+	                            GTK_MESSAGE_ERROR,
+	                            GTK_BUTTONS_CLOSE, err);
+
+	g_signal_connect_swapped(mw, "response",
+	                         G_CALLBACK(gtk_widget_destroy), mw);
+
+	gtk_widget_show(mw);
+}
+
+
 static void update_toolbar(NarrativeWindow *nw)
 {
 	int cur_para;
@@ -89,7 +105,7 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
 
 		if ( save_presentation(nw->p, file) ) {
-			//show_error(sw, "Failed to save presentation");
+			show_error(nw, "Failed to save presentation");
 		}
 
 		g_object_unref(file);
@@ -132,8 +148,7 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 		return saveas_sig(NULL, NULL, nw);
 	}
 
-	/* FIXME: Do this properly with GFile */
-	file = g_file_new_for_path(nw->p->filename);
+	file = g_file_new_for_uri(nw->p->filename);
 	save_presentation(nw->p, file);
 	g_object_unref(file);
 }

@@ -28,6 +28,7 @@
 #endif
 
 #include <stdio.h>
+#include <gio/gio.h>
 
 typedef struct _scblock SCBlock;
 
@@ -83,7 +84,7 @@ extern void show_sc_blocks(const SCBlock *bl);
 extern void show_sc_block(const SCBlock *bl, const char *prefix);
 
 extern char *serialise_sc_block(const SCBlock *bl);
-extern void save_sc_block(FILE *fh, const SCBlock *bl);
+extern int save_sc_block(GOutputStream *fh, const SCBlock *bl);
 
 extern size_t scblock_delete_text(SCBlock *b, ssize_t o1, ssize_t o2);
 

@@ -47,6 +47,8 @@ struct image_record
 	int last_used[MAX_SIZES];
 	int n_sizes;
 	int h_last_used;
+	int full_width;
+	int full_height;
 };
 
 
@@ -203,16 +205,58 @@ static GdkPixbuf *load_image(const char *uri, GFile *pparent, GFile *iparent,
 }
 
 
+static struct image_record *add_image_record(ImageStore *is,
+                                             const char *filename)
+{
+	int idx;
+
+	if ( is->n_images == is->max_images ) {
+		if ( alloc_images(is, is->max_images+32) ) {
+			fprintf(stderr, "Couldn't allocate memory.\n");
+			return NULL;
+		}
+	}
+
+	idx = is->n_images++;
+
+	is->images[idx].n_sizes = 0;
+	is->images[idx].filename = strdup(filename);
+	is->images[idx].h_last_used = 0;
+
+	return &is->images[idx];
+}
+
+
+
 int imagestore_get_size(ImageStore *is, const char *filename,
                         int *w, int *h)
 {
 	GdkPixbuf *pixbuf;
+	struct image_record *ir;
+	int i;
+
+	for ( i=0; i<is->n_images; i++ ) {
+		if ( strcmp(is->images[i].filename, filename) == 0 ) {
+			*w = is->images[i].full_width;
+			*h = is->images[i].full_height;
+			return 0;
+		}
+	}
 
 	pixbuf = load_image(filename, is->pparent, is->iparent, -1, -1);
 	if ( pixbuf == NULL ) return 1;
 
+
 	*w = gdk_pixbuf_get_width(pixbuf);
 	*h = gdk_pixbuf_get_height(pixbuf);
+
+	ir = add_image_record(is, filename);
+	if ( ir != NULL ) {
+		ir->full_width = *w;
+		ir->full_height = *h;
+	} /* otherwise can't cache, too bad */
+
+	g_object_unref(pixbuf);
 
 	return 0;
 }
@@ -271,23 +315,10 @@ static cairo_surface_t *add_image_size(struct image_record *im,
 
 static cairo_surface_t *add_new_image(ImageStore *is, const char *filename, int w)
 {
-	int idx;
-
-	if ( is->n_images == is->max_images ) {
-		if ( alloc_images(is, is->max_images+32) ) {
-			fprintf(stderr, "Couldn't allocate memory.\n");
-			return NULL;
-		}
-	}
-
-	idx = is->n_images++;
-
-	is->images[idx].n_sizes = 0;
-	is->images[idx].filename = strdup(filename);
-	is->images[idx].h_last_used = 0;
-
-	return add_image_size(&is->images[idx], filename, is->pparent,
-	                      is->iparent, w);
+	struct image_record *ir;
+	ir = add_image_record(is, filename);
+	if ( ir == NULL ) return NULL;
+	return add_image_size(ir, filename, is->pparent, is->iparent, w);
 }
 
 

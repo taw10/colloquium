@@ -157,6 +157,10 @@
           <attribute name='label'>About</attribute>
           <attribute name='action'>app.about</attribute>
         </item>
+        <item>
+          <attribute name='label'>Basic introduction</attribute>
+          <attribute name='action'>app.intro</attribute>
+        </item>
       </section>
     </submenu>
 

@@ -73,6 +73,21 @@ static void new_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
+static void open_intro_doc(Colloquium *app)
+{
+	GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
+	g_application_open(G_APPLICATION(app), &file, 1, "");
+	g_object_unref(file);
+}
+
+
+static void intro_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	GApplication *app = vp;
+	open_intro_doc(COLLOQUIUM(app));
+}
+
+
 static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	GtkWidget *window;
@@ -208,6 +223,7 @@ GActionEntry app_entries[] = {
 	{ "new", new_sig, NULL, NULL, NULL  },
 	{ "open", open_sig, NULL, NULL, NULL  },
 	{ "about", about_sig, NULL, NULL, NULL  },
+	{ "intro", intro_sig, NULL, NULL, NULL  },
 	{ "quit", quit_sig, NULL, NULL, NULL  },
 };
 
@@ -351,10 +367,8 @@ static void colloquium_startup(GApplication *papp)
 	if ( !g_file_test(app->mydir, G_FILE_TEST_IS_DIR) ) {
 
 		/* Folder not created yet */
-		GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
-		g_application_open(G_APPLICATION(app), &file, 1, "");
+		open_intro_doc(app);
 		app->first_run = 1;
-		g_object_unref(file);
 
 		if ( g_mkdir(app->mydir, S_IRUSR | S_IWUSR | S_IXUSR) ) {
 			fprintf(stderr, "Failed to create folder\n");

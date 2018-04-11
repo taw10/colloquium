@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: colloquium\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-11 09:12+0200\n"
-"PO-Revision-Date: 2018-04-10 23:09+0200\n"
+"POT-Creation-Date: 2018-04-11 14:47+0200\n"
+"PO-Revision-Date: 2018-04-11 14:26+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: en\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#. Description of the program
 #: src/colloquium.c:113
 msgid "Narrative-based presentation system"
 msgstr "Narrative-based presentation system"
@@ -24,39 +25,39 @@ msgstr "Narrative-based presentation system"
 #: src/colloquium.c:184
 #, c-format
 msgid "Failed to convert file list\n"
-msgstr ""
+msgstr "Failed to convert file list\n"
 
 #: src/colloquium.c:207
 msgid "Open Presentation"
-msgstr ""
+msgstr "Open Presentation"
 
 #: src/colloquium.c:210
 msgid "_Cancel"
-msgstr ""
+msgstr "_Cancel"
 
 #: src/colloquium.c:211
 msgid "_Open"
-msgstr ""
+msgstr "_Open"
 
 #: src/colloquium.c:246
 #, c-format
 msgid "Failed to load presentation '%s'\n"
-msgstr ""
+msgstr "Failed to load presentation '%s'\n"
 
 #: src/colloquium.c:290
 #, c-format
 msgid "Don't understand '%s', assuming false\n"
-msgstr ""
+msgstr "Don't understand '%s', assuming false\n"
 
 #: src/colloquium.c:302
 #, c-format
 msgid "Failed to open config %s\n"
-msgstr ""
+msgstr "Failed to open config %s\n"
 
 #: src/colloquium.c:377
 #, c-format
 msgid "Failed to create config folder\n"
-msgstr ""
+msgstr "Failed to create config folder\n"
 
 #: src/colloquium.c:446
 #, c-format
@@ -64,6 +65,8 @@ msgid ""
 "Syntax: %s [options] [<file.sc>]\n"
 "\n"
 msgstr ""
+"Syntax: %s [options] [<file.sc>]\n"
+"\n"
 
 #: src/colloquium.c:447
 #, c-format
@@ -72,3 +75,6 @@ msgid ""
 "\n"
 "  -h, --help    Display this help message.\n"
 msgstr ""
+"A tiny presentation program.\n"
+"\n"
+"  -h, --help    Display this help message.\n"

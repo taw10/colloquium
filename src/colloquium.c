@@ -109,6 +109,7 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
 	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
+	    /* Description of the program */
 	    gettext("Narrative-based presentation system"));
 	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
 	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>\n"

@@ -11,6 +11,11 @@ datadir=join_paths(get_option('datadir'), 'colloquium')
 add_project_arguments('-DPACKAGE_VERSION="'+meson.project_version()+'"', language : 'c')
 add_project_arguments('-DDATADIR="'+join_paths(get_option('prefix'), datadir)+'"',
                       language : 'c')
+add_project_arguments('-DLOCALEDIR="'+join_paths(get_option('prefix'), get_option('localedir'))+'"',
+                      language : 'c')
+
+# Localisation
+subdir('po')
 
 # Dependencies
 gtkdep = dependency('gtk+-3.0')

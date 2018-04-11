@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <libintl.h>
 
 #include "colloquium.h"
 #include "presentation.h"
@@ -108,7 +109,7 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
 	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
-	    "Narrative-based presentation system");
+	    gettext("Narrative-based presentation system"));
 	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
 	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>\n"
 	    "\n"
@@ -179,7 +180,7 @@ static gint open_response_sig(GtkWidget *d, gint response, GApplication *papp)
 		files = gtk_file_chooser_get_files(GTK_FILE_CHOOSER(d));
 		files_array = gslist_to_array(files, &n_files);
 		if ( files_array == NULL ) {
-			fprintf(stderr, "Failed to convert file list\n");
+			fprintf(stderr, _("Failed to convert file list\n"));
 			return 0;
 		}
 		g_slist_free(files);
@@ -202,11 +203,11 @@ static void open_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	GtkWidget *d;
 	GApplication *app = vp;
 
-	d = gtk_file_chooser_dialog_new("Open Presentation",
+	d = gtk_file_chooser_dialog_new(_("Open Presentation"),
 	                                gtk_application_get_active_window(GTK_APPLICATION(app)),
 	                                GTK_FILE_CHOOSER_ACTION_OPEN,
-	                                "_Cancel", GTK_RESPONSE_CANCEL,
-	                                "_Open", GTK_RESPONSE_ACCEPT,
+	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
+	                                _("_Open"), GTK_RESPONSE_ACCEPT,
 	                                NULL);
 
 	gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(d), TRUE);
@@ -241,7 +242,8 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 			narrative_window_new(p, papp);
 		} else {
 			char *uri = g_file_get_uri(files[i]);
-			fprintf(stderr, "Failed to load '%s'\n", uri);
+			fprintf(stderr, _("Failed to load presentation '%s'\n"),
+			        uri);
 			g_free(uri);
 		}
 	}
@@ -284,7 +286,7 @@ static int yesno(const char *a)
 	if ( strcasecmp(a, "no") == 0 ) return 0;
 	if ( strcasecmp(a, "false") == 0 ) return 0;
 
-	fprintf(stderr, "Don't understand '%s', assuming false\n", a);
+	fprintf(stderr, _("Don't understand '%s', assuming false\n"), a);
 	return 0;
 }
 
@@ -296,7 +298,7 @@ static void read_config(const char *filename, Colloquium *app)
 
 	fh = fopen(filename, "r");
 	if ( fh == NULL ) {
-		fprintf(stderr, "Failed to open %s\n", filename);
+		fprintf(stderr, _("Failed to open config %s\n"), filename);
 		return;
 	}
 
@@ -371,7 +373,7 @@ static void colloquium_startup(GApplication *papp)
 		app->first_run = 1;
 
 		if ( g_mkdir(app->mydir, S_IRUSR | S_IWUSR | S_IXUSR) ) {
-			fprintf(stderr, "Failed to create folder\n");
+			fprintf(stderr, _("Failed to create config folder\n"));
 		}
 	}
 
@@ -440,12 +442,9 @@ static Colloquium *colloquium_new()
 
 static void show_help(const char *s)
 {
-	printf("Syntax: %s [options] [<file.sc>]\n\n", s);
-	printf(
-"A tiny presentation program.\n"
-"\n"
-"  -h, --help                       Display this help message.\n"
-"\n");
+	printf(_("Syntax: %s [options] [<file.sc>]\n\n"), s);
+	printf(_("A tiny presentation program.\n\n"
+	         "  -h, --help    Display this help message.\n"));
 }
 
 
@@ -482,6 +481,9 @@ int main(int argc, char *argv[])
 #if !GLIB_CHECK_VERSION(2,36,0)
 	g_type_init();
 #endif
+
+	bindtextdomain("colloquium", LOCALEDIR);
+	textdomain("colloquium");
 
 	app = colloquium_new();
 	status = g_application_run(G_APPLICATION(app), argc, argv);

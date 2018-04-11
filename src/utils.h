@@ -32,4 +32,6 @@ extern void chomp(char *s);
 extern int safe_strcmp(const char *a, const char *b);
 extern char *load_everything(const char *filename);
 
+#define _(x) gettext(x)
+
 #endif /* UTILS_H */

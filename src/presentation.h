@@ -39,8 +39,7 @@ struct menu_pl;
 
 struct presentation
 {
-	char             *filename;
-	char             *titlebar;  /* basename(filename) or "(untitled)" */
+	char             *uri;
 	int               completely_empty;
 	int               saved;
 	PangoLanguage    *lang;

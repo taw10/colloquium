@@ -144,11 +144,11 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	NarrativeWindow *nw = vp;
 	GFile *file;
 
-	if ( nw->p->filename == NULL ) {
+	if ( nw->p->uri == NULL ) {
 		return saveas_sig(NULL, NULL, nw);
 	}
 
-	file = g_file_new_for_uri(nw->p->filename);
+	file = g_file_new_for_uri(nw->p->uri);
 	save_presentation(nw->p, file);
 	g_object_unref(file);
 }
@@ -660,14 +660,14 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 
 static void nw_update_titlebar(NarrativeWindow *nw)
 {
-	get_titlebar_string(nw->p);
+	char *tb = get_titlebar_string(nw->p);
 
 	if ( nw->p->slidewindow != NULL ) {
 
 		char *title;
 
-		title = malloc(strlen(nw->p->titlebar)+14);
-		sprintf(title, "%s - Colloquium", nw->p->titlebar);
+		title = malloc(strlen(tb)+14);
+		sprintf(title, "%s - Colloquium", tb);
 		gtk_window_set_title(GTK_WINDOW(nw->window), title);
 		free(title);
 

@@ -44,7 +44,7 @@ void free_presentation(struct presentation *p)
 	int final = 0;
 
 	/* FIXME: Loads of stuff leaks here */
-	free(p->filename);
+	free(p->uri);
 	imagestore_destroy(p->is);
 	free(p);
 
@@ -54,46 +54,15 @@ void free_presentation(struct presentation *p)
 }
 
 
-static char *safe_basename(const char *in)
-{
-	int i;
-	char *cpy;
-	char *res;
-
-	cpy = strdup(in);
-
-	/* Get rid of any trailing slashes */
-	for ( i=strlen(cpy)-1; i>0; i-- ) {
-		if ( cpy[i] == '/' ) {
-			cpy[i] = '\0';
-		} else {
-			break;
-		}
-	}
-
-	/* Find the base name */
-	for ( i=strlen(cpy)-1; i>0; i-- ) {
-		if ( cpy[i] == '/' ) {
-			i++;
-			break;
-		}
-	}
-
-	res = strdup(cpy+i);
-	/* If we didn't find a previous slash, i==0 so res==cpy */
-
-	free(cpy);
-
-	return res;
-}
-
-
 char *get_titlebar_string(struct presentation *p)
 {
-	if ( p == NULL || p->filename == NULL ) {
+	if ( p == NULL || p->uri == NULL ) {
 		return strdup("(untitled)");
 	} else {
-		return safe_basename(p->filename);
+		GFile *f = g_file_new_for_uri(p->uri);
+		char *bn = g_file_get_basename(f);
+		g_object_unref(f);
+		return bn;
 	}
 }
 
@@ -105,8 +74,7 @@ struct presentation *new_presentation(const char *imagestore)
 	new = calloc(1, sizeof(struct presentation));
 	if ( new == NULL ) return NULL;
 
-	new->filename = NULL;
-	new->titlebar = get_titlebar_string(new);
+	new->uri = NULL;
 
 	new->scblocks = NULL;
 
@@ -142,7 +110,7 @@ int save_presentation(struct presentation *p, GFile *file)
 	if ( r ) return 1;
 
 	imagestore_set_parent(p->is, g_file_get_parent(file));
-	p->filename = g_file_get_uri(file);
+	p->uri = g_file_get_uri(file);
 	p->saved = 1;
 	update_titlebar(p->narrative_window);
 	return 0;
@@ -359,8 +327,8 @@ int load_presentation(struct presentation *p, GFile *file)
 	install_stylesheet(p);
 	set_slide_size_from_stylesheet(p);
 
-	assert(p->filename == NULL);
-	p->filename = g_file_get_uri(file);
+	assert(p->uri == NULL);
+	p->uri = g_file_get_uri(file);
 	imagestore_set_parent(p->is, g_file_get_parent(file));
 
 	return 0;

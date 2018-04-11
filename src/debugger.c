@@ -29,11 +29,13 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libintl.h>
 
 #include "presentation.h"
 #include "narrative_window.h"
 #include "render.h"
 #include "frame.h"
+#include "utils.h"
 
 
 #define MAX_DEBUG_RUNS (1024)
@@ -83,9 +85,15 @@ static void plot_text(cairo_t *cr, double *ypos, PangoFontDescription *fontdesc,
 static const char *str_type(enum para_type t)
 {
 	switch ( t ) {
-		case PARA_TYPE_TEXT : return "text";
-		case PARA_TYPE_CALLBACK : return "callback";
-		default : return "unknown";
+
+		/* Text paragraph */
+		case PARA_TYPE_TEXT : return _("text");
+
+		/* Callback paragraph */
+		case PARA_TYPE_CALLBACK : return _("callback");
+
+		/* Unknown paragraph type */
+		default : return _("unknown");
 	}
 }
 
@@ -96,14 +104,16 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 	char tmp[256];
 
 	nrun = para_debug_num_runs(para);
-	snprintf(tmp, 255, "  %i runs", nrun);
+	/* How many text runs */
+	snprintf(tmp, 255, _("  %i runs"), nrun);
 	plot_text(cr, ypos, fontdesc, tmp);
 
 	for ( i=0; i<nrun; i++ ) {
 		SCBlock *scblock;
 		SCBlock *rscblock;
 		if ( para_debug_run_info(para, i, &scblock, &rscblock) ) {
-			plot_text(cr, ypos, fontdesc, "Error");
+			/* Failed to get debug info for paragraph */
+			plot_text(cr, ypos, fontdesc, _("Error"));
 		} else {
 
 			if ( scblock != rscblock ) {

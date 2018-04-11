@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: colloquium\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-11 14:47+0200\n"
+"POT-Creation-Date: 2018-04-11 15:08+0200\n"
 "PO-Revision-Date: 2018-04-10 23:10+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -21,6 +21,11 @@ msgstr ""
 #: src/colloquium.c:113
 msgid "Narrative-based presentation system"
 msgstr "Erzählungsbasiertes Präsentationssystem"
+
+#: src/colloquium.c:160
+#, c-format
+msgid "WTF? Too many files\n"
+msgstr ""
 
 #: src/colloquium.c:184
 #, c-format
@@ -44,6 +49,11 @@ msgstr ""
 msgid "Failed to load presentation '%s'\n"
 msgstr ""
 
+#: src/colloquium.c:266
+#, c-format
+msgid "Failed to create config\n"
+msgstr ""
+
 #: src/colloquium.c:290
 #, c-format
 msgid "Don't understand '%s', assuming false\n"
@@ -52,6 +62,15 @@ msgstr ""
 #: src/colloquium.c:302
 #, c-format
 msgid "Failed to open config %s\n"
+msgstr ""
+
+#. Set the application menu only if it will be shown by the
+#. * desktop environment.  All the entries are already in the
+#. * normal menus, so don't let GTK create a fallback menu in the
+#. * menu bar.
+#: src/colloquium.c:358
+#, c-format
+msgid "Using app menu\n"
 msgstr ""
 
 #: src/colloquium.c:377
@@ -72,4 +91,30 @@ msgid ""
 "A tiny presentation program.\n"
 "\n"
 "  -h, --help    Display this help message.\n"
+msgstr ""
+
+#. Text paragraph
+#: src/debugger.c:90
+msgid "text"
+msgstr ""
+
+#. Callback paragraph
+#: src/debugger.c:93
+msgid "callback"
+msgstr ""
+
+#. Unknown paragraph type
+#: src/debugger.c:96
+msgid "unknown"
+msgstr ""
+
+#. How many text runs
+#: src/debugger.c:108
+#, c-format
+msgid "  %i runs"
+msgstr ""
+
+#. Failed to get debug info for paragraph
+#: src/debugger.c:116
+msgid "Error"
 msgstr ""

@@ -110,7 +110,7 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>");
 	gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
 	    /* Description of the program */
-	    gettext("Narrative-based presentation system"));
+	    _("Narrative-based presentation system"));
 	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(window),
 	    "© 2017-2018 Thomas White <taw@bitwiz.me.uk>\n"
 	    "\n"
@@ -157,7 +157,7 @@ static GFile **gslist_to_array(GSList *item, int *n)
 
 	while ( item != NULL ) {
 		if ( i == len ) {
-			fprintf(stderr, "WTF? Too many files\n");
+			fprintf(stderr, _("WTF? Too many files\n"));
 			break;
 		}
 		files[i++] = item->data;
@@ -263,7 +263,7 @@ static void create_config(const char *filename)
 	FILE *fh;
 	fh = fopen(filename, "w");
 	if ( fh == NULL ) {
-		fprintf(stderr, "Failed to create config\n");
+		fprintf(stderr, _("Failed to create config\n"));
 		return;
 	}
 
@@ -355,7 +355,7 @@ static void colloquium_startup(GApplication *papp)
 		 * desktop environment.  All the entries are already in the
 		 * normal menus, so don't let GTK create a fallback menu in the
 		 * menu bar. */
-		printf("Using app menu\n");
+		printf(_("Using app menu\n"));
 		builder = gtk_builder_new_from_resource("/uk/me/bitwiz/Colloquium/app-menu.ui");
 		GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu"));
 		gtk_application_set_app_menu(GTK_APPLICATION(app), mmodel);

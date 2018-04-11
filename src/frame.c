@@ -49,6 +49,7 @@ struct _paragraph
 	double           height;
 	float            space[4];
 	SCBlock         *newline_at_end;
+	int              empty;
 
 	/* For PARA_TYPE_TEXT */
 	int              n_runs;
@@ -414,6 +415,7 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 	para->runs[para->n_runs].col[1] = col[1];
 	para->runs[para->n_runs].col[2] = col[2];
 	para->runs[para->n_runs].col[3] = col[3];
+	para->empty = 0;
 	para->n_runs++;
 }
 
@@ -442,6 +444,7 @@ Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl)
 	pnew->layout = NULL;
 	pnew->height = 0.0;
 	pnew->alignment = PANGO_ALIGN_LEFT;
+	pnew->empty = 1;
 
 	return pnew;
 }
@@ -485,10 +488,14 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 {
 	Paragraph *pnew;
 
-	pnew = create_paragraph(fr, bl, rbl);
-	if ( pnew == NULL ) {
-		fprintf(stderr, "Failed to add callback paragraph\n");
-		return;
+	if ( (fr->n_paras > 0) && (fr->paras[fr->n_paras-1]->empty) ) {
+		pnew = fr->paras[fr->n_paras-1];
+	} else {
+		pnew = create_paragraph(fr, bl, rbl);
+		if ( pnew == NULL ) {
+			fprintf(stderr, "Failed to add callback paragraph\n");
+			return;
+		}
 	}
 
 	pnew->type = PARA_TYPE_CALLBACK;
@@ -501,6 +508,7 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 	pnew->bvp = bvp;
 	pnew->vp = vp;
 	pnew->height = h;
+	pnew->empty = 0;
 }
 
 
@@ -516,10 +524,14 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 		return;
 	}
 
-	pnew = create_paragraph(fr, scblock, rscblock);
-	if ( pnew == NULL ) {
-		fprintf(stderr, "Failed to add image paragraph\n");
-		return;
+	if ( (fr->n_paras > 0) && (fr->paras[fr->n_paras-1]->empty) ) {
+		pnew = fr->paras[fr->n_paras-1];
+	} else {
+		pnew = create_paragraph(fr, scblock, rscblock);
+		if ( pnew == NULL ) {
+			fprintf(stderr, "Failed to add image paragraph\n");
+			return;
+		}
 	}
 
 	if ( imagestore_get_size(is, filename, &wi, &hi) ) {
@@ -541,6 +553,7 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 	pnew->space[1] = 0.0;
 	pnew->space[2] = 0.0;
 	pnew->space[3] = 0.0;
+	pnew->empty = 0;
 }
 
 

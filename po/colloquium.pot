@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: colloquium\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-11 15:08+0200\n"
+"POT-Creation-Date: 2018-04-12 12:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,44 +22,48 @@ msgstr ""
 msgid "Narrative-based presentation system"
 msgstr ""
 
-#: src/colloquium.c:160
+#: src/colloquium.c:136
+msgid "translator-credits"
+msgstr ""
+
+#: src/colloquium.c:162
 #, c-format
 msgid "WTF? Too many files\n"
 msgstr ""
 
-#: src/colloquium.c:184
+#: src/colloquium.c:186
 #, c-format
 msgid "Failed to convert file list\n"
 msgstr ""
 
-#: src/colloquium.c:207
+#: src/colloquium.c:209
 msgid "Open Presentation"
 msgstr ""
 
-#: src/colloquium.c:210
+#: src/colloquium.c:212
 msgid "_Cancel"
 msgstr ""
 
-#: src/colloquium.c:211
+#: src/colloquium.c:213
 msgid "_Open"
 msgstr ""
 
-#: src/colloquium.c:246
+#: src/colloquium.c:248
 #, c-format
 msgid "Failed to load presentation '%s'\n"
 msgstr ""
 
-#: src/colloquium.c:266
+#: src/colloquium.c:268
 #, c-format
 msgid "Failed to create config\n"
 msgstr ""
 
-#: src/colloquium.c:290
+#: src/colloquium.c:292
 #, c-format
 msgid "Don't understand '%s', assuming false\n"
 msgstr ""
 
-#: src/colloquium.c:302
+#: src/colloquium.c:304
 #, c-format
 msgid "Failed to open config %s\n"
 msgstr ""
@@ -68,24 +72,24 @@ msgstr ""
 #. * desktop environment.  All the entries are already in the
 #. * normal menus, so don't let GTK create a fallback menu in the
 #. * menu bar.
-#: src/colloquium.c:358
+#: src/colloquium.c:360
 #, c-format
 msgid "Using app menu\n"
 msgstr ""
 
-#: src/colloquium.c:377
+#: src/colloquium.c:379
 #, c-format
 msgid "Failed to create config folder\n"
 msgstr ""
 
-#: src/colloquium.c:446
+#: src/colloquium.c:448
 #, c-format
 msgid ""
 "Syntax: %s [options] [<file.sc>]\n"
 "\n"
 msgstr ""
 
-#: src/colloquium.c:447
+#: src/colloquium.c:449
 #, c-format
 msgid ""
 "A tiny presentation program.\n"

@@ -132,6 +132,8 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	gtk_about_dialog_set_website_label(GTK_ABOUT_DIALOG(window),
 	    "https://www.bitwiz.me.uk/");
 	gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(window), authors);
+	gtk_about_dialog_set_translator_credits(GTK_ABOUT_DIALOG(window),
+	                                        _("translator-credits"));
 
 	g_signal_connect(window, "response", G_CALLBACK(gtk_widget_destroy),
 	    NULL);

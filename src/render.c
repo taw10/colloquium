@@ -191,7 +191,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 
 	scin = sc_interp_new(pc, lang, is, top);
 	if ( scin == NULL ) {
-		fprintf(stderr, "Failed to set up interpreter.\n");
+		fprintf(stderr, _("Failed to set up interpreter.\n"));
 		frame_free(top);
 		return NULL;
 	}
@@ -290,7 +290,7 @@ int export_pdf(struct presentation *p, const char *filename)
 
 	surf = cairo_pdf_surface_create(filename, w, w*r);
 	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
-		fprintf(stderr, "Couldn't create Cairo surface\n");
+		fprintf(stderr, _("Couldn't create Cairo surface\n"));
 		return 1;
 	}
 

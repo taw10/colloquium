@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils.h"
+
 void chomp(char *s)
 {
 	size_t i;
@@ -125,7 +127,7 @@ char *load_everything(const char *filename)
 
 			everything = realloc(everything, el+len);
 			if ( everything == NULL ) {
-				fprintf(stderr, "Failed to allocate memory\n");
+				fprintf(stderr, _("Failed to allocate memory\n"));
 				return NULL;
 			}
 			el += len;

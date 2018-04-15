@@ -105,7 +105,7 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
 
 		if ( save_presentation(nw->p, file) ) {
-			show_error(nw, "Failed to save presentation");
+			show_error(nw, _("Failed to save presentation"));
 		}
 
 		g_object_unref(file);
@@ -123,11 +123,11 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	GtkWidget *d;
 	NarrativeWindow *nw = vp;
 
-	d = gtk_file_chooser_dialog_new("Save Presentation",
+	d = gtk_file_chooser_dialog_new(_("Save Presentation"),
 	                                GTK_WINDOW(nw->window),
 	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                "_Cancel", GTK_RESPONSE_CANCEL,
-	                                "_Save", GTK_RESPONSE_ACCEPT,
+	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
+	                                _("_Save"), GTK_RESPONSE_ACCEPT,
 	                                NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
 	                                               TRUE);
@@ -169,7 +169,7 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 	/* Get the SCBlock corresponding to the slide */
 	ns = sc_editor_get_cursor_bvp(nw->sceditor);
 	if ( ns == NULL ) {
-		fprintf(stderr, "Not a slide!\n");
+		fprintf(stderr, _("Not a slide!\n"));
 		return;
 	}
 
@@ -296,10 +296,10 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 				                      nw->dummy_top);
 
 			} else {
-				fprintf(stderr, "Not a style sheet\n");
+				fprintf(stderr, _("Not a style sheet\n"));
 			}
 		} else {
-			fprintf(stderr, "Failed to load\n");
+			fprintf(stderr, _("Failed to load\n"));
 		}
 
 		g_free(filename);
@@ -320,11 +320,11 @@ static void load_ss_sig(GSimpleAction *action, GVariant *parameter,
 	NarrativeWindow *nw = vp;
 	GtkWidget *d;
 
-	d = gtk_file_chooser_dialog_new("Load stylesheet",
+	d = gtk_file_chooser_dialog_new(_("Load stylesheet"),
 	                                GTK_WINDOW(nw->window),
 	                                GTK_FILE_CHOOSER_ACTION_OPEN,
-	                                "_Cancel", GTK_RESPONSE_CANCEL,
-	                                "_Open", GTK_RESPONSE_ACCEPT,
+	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
+	                                _("_Open"), GTK_RESPONSE_ACCEPT,
 	                                NULL);
 
 	g_signal_connect(G_OBJECT(d), "response",
@@ -354,7 +354,7 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 	if ( nsblock != NULL ) {
 		sc_block_append_p(nsblock, templ);
 	} else {
-		fprintf(stderr, "Failed to split paragraph\n");
+		fprintf(stderr, _("Failed to split paragraph\n"));
 	}
 
 	sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
@@ -480,11 +480,11 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
        struct presentation *p = vp;
        GtkWidget *d;
 
-       d = gtk_file_chooser_dialog_new("Export PDF",
+       d = gtk_file_chooser_dialog_new(_("Export PDF"),
                                        NULL,
                                        GTK_FILE_CHOOSER_ACTION_SAVE,
-                                       "_Cancel", GTK_RESPONSE_CANCEL,
-                                       "_Export", GTK_RESPONSE_ACCEPT,
+                                       _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                       _("_Export"), GTK_RESPONSE_ACCEPT,
                                        NULL);
        gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
                                                       TRUE);
@@ -781,7 +781,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	Colloquium *app = COLLOQUIUM(papp);
 
 	if ( p->narrative_window != NULL ) {
-		fprintf(stderr, "Narrative window is already open!\n");
+		fprintf(stderr, _("Narrative window is already open!\n"));
 		return NULL;
 	}
 
@@ -833,7 +833,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	/* Fullscreen */
 	image = gtk_image_new_from_icon_name("view-fullscreen",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	button = gtk_tool_button_new(image, "Start slideshow");
+	button = gtk_tool_button_new(image, _("Start slideshow"));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
 	                               "win.startslideshow");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
@@ -844,7 +844,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	/* Add slide */
 	image = gtk_image_new_from_icon_name("list-add",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	button = gtk_tool_button_new(image, "Add slide");
+	button = gtk_tool_button_new(image, _("Add slide"));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
 	                               "win.slide");
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
@@ -854,28 +854,28 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 
 	image = gtk_image_new_from_icon_name("go-top",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	nw->bfirst = gtk_tool_button_new(image, "First slide");
+	nw->bfirst = gtk_tool_button_new(image, _("First slide"));
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bfirst));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bfirst),
 	                               "win.first");
 
 	image = gtk_image_new_from_icon_name("go-up",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	nw->bprev = gtk_tool_button_new(image, "Previous slide");
+	nw->bprev = gtk_tool_button_new(image, _("Previous slide"));
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bprev));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bprev),
 	                               "win.prev");
 
 	image = gtk_image_new_from_icon_name("go-down",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	nw->bnext = gtk_tool_button_new(image, "Next slide");
+	nw->bnext = gtk_tool_button_new(image, _("Next slide"));
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bnext));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bnext),
 	                               "win.next");
 
 	image = gtk_image_new_from_icon_name("go-bottom",
 	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
-	nw->blast = gtk_tool_button_new(image, "Last slide");
+	nw->blast = gtk_tool_button_new(image, _("Last slide"));
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->blast));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
 	                               "win.last");

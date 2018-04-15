@@ -33,6 +33,7 @@
 #include "presentation.h"
 #include "narrative_window.h"
 #include "render.h"
+#include "utils.h"
 
 
 static GtkPrintSettings *print_settings = NULL;
@@ -86,9 +87,9 @@ static GObject *print_widget(GtkPrintOperation *op, void *vp)
 	/* What do you want to print? */
 	cbox = gtk_combo_box_text_new();
 	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cbox), "slides",
-	                          "Print the slides only");
+	                          _("Print the slides only"));
 	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cbox), "narrative",
-	                          "Print the narrative");
+	                          _("Print the narrative"));
 	gtk_box_pack_start(GTK_BOX(vbox), cbox, FALSE, FALSE, 10);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(cbox), 1);
 	ps->combo = cbox;

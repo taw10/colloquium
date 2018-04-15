@@ -34,6 +34,7 @@
 #include "sc_parse.h"
 #include "frame.h"
 #include "imagestore.h"
+#include "utils.h"
 
 struct text_run
 {
@@ -116,7 +117,7 @@ struct frame *frame_new()
 	n->children = NULL;
 	n->max_children = 32;
 	if ( alloc_ro(n) ) {
-		fprintf(stderr, "Couldn't allocate children\n");
+		fprintf(stderr, _("Couldn't allocate children\n"));
 		free(n);
 		return NULL;
 	}
@@ -193,7 +194,7 @@ void show_hierarchy(struct frame *fr, const char *t)
 	strcpy(tn, t);
 	strcat(tn, "      ");
 
-	printf("%s%p (%.2f x %.2f)\n", t, fr, fr->w, fr->h);
+	printf(_("%s%p (%.2f x %.2f)\n"), t, fr, fr->w, fr->h);
 
 	for ( i=0; i<fr->num_children; i++ ) {
 		show_hierarchy(fr->children[i], tn);
@@ -229,7 +230,7 @@ void delete_subframe(struct frame *top, struct frame *fr)
 
 	parent = find_parent(top, fr);
 	if ( parent == NULL ) {
-		fprintf(stderr, "Couldn't find parent when deleting frame.\n");
+		fprintf(stderr, _("Couldn't find parent when deleting frame.\n"));
 		return;
 	}
 
@@ -243,7 +244,7 @@ void delete_subframe(struct frame *top, struct frame *fr)
 	}
 
 	if ( !found ) {
-		fprintf(stderr, "Couldn't find child when deleting frame.\n");
+		fprintf(stderr, _("Couldn't find child when deleting frame.\n"));
 		return;
 	}
 
@@ -274,17 +275,17 @@ struct frame *find_frame_with_scblocks(struct frame *fr, SCBlock *scblocks)
 static size_t run_text_len(const struct text_run *run)
 {
 	if ( run == NULL ) {
-		fprintf(stderr, "NULL run passed to run_text_len\n");
+		fprintf(stderr, _("NULL run passed to run_text_len\n"));
 		return 0;
 	}
 
 	if ( run->rscblock == NULL ) {
-		fprintf(stderr, "NULL rscblock in run_text_len\n");
+		fprintf(stderr, _("NULL rscblock in run_text_len\n"));
 		return 0;
 	}
 
 	if ( sc_block_contents(run->rscblock) == NULL ) {
-		fprintf(stderr, "NULL rscblock contents in run_text_len\n");
+		fprintf(stderr, _("NULL rscblock contents in run_text_len\n"));
 		return 0;
 	}
 
@@ -322,7 +323,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 	/* Allocate the complete text */
 	text = malloc(total_len+1);
 	if ( text == NULL ) {
-		fprintf(stderr, "Couldn't allocate combined text (%lli)\n",
+		fprintf(stderr, _("Couldn't allocate combined text (%lli)\n"),
 		       (long long int)total_len);
 		return;
 	}
@@ -403,7 +404,7 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 	runs_new = realloc(para->runs,
 	                   (para->n_runs+1)*sizeof(struct text_run));
 	if ( runs_new == NULL ) {
-		fprintf(stderr, "Failed to add run.\n");
+		fprintf(stderr, _("Failed to add run.\n"));
 		return;
 	}
 
@@ -458,7 +459,7 @@ Paragraph *insert_paragraph(struct frame *fr, int pos)
 	int i;
 
 	if ( pos >= fr->n_paras ) {
-		fprintf(stderr, "insert_paragraph(): pos too high!\n");
+		fprintf(stderr, _("insert_paragraph(): pos too high!\n"));
 		return NULL;
 	}
 
@@ -493,7 +494,7 @@ Paragraph *add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 	} else {
 		pnew = create_paragraph(fr, bl, rbl);
 		if ( pnew == NULL ) {
-			fprintf(stderr, "Failed to add callback paragraph\n");
+			fprintf(stderr, _("Failed to add callback paragraph\n"));
 			return NULL;
 		}
 	}
@@ -522,7 +523,7 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 	int wi, hi;
 
 	if ( is == NULL ) {
-		fprintf(stderr, "Adding image without ImageStore!\n");
+		fprintf(stderr, _("Adding image without ImageStore!\n"));
 		return;
 	}
 
@@ -531,13 +532,13 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 	} else {
 		pnew = create_paragraph(fr, scblock, rscblock);
 		if ( pnew == NULL ) {
-			fprintf(stderr, "Failed to add image paragraph\n");
+			fprintf(stderr, _("Failed to add image paragraph\n"));
 			return;
 		}
 	}
 
 	if ( imagestore_get_size(is, filename, &wi, &hi) ) {
-		fprintf(stderr, "Couldn't get size for %s\n", filename);
+		fprintf(stderr, _("Couldn't get size for %s\n"), filename);
 		wi = 100;
 		hi = 100;
 	}
@@ -639,7 +640,7 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 		if ( surf != NULL ) {
 			render_from_surf(surf, cr, para->image_w, para->image_h, 0);
 		} else {
-			printf("surf = NULL!\n");
+			printf(_("surf = NULL!\n"));
 		}
 		break;
 
@@ -683,7 +684,7 @@ static size_t text_para_pos(Paragraph *para, double x, double y, int *ptrail)
 
 void show_edit_pos(struct edit_pos a)
 {
-	printf("para %i, pos %li, trail %i\n", a.para, (long int)a.pos, a.trail);
+	printf(_("para %i, pos %li, trail %i\n"), a.para, (long int)a.pos, a.trail);
 }
 
 
@@ -725,7 +726,7 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 	if ( para->type != PARA_TYPE_TEXT ) return;
 
 	if ( para->scblock != para->rscblock ) {
-		fprintf(stderr, "Need to add run, but paragraph not editable\n");
+		fprintf(stderr, _("Need to add run, but paragraph not editable\n"));
 		return;
 	}
 
@@ -733,7 +734,7 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 
 		bl = sc_block_prepend(para->scblock, fr->scblocks);
 		if ( bl == NULL ) {
-			fprintf(stderr, "Couldn't prepend block\n");
+			fprintf(stderr, _("Couldn't prepend block\n"));
 			return;
 		}
 		sc_block_set_contents(bl, strdup(""));
@@ -760,7 +761,7 @@ int find_cursor(struct frame *fr, double x, double y, struct edit_pos *pos)
 	int i;
 
 	if ( fr == NULL ) {
-		fprintf(stderr, "Cursor frame is NULL.\n");
+		fprintf(stderr, _("Cursor frame is NULL.\n"));
 		return 1;
 	}
 
@@ -782,7 +783,7 @@ int find_cursor(struct frame *fr, double x, double y, struct edit_pos *pos)
 	}
 
 	if ( fr->n_paras == 0 ) {
-		printf("No paragraphs in frame.\n");
+		printf(_("No paragraphs in frame.\n"));
 		return 1;
 	}
 
@@ -803,12 +804,12 @@ int get_para_highlight(struct frame *fr, int cursor_para,
 	double py = 0.0;
 
 	if ( fr == NULL ) {
-		fprintf(stderr, "Cursor frame is NULL.\n");
+		fprintf(stderr, _("Cursor frame is NULL.\n"));
 		return 1;
 	}
 
 	if ( cursor_para >= fr->n_paras ) {
-		fprintf(stderr, "Highlight paragraph number is too high!\n");
+		fprintf(stderr, _("Highlight paragraph number is too high!\n"));
 		return 1;
 	}
 
@@ -834,12 +835,12 @@ int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 	double py = 0.0;
 
 	if ( fr == NULL ) {
-		fprintf(stderr, "Cursor frame is NULL.\n");
+		fprintf(stderr, _("Cursor frame is NULL.\n"));
 		return 1;
 	}
 
 	if ( cursor_para >= fr->n_paras ) {
-		fprintf(stderr, "Cursor paragraph number is too high!\n");
+		fprintf(stderr, _("Cursor paragraph number is too high!\n"));
 		return 1;
 	}
 
@@ -963,12 +964,12 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	nrun = which_run(para, offs);
 
 	if ( nrun == para->n_runs ) {
-		fprintf(stderr, "pos_trail_to_offset: Offset too high\n");
+		fprintf(stderr, _("pos_trail_to_offset: Offset too high\n"));
 		return 0;
 	}
 
 	if ( para->n_runs == 0 ) {
-		fprintf(stderr, "pos_trail_to_offset: No runs\n");
+		fprintf(stderr, _("pos_trail_to_offset: No runs\n"));
 		return 0;
 	}
 
@@ -977,18 +978,18 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	if ( para->type != PARA_TYPE_TEXT ) return 0;
 
 	if ( run == NULL ) {
-		fprintf(stderr, "pos_trail_to_offset: No run\n");
+		fprintf(stderr, _("pos_trail_to_offset: No run\n"));
 		return 0;
 	}
 
 	if ( run->scblock == NULL ) {
-		fprintf(stderr, "pos_trail_to_offset: SCBlock = NULL?\n");
+		fprintf(stderr, _("pos_trail_to_offset: SCBlock = NULL?\n"));
 		return 0;
 	}
 
 	if ( sc_block_contents(run->rscblock) == NULL ) {
-		fprintf(stderr, "pos_trail_to_offset: No contents "
-		        "(%p name=%s, options=%s)\n",
+		fprintf(stderr, _("pos_trail_to_offset: No contents "
+		        "(%p name=%s, options=%s)\n"),
 		        run->scblock, sc_block_name(run->scblock),
 		        sc_block_options(run->scblock));
 		return 0;
@@ -1005,8 +1006,8 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	char_offs += trail;
 
 	if ( char_offs > g_utf8_strlen(run_text, -1) ) {
-		printf("Offset outside string! '%s'\n"
-		       "char_offs %li offs %li len %li\n",
+		printf(_("Offset outside string! '%s'\n"
+		       "char_offs %li offs %li len %li\n"),
 		       run_text, (long int)char_offs, (long int)offs,
 		       (long int)g_utf8_strlen(run_text, -1));
 	}
@@ -1023,31 +1024,31 @@ int position_editable(struct frame *fr, struct edit_pos cp)
 	size_t paraoffs;
 
 	if ( fr == NULL ) {
-		fprintf(stderr, "Frame is NULL.\n");
+		fprintf(stderr, _("Frame is NULL.\n"));
 		return 0;
 	}
 
 	if ( cp.para >= fr->n_paras ) {
-		fprintf(stderr, "Paragraph number is too high!\n");
+		fprintf(stderr, _("Paragraph number is too high!\n"));
 		return 0;
 	}
 
 	para = fr->paras[cp.para];
 
 	if ( para->scblock != para->rscblock ) {
-		fprintf(stderr, "Paragraph is not editable.\n");
+		fprintf(stderr, _("Paragraph is not editable.\n"));
 		return 0;
 	}
 
 	if ( para->type != PARA_TYPE_TEXT ) {
-		fprintf(stderr, "Paragraph is not text.\n");
+		fprintf(stderr, _("Paragraph is not text.\n"));
 		return 0;
 	}
 
 	paraoffs = pos_trail_to_offset(para, cp.pos, cp.trail);
 	run = which_run(para, paraoffs);
 	if ( run == para->n_runs ) {
-		fprintf(stderr, "Couldn't find run!\n");
+		fprintf(stderr, _("Couldn't find run!\n"));
 		return 0;
 	}
 
@@ -1062,12 +1063,12 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 	/* Find which run we are in */
 	nrun = which_run(para, offs);
 	if ( nrun == para->n_runs ) {
-		fprintf(stderr, "Couldn't find run to insert into.\n");
+		fprintf(stderr, _("Couldn't find run to insert into.\n"));
 		return;
 	}
 
 	if ( para->n_runs == 0 ) {
-		printf("No runs in paragraph?\n");
+		printf(_("No runs in paragraph?\n"));
 	} else {
 		struct text_run *run;
 		size_t run_offs;
@@ -1170,7 +1171,7 @@ static int pos_to_run_number(struct frame *fr, struct edit_pos p)
 
 static void delete_run(Paragraph *para, int nrun)
 {
-	printf("deleting run %i of %i from para %p\n", nrun, para->n_runs, para);
+	printf(_("deleting run %i of %i from para %p\n"), nrun, para->n_runs, para);
 	memmove(&para->runs[nrun], &para->runs[nrun+1],
 	        (para->n_runs-nrun-1)*sizeof(struct text_run));
 	para->n_runs--;
@@ -1264,7 +1265,7 @@ static int paragraph_number(struct frame *fr, Paragraph *p, int *err)
 	for ( i=0; i<fr->n_paras; i++ ) {
 		if ( fr->paras[i] == p ) return i;
 	}
-	fprintf(stderr, "Couldn't find paragraph %p\n", p);
+	fprintf(stderr, _("Couldn't find paragraph %p\n"), p);
 	*err = 1;
 	return 0;
 }
@@ -1286,11 +1287,11 @@ static void delete_paragraph(struct frame *fr, Paragraph *para, int *pnp)
 {
 	int pn = find_para(fr, para);
 	if ( pn == fr->n_paras ) {
-		fprintf(stderr, "Couldn't find paragraph to delete (%p)\n", para);
+		fprintf(stderr, _("Couldn't find paragraph to delete (%p)\n"), para);
 		return;
 	}
 
-	printf("deleting paragraph %i (%p)\n", pn, para);
+	printf(_("deleting paragraph %i (%p)\n"), pn, para);
 
 	memmove(&fr->paras[pn], &fr->paras[pn+1],
 	        (fr->n_paras-pn-1)*sizeof(Paragraph *));
@@ -1317,7 +1318,7 @@ static void delete_run_for_scblock(struct frame *fr,
 
 	para = find_run_for_scblock(fr, pn1, pn2, bl, &run);
 	if ( para == NULL ) {
-		fprintf(stderr, "Couldn't find block %p between paragraphs %p and %p\n",
+		fprintf(stderr, _("Couldn't find block %p between paragraphs %p and %p\n"),
 		        bl, p1, p2);
 		return;
 	}
@@ -1339,7 +1340,7 @@ static signed int merge_paragraph_runs(Paragraph *p1, Paragraph *p2)
 	runs_new = realloc(p1->runs,
 	                   (p1->n_runs+p2->n_runs)*sizeof(struct text_run));
 	if ( runs_new == NULL ) {
-		fprintf(stderr, "Failed to allocate merged runs.\n");
+		fprintf(stderr, _("Failed to allocate merged runs.\n"));
 		return -1;
 	}
 	p1->runs = runs_new;
@@ -1382,7 +1383,7 @@ static void merge_paragraphs_by_newpara(struct frame *fr, SCBlock *np)
 			show_para(p2);
 			spos = merge_paragraph_runs(p1, p2);
 			if ( spos < 0 ) {
-				fprintf(stderr, "Failed to merge paragraphs\n");
+				fprintf(stderr, _("Failed to merge paragraphs\n"));
 				return;
 			}
 			printf("-------------------------------\n");
@@ -1398,7 +1399,7 @@ static void merge_paragraphs_by_newpara(struct frame *fr, SCBlock *np)
 		}
 	}
 
-	fprintf(stderr, "Couldn't find paragraphs to merge by newpara\n");
+	fprintf(stderr, _("Couldn't find paragraphs to merge by newpara\n"));
 }
 
 
@@ -1459,7 +1460,7 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	}
 
 	if ( !position_editable(fr, p1) || !position_editable(fr, p2) ) {
-		fprintf(stderr, "Delete outside editable region\n");
+		fprintf(stderr, _("Delete outside editable region\n"));
 		return;
 	}
 
@@ -1595,22 +1596,22 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 void show_para(Paragraph *p)
 {
 	int i;
-	printf("Paragraph %p\n", p);
+	printf(_("Paragraph %p\n"), p);
 
 	if ( p->type == PARA_TYPE_TEXT ) {
 
-		printf("%i runs:\n", p->n_runs);
+		printf(_("%i runs:\n"), p->n_runs);
 		for ( i=0; i<p->n_runs; i++ ) {
-			printf("  Run %2i: SCBlock %p/%p %s '%s'\n",
+			printf(_("  Run %2i: SCBlock %p/%p %s '%s'\n"),
 			       i, p->runs[i].scblock, p->runs[i].rscblock,
 			       pango_font_description_to_string(p->runs[i].fontdesc),
 			       sc_block_contents(p->runs[i].rscblock));
 		}
 
 	} else if ( p->type == PARA_TYPE_IMAGE ) {
-		printf("  Image: %s\n", p->filename);
+		printf(_("  Image: %s\n"), p->filename);
 	} else {
-		printf("  Other paragraph type\n");
+		printf(_("  Other paragraph type\n"));
 	}
 }
 
@@ -1628,7 +1629,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 
 	pnew = insert_paragraph(fr, pn);
 	if ( pnew == NULL ) {
-		fprintf(stderr, "Failed to insert paragraph\n");
+		fprintf(stderr, _("Failed to insert paragraph\n"));
 		return NULL;
 	}
 
@@ -1802,7 +1803,7 @@ int get_sc_pos(struct frame *fr, int pn, size_t pos,
 
 	nrun = which_run(para, pos);
 	if ( nrun == para->n_runs ) {
-		fprintf(stderr, "Couldn't find run to insert into.\n");
+		fprintf(stderr, _("Couldn't find run to insert into.\n"));
 		return 1;
 	}
 	run = &para->runs[nrun];

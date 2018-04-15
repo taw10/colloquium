@@ -1,2 +1,16 @@
 src/colloquium.c
 src/debugger.c
+src/frame.c
+src/imagestore.c
+src/narrative_window.c
+src/pr_clock.c
+src/presentation.c
+src/print.c
+src/render.c
+src/sc_editor.c
+src/sc_interp.c
+src/sc_parse.c
+src/slideshow.c
+src/slide_window.c
+src/testcard.c
+src/utils.c

@@ -36,6 +36,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "imagestore.h"
+#include "utils.h"
 
 #define MAX_SIZES (32)
 
@@ -212,7 +213,7 @@ static struct image_record *add_image_record(ImageStore *is,
 
 	if ( is->n_images == is->max_images ) {
 		if ( alloc_images(is, is->max_images+32) ) {
-			fprintf(stderr, "Couldn't allocate memory.\n");
+			fprintf(stderr, _("Couldn't allocate memory.\n"));
 			return NULL;
 		}
 	}
@@ -326,11 +327,11 @@ void show_imagestore(ImageStore *is)
 {
 	int i;
 
-	printf("Store %p contains %i records.\n", is, is->n_images);
+	printf(_("Store %p contains %i records.\n"), is, is->n_images);
 
 	for ( i=0; i<is->n_images; i++ ) {
 
-		printf("%s :\n", is->images[i].filename);
+		printf(_("%s :\n"), is->images[i].filename);
 		printf("\n");
 
 	}

@@ -36,6 +36,7 @@
 #include "render.h"
 #include "pr_clock.h"
 #include "frame.h"
+#include "utils.h"
 
 G_DEFINE_TYPE_WITH_CODE(SCSlideshow, sc_slideshow, GTK_TYPE_WINDOW, NULL)
 
@@ -216,11 +217,11 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 	GdkMonitor *mon_ss;
 	if ( n_monitors == 1 ) {
 		mon_ss = gdk_display_get_primary_monitor(display);
-		printf("Single monitor mode\n");
+		printf(_("Single monitor mode\n"));
 		ss->single_monitor = 1;
 	} else {
 		mon_ss = gdk_display_get_monitor(display, 1);
-		printf("Dual monitor mode\n");
+		printf(_("Dual monitor mode\n"));
 		ss->single_monitor = 0;
 	}
 
@@ -235,7 +236,7 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 	if ( app != NULL ) {
 		ss->inhibit_cookie = gtk_application_inhibit(app, GTK_WINDOW(ss),
 		                                             GTK_APPLICATION_INHIBIT_IDLE,
-		                                             "Presentation slide show is running");
+		                                             _("Presentation slide show is running"));
 	}
 
 	return ss;

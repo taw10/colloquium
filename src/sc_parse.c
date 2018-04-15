@@ -34,6 +34,7 @@
 #include <gio/gio.h>
 
 #include "sc_parse.h"
+#include "utils.h"
 
 struct _scblock
 {
@@ -112,7 +113,7 @@ SCBlock *sc_block_prepend(SCBlock *bl, SCBlock *top)
 
 	prev = sc_find_previous(top, bl);
 	if ( prev == NULL ) {
-		fprintf(stderr, "Couldn't find previous\n");
+		fprintf(stderr, _("Couldn't find previous\n"));
 		return NULL;
 	}
 
@@ -266,7 +267,7 @@ static SCBlock *sc_find_parent(SCBlock *top, SCBlock *find)
 void sc_block_substitute(SCBlock **top, SCBlock *old, SCBlock *new)
 {
 	if ( old == NULL ) {
-		fprintf(stderr, "Substituting nothing!\n");
+		fprintf(stderr, _("Substituting nothing!\n"));
 		return;
 	}
 
@@ -288,11 +289,11 @@ int sc_block_unlink(SCBlock **top, SCBlock *deleteme)
 	if ( parent == NULL ) {
 		/* Maybe it's the first block? */
 		if ( *top == deleteme ) {
-			fprintf(stderr, "Unlinking at top\n");
+			fprintf(stderr, _("Unlinking at top\n"));
 			*top = (*top)->next;
 			return 0;
 		} else {
-			fprintf(stderr, "Couldn't find block parent!\n");
+			fprintf(stderr, _("Couldn't find block parent!\n"));
 			return 1;
 		}
 	}
@@ -418,12 +419,12 @@ int save_sc_block(GOutputStream *fh, const SCBlock *bl)
 		char *a = serialise_sc_block(bl);
 		gssize r;
 		if ( a == NULL ) {
-			fprintf(stderr, "Failed to serialise block\n");
+			fprintf(stderr, _("Failed to serialise block\n"));
 			return 1;
 		}
 		r = g_output_stream_write(fh, a, strlen(a), NULL, &error);
 		if ( r == -1 ) {
-			fprintf(stderr, "Write failed: %s\n", error->message);
+			fprintf(stderr, _("Write failed: %s\n"), error->message);
 			return 1;
 		}
 		free(a);
@@ -546,7 +547,7 @@ static size_t read_block(const char *sc, char **pname, char **options,
 
 		i += get_subexpr(sc+i+1, "[]", options, err) + 1;
 		if ( *err ) {
-			printf("Couldn't find end of options '%s'\n", sc+i);
+			printf(_("Couldn't find end of options '%s'\n"), sc+i);
 			return 0;
 		}
 
@@ -558,7 +559,7 @@ static size_t read_block(const char *sc, char **pname, char **options,
 
 		i += get_subexpr(sc+i+1, "{}", contents, err) + 1;
 		if ( *err ) {
-			printf("Couldn't find end of content '%s'\n", sc+i);
+			printf(_("Couldn't find end of content '%s'\n"), sc+i);
 			return 0;
 		}
 
@@ -656,7 +657,7 @@ SCBlock *sc_parse(const char *sc)
 				bl = sc_block_append(bl, NULL, NULL,
 				                     strdup(tbuf), &blf);
 				if ( bl == NULL ) {
-					fprintf(stderr, "Block add failed.\n");
+					fprintf(stderr, _("Block add failed.\n"));
 					sc_block_free(blf);
 					free(tbuf);
 					return NULL;
@@ -666,7 +667,7 @@ SCBlock *sc_parse(const char *sc)
 
 			i += read_block(sc+i+1, &name, &opt, &contents, &err);
 			if ( err ) {
-				printf("Parse error\n");
+				printf(_("Parse error\n"));
 				sc_block_free(blf);
 				free(tbuf);
 				return NULL;
@@ -674,7 +675,7 @@ SCBlock *sc_parse(const char *sc)
 
 			bl = sc_block_append(bl, name, opt, contents, &blf);
 			if ( bl == NULL ) {
-				fprintf(stderr, "Block add failed.\n");
+				fprintf(stderr, _("Block add failed.\n"));
 				sc_block_free(blf);
 				free(tbuf);
 				return NULL;
@@ -699,7 +700,7 @@ SCBlock *sc_parse(const char *sc)
 		tbuf[j] = '\0';
 		bl = sc_block_append(bl, NULL, NULL, tbuf, &blf);
 		if ( bl == NULL ) {
-			fprintf(stderr, "Block add failed.\n");
+			fprintf(stderr, _("Block add failed.\n"));
 			sc_block_free(blf);
 			free(tbuf);
 			return NULL;
@@ -716,7 +717,7 @@ SCBlock *sc_parse(const char *sc)
 void sc_block_set_name(SCBlock *bl, char *nam)
 {
 	if ( bl == NULL ) {
-		fprintf(stderr, "sc_block_set_name: NULL block\n");
+		fprintf(stderr, _("sc_block_set_name: NULL block\n"));
 		return;
 	}
 	free(bl->name);
@@ -795,7 +796,7 @@ size_t scblock_delete_text(SCBlock *b, ssize_t o1, ssize_t o2)
 	size_t len;
 
 	if ( b->contents == NULL ) {
-		fprintf(stderr, "Deleting text from block \\%s\n", b->name);
+		fprintf(stderr, _("Deleting text from block \\%s\n"), b->name);
 		return 0;
 	}
 
@@ -808,7 +809,7 @@ size_t scblock_delete_text(SCBlock *b, ssize_t o1, ssize_t o2)
 	len = strlen(b->contents);
 	if ( o2 < 0 ) o2 = len;
 	if ( (o1 >= o2) || (o1 > len) || (o2 > len) ) {
-		fprintf(stderr, "Invalid delete: %i %i %i\n",
+		fprintf(stderr, _("Invalid delete: %i %i %i\n"),
 		        (int)o1, (int)o2, (int)len);
 		return 0;
 	}
@@ -861,7 +862,7 @@ SCBlock *sc_block_split(SCBlock *bl, size_t pos)
 	SCBlock *n = sc_block_new();
 
 	if ( bl->child != NULL ) {
-		fprintf(stderr, "Splitting a block with a child!\n");
+		fprintf(stderr, _("Splitting a block with a child!\n"));
 		return NULL;
 	}
 

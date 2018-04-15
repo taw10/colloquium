@@ -32,6 +32,7 @@
 #include <gdk/gdkkeysyms.h>
 
 #include "presentation.h"
+#include "utils.h"
 
 
 struct testcard
@@ -173,9 +174,10 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	cairo_save(cr);
 	cairo_translate(cr, 0.0, yp);
 
-	snprintf(tmp, 1024, "Colloquium "PACKAGE_VERSION" test card\n"
+	snprintf(tmp, 1024, _("Colloquium %s test card\n"
 	                    "Screen resolution %.0f × %.0f\n"
-	                    "Slide resolution %i × %i", width, height,
+	                    "Slide resolution %i × %i"),
+	                    PACKAGE_VERSION, width, height,
 	                    tc->slide_width, h);
 
 	pl = pango_cairo_create_layout(cr);
@@ -192,12 +194,12 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 
 	/* Colour boxes */
 	xp = (tc->slide_width-450)/2.0;
-	colour_box(cr, xp+0,   200, 1.0, 0.0, 0.0, "Red");
-	colour_box(cr, xp+80,  200, 0.0, 1.0, 0.0, "Green");
-	colour_box(cr, xp+160, 200, 0.0, 0.0, 1.0, "Blue");
-	colour_box(cr, xp+240, 200, 1.0, 1.0, 0.0, "Yellow");
-	colour_box(cr, xp+320, 200, 1.0, 0.0, 1.0, "Pink");
-	colour_box(cr, xp+400, 200, 0.0, 1.0, 1.0, "Cyan");
+	colour_box(cr, xp+0,   200, 1.0, 0.0, 0.0, _("Red"));
+	colour_box(cr, xp+80,  200, 0.0, 1.0, 0.0, _("Green"));
+	colour_box(cr, xp+160, 200, 0.0, 0.0, 1.0, _("Blue"));
+	colour_box(cr, xp+240, 200, 1.0, 1.0, 0.0, _("Yellow"));
+	colour_box(cr, xp+320, 200, 1.0, 0.0, 1.0, _("Pink"));
+	colour_box(cr, xp+400, 200, 0.0, 1.0, 1.0, _("Cyan"));
 
 	/* Shades of grey */
 	double i;
@@ -268,10 +270,10 @@ void show_testcard(struct presentation *p)
 	GdkMonitor *mon_ss;
 	if ( n_monitors == 1 ) {
 		mon_ss = gdk_display_get_primary_monitor(display);
-		printf("Single monitor mode\n");
+		printf(_("Single monitor mode\n"));
 	} else {
 		mon_ss = gdk_display_get_monitor(display, 1);
-		printf("Dual monitor mode\n");
+		printf(_("Dual monitor mode\n"));
 	}
 
 	/* Workaround because gtk_window_fullscreen_on_monitor doesn't work */

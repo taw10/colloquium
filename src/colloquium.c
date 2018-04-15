@@ -32,7 +32,6 @@
 #include <sys/stat.h>
 #include <glib.h>
 #include <glib/gstdio.h>
-#include <libintl.h>
 
 #include "colloquium.h"
 #include "presentation.h"

@@ -35,6 +35,7 @@
 #include "sc_parse.h"
 #include "sc_interp.h"
 #include "presentation.h"
+#include "utils.h"
 
 
 struct macro
@@ -185,7 +186,7 @@ void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
 		if ( (names_new == NULL) || (box_funcs_new == NULL)
 		  || (vps_new == NULL) || (draw_funcs_new == NULL)
 		  || (click_funcs_new == NULL) ) {
-			fprintf(stderr, "Failed to grow callback list\n");
+			fprintf(stderr, _("Failed to grow callback list\n"));
 			return;
 		}
 
@@ -210,8 +211,8 @@ void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
 void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl)
 {
 	if ( scin->cbl != NULL ) {
-		fprintf(stderr, "WARNING: Interpreter already has a callback "
-		                "list.\n");
+		fprintf(stderr, _("WARNING: Interpreter already has a callback "
+		                  "list.\n"));
 	}
 	scin->cbl = cbl;
 }
@@ -325,7 +326,7 @@ static void update_font(SCInterpreter *scin)
 	                                    scin->pc, st->fontdesc);
 	if ( st->font == NULL ) {
 		char *f = pango_font_description_to_string(st->fontdesc);
-		fprintf(stderr, "Couldn't load font '%s' (font map %p, pc %p)\n",
+		fprintf(stderr, _("Couldn't load font '%s' (font map %p, pc %p)\n"),
 		        f, pango_context_get_font_map(scin->pc), scin->pc);
 		g_free(f);
 		return;
@@ -346,7 +347,7 @@ static void set_font(SCInterpreter *scin, const char *font_name)
 
 	st->fontdesc = pango_font_description_from_string(font_name);
 	if ( st->fontdesc == NULL ) {
-		fprintf(stderr, "Couldn't describe font.\n");
+		fprintf(stderr, _("Couldn't describe font.\n"));
 		return;
 	}
 
@@ -380,7 +381,7 @@ static void set_fontsize(SCInterpreter *scin, const char *size_str)
 
 	size = strtoul(size_str, &end, 10);
 	if ( end[0] != '\0' ) {
-		fprintf(stderr, "Invalid font size '%s'\n", size_str);
+		fprintf(stderr, _("Invalid font size '%s'\n"), size_str);
 		return;
 	}
 
@@ -431,7 +432,7 @@ static void set_colour(SCInterpreter *scin, const char *colour)
 	struct sc_state *st = &scin->state[scin->j];
 
 	if ( colour == NULL ) {
-		printf("Invalid colour\n");
+		printf(_("Invalid colour\n"));
 		st->col[0] = 0.0;
 		st->col[1] = 0.0;
 		st->col[2] = 0.0;
@@ -456,7 +457,7 @@ static void set_frame_bgcolour(struct frame *fr, const char *colour)
 	if ( fr == NULL ) return;
 
 	if ( colour == NULL ) {
-		printf("Invalid colour\n");
+		printf(_("Invalid colour\n"));
 		fr->bgcol[0] = 0.0;
 		fr->bgcol[1] = 0.0;
 		fr->bgcol[2] = 0.0;
@@ -484,13 +485,13 @@ static void set_frame_bggrad(struct frame *fr, const char *options,
 	if ( fr == NULL ) return;
 
 	if ( options == NULL ) {
-		fprintf(stderr, "Invalid bg gradient spec '%s'\n", options);
+		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), options);
 		return;
 	}
 
 	n2 = strchr(optcopy, ',');
 	if ( n2 == NULL ) {
-		fprintf(stderr, "Invalid bg gradient spec '%s'\n", options);
+		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), options);
 		return;
 	}
 
@@ -524,7 +525,7 @@ void sc_interp_save(SCInterpreter *scin)
 		stack_new = realloc(scin->state, sizeof(struct sc_state)
 		                     * (scin->max_state+8));
 		if ( stack_new == NULL ) {
-			fprintf(stderr, "Failed to add to stack.\n");
+			fprintf(stderr, _("Failed to add to stack.\n"));
 			return;
 		}
 
@@ -668,7 +669,7 @@ static int parse_double(const char *a, float v[2])
 
 	nn = sscanf(a, "%fx%f", &v[0], &v[1]);
 	if ( nn != 2 ) {
-		fprintf(stderr, "Invalid size '%s'\n", a);
+		fprintf(stderr, _("Invalid size '%s'\n"), a);
 		return 1;
 	}
 
@@ -682,7 +683,7 @@ static int parse_tuple(const char *a, float v[4])
 
 	nn = sscanf(a, "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]);
 	if ( nn != 4 ) {
-		fprintf(stderr, "Invalid tuple '%s'\n", a);
+		fprintf(stderr, _("Invalid tuple '%s'\n"), a);
 		return 1;
 	}
 
@@ -750,7 +751,7 @@ static LengthUnits get_units(const char *t)
 	if ( t[len-1] == 'f' ) return UNITS_FRAC;
 	if ( t[len-1] == 'u' ) return UNITS_SLIDE;
 
-	fprintf(stderr, "Invalid units in '%s'\n", t);
+	fprintf(stderr, _("Invalid units in '%s'\n"), t);
 	return UNITS_SLIDE;
 }
 
@@ -815,7 +816,7 @@ static int parse_dims(const char *opt, struct frame *parent,
 	return 0;
 
 invalid:
-	fprintf(stderr, "Invalid dimensions '%s'\n", opt);
+	fprintf(stderr, _("Invalid dimensions '%s'\n"), opt);
 	return 1;
 }
 
@@ -828,7 +829,7 @@ static int parse_frame_option(const char *opt, struct frame *fr,
 		return parse_dims(opt, parent, &fr->w, &fr->h, &fr->x, &fr->y);
 	}
 
-	fprintf(stderr, "Unrecognised frame option '%s'\n", opt);
+	fprintf(stderr, _("Unrecognised frame option '%s'\n"), opt);
 
 	return 1;
 }
@@ -885,7 +886,7 @@ static int parse_image_option(const char *opt, struct frame *parent,
 		char *fn;
 		fn = strdup(opt+10);
 		if ( fn[strlen(fn)-1] != '\"' ) {
-			fprintf(stderr, "Unterminated filename?\n");
+			fprintf(stderr, _("Unterminated filename?\n"));
 			free(fn);
 			return 1;
 		}
@@ -894,7 +895,7 @@ static int parse_image_option(const char *opt, struct frame *parent,
 		return 0;
 	}
 
-	fprintf(stderr, "Unrecognised image option '%s'\n", opt);
+	fprintf(stderr, _("Unrecognised image option '%s'\n"), opt);
 
 	return 1;
 }
@@ -1041,7 +1042,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			               filename, scin->is, w, h, 1);
 			free(filename);
 		} else {
-			fprintf(stderr, "Invalid image options '%s'\n",
+			fprintf(stderr, _("Invalid image options '%s'\n"),
 			        options);
 		}
 
@@ -1057,7 +1058,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 			fr->resizable = 1;
 		}
 		if ( fr == NULL ) {
-			fprintf(stderr, "Failed to add frame.\n");
+			fprintf(stderr, _("Failed to add frame.\n"));
 			return 1;
 		}
 
@@ -1292,7 +1293,7 @@ static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
 		macros_new = realloc(st->macros, sizeof(struct macro)
 		                     * (st->max_macros+16));
 		if ( macros_new == NULL ) {
-			fprintf(stderr, "Failed to add macro.\n");
+			fprintf(stderr, _("Failed to add macro.\n"));
 			return 1;
 		}
 
@@ -1326,7 +1327,7 @@ static int try_add_template(SCInterpreter *scin, const char *options, SCBlock *b
 
 	for ( i=0; i<st->n_templates; i++ ) {
 		if ( strcmp(st->templates[i].name, nn) == 0 ) {
-			fprintf(stderr, "Duplicate template '%s'\n", nn);
+			fprintf(stderr, _("Duplicate template '%s'\n"), nn);
 			return 0;
 		}
 	}
@@ -1338,7 +1339,7 @@ static int try_add_template(SCInterpreter *scin, const char *options, SCBlock *b
 		templates_new = realloc(st->templates, sizeof(struct template)
 		                     * (st->max_templates+16));
 		if ( templates_new == NULL ) {
-			fprintf(stderr, "Failed to add templates\n");
+			fprintf(stderr, _("Failed to add templates\n"));
 			return 1;
 		}
 
@@ -1367,7 +1368,7 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 	if ( bl == NULL ) return;
 
 	if ( strcmp(sc_block_name(bl), "stylesheet") != 0 ) {
-		fprintf(stderr, "Style sheet isn't a style sheet.\n");
+		fprintf(stderr, _("Style sheet isn't a style sheet.\n"));
 		return;
 	}
 

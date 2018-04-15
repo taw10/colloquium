@@ -57,7 +57,7 @@ void free_presentation(struct presentation *p)
 char *get_titlebar_string(struct presentation *p)
 {
 	if ( p == NULL || p->uri == NULL ) {
-		return strdup("(untitled)");
+		return strdup(_("(untitled)"));
 	} else {
 		GFile *f = g_file_new_for_uri(p->uri);
 		char *bn = g_file_get_basename(f);
@@ -101,7 +101,7 @@ int save_presentation(struct presentation *p, GFile *file)
 
 	fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
 	if ( fh == NULL ) {
-		fprintf(stderr, "Open failed: %s\n", error->message);
+		fprintf(stderr, _("Open failed: %s\n"), error->message);
 		return 1;
 	}
 	r = save_sc_block(G_OUTPUT_STREAM(fh), p->scblocks);
@@ -161,7 +161,7 @@ SCBlock *first_slide(struct presentation *p)
 		bl = sc_block_next(bl);
 	}
 
-	fprintf(stderr, "Couldn't find first slide!\n");
+	fprintf(stderr, _("Couldn't find first slide!\n"));
 	return NULL;
 }
 
@@ -179,7 +179,7 @@ SCBlock *last_slide(struct presentation *p)
 	}
 
 	if ( l == NULL ) {
-		fprintf(stderr, "Couldn't find last slide!\n");
+		fprintf(stderr, _("Couldn't find last slide!\n"));
 	}
 	return l;
 }
@@ -200,7 +200,7 @@ SCBlock *next_slide(struct presentation *p, SCBlock *sl)
 		bl = sc_block_next(bl);
 	}
 
-	fprintf(stderr, "Couldn't find next slide!\n");
+	fprintf(stderr, _("Couldn't find next slide!\n"));
 	return NULL;
 }
 
@@ -221,7 +221,7 @@ SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 		bl = sc_block_next(bl);
 	}
 
-	fprintf(stderr, "Couldn't find prev slide!\n");
+	fprintf(stderr, _("Couldn't find prev slide!\n"));
 	return NULL;
 }
 
@@ -267,14 +267,14 @@ SCBlock *find_stylesheet(SCBlock *bl)
 static void install_stylesheet(struct presentation *p)
 {
 	if ( p->stylesheet != NULL ) {
-		fprintf(stderr, "Duplicate style sheet!\n");
+		fprintf(stderr, _("Duplicate style sheet!\n"));
 		return;
 	}
 
 	p->stylesheet = find_stylesheet(p->scblocks);
 
 	if ( p->stylesheet == NULL ) {
-		fprintf(stderr, "No style sheet.\n");
+		fprintf(stderr, _("No style sheet.\n"));
 	}
 }
 
@@ -307,7 +307,7 @@ int load_presentation(struct presentation *p, GFile *file)
 	assert(p->completely_empty);
 
 	if ( !g_file_load_contents(file, NULL, &everything, NULL, NULL, NULL) ) {
-		fprintf(stderr, "Failed to load '%s'\n", g_file_get_uri(file));
+		fprintf(stderr, _("Failed to load '%s'\n"), g_file_get_uri(file));
 		return 1;
 	}
 
@@ -320,7 +320,7 @@ int load_presentation(struct presentation *p, GFile *file)
 
 	if ( r ) {
 		p->completely_empty = 1;
-		fprintf(stderr, "Parse error.\n");
+		fprintf(stderr, _("Parse error.\n"));
 		return r;  /* Error */
 	}
 

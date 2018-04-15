@@ -70,7 +70,7 @@ static void debug_paragraphs(SCEditor *e)
 	struct frame *fr = e->cursor_frame;
 	int i;
 
-	printf("Paragraphs in current frame:\n");
+	printf(_("Paragraphs in current frame:\n"));
 	for ( i=0; i<fr->n_paras; i++ ) {
 		show_para(fr->paras[i]);
 	}
@@ -766,7 +766,7 @@ static void do_backspace(struct frame *fr, SCEditor *e)
 		} else {
 
 			/* FIXME: Implement this */
-			fprintf(stderr, "Deleting non-text paragraph\n");
+			fprintf(stderr, _("Deleting non-text paragraph\n"));
 
 		}
 
@@ -807,7 +807,7 @@ static void insert_text(char *t, SCEditor *e)
 		/* Yes. The "easy" case */
 
 		if ( !position_editable(e->cursor_frame, e->cpos) ) {
-			fprintf(stderr, "Position not editable\n");
+			fprintf(stderr, _("Position not editable\n"));
 			return;
 		}
 
@@ -828,20 +828,20 @@ static void insert_text(char *t, SCEditor *e)
 
 		bd = para_scblock(para);
 		if ( bd == NULL ) {
-			fprintf(stderr, "No SCBlock for para\n");
+			fprintf(stderr, _("No SCBlock for para\n"));
 			return;
 		}
 
 		/* No. Create a new text paragraph straight afterwards */
 		ad = sc_block_insert_after(bd, NULL, NULL, strdup(t));
 		if ( ad == NULL ) {
-			fprintf(stderr, "Failed to add SCBlock\n");
+			fprintf(stderr, _("Failed to add SCBlock\n"));
 			return;
 		}
 
 		pnew = insert_paragraph(e->cursor_frame, e->cpos.para);
 		if ( pnew == NULL ) {
-			fprintf(stderr, "Failed to insert paragraph\n");
+			fprintf(stderr, _("Failed to insert paragraph\n"));
 			return;
 		}
 		add_run(pnew, ad, ad, e->cursor_frame->fontdesc,
@@ -1421,7 +1421,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 	{
 
 		case DRAG_REASON_NONE :
-		printf("Release on pointless drag.\n");
+		printf(_("Release on pointless drag.\n"));
 		break;
 
 		case DRAG_REASON_CREATE :
@@ -1436,7 +1436,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 			e->cpos.pos = 0;
 			e->cpos.trail = 0;
 		} else {
-			fprintf(stderr, "Failed to create frame!\n");
+			fprintf(stderr, _("Failed to create frame!\n"));
 		}
 		break;
 
@@ -1589,16 +1589,16 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 			if ( event->state & GDK_CONTROL_MASK ) {
 				debug_paragraphs(e);
 			} else if ( event->state & GDK_SHIFT_MASK ) {
-				printf("Cursor frame block = %p\n", e->cursor_frame->scblocks);
-				printf("Editor top block = %p\n", e->scblocks);
+				printf(_("Cursor frame block = %p\n"), e->cursor_frame->scblocks);
+				printf(_("Editor top block = %p\n"), e->scblocks);
 				show_sc_block(e->cursor_frame->scblocks, "");
 			} else {
 				open_debugger(e->cursor_frame);
 			}
 		} else {
 			if ( event->state & GDK_SHIFT_MASK ) {
-				printf("Debugging the top frame:\n");
-				printf("Editor top block = %p\n", e->scblocks);
+				printf(_("Debugging the top frame:\n"));
+				printf(_("Editor top block = %p\n"), e->scblocks);
 				show_sc_block(e->top->scblocks, "");
 			}
 		}
@@ -1802,7 +1802,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			opts = malloc(len);
 			if ( opts == NULL ) {
 				free(filename);
-				fprintf(stderr, "Failed to allocate SC\n");
+				fprintf(stderr, _("Failed to allocate SC\n"));
 				return;
 			}
 			snprintf(opts, len, "1fx1f+0+0,filename=\"%s\"",
@@ -2033,7 +2033,7 @@ void sc_editor_set_scale(SCEditor *e, int scale)
 void sc_editor_set_imagestore(SCEditor *e, ImageStore *is)
 {
 	if ( e->is != NULL ) {
-		fprintf(stderr, "WARNING: Changing imagestore\n");
+		fprintf(stderr, _("WARNING: Changing imagestore\n"));
 	}
 	e->is = is;
 }
@@ -2077,7 +2077,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/Colloquium/sky.png",
 	                                                   &err);
 	if ( sceditor->bg_pixbuf == NULL ) {
-		fprintf(stderr, "Failed to load background: %s\n",
+		fprintf(stderr, _("Failed to load background: %s\n"),
 		        err->message);
 	}
 

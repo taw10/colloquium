@@ -43,6 +43,7 @@
 #include "sc_parse.h"
 #include "sc_interp.h"
 #include "sc_editor.h"
+#include "utils.h"
 
 
 struct _slidewindow

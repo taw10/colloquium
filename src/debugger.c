@@ -29,7 +29,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libintl.h>
 
 #include "presentation.h"
 #include "narrative_window.h"

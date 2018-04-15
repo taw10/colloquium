@@ -8,62 +8,63 @@ msgid ""
 msgstr ""
 "Project-Id-Version: colloquium\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-12 12:53+0200\n"
+"POT-Creation-Date: 2018-04-15 17:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #. Description of the program
-#: src/colloquium.c:113
+#: src/colloquium.c:112
 msgid "Narrative-based presentation system"
 msgstr ""
 
-#: src/colloquium.c:136
+#: src/colloquium.c:135
 msgid "translator-credits"
 msgstr ""
 
-#: src/colloquium.c:162
+#: src/colloquium.c:161
 #, c-format
 msgid "WTF? Too many files\n"
 msgstr ""
 
-#: src/colloquium.c:186
+#: src/colloquium.c:185
 #, c-format
 msgid "Failed to convert file list\n"
 msgstr ""
 
-#: src/colloquium.c:209
+#: src/colloquium.c:208
 msgid "Open Presentation"
 msgstr ""
 
-#: src/colloquium.c:212
+#: src/colloquium.c:211 src/narrative_window.c:129 src/narrative_window.c:326
+#: src/narrative_window.c:486
 msgid "_Cancel"
 msgstr ""
 
-#: src/colloquium.c:213
+#: src/colloquium.c:212 src/narrative_window.c:327
 msgid "_Open"
 msgstr ""
 
-#: src/colloquium.c:248
+#: src/colloquium.c:247
 #, c-format
 msgid "Failed to load presentation '%s'\n"
 msgstr ""
 
-#: src/colloquium.c:268
+#: src/colloquium.c:267
 #, c-format
 msgid "Failed to create config\n"
 msgstr ""
 
-#: src/colloquium.c:292
+#: src/colloquium.c:291
 #, c-format
 msgid "Don't understand '%s', assuming false\n"
 msgstr ""
 
-#: src/colloquium.c:304
+#: src/colloquium.c:303
 #, c-format
 msgid "Failed to open config %s\n"
 msgstr ""
@@ -72,24 +73,24 @@ msgstr ""
 #. * desktop environment.  All the entries are already in the
 #. * normal menus, so don't let GTK create a fallback menu in the
 #. * menu bar.
-#: src/colloquium.c:360
+#: src/colloquium.c:359
 #, c-format
 msgid "Using app menu\n"
 msgstr ""
 
-#: src/colloquium.c:379
+#: src/colloquium.c:378
 #, c-format
 msgid "Failed to create config folder\n"
 msgstr ""
 
-#: src/colloquium.c:448
+#: src/colloquium.c:447
 #, c-format
 msgid ""
 "Syntax: %s [options] [<file.sc>]\n"
 "\n"
 msgstr ""
 
-#: src/colloquium.c:449
+#: src/colloquium.c:448
 #, c-format
 msgid ""
 "A tiny presentation program.\n"
@@ -98,27 +99,779 @@ msgid ""
 msgstr ""
 
 #. Text paragraph
-#: src/debugger.c:90
+#: src/debugger.c:89
 msgid "text"
 msgstr ""
 
 #. Callback paragraph
-#: src/debugger.c:93
+#: src/debugger.c:92
 msgid "callback"
 msgstr ""
 
 #. Unknown paragraph type
-#: src/debugger.c:96
+#: src/debugger.c:95
 msgid "unknown"
 msgstr ""
 
 #. How many text runs
-#: src/debugger.c:108
+#: src/debugger.c:107
 #, c-format
 msgid "  %i runs"
 msgstr ""
 
 #. Failed to get debug info for paragraph
-#: src/debugger.c:116
+#: src/debugger.c:115
 msgid "Error"
+msgstr ""
+
+#: src/frame.c:120
+#, c-format
+msgid "Couldn't allocate children\n"
+msgstr ""
+
+#: src/frame.c:197
+#, c-format
+msgid "%s%p (%.2f x %.2f)\n"
+msgstr ""
+
+#: src/frame.c:233
+#, c-format
+msgid "Couldn't find parent when deleting frame.\n"
+msgstr ""
+
+#: src/frame.c:247
+#, c-format
+msgid "Couldn't find child when deleting frame.\n"
+msgstr ""
+
+#: src/frame.c:278
+#, c-format
+msgid "NULL run passed to run_text_len\n"
+msgstr ""
+
+#: src/frame.c:283
+#, c-format
+msgid "NULL rscblock in run_text_len\n"
+msgstr ""
+
+#: src/frame.c:288
+#, c-format
+msgid "NULL rscblock contents in run_text_len\n"
+msgstr ""
+
+#: src/frame.c:326
+#, c-format
+msgid "Couldn't allocate combined text (%lli)\n"
+msgstr ""
+
+#: src/frame.c:407
+#, c-format
+msgid "Failed to add run.\n"
+msgstr ""
+
+#: src/frame.c:462
+#, c-format
+msgid "insert_paragraph(): pos too high!\n"
+msgstr ""
+
+#: src/frame.c:497
+#, c-format
+msgid "Failed to add callback paragraph\n"
+msgstr ""
+
+#: src/frame.c:526
+#, c-format
+msgid "Adding image without ImageStore!\n"
+msgstr ""
+
+#: src/frame.c:535
+#, c-format
+msgid "Failed to add image paragraph\n"
+msgstr ""
+
+#: src/frame.c:541
+#, c-format
+msgid "Couldn't get size for %s\n"
+msgstr ""
+
+#: src/frame.c:643
+#, c-format
+msgid "surf = NULL!\n"
+msgstr ""
+
+#: src/frame.c:687
+#, c-format
+msgid "para %i, pos %li, trail %i\n"
+msgstr ""
+
+#: src/frame.c:729
+#, c-format
+msgid "Need to add run, but paragraph not editable\n"
+msgstr ""
+
+#: src/frame.c:737
+#, c-format
+msgid "Couldn't prepend block\n"
+msgstr ""
+
+#: src/frame.c:764 src/frame.c:807 src/frame.c:838
+#, c-format
+msgid "Cursor frame is NULL.\n"
+msgstr ""
+
+#: src/frame.c:786
+#, c-format
+msgid "No paragraphs in frame.\n"
+msgstr ""
+
+#: src/frame.c:812
+#, c-format
+msgid "Highlight paragraph number is too high!\n"
+msgstr ""
+
+#: src/frame.c:843
+#, c-format
+msgid "Cursor paragraph number is too high!\n"
+msgstr ""
+
+#: src/frame.c:967
+#, c-format
+msgid "pos_trail_to_offset: Offset too high\n"
+msgstr ""
+
+#: src/frame.c:972
+#, c-format
+msgid "pos_trail_to_offset: No runs\n"
+msgstr ""
+
+#: src/frame.c:981
+#, c-format
+msgid "pos_trail_to_offset: No run\n"
+msgstr ""
+
+#: src/frame.c:986
+#, c-format
+msgid "pos_trail_to_offset: SCBlock = NULL?\n"
+msgstr ""
+
+#: src/frame.c:991
+#, c-format
+msgid "pos_trail_to_offset: No contents (%p name=%s, options=%s)\n"
+msgstr ""
+
+#: src/frame.c:1009
+#, c-format
+msgid ""
+"Offset outside string! '%s'\n"
+"char_offs %li offs %li len %li\n"
+msgstr ""
+
+#: src/frame.c:1027
+#, c-format
+msgid "Frame is NULL.\n"
+msgstr ""
+
+#: src/frame.c:1032
+#, c-format
+msgid "Paragraph number is too high!\n"
+msgstr ""
+
+#: src/frame.c:1039
+#, c-format
+msgid "Paragraph is not editable.\n"
+msgstr ""
+
+#: src/frame.c:1044
+#, c-format
+msgid "Paragraph is not text.\n"
+msgstr ""
+
+#: src/frame.c:1051
+#, c-format
+msgid "Couldn't find run!\n"
+msgstr ""
+
+#: src/frame.c:1066 src/frame.c:1806
+#, c-format
+msgid "Couldn't find run to insert into.\n"
+msgstr ""
+
+#: src/frame.c:1071
+#, c-format
+msgid "No runs in paragraph?\n"
+msgstr ""
+
+#: src/frame.c:1174
+#, c-format
+msgid "deleting run %i of %i from para %p\n"
+msgstr ""
+
+#: src/frame.c:1268
+#, c-format
+msgid "Couldn't find paragraph %p\n"
+msgstr ""
+
+#: src/frame.c:1290
+#, c-format
+msgid "Couldn't find paragraph to delete (%p)\n"
+msgstr ""
+
+#: src/frame.c:1294
+#, c-format
+msgid "deleting paragraph %i (%p)\n"
+msgstr ""
+
+#: src/frame.c:1321
+#, c-format
+msgid "Couldn't find block %p between paragraphs %p and %p\n"
+msgstr ""
+
+#: src/frame.c:1343
+#, c-format
+msgid "Failed to allocate merged runs.\n"
+msgstr ""
+
+#: src/frame.c:1386
+#, c-format
+msgid "Failed to merge paragraphs\n"
+msgstr ""
+
+#: src/frame.c:1402
+#, c-format
+msgid "Couldn't find paragraphs to merge by newpara\n"
+msgstr ""
+
+#: src/frame.c:1463
+#, c-format
+msgid "Delete outside editable region\n"
+msgstr ""
+
+#: src/frame.c:1599
+#, c-format
+msgid "Paragraph %p\n"
+msgstr ""
+
+#: src/frame.c:1603
+#, c-format
+msgid "%i runs:\n"
+msgstr ""
+
+#: src/frame.c:1605
+#, c-format
+msgid "  Run %2i: SCBlock %p/%p %s '%s'\n"
+msgstr ""
+
+#: src/frame.c:1612
+#, c-format
+msgid "  Image: %s\n"
+msgstr ""
+
+#: src/frame.c:1614
+#, c-format
+msgid "  Other paragraph type\n"
+msgstr ""
+
+#: src/frame.c:1632 src/sc_editor.c:844
+#, c-format
+msgid "Failed to insert paragraph\n"
+msgstr ""
+
+#: src/imagestore.c:216
+#, c-format
+msgid "Couldn't allocate memory.\n"
+msgstr ""
+
+#: src/imagestore.c:330
+#, c-format
+msgid "Store %p contains %i records.\n"
+msgstr ""
+
+#: src/imagestore.c:334
+#, c-format
+msgid "%s :\n"
+msgstr ""
+
+#: src/narrative_window.c:108
+msgid "Failed to save presentation"
+msgstr ""
+
+#: src/narrative_window.c:126
+msgid "Save Presentation"
+msgstr ""
+
+#: src/narrative_window.c:130
+msgid "_Save"
+msgstr ""
+
+#: src/narrative_window.c:172
+#, c-format
+msgid "Not a slide!\n"
+msgstr ""
+
+#: src/narrative_window.c:299
+#, c-format
+msgid "Not a style sheet\n"
+msgstr ""
+
+#: src/narrative_window.c:302
+#, c-format
+msgid "Failed to load\n"
+msgstr ""
+
+#: src/narrative_window.c:323
+msgid "Load stylesheet"
+msgstr ""
+
+#: src/narrative_window.c:357
+#, c-format
+msgid "Failed to split paragraph\n"
+msgstr ""
+
+#: src/narrative_window.c:483
+msgid "Export PDF"
+msgstr ""
+
+#: src/narrative_window.c:487
+msgid "_Export"
+msgstr ""
+
+#: src/narrative_window.c:784
+#, c-format
+msgid "Narrative window is already open!\n"
+msgstr ""
+
+#: src/narrative_window.c:836
+msgid "Start slideshow"
+msgstr ""
+
+#: src/narrative_window.c:847
+msgid "Add slide"
+msgstr ""
+
+#: src/narrative_window.c:857
+msgid "First slide"
+msgstr ""
+
+#: src/narrative_window.c:864
+msgid "Previous slide"
+msgstr ""
+
+#: src/narrative_window.c:871
+msgid "Next slide"
+msgstr ""
+
+#: src/narrative_window.c:878
+msgid "Last slide"
+msgstr ""
+
+#: src/pr_clock.c:270
+msgid "Timer is NOT running!"
+msgstr ""
+
+#: src/pr_clock.c:285
+#, c-format
+msgid "Invalid time '%s'\n"
+msgstr ""
+
+#: src/pr_clock.c:329 src/pr_clock.c:380
+msgid "Start"
+msgstr ""
+
+#: src/pr_clock.c:338
+msgid "Stop"
+msgstr ""
+
+#: src/pr_clock.c:372
+msgid "Length (mins):"
+msgstr ""
+
+#: src/pr_clock.c:373
+msgid "<b>Length (mins):</b>"
+msgstr ""
+
+#: src/pr_clock.c:383
+msgid "Reset"
+msgstr ""
+
+#: src/pr_clock.c:386
+msgid "Set position"
+msgstr ""
+
+#: src/pr_clock.c:399
+msgid "Time elapsed"
+msgstr ""
+
+#: src/pr_clock.c:400
+msgid "<b>Time elapsed</b>"
+msgstr ""
+
+#: src/pr_clock.c:402
+msgid "Time remaining"
+msgstr ""
+
+#: src/pr_clock.c:403
+msgid "<b>Time remaining</b>"
+msgstr ""
+
+#: src/pr_clock.c:434
+msgid "Presentation clock"
+msgstr ""
+
+#: src/presentation.c:60
+msgid "(untitled)"
+msgstr ""
+
+#: src/presentation.c:104
+#, c-format
+msgid "Open failed: %s\n"
+msgstr ""
+
+#: src/presentation.c:164
+#, c-format
+msgid "Couldn't find first slide!\n"
+msgstr ""
+
+#: src/presentation.c:182
+#, c-format
+msgid "Couldn't find last slide!\n"
+msgstr ""
+
+#: src/presentation.c:203
+#, c-format
+msgid "Couldn't find next slide!\n"
+msgstr ""
+
+#: src/presentation.c:224
+#, c-format
+msgid "Couldn't find prev slide!\n"
+msgstr ""
+
+#: src/presentation.c:270
+#, c-format
+msgid "Duplicate style sheet!\n"
+msgstr ""
+
+#: src/presentation.c:277
+#, c-format
+msgid "No style sheet.\n"
+msgstr ""
+
+#: src/presentation.c:310
+#, c-format
+msgid "Failed to load '%s'\n"
+msgstr ""
+
+#: src/presentation.c:323
+#, c-format
+msgid "Parse error.\n"
+msgstr ""
+
+#: src/print.c:90
+msgid "Print the slides only"
+msgstr ""
+
+#: src/print.c:92
+msgid "Print the narrative"
+msgstr ""
+
+#: src/render.c:194
+#, c-format
+msgid "Failed to set up interpreter.\n"
+msgstr ""
+
+#: src/render.c:293
+#, c-format
+msgid "Couldn't create Cairo surface\n"
+msgstr ""
+
+#: src/sc_editor.c:73
+#, c-format
+msgid "Paragraphs in current frame:\n"
+msgstr ""
+
+#. FIXME: Implement this
+#: src/sc_editor.c:769
+#, c-format
+msgid "Deleting non-text paragraph\n"
+msgstr ""
+
+#: src/sc_editor.c:810
+#, c-format
+msgid "Position not editable\n"
+msgstr ""
+
+#: src/sc_editor.c:831
+#, c-format
+msgid "No SCBlock for para\n"
+msgstr ""
+
+#: src/sc_editor.c:838
+#, c-format
+msgid "Failed to add SCBlock\n"
+msgstr ""
+
+#: src/sc_editor.c:1424
+#, c-format
+msgid "Release on pointless drag.\n"
+msgstr ""
+
+#: src/sc_editor.c:1439
+#, c-format
+msgid "Failed to create frame!\n"
+msgstr ""
+
+#: src/sc_editor.c:1592
+#, c-format
+msgid "Cursor frame block = %p\n"
+msgstr ""
+
+#: src/sc_editor.c:1593 src/sc_editor.c:1601
+#, c-format
+msgid "Editor top block = %p\n"
+msgstr ""
+
+#: src/sc_editor.c:1600
+#, c-format
+msgid "Debugging the top frame:\n"
+msgstr ""
+
+#: src/sc_editor.c:1805
+#, c-format
+msgid "Failed to allocate SC\n"
+msgstr ""
+
+#: src/sc_editor.c:2036
+#, c-format
+msgid "WARNING: Changing imagestore\n"
+msgstr ""
+
+#: src/sc_editor.c:2080
+#, c-format
+msgid "Failed to load background: %s\n"
+msgstr ""
+
+#: src/sc_interp.c:189
+#, c-format
+msgid "Failed to grow callback list\n"
+msgstr ""
+
+#: src/sc_interp.c:214
+#, c-format
+msgid "WARNING: Interpreter already has a callback list.\n"
+msgstr ""
+
+#: src/sc_interp.c:329
+#, c-format
+msgid "Couldn't load font '%s' (font map %p, pc %p)\n"
+msgstr ""
+
+#: src/sc_interp.c:350
+#, c-format
+msgid "Couldn't describe font.\n"
+msgstr ""
+
+#: src/sc_interp.c:384
+#, c-format
+msgid "Invalid font size '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:435 src/sc_interp.c:460
+#, c-format
+msgid "Invalid colour\n"
+msgstr ""
+
+#: src/sc_interp.c:488 src/sc_interp.c:494
+#, c-format
+msgid "Invalid bg gradient spec '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:528
+#, c-format
+msgid "Failed to add to stack.\n"
+msgstr ""
+
+#: src/sc_interp.c:672
+#, c-format
+msgid "Invalid size '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:686
+#, c-format
+msgid "Invalid tuple '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:754
+#, c-format
+msgid "Invalid units in '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:819
+#, c-format
+msgid "Invalid dimensions '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:832
+#, c-format
+msgid "Unrecognised frame option '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:889
+#, c-format
+msgid "Unterminated filename?\n"
+msgstr ""
+
+#: src/sc_interp.c:898
+#, c-format
+msgid "Unrecognised image option '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:1045
+#, c-format
+msgid "Invalid image options '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:1061
+#, c-format
+msgid "Failed to add frame.\n"
+msgstr ""
+
+#: src/sc_interp.c:1296
+#, c-format
+msgid "Failed to add macro.\n"
+msgstr ""
+
+#: src/sc_interp.c:1330
+#, c-format
+msgid "Duplicate template '%s'\n"
+msgstr ""
+
+#: src/sc_interp.c:1342
+#, c-format
+msgid "Failed to add templates\n"
+msgstr ""
+
+#: src/sc_interp.c:1371
+#, c-format
+msgid "Style sheet isn't a style sheet.\n"
+msgstr ""
+
+#: src/sc_parse.c:116
+#, c-format
+msgid "Couldn't find previous\n"
+msgstr ""
+
+#: src/sc_parse.c:270
+#, c-format
+msgid "Substituting nothing!\n"
+msgstr ""
+
+#: src/sc_parse.c:292
+#, c-format
+msgid "Unlinking at top\n"
+msgstr ""
+
+#: src/sc_parse.c:296
+#, c-format
+msgid "Couldn't find block parent!\n"
+msgstr ""
+
+#: src/sc_parse.c:422
+#, c-format
+msgid "Failed to serialise block\n"
+msgstr ""
+
+#: src/sc_parse.c:427
+#, c-format
+msgid "Write failed: %s\n"
+msgstr ""
+
+#: src/sc_parse.c:550
+#, c-format
+msgid "Couldn't find end of options '%s'\n"
+msgstr ""
+
+#: src/sc_parse.c:562
+#, c-format
+msgid "Couldn't find end of content '%s'\n"
+msgstr ""
+
+#: src/sc_parse.c:660 src/sc_parse.c:678 src/sc_parse.c:703
+#, c-format
+msgid "Block add failed.\n"
+msgstr ""
+
+#: src/sc_parse.c:670
+#, c-format
+msgid "Parse error\n"
+msgstr ""
+
+#: src/sc_parse.c:720
+#, c-format
+msgid "sc_block_set_name: NULL block\n"
+msgstr ""
+
+#: src/sc_parse.c:799
+#, c-format
+msgid "Deleting text from block \\%s\n"
+msgstr ""
+
+#: src/sc_parse.c:812
+#, c-format
+msgid "Invalid delete: %i %i %i\n"
+msgstr ""
+
+#: src/sc_parse.c:865
+#, c-format
+msgid "Splitting a block with a child!\n"
+msgstr ""
+
+#: src/slideshow.c:220 src/testcard.c:273
+#, c-format
+msgid "Single monitor mode\n"
+msgstr ""
+
+#: src/slideshow.c:224 src/testcard.c:276
+#, c-format
+msgid "Dual monitor mode\n"
+msgstr ""
+
+#: src/slideshow.c:239
+msgid "Presentation slide show is running"
+msgstr ""
+
+#: src/testcard.c:177
+#, c-format
+msgid ""
+"Colloquium %s test card\n"
+"Screen resolution %.0f × %.0f\n"
+"Slide resolution %i × %i"
+msgstr ""
+
+#: src/testcard.c:197
+msgid "Red"
+msgstr ""
+
+#: src/testcard.c:198
+msgid "Green"
+msgstr ""
+
+#: src/testcard.c:199
+msgid "Blue"
+msgstr ""
+
+#: src/testcard.c:200
+msgid "Yellow"
+msgstr ""
+
+#: src/testcard.c:201
+msgid "Pink"
+msgstr ""
+
+#: src/testcard.c:202
+msgid "Cyan"
+msgstr ""
+
+#: src/utils.c:130
+#, c-format
+msgid "Failed to allocate memory\n"
 msgstr ""

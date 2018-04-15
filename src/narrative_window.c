@@ -139,6 +139,13 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
+static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	open_about_dialog(nw->window);
+}
+
+
 static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
@@ -727,6 +734,7 @@ static int click_thumbnail(double x, double y, void *bvp, void *vp)
 
 GActionEntry nw_entries[] = {
 
+	{ "about", about_sig, NULL, NULL, NULL },
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
 	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },

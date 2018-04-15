@@ -88,7 +88,7 @@ static void intro_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+void open_about_dialog(GtkWidget *parent)
 {
 	GtkWidget *window;
 
@@ -98,6 +98,7 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	};
 
 	window = gtk_about_dialog_new();
+	gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(parent));
 
 	gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(window),
 	    "Colloquium");
@@ -210,7 +211,6 @@ GActionEntry app_entries[] = {
 
 	{ "new", new_sig, NULL, NULL, NULL  },
 	{ "open", open_sig, NULL, NULL, NULL  },
-	{ "about", about_sig, NULL, NULL, NULL  },
 	{ "intro", intro_sig, NULL, NULL, NULL  },
 	{ "quit", quit_sig, NULL, NULL, NULL  },
 };

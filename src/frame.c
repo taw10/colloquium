@@ -85,9 +85,10 @@ PangoLayout *paragraph_layout(Paragraph *para)
 }
 
 
+/* Returns the height of the paragraph including all spacing, padding etc */
 double paragraph_height(Paragraph *para)
 {
-	return para->height;
+	return para->height + para->space[2] + para->space[3];
 }
 
 
@@ -380,7 +381,6 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 
 	pango_layout_get_extents(para->layout, NULL, &rect);
 	para->height = pango_units_to_double(rect.height);
-	para->height += para->space[2] + para->space[3];
 }
 
 SCBlock *get_newline_at_end(Paragraph *para)
@@ -562,7 +562,7 @@ double total_height(struct frame *fr)
 	int i;
 	double t = 0.0;
 	for ( i=0; i<fr->n_paras; i++ ) {
-		t += fr->paras[i]->height;
+		t += paragraph_height(fr->paras[i]);
 	}
 	return t;
 }
@@ -763,7 +763,7 @@ int find_cursor(struct frame *fr, double x, double y, struct edit_pos *pos)
 	}
 
 	for ( i=0; i<fr->n_paras; i++ ) {
-		double npos = pad + fr->paras[i]->height;
+		double npos = pad + paragraph_height(fr->paras[i]);
 		if ( npos > y ) {
 			pos->para = i;
 			if ( fr->paras[i]->type == PARA_TYPE_TEXT ) {
@@ -812,13 +812,13 @@ int get_para_highlight(struct frame *fr, int cursor_para,
 
 	para = fr->paras[cursor_para];
 	for ( i=0; i<cursor_para; i++ ) {
-		py += fr->paras[i]->height;
+		py += paragraph_height(fr->paras[i]);
 	}
 
-	*cx = fr->pad_l + para->space[0];
-	*cy = fr->pad_t + py + para->space[2];
-	*cw = fr->w - fr->pad_l - fr->pad_r - para->space[0] - para->space[1];
-	*ch = para->height - para->space[2] - para->space[3];
+	*cx = fr->pad_l;
+	*cy = fr->pad_t + py;
+	*cw = fr->w - fr->pad_l - fr->pad_r;
+	*ch = paragraph_height(para);
 	return 0;
 }
 
@@ -843,7 +843,7 @@ int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 
 	para = fr->paras[cursor_para];
 	for ( i=0; i<cursor_para; i++ ) {
-		py += fr->paras[i]->height;
+		py += paragraph_height(fr->paras[i]);
 	}
 
 	if ( para->type != PARA_TYPE_TEXT ) {

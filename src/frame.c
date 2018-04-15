@@ -480,11 +480,11 @@ Paragraph *insert_paragraph(struct frame *fr, int pos)
 }
 
 
-void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
-                       double w, double h,
-                       SCCallbackDrawFunc draw_func,
-                       SCCallbackClickFunc click_func, void *bvp,
-                       void *vp)
+Paragraph *add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
+                             double w, double h,
+                             SCCallbackDrawFunc draw_func,
+                             SCCallbackClickFunc click_func, void *bvp,
+                             void *vp)
 {
 	Paragraph *pnew;
 
@@ -494,7 +494,7 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 		pnew = create_paragraph(fr, bl, rbl);
 		if ( pnew == NULL ) {
 			fprintf(stderr, "Failed to add callback paragraph\n");
-			return;
+			return NULL;
 		}
 	}
 
@@ -509,6 +509,8 @@ void add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 	pnew->vp = vp;
 	pnew->height = h;
 	pnew->empty = 0;
+
+	return pnew;
 }
 
 

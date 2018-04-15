@@ -139,12 +139,12 @@ extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 
 extern Paragraph *insert_paragraph(struct frame *fr, int pos);
 
-extern void add_callback_para(struct frame *fr, SCBlock *scblock,
-                              SCBlock *rscblock,
-                              double w, double h,
-                              SCCallbackDrawFunc draw_func,
-                              SCCallbackClickFunc click_func, void *bvp,
-                              void *vp);
+extern Paragraph *add_callback_para(struct frame *fr, SCBlock *scblock,
+                                    SCBlock *rscblock,
+                                    double w, double h,
+                                    SCCallbackDrawFunc draw_func,
+                                    SCCallbackClickFunc click_func, void *bvp,
+                                    void *vp);
 
 extern void add_image_para(struct frame *fr, SCBlock *scblock,
                            SCBlock *rscblock, const char *filename,

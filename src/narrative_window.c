@@ -161,12 +161,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static void open_slidesorter_sig(GSimpleAction *action, GVariant *parameter,
-                                 gpointer vp)
-{
-}
-
-
 static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
                               gpointer vp)
 {
@@ -737,7 +731,6 @@ GActionEntry nw_entries[] = {
 	{ "about", about_sig, NULL, NULL, NULL },
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
-	{ "sorter", open_slidesorter_sig, NULL, NULL, NULL },
 	{ "deleteslide", delete_slide_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },

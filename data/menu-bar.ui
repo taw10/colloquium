@@ -6,50 +6,50 @@
       <attribute name='label' translatable='yes'>File</attribute>
       <section>
         <item>
-          <attribute name='label'>_New</attribute>
+          <attribute name='label' translatable='yes'>_New</attribute>
           <attribute name='action'>app.new</attribute>
           <attribute name='accel'>&lt;Primary&gt;n</attribute>
         </item>
         <item>
-          <attribute name='label'>_Open...</attribute>
+          <attribute name='label' translatable='yes'>_Open...</attribute>
           <attribute name='action'>app.open</attribute>
           <attribute name='accel'>&lt;Primary&gt;o</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>_Save</attribute>
+          <attribute name='label' translatable='yes'>_Save</attribute>
           <attribute name='action'>win.save</attribute>
           <attribute name='accel'>&lt;Primary&gt;s</attribute>
         </item>
         <item>
-          <attribute name='label'>Save As...</attribute>
+          <attribute name='label' translatable='yes'>Save As...</attribute>
           <attribute name='action'>win.saveas</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>Print...</attribute>
+          <attribute name='label' translatable='yes'>Print...</attribute>
           <attribute name='action'>win.print</attribute>
         </item>
         <item>
-          <attribute name='label'>Export slides as PDF...</attribute>
+          <attribute name='label' translatable='yes'>Export slides as PDF...</attribute>
           <attribute name='action'>win.exportpdf</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>Load stylesheet...</attribute>
+          <attribute name='label' translatable='yes'>Load stylesheet...</attribute>
           <attribute name='action'>win.loadstyle</attribute>
         </item>
         <item>
-          <attribute name='label'>Save stylesheet...</attribute>
+          <attribute name='label' translatable='yes'>Save stylesheet...</attribute>
           <attribute name='action'>win.savestyle</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>_Quit</attribute>
+          <attribute name='label' translatable='yes'>_Quit</attribute>
           <attribute name='action'>app.quit</attribute>
           <attribute name='accel'>&lt;Primary&gt;q</attribute>
         </item>
@@ -60,51 +60,51 @@
       <attribute name='label' translatable='yes'>Edit</attribute>
       <section>
         <item>
-          <attribute name='label'>Undo</attribute>
+          <attribute name='label' translatable='yes'>Undo</attribute>
           <attribute name='action'>win.undo</attribute>
         </item>
         <item>
-          <attribute name='label'>Redo</attribute>
+          <attribute name='label' translatable='yes'>Redo</attribute>
           <attribute name='action'>win.redo</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>Cut</attribute>
+          <attribute name='label' translatable='yes'>Cut</attribute>
           <attribute name='action'>win.cut</attribute>
         </item>
         <item>
-          <attribute name='label'>Copy</attribute>
+          <attribute name='label' translatable='yes'>Copy</attribute>
           <attribute name='action'>win.copy</attribute>
         </item>
         <item>
-          <attribute name='label'>Paste</attribute>
+          <attribute name='label' translatable='yes'>Paste</attribute>
           <attribute name='action'>win.paste</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>Delete frame</attribute>
+          <attribute name='label' translatable='yes'>Delete frame</attribute>
           <attribute name='action'>win.deleteframe</attribute>
         </item>
         <item>
-          <attribute name='label'>Copy Frame</attribute>
+          <attribute name='label' translatable='yes'>Copy Frame</attribute>
           <attribute name='action'>win.copyframe</attribute>
         </item>
         <item>
-          <attribute name='label'>Delete slide</attribute>
+          <attribute name='label' translatable='yes'>Delete slide</attribute>
           <attribute name='action'>win.deleteslide</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>Edit stylesheet...</attribute>
+          <attribute name='label' translatable='yes'>Edit stylesheet...</attribute>
           <attribute name='action'>win.stylesheet</attribute>
         </item>
       </section>
       <section>
         <item>
-          <attribute name='label'>Preferences</attribute>
+          <attribute name='label' translatable='yes'>Preferences</attribute>
           <attribute name='action'>app.prefs</attribute>
         </item>
       </section>
@@ -114,11 +114,11 @@
       <attribute name='label' translatable='yes'>Insert</attribute>
       <section>
         <item>
-          <attribute name='label'>Slide</attribute>
+          <attribute name='label' translatable='yes'>Slide</attribute>
           <attribute name='action'>win.slide</attribute>
         </item>
         <item>
-          <attribute name='label'>Slide title</attribute>
+          <attribute name='label' translatable='yes'>Slide title</attribute>
           <attribute name='action'>win.slidetitle</attribute>
         </item>
       </section>
@@ -128,23 +128,23 @@
       <attribute name='label' translatable='yes'>Tools</attribute>
       <section>
         <item>
-          <attribute name='label'>Start slideshow</attribute>
+          <attribute name='label' translatable='yes'>Start slideshow</attribute>
           <attribute name='action'>win.startslideshow</attribute>
         </item>
         <item>
-          <attribute name='label'>Start slideshow here</attribute>
+          <attribute name='label' translatable='yes'>Start slideshow here</attribute>
           <attribute name='action'>win.startslideshowhere</attribute>
         </item>
         <item>
-          <attribute name='label'>Start slideshow without slides</attribute>
+          <attribute name='label' translatable='yes'>Start slideshow without slides</attribute>
           <attribute name='action'>win.startslideshownoslides</attribute>
         </item>
         <item>
-          <attribute name='label'>Presentation clock</attribute>
+          <attribute name='label' translatable='yes'>Presentation clock</attribute>
           <attribute name='action'>win.clock</attribute>
         </item>
         <item>
-          <attribute name='label'>Test card</attribute>
+          <attribute name='label' translatable='yes'>Test card</attribute>
           <attribute name='action'>win.testcard</attribute>
         </item>
       </section>
@@ -154,11 +154,11 @@
       <attribute name='label' translatable='yes'>Help</attribute>
       <section>
         <item>
-          <attribute name='label'>Basic introduction</attribute>
+          <attribute name='label' translatable='yes'>Basic introduction</attribute>
           <attribute name='action'>app.intro</attribute>
         </item>
         <item>
-          <attribute name='label'>About</attribute>
+          <attribute name='label' translatable='yes'>About</attribute>
           <attribute name='action'>app.about</attribute>
         </item>
       </section>

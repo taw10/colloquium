@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: colloquium\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-15 17:09+0200\n"
+"POT-Creation-Date: 2018-04-15 17:17+0200\n"
 "PO-Revision-Date: 2018-04-10 23:10+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -399,7 +399,7 @@ msgstr ""
 msgid "Save Presentation"
 msgstr ""
 
-#: src/narrative_window.c:130
+#: src/narrative_window.c:130 data/menu-bar.ui:21
 msgid "_Save"
 msgstr ""
 
@@ -440,7 +440,7 @@ msgstr ""
 msgid "Narrative window is already open!\n"
 msgstr ""
 
-#: src/narrative_window.c:836
+#: src/narrative_window.c:836 data/menu-bar.ui:131
 msgid "Start slideshow"
 msgstr ""
 
@@ -513,7 +513,7 @@ msgstr ""
 msgid "<b>Time remaining</b>"
 msgstr ""
 
-#: src/pr_clock.c:434
+#: src/pr_clock.c:434 data/menu-bar.ui:143
 msgid "Presentation clock"
 msgstr ""
 
@@ -874,4 +874,128 @@ msgstr ""
 #: src/utils.c:130
 #, c-format
 msgid "Failed to allocate memory\n"
+msgstr ""
+
+#: data/menu-bar.ui:6
+msgid "File"
+msgstr ""
+
+#: data/menu-bar.ui:9 data/app-menu.ui:6
+msgid "_New"
+msgstr ""
+
+#: data/menu-bar.ui:14 data/app-menu.ui:11
+msgid "_Open..."
+msgstr ""
+
+#: data/menu-bar.ui:26
+msgid "Save As..."
+msgstr ""
+
+#: data/menu-bar.ui:32
+msgid "Print..."
+msgstr ""
+
+#: data/menu-bar.ui:36
+msgid "Export slides as PDF..."
+msgstr ""
+
+#: data/menu-bar.ui:42
+msgid "Load stylesheet..."
+msgstr ""
+
+#: data/menu-bar.ui:46
+msgid "Save stylesheet..."
+msgstr ""
+
+#: data/menu-bar.ui:52 data/app-menu.ui:30
+msgid "_Quit"
+msgstr ""
+
+#: data/menu-bar.ui:60
+msgid "Edit"
+msgstr ""
+
+#: data/menu-bar.ui:63
+msgid "Undo"
+msgstr ""
+
+#: data/menu-bar.ui:67
+msgid "Redo"
+msgstr ""
+
+#: data/menu-bar.ui:73
+msgid "Cut"
+msgstr ""
+
+#: data/menu-bar.ui:77
+msgid "Copy"
+msgstr ""
+
+#: data/menu-bar.ui:81
+msgid "Paste"
+msgstr ""
+
+#: data/menu-bar.ui:87
+msgid "Delete frame"
+msgstr ""
+
+#: data/menu-bar.ui:91
+msgid "Copy Frame"
+msgstr ""
+
+#: data/menu-bar.ui:95
+msgid "Delete slide"
+msgstr ""
+
+#: data/menu-bar.ui:101
+msgid "Edit stylesheet..."
+msgstr ""
+
+#: data/menu-bar.ui:107 data/app-menu.ui:16
+msgid "Preferences"
+msgstr ""
+
+#: data/menu-bar.ui:114
+msgid "Insert"
+msgstr ""
+
+#: data/menu-bar.ui:117
+msgid "Slide"
+msgstr ""
+
+#: data/menu-bar.ui:121
+msgid "Slide title"
+msgstr ""
+
+#: data/menu-bar.ui:128
+msgid "Tools"
+msgstr ""
+
+#: data/menu-bar.ui:135
+msgid "Start slideshow here"
+msgstr ""
+
+#: data/menu-bar.ui:139
+msgid "Start slideshow without slides"
+msgstr ""
+
+#: data/menu-bar.ui:147
+msgid "Test card"
+msgstr ""
+
+#: data/menu-bar.ui:154
+msgid "Help"
+msgstr ""
+
+#: data/menu-bar.ui:157 data/app-menu.ui:26
+msgid "Basic introduction"
+msgstr ""
+
+#: data/menu-bar.ui:161
+msgid "About"
+msgstr ""
+
+#: data/app-menu.ui:22
+msgid "_About"
 msgstr ""

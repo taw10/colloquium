@@ -27,6 +27,6 @@
 #include <config.h>
 #endif
 
-extern void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp);
+extern void run_printing(struct presentation *p, GtkWidget *parent);
 
 #endif /* PRINT_H */

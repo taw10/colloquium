@@ -291,9 +291,8 @@ static void print_draw(GtkPrintOperation *op, GtkPrintContext *ctx, gint page,
 }
 
 
-void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+void run_printing(struct presentation *p, GtkWidget *parent)
 {
-	struct presentation *p = vp;
 	GtkPrintOperation *print;
 	GtkPrintOperationResult res;
 	struct print_stuff *ps;
@@ -317,7 +316,7 @@ void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 
 	res = gtk_print_operation_run(print,
 	                              GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
-	                              GTK_WINDOW(NULL), NULL);
+	                              GTK_WINDOW(parent), NULL);
 
 	if ( res == GTK_PRINT_OPERATION_RESULT_APPLY ) {
 		if ( print_settings != NULL ) {

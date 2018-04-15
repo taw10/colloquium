@@ -475,10 +475,17 @@ static gint export_pdf_response_sig(GtkWidget *d, gint response,
 }
 
 
+static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	run_printing(nw->p, nw->window);
+}
+
+
 static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
-       struct presentation *p = vp;
+	NarrativeWindow *nw = vp;
        GtkWidget *d;
 
        d = gtk_file_chooser_dialog_new(_("Export PDF"),
@@ -491,7 +498,7 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
                                                       TRUE);
 
        g_signal_connect(G_OBJECT(d), "response",
-                        G_CALLBACK(export_pdf_response_sig), p);
+                        G_CALLBACK(export_pdf_response_sig), nw->p);
 
        gtk_widget_show_all(d);
 }
@@ -743,10 +750,6 @@ GActionEntry nw_entries[] = {
 	{ "prev", prev_para_sig, NULL, NULL, NULL },
 	{ "next", next_para_sig, NULL, NULL, NULL },
 	{ "last", last_para_sig, NULL, NULL, NULL },
-};
-
-
-GActionEntry nw_entries_p[] = {
 	{ "print", print_sig, NULL, NULL, NULL  },
 	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 };
@@ -798,8 +801,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
 	                                G_N_ELEMENTS(nw_entries), nw);
-	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries_p,
-	                                G_N_ELEMENTS(nw_entries_p), p);
 
 	nw_update_titlebar(nw);
 

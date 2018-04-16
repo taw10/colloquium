@@ -437,13 +437,98 @@ void sc_editor_redraw(SCEditor *e)
 }
 
 
-void paste_received(GtkClipboard *cb, const gchar *t, gpointer vp)
+static void paste_storycode_received(GtkClipboard *cb, GtkSelectionData *seldata,
+                                     gpointer vp)
 {
 	SCEditor *e = vp;
 	SCBlock *nf;
-	nf = sc_parse(t);
-	sc_block_append_block(e->scblocks, nf);
+	const guchar *t;
+
+	t = gtk_selection_data_get_data(seldata);
+
+	printf("received storycode paste\n");
+	printf("'%s'\n", t);
+	if ( t == NULL ) return;
+
+	/* FIXME: It might not be a new frame */
+	nf = sc_parse((char *)t);
+	show_sc_blocks(nf);
+	sc_block_append_block(sc_block_child(e->scblocks), nf);
 	full_rerender(e);
+}
+
+
+static void paste_text_received(GtkClipboard *cb, GtkSelectionData *seldata,
+                                gpointer vp)
+{
+	SCEditor *e = vp;
+	SCBlock *bl;
+	guchar *t;
+	SCBlock *cur_bl;
+	size_t cur_sc_pos;
+	size_t offs;
+	Paragraph *para;
+
+	t = gtk_selection_data_get_text(seldata);
+
+	printf("received text paste\n");
+	printf("'%s'\n", t);
+	if ( t == NULL ) return;
+
+	bl = sc_parse((char *)t);
+
+	if ( e->cursor_frame == NULL ) {
+		fprintf(stderr, _("No frame selected for paste\n"));
+		return;
+	}
+
+	para = e->cursor_frame->paras[e->cpos.para];
+	offs = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
+
+	get_sc_pos(e->cursor_frame, e->cpos.para, offs, &cur_bl, &cur_sc_pos);
+	sc_insert_block(cur_bl, cur_sc_pos, bl);
+	full_rerender(e);
+}
+
+
+static void paste_targets_received(GtkClipboard *cb, GdkAtom *targets,
+                                   gint n_targets, gpointer vp)
+{
+	SCEditor *e = vp;
+	int i;
+	int have_sc = 0;
+	int index_sc, index_text;
+	int have_text = 0;
+
+	if ( targets == NULL ) {
+		fprintf(stderr, "No paste targets offered.\n");
+		return;
+	}
+
+	for ( i=0; i<n_targets; i++ ) {
+		gchar *name = gdk_atom_name(targets[i]);
+		if ( g_strcmp0(name, "text/x-storycode") == 0 ) {
+			have_sc = 1;
+			index_sc = i;
+		}
+		if ( g_strcmp0(name, "text/plain") == 0 ) {
+			have_text = 1;
+			index_text = i;
+		}
+		g_free(name);
+	}
+
+	if ( have_sc ) {
+		printf("storycode is offered\n");
+		gtk_clipboard_request_contents(cb, targets[index_sc],
+		                               paste_storycode_received, e);
+	} else if ( have_text ) {
+		printf("text is offered\n");
+		gtk_clipboard_request_contents(cb, targets[index_text],
+		                               paste_text_received, e);
+	} else {
+		printf("nothing useful is offered\n");
+	}
 }
 
 
@@ -452,10 +537,12 @@ void sc_editor_paste(SCEditor *e)
 	GtkClipboard *cb;
 	GdkAtom atom;
 
+	printf("pasting\n");
+
 	atom = gdk_atom_intern("CLIPBOARD", FALSE);
 	if ( atom == GDK_NONE ) return;
 	cb = gtk_clipboard_get(atom);
-	gtk_clipboard_request_text(cb, paste_received, e);
+	gtk_clipboard_request_targets(cb, paste_targets_received, e);
 }
 
 
@@ -468,11 +555,41 @@ void sc_editor_add_storycode(SCEditor *e, const char *sc)
 }
 
 
+static void clipboard_get(GtkClipboard *cb, GtkSelectionData *seldata,
+                          guint info, gpointer data)
+{
+	char *t = data;
+
+	printf("clipboard get\n");
+
+	if ( info == 0 ) {
+		printf("sending SC frame\n");
+		gtk_selection_data_set(seldata,
+		                       gtk_selection_data_get_target(seldata),
+		                       8, (const guchar *)t, strlen(t)+1);
+	} else {
+		GdkAtom target;
+		gchar *name;
+		target = gtk_selection_data_get_target(seldata);
+		name = gdk_atom_name(target);
+		fprintf(stderr, "Don't know what to send for %s\n", name);
+		g_free(name);
+	}
+}
+
+
+static void clipboard_clear(GtkClipboard *cb, gpointer data)
+{
+	free(data);
+}
+
+
 void sc_editor_copy_selected_frame(SCEditor *e)
 {
 	char *t;
 	GtkClipboard *cb;
 	GdkAtom atom;
+	GtkTargetEntry targets[1];
 
 	if ( e->selection == NULL ) return;
 
@@ -481,10 +598,50 @@ void sc_editor_copy_selected_frame(SCEditor *e)
 
 	cb = gtk_clipboard_get(atom);
 
+	targets[0].target = "text/x-storycode";
+	targets[0].flags = 0;
+	targets[0].info = 0;
+
+	/* FIXME: Offer image, PDF etc? */
+
+	printf("copying frame\n");
+
 	t = serialise_sc_block(e->selection->scblocks);
 
-	gtk_clipboard_set_text(cb, t, -1);
-	free(t);
+	gtk_clipboard_set_with_data(cb, targets, 1,
+	                            clipboard_get, clipboard_clear, t);
+}
+
+
+static void copy_selection(SCEditor *e)
+{
+	char *t;
+	GtkClipboard *cb;
+	GdkAtom atom;
+	GtkTargetEntry targets[1];
+	SCBlock *bl;
+
+	if ( e->selection == NULL ) return;
+
+	atom = gdk_atom_intern("CLIPBOARD", FALSE);
+	if ( atom == GDK_NONE ) return;
+
+	cb = gtk_clipboard_get(atom);
+
+
+	targets[0].target = "text/x-storycode";
+	targets[0].flags = 0;
+	targets[0].info = 0;
+
+	printf("copying selection\n");
+
+	bl = block_at_cursor(e->cursor_frame, e->cpos.para, 0);
+	if ( bl == NULL ) return;
+
+	t = serialise_sc_block(bl);
+
+	gtk_clipboard_set_with_data(cb, targets, 1,
+	                            clipboard_get, clipboard_clear, t);
 }
 
 
@@ -1466,50 +1623,6 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
-static void copy_selection(SCEditor *e)
-{
-	GtkClipboard *cb;
-	char *storycode;
-	SCBlock *bl;
-
-	bl = block_at_cursor(e->cursor_frame, e->cpos.para, 0);
-	if ( bl == NULL ) return;
-
-	storycode = serialise_sc_block(bl);
-
-	cb = gtk_clipboard_get(GDK_NONE);
-	gtk_clipboard_set_text(cb, storycode, -1);
-	free(storycode);
-}
-
-
-static void paste_callback(GtkClipboard *cb, const gchar *text, void *vp)
-{
-	SCEditor *e = vp;
-	SCBlock *bl = sc_parse(text);
-	SCBlock *cur_bl;
-	size_t cur_sc_pos;
-	size_t offs;
-	Paragraph *para;
-
-	para = e->cursor_frame->paras[e->cpos.para];
-	offs = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
-
-	get_sc_pos(e->cursor_frame, e->cpos.para, offs, &cur_bl, &cur_sc_pos);
-	sc_insert_block(cur_bl, cur_sc_pos, bl);
-	full_rerender(e);
-}
-
-
-static void paste_selection(SCEditor *e)
-{
-	GtkClipboard *cb;
-
-	cb = gtk_clipboard_get(GDK_NONE);
-	gtk_clipboard_request_text(cb, paste_callback, e);
-}
-
-
 static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               SCEditor *e)
 {
@@ -1614,7 +1727,7 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_V :
 		case GDK_KEY_v :
 		if ( event->state == GDK_CONTROL_MASK ) {
-			paste_selection(e);
+			sc_editor_paste(e);
 		}
 		break;
 

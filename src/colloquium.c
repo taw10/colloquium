@@ -430,7 +430,7 @@ static Colloquium *colloquium_new()
 static void show_help(const char *s)
 {
 	printf(_("Syntax: %s [options] [<file.sc>]\n\n"), s);
-	printf(_("A tiny presentation program.\n\n"
+	printf(_("Narrative-based presentation system.\n\n"
 	         "  -h, --help    Display this help message.\n"));
 }
 

@@ -14,5 +14,4 @@ src/slideshow.c
 src/slide_window.c
 src/testcard.c
 src/utils.c
-data/menu-bar.ui
-data/app-menu.ui
+data/menus.ui

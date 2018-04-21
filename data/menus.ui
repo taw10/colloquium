@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <interface>
+
+  <!-- Main menu bar -->
+
   <menu id='menubar'>
 
     <submenu>
@@ -165,4 +168,40 @@
     </submenu>
 
   </menu>
+
+  <!-- Application menu (only used for some DEs) -->
+  <menu id='app-menu'>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_New</attribute>
+        <attribute name='action'>app.new</attribute>
+        <attribute name='accel'>&lt;Primary&gt;n</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>_Open...</attribute>
+        <attribute name='action'>app.open</attribute>
+        <attribute name='accel'>&lt;Primary&gt;o</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>Preferences</attribute>
+        <attribute name='action'>app.prefs</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_About</attribute>
+        <attribute name='action'>app.about</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>Basic introduction</attribute>
+        <attribute name='action'>app.intro</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>_Quit</attribute>
+        <attribute name='action'>app.quit</attribute>
+        <attribute name='accel'>&lt;Primary&gt;q</attribute>
+      </item>
+    </section>
+  </menu>
+
 </interface>

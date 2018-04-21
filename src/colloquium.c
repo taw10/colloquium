@@ -42,6 +42,7 @@
 struct _colloquium
 {
 	GtkApplication parent_instance;
+	GtkBuilder *builder;
 	char *mydir;
 	int first_run;
 	char *imagestore;
@@ -319,10 +320,15 @@ int colloquium_get_hidepointer(Colloquium *app)
 }
 
 
+GtkBuilder *colloquium_get_uibuilder(Colloquium *app)
+{
+	return app->builder;
+}
+
+
 static void colloquium_startup(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);
-	GtkBuilder *builder;
 	const char *configdir;
 	char *tmp;
 
@@ -331,10 +337,9 @@ static void colloquium_startup(GApplication *papp)
 	g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries,
 	                                 G_N_ELEMENTS(app_entries), app);
 
-	builder = gtk_builder_new_from_resource("/uk/me/bitwiz/Colloquium/menu-bar.ui");
+	app->builder = gtk_builder_new_from_resource("/uk/me/bitwiz/Colloquium/menus.ui");
 	gtk_application_set_menubar(GTK_APPLICATION(app),
-	    G_MENU_MODEL(gtk_builder_get_object(builder, "menubar")));
-	g_object_unref(builder);
+	    G_MENU_MODEL(gtk_builder_get_object(app->builder, "menubar")));
 
 	if ( gtk_application_prefers_app_menu(GTK_APPLICATION(app)) ) {
 		/* Set the application menu only if it will be shown by the
@@ -342,10 +347,8 @@ static void colloquium_startup(GApplication *papp)
 		 * normal menus, so don't let GTK create a fallback menu in the
 		 * menu bar. */
 		printf(_("Using app menu\n"));
-		builder = gtk_builder_new_from_resource("/uk/me/bitwiz/Colloquium/app-menu.ui");
-		GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(builder, "app-menu"));
+		GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(app->builder, "app-menu"));
 		gtk_application_set_app_menu(GTK_APPLICATION(app), mmodel);
-		g_object_unref(builder);
 	}
 
 	configdir = g_get_user_config_dir();

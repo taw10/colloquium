@@ -40,6 +40,7 @@
 #include "pr_clock.h"
 #include "print.h"
 #include "utils.h"
+#include "stylesheet_editor.h"
 
 
 struct _narrative_window
@@ -310,6 +311,18 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 	gtk_widget_destroy(d);
 
 	return 0;
+}
+
+
+static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
+                        gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	StylesheetEditor *se;
+
+	se = stylesheet_editor_new(nw->p);
+	gtk_window_set_transient_for(GTK_WINDOW(se), GTK_WINDOW(nw->window));
+	gtk_widget_show_all(GTK_WIDGET(se));
 }
 
 
@@ -741,6 +754,7 @@ GActionEntry nw_entries[] = {
 	{ "deleteslide", delete_slide_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
+	{ "stylesheet", edit_ss_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
 	{ "startslideshowhere", start_slideshow_here_sig, NULL, NULL, NULL },
 	{ "startslideshownoslides", start_slideshow_noslides_sig, NULL, NULL, NULL },

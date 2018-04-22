@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: colloquium\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-22 12:15+0200\n"
+"POT-Creation-Date: 2018-04-22 23:21+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,12 +40,12 @@ msgstr ""
 msgid "Open Presentation"
 msgstr ""
 
-#: src/colloquium.c:198 src/narrative_window.c:129 src/narrative_window.c:341
-#: src/narrative_window.c:508
+#: src/colloquium.c:198 src/narrative_window.c:130 src/narrative_window.c:340
+#: src/narrative_window.c:507
 msgid "_Cancel"
 msgstr ""
 
-#: src/colloquium.c:199 src/narrative_window.c:342
+#: src/colloquium.c:199 src/narrative_window.c:341
 msgid "_Open"
 msgstr ""
 
@@ -391,76 +391,76 @@ msgstr ""
 msgid "%s :\n"
 msgstr ""
 
-#: src/narrative_window.c:108
+#: src/narrative_window.c:109
 msgid "Failed to save presentation"
 msgstr ""
 
-#: src/narrative_window.c:126
+#: src/narrative_window.c:127
 msgid "Save Presentation"
 msgstr ""
 
-#: src/narrative_window.c:130 data/menus.ui:24
+#: src/narrative_window.c:131 data/menus.ui:24
 msgid "_Save"
 msgstr ""
 
-#: src/narrative_window.c:173
+#: src/narrative_window.c:174
 #, c-format
 msgid "Not a slide!\n"
 msgstr ""
 
-#: src/narrative_window.c:300
+#: src/narrative_window.c:301
 #, c-format
 msgid "Not a style sheet\n"
 msgstr ""
 
-#: src/narrative_window.c:303
+#: src/narrative_window.c:304
 #, c-format
 msgid "Failed to load\n"
 msgstr ""
 
-#: src/narrative_window.c:338
+#: src/narrative_window.c:337
 msgid "Load stylesheet"
 msgstr ""
 
-#: src/narrative_window.c:372
+#: src/narrative_window.c:371
 #, c-format
 msgid "Failed to split paragraph\n"
 msgstr ""
 
-#: src/narrative_window.c:505
+#: src/narrative_window.c:504
 msgid "Export PDF"
 msgstr ""
 
-#: src/narrative_window.c:509
+#: src/narrative_window.c:508
 msgid "_Export"
 msgstr ""
 
-#: src/narrative_window.c:803
+#: src/narrative_window.c:802
 #, c-format
 msgid "Narrative window is already open!\n"
 msgstr ""
 
-#: src/narrative_window.c:853 data/menus.ui:134
+#: src/narrative_window.c:852 data/menus.ui:134
 msgid "Start slideshow"
 msgstr ""
 
-#: src/narrative_window.c:864
+#: src/narrative_window.c:863
 msgid "Add slide"
 msgstr ""
 
-#: src/narrative_window.c:874
+#: src/narrative_window.c:873
 msgid "First slide"
 msgstr ""
 
-#: src/narrative_window.c:881
+#: src/narrative_window.c:880
 msgid "Previous slide"
 msgstr ""
 
-#: src/narrative_window.c:888
+#: src/narrative_window.c:887
 msgid "Next slide"
 msgstr ""
 
-#: src/narrative_window.c:895
+#: src/narrative_window.c:894
 msgid "Last slide"
 msgstr ""
 
@@ -969,7 +969,7 @@ msgstr ""
 msgid "Slide"
 msgstr ""
 
-#: data/menus.ui:124
+#: data/menus.ui:124 data/stylesheeteditor.ui:822 data/stylesheeteditor.ui:902
 msgid "Slide title"
 msgstr ""
 
@@ -1003,4 +1003,103 @@ msgstr ""
 
 #: data/menus.ui:192
 msgid "_About"
+msgstr ""
+
+#: data/stylesheeteditor.ui:7
+msgid "Stylesheet editor"
+msgstr ""
+
+#: data/stylesheeteditor.ui:77
+msgid ""
+"This style will be used in the narrative editor and for slides unless "
+"overridden"
+msgstr ""
+
+#: data/stylesheeteditor.ui:95 data/stylesheeteditor.ui:471
+msgid "Text:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:146 data/stylesheeteditor.ui:522
+msgid "Background:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:160 data/stylesheeteditor.ui:535
+msgid "Flat colour"
+msgstr ""
+
+#: data/stylesheeteditor.ui:161 data/stylesheeteditor.ui:536
+msgid "Horizontal gradient"
+msgstr ""
+
+#: data/stylesheeteditor.ui:162 data/stylesheeteditor.ui:537
+msgid "Vertical gradient"
+msgstr ""
+
+#: data/stylesheeteditor.ui:227 data/stylesheeteditor.ui:603
+msgid "Top:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:264 data/stylesheeteditor.ui:640
+msgid "Left:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:301 data/stylesheeteditor.ui:678
+msgid "Right:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:327 data/stylesheeteditor.ui:704
+msgid "Bottom:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:364 data/stylesheeteditor.ui:740
+msgid "Paragraph spacing"
+msgstr ""
+
+#: data/stylesheeteditor.ui:402 data/stylesheeteditor.ui:778
+#: data/stylesheeteditor.ui:858 data/stylesheeteditor.ui:938
+msgid "Storycode"
+msgstr ""
+
+#: data/stylesheeteditor.ui:419
+msgid "Default style"
+msgstr ""
+
+#: data/stylesheeteditor.ui:439
+msgid "This style will be used in the narrative editor"
+msgstr ""
+
+#: data/stylesheeteditor.ui:450
+msgid "Use default style"
+msgstr ""
+
+#: data/stylesheeteditor.ui:798
+msgid "Narrative style"
+msgstr ""
+
+#: data/stylesheeteditor.ui:821 data/stylesheeteditor.ui:901
+msgid "Presentation title"
+msgstr ""
+
+#: data/stylesheeteditor.ui:878
+msgid "Style definitions"
+msgstr ""
+
+#: data/stylesheeteditor.ui:958
+msgid "Templates"
+msgstr ""
+
+#: data/stylesheeteditor.ui:984
+msgid "Slide width:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:1010
+msgid "Slide height:"
+msgstr ""
+
+#: data/stylesheeteditor.ui:1036
+msgid "(arbitrary units)"
+msgstr ""
+
+#: data/stylesheeteditor.ui:1064
+msgid "Properties"
 msgstr ""

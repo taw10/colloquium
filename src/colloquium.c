@@ -338,6 +338,7 @@ static void colloquium_startup(GApplication *papp)
 	                                 G_N_ELEMENTS(app_entries), app);
 
 	app->builder = gtk_builder_new_from_resource("/uk/me/bitwiz/Colloquium/menus.ui");
+	gtk_builder_add_from_resource(app->builder, "/uk/me/bitwiz/Colloquium/windows.ui", NULL);
 	gtk_application_set_menubar(GTK_APPLICATION(app),
 	    G_MENU_MODEL(gtk_builder_get_object(app->builder, "menubar")));
 

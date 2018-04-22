@@ -15,3 +15,4 @@ src/slide_window.c
 src/testcard.c
 src/utils.c
 data/menus.ui
+data/stylesheeteditor.ui

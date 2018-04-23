@@ -108,7 +108,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="font">Sans 12</property>
-                        <property name="preview_text"/>
+                        <property name="preview_text">Preview text</property>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -484,7 +484,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="font">Sans 12</property>
-                        <property name="preview_text"/>
+                        <property name="preview_text">Preview text</property>
                       </object>
                       <packing>
                         <property name="expand">True</property>

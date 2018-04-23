@@ -1473,6 +1473,14 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	wrap_end = p2.para;
 
 	printf("SCBlocks %p to %p\n", p1scblock, p2scblock);
+	if ( p1scblock == NULL ) {
+		fprintf(stderr, "Starting block NULL.  Not deleting.\n");
+		return;
+	}
+	if ( p2scblock == NULL ) {
+		fprintf(stderr, "Ending block NULL.  Not deleting.\n");
+		return;
+	}
 	//show_sc_blocks(p1scblock);
 
 	if ( (p1scblock == p2scblock) && (type1 == PARA_TYPE_TEXT) ) {

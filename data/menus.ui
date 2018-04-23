@@ -103,6 +103,7 @@
         <item>
           <attribute name='label' translatable='yes'>Edit stylesheet...</attribute>
           <attribute name='action'>win.stylesheet</attribute>
+          <attribute name='accel'>&lt;Primary&gt;e</attribute>
         </item>
       </section>
       <section>

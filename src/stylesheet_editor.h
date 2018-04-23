@@ -51,12 +51,16 @@
                                                         COLLOQUIUM_TYPE_STYLESHEET_EDITOR, \
                                                         StylesheetEditorClass))
 
-struct stylesheet_editor_private;
+
+typedef struct _sspriv StylesheetEditorPrivate;
 
 struct _stylesheeteditor
 {
 	GtkDialog parent_instance;
-	struct stylesheet_editor_private *priv;
+	GtkWidget *default_style_font;
+	GtkWidget *default_style_fgcol;
+	GtkWidget *default_style_ss;
+	StylesheetEditorPrivate *priv;
 };
 
 

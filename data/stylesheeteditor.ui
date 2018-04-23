@@ -103,7 +103,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkFontButton">
+                      <object class="GtkFontButton" id="default_style_font">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -117,7 +117,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton">
+                      <object class="GtkColorButton" id="default_style_fgcol">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>

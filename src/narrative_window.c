@@ -66,7 +66,7 @@ static void show_error(NarrativeWindow *nw, const char *err)
 	mw = gtk_message_dialog_new(GTK_WINDOW(nw->window),
 	                            GTK_DIALOG_DESTROY_WITH_PARENT,
 	                            GTK_MESSAGE_ERROR,
-	                            GTK_BUTTONS_CLOSE, err);
+	                            GTK_BUTTONS_CLOSE, "%s", err);
 
 	g_signal_connect_swapped(mw, "response",
 	                         G_CALLBACK(gtk_widget_destroy), mw);

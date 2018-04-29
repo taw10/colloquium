@@ -337,6 +337,7 @@ void sc_block_free(SCBlock *bl)
 }
 
 
+/* Serialise one block (including children) */
 char *serialise_sc_block(const SCBlock *bl)
 {
 	char *a;
@@ -406,6 +407,36 @@ char *serialise_sc_block(const SCBlock *bl)
 	if ( (bl->name != NULL) &&
 	     ((bl->contents != NULL) || (bl->child != NULL)) ) {
 		strcat(a, "}");
+	}
+
+	return a;
+}
+
+
+/* Serialise an entire chain of blocks */
+char *serialise_sc_block_chain(const SCBlock *bl)
+{
+	char *a = strdup("");
+	size_t len = 1;
+
+	if ( a == NULL ) return NULL;
+
+	while ( bl != NULL ) {
+
+		char *c = serialise_sc_block(bl);
+		if ( c == NULL ) {
+			free(a);
+			return NULL;
+		}
+
+		len += strlen(c);
+		a = realloc(a, len);
+		if ( a == NULL ) return NULL;
+		strcat(a, c);
+		free(c);
+
+		bl = bl->next;
+
 	}
 
 	return a;

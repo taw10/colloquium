@@ -90,6 +90,17 @@ static void default_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 }
 
 
+static void default_colour_sig(GtkColorButton *widget, StylesheetEditor *se)
+{
+	GdkRGBA rgba;
+	gchar *col;
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget), &rgba);
+	col = gdk_rgba_to_string(&rgba);
+	set_ss(se->priv->p->stylesheet, "fgcol", col);
+	g_free(col);
+}
+
+
 static void stylesheet_editor_init(StylesheetEditor *se)
 {
 	se->priv = G_TYPE_INSTANCE_GET_PRIVATE(se, COLLOQUIUM_TYPE_STYLESHEET_EDITOR,
@@ -117,6 +128,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
 	gtk_widget_class_bind_template_callback(widget_class, default_font_sig);
+	gtk_widget_class_bind_template_callback(widget_class, default_colour_sig);
 }
 
 

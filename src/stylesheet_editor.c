@@ -40,7 +40,6 @@ G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
 
 struct _sspriv
 {
-
 	struct presentation *p;
 };
 

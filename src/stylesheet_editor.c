@@ -87,6 +87,8 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	PangoFontDescription *fontdesc;
 	double *col;
 	GdkRGBA rgba;
+	GtkTextBuffer *buf;
+	char *sc;
 
 	scin = sc_interp_new(NULL, NULL, NULL, NULL);
 	sc_interp_run_stylesheet(scin, se->priv->p->stylesheet);  /* NULL stylesheet is OK */
@@ -103,6 +105,11 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	rgba.blue = col[2];
 	rgba.alpha = col[3];
 	gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(se->default_style_fgcol), &rgba);
+
+	sc = serialise_sc_block_chain(sc_block_child(se->priv->p->stylesheet));
+	buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(se->default_style_ss));
+	gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buf), sc, -1);
+	free(sc);
 
 	sc_interp_destroy(scin);
 }

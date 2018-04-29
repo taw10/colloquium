@@ -630,6 +630,10 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->paraspace[3] = 0.0;
 	st->fontdesc = NULL;
 	st->have_size = 0;
+	st->col[0] = 0.0;
+	st->col[1] = 0.0;
+	st->col[2] = 0.0;
+	st->col[3] = 1.0;
 	st->alignment = PANGO_ALIGN_LEFT;
 
 	scin->lang = lang;

@@ -109,6 +109,7 @@
                         <property name="receives_default">True</property>
                         <property name="font">Sans 12</property>
                         <property name="preview_text">Preview text</property>
+                        <signal name="font-set" handler="default_font_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>

@@ -38,15 +38,55 @@
 G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
                         GTK_TYPE_DIALOG, NULL)
 
+static void set_values_from_presentation(StylesheetEditor *se);
+
 struct _sspriv
 {
 	struct presentation *p;
 };
 
 
+static void set_ss(SCBlock *bl, const char *find, const char *seti)
+{
+	char *set;
+	const char *name;
+
+	set = strdup(seti);
+	if ( set == NULL ) return;
+
+	name = sc_block_name(bl);
+	if ( (name != NULL) && (strcmp(name, "stylesheet")==0) ) {
+		bl = sc_block_child(bl);
+	}
+
+	while ( bl != NULL ) {
+
+		const char *name = sc_block_name(bl);
+		if ( (name != NULL) && (strcmp(name, find)==0) ) {
+			sc_block_set_options(bl, set);
+			return;
+		}
+
+		bl = sc_block_next(bl);
+
+	}
+
+	fprintf(stderr, "WARNING: Didn't find block in stylesheet to set.\n");
+}
+
+
 static void revert_sig(GtkButton *button, StylesheetEditor *widget)
 {
 	printf("click revert!\n");
+}
+
+
+static void default_font_sig(GtkFontButton *widget, StylesheetEditor *se)
+{
+	const gchar *font;
+	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
+	set_ss(se->priv->p->stylesheet, "font", font);
+	set_values_from_presentation(se);
 }
 
 
@@ -76,6 +116,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	                                     default_style_fgcol);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
+	gtk_widget_class_bind_template_callback(widget_class, default_font_sig);
 }
 
 

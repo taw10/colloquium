@@ -46,10 +46,20 @@ struct _sspriv
 };
 
 
-static void set_ss(SCBlock *bl, const char *find, const char *seti)
+static void set_ss(struct presentation *p, const char *find, const char *seti)
 {
 	char *set;
 	const char *name;
+	SCBlock *bl;
+
+	if ( p->stylesheet == NULL ) {
+		p->stylesheet = sc_parse("\\stylesheet");
+		if ( p->stylesheet == NULL ) {
+			fprintf(stderr, "WARNING: Couldn't create stylesheet\n");
+			return;
+		}
+	}
+	bl = p->stylesheet;
 
 	set = strdup(seti);
 	if ( set == NULL ) return;
@@ -71,7 +81,7 @@ static void set_ss(SCBlock *bl, const char *find, const char *seti)
 
 	}
 
-	fprintf(stderr, "WARNING: Didn't find block in stylesheet to set.\n");
+	sc_block_append_inside(p->stylesheet, strdup(find), set, NULL);
 }
 
 
@@ -85,7 +95,7 @@ static void default_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
 	const gchar *font;
 	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
-	set_ss(se->priv->p->stylesheet, "font", font);
+	set_ss(se->priv->p, "font", font);
 	set_values_from_presentation(se);
 }
 
@@ -96,8 +106,9 @@ static void default_colour_sig(GtkColorButton *widget, StylesheetEditor *se)
 	gchar *col;
 	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget), &rgba);
 	col = gdk_rgba_to_string(&rgba);
-	set_ss(se->priv->p->stylesheet, "fgcol", col);
+	set_ss(se->priv->p, "fgcol", col);
 	g_free(col);
+	set_values_from_presentation(se);
 }
 
 
@@ -141,6 +152,7 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	GdkRGBA rgba;
 	GtkTextBuffer *buf;
 	char *sc;
+	SCBlock *ss;
 
 	scin = sc_interp_new(NULL, NULL, NULL, NULL);
 	sc_interp_run_stylesheet(scin, se->priv->p->stylesheet);  /* NULL stylesheet is OK */
@@ -158,10 +170,18 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	rgba.alpha = col[3];
 	gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(se->default_style_fgcol), &rgba);
 
-	sc = serialise_sc_block_chain(sc_block_child(se->priv->p->stylesheet));
-	buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(se->default_style_ss));
-	gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buf), sc, -1);
-	free(sc);
+	ss = se->priv->p->stylesheet;
+	if ( ss != NULL ) {
+		const char *name = sc_block_name(ss);
+		if ( (name != NULL) && (strcmp(name, "stylesheet")==0) ) {
+			ss = sc_block_child(ss);
+		}
+
+		sc = serialise_sc_block_chain(ss);
+		buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(se->default_style_ss));
+		gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buf), sc, -1);
+		free(sc);
+	}
 
 	sc_interp_destroy(scin);
 }

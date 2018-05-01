@@ -171,7 +171,7 @@ int recursive_wrap(struct frame *fr, PangoContext *pc)
 }
 
 
-struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
+struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
                                SCCallbackList *cbl, ImageStore *is,
                                int slide_number,
                                PangoContext *pc, double w, double h,
@@ -201,12 +201,8 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 	snprintf(snum, 63, "%i", slide_number);
 	add_macro(scin, "slidenumber", snum);
 
-	if ( stylesheets != NULL ) {
-		int i = 0;
-		while ( stylesheets[i] != NULL ) {
-			sc_interp_run_stylesheet(scin, stylesheets[i]);
-			i++;
-		}
+	if ( stylesheet != NULL ) {
+		sc_interp_run_stylesheet(scin, stylesheet);
 	}
 
 	top->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
@@ -225,7 +221,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock **stylesheets,
 
 static struct frame *render_sc_with_context(SCBlock *scblocks,
                                  cairo_t *cr, double log_w, double log_h,
-                                 SCBlock **stylesheets, SCCallbackList *cbl,
+                                 SCBlock *stylesheet, SCCallbackList *cbl,
                                  ImageStore *is,
                                  int slide_number, PangoLanguage *lang,
 				 PangoContext *pc)
@@ -236,7 +232,7 @@ static struct frame *render_sc_with_context(SCBlock *scblocks,
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 
-	top = interp_and_shape(scblocks, stylesheets, cbl, is,
+	top = interp_and_shape(scblocks, stylesheet, cbl, is,
 	                       slide_number, pc, log_w, log_h, lang);
 
 	recursive_wrap(top, pc);
@@ -249,7 +245,7 @@ static struct frame *render_sc_with_context(SCBlock *scblocks,
 
 cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                            double log_w, double log_h,
-                           SCBlock **stylesheets, SCCallbackList *cbl,
+                           SCBlock *stylesheet, SCCallbackList *cbl,
                            ImageStore *is,
                            int slide_number, struct frame **ptop,
                            PangoLanguage *lang)
@@ -264,7 +260,7 @@ cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
 	pc = pango_cairo_create_context(cr);
 	cairo_scale(cr, w/log_w, h/log_h);
 	top = render_sc_with_context(scblocks, cr, log_w, log_h,
-	                             stylesheets, cbl, is, slide_number,
+	                             stylesheet, cbl, is, slide_number,
 	                             lang, pc);
 	g_object_unref(pc);
 	cairo_destroy(cr);
@@ -307,11 +303,6 @@ int export_pdf(struct presentation *p, const char *filename)
 			continue;
 		}
 
-		SCBlock *stylesheets[2];
-
-		stylesheets[0] = p->stylesheet;
-		stylesheets[1] = NULL;
-
 		cairo_save(cr);
 
 		cairo_scale(cr, scale, scale);
@@ -321,7 +312,7 @@ int export_pdf(struct presentation *p, const char *filename)
 		cairo_fill(cr);
 
 		render_sc_with_context(bl, cr, p->slide_width,
-		                       p->slide_height, stylesheets, NULL,
+		                       p->slide_height, p->stylesheet, NULL,
 		                       p->is, i, p->lang, pc);
 
 		cairo_restore(cr);

@@ -238,7 +238,6 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 {
 	GtkWidget *window;
 	SlideWindow *sw;
-	SCBlock *stylesheets[2];
 	Colloquium *app = COLLOQUIUM(papp);
 
 	sw = calloc(1, sizeof(SlideWindow));
@@ -255,11 +254,8 @@ SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
 	g_signal_connect(G_OBJECT(window), "destroy",
 	                 G_CALLBACK(sw_close_sig), sw);
 
-	stylesheets[0] = p->stylesheet;
-	stylesheets[1] = NULL;
-
 	sw->scblocks = scblocks;
-	sw->sceditor = sc_editor_new(scblocks, stylesheets, p->lang,
+	sw->sceditor = sc_editor_new(scblocks, p->stylesheet, p->lang,
 	                             colloquium_get_imagestore(app));
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, scblocks));
 	sc_editor_set_scale(sw->sceditor, 1);

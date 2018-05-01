@@ -244,24 +244,6 @@ static SCBlock *get_slide_template(SCBlock *ss)
 }
 
 
-static SCBlock **get_ss_list(struct presentation *p)
-{
-	SCBlock **stylesheets;
-
-	stylesheets = malloc(3 * sizeof(SCBlock *));
-	if ( stylesheets == NULL ) return NULL;
-
-	if ( p->stylesheet != NULL ) {
-		stylesheets[0] = p->stylesheet;
-		stylesheets[1] = NULL;
-	} else {
-		stylesheets[0] = NULL;
-	}
-
-	return stylesheets;
-}
-
-
 static gint load_ss_response_sig(GtkWidget *d, gint response,
                                  NarrativeWindow *nw)
 {
@@ -275,22 +257,20 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 
 		stext = load_everything(filename);
 		if ( stext != NULL ) {
+
 			SCBlock *bl;
 			SCBlock *ss;
 			bl = sc_parse(stext);
 			free(stext);
 			ss = find_stylesheet(bl);
+
 			if ( ss != NULL ) {
 
-				SCBlock **stylesheets;
-
-				/* Substitute the style sheet */
+				/* Substitute the style sheet in
+				 * presentation Storycode */
 				replace_stylesheet(nw->p, ss);
 
-				stylesheets = get_ss_list(nw->p);
-				sc_editor_set_stylesheets(nw->sceditor,
-				                          stylesheets);
-				free(stylesheets);
+				sc_editor_set_stylesheet(nw->sceditor, ss);
 
 				/* Full rerender, first block may have
 				 * changed */
@@ -314,6 +294,16 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 }
 
 
+static void stylesheet_changed_sig(GtkWidget *da, NarrativeWindow *nw)
+{
+	/* It might have changed (been created) since last time */
+	sc_editor_set_stylesheet(nw->sceditor, nw->p->stylesheet);
+
+	/* Full rerender, first block may have changed */
+	sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
+}
+
+
 static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
                         gpointer vp)
 {
@@ -322,6 +312,8 @@ static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
 
 	se = stylesheet_editor_new(nw->p);
 	gtk_window_set_transient_for(GTK_WINDOW(se), GTK_WINDOW(nw->window));
+	g_signal_connect(G_OBJECT(se), "changed",
+	                 G_CALLBACK(stylesheet_changed_sig), nw);
 	gtk_widget_show_all(GTK_WIDGET(se));
 }
 
@@ -715,16 +707,12 @@ static cairo_surface_t *render_thumbnail(int w, int h, void *bvp, void *vp)
 	struct presentation *p = vp;
 	SCBlock *scblocks = bvp;
 	cairo_surface_t *surf;
-	SCBlock *stylesheets[2];
 	struct frame *top;
 	int sn = slide_number(p, scblocks);
 
-	stylesheets[0] = p->stylesheet;
-	stylesheets[1] = NULL;
-
 	/* FIXME: Cache like crazy here */
 	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height,
-	                 stylesheets, NULL, p->is, sn, &top, p->lang);
+	                 p->stylesheet, NULL, p->is, sn, &top, p->lang);
 	frame_free(top);
 
 	return surf;
@@ -793,7 +781,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	GtkWidget *scroll;
 	GtkWidget *toolbar;
 	GtkToolItem *button;
-	SCBlock **stylesheets;
 	SCCallbackList *cbl;
 	GtkWidget *image;
 	Colloquium *app = COLLOQUIUM(papp);
@@ -821,8 +808,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	stylesheets = get_ss_list(p);
-
 	/* If the presentation is completely empty, give ourselves at least
 	 * something to work with */
 	if ( nw->p->scblocks == NULL ) {
@@ -833,9 +818,8 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	 * SCEditor will start processing one level down */
 	nw->dummy_top = sc_block_new_parent(nw->p->scblocks, "presentation");
 
-	nw->sceditor = sc_editor_new(nw->dummy_top, stylesheets, p->lang,
+	nw->sceditor = sc_editor_new(nw->dummy_top, p->stylesheet, p->lang,
 	                             colloquium_get_imagestore(app));
-	free(stylesheets);
 	cbl = sc_callback_list_new();
 	sc_callback_list_add_callback(cbl, "slide", create_thumbnail,
 	                              render_thumbnail, click_thumbnail, p);

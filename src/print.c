@@ -106,7 +106,6 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 	cairo_t *cr;
 	PangoContext *pc;
 	double w, h;
-	SCBlock *stylesheets[2];
 	struct frame *top;
 	const double sw = ps->p->slide_width;
 	const double sh = ps->p->slide_height;
@@ -116,9 +115,6 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 	pc = gtk_print_context_create_pango_context(ctx);
 	w = gtk_print_context_get_width(ctx);
 	h = gtk_print_context_get_height(ctx);
-
-	stylesheets[0] = ps->p->stylesheet;
-	stylesheets[1] = NULL;
 
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
@@ -136,7 +132,7 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 
 	printf("%f x %f ---> %f x %f\n", w, h, slide_width, slide_height);
 
-	top = interp_and_shape(ps->slide, stylesheets, NULL,
+	top = interp_and_shape(ps->slide, ps->p->stylesheet, NULL,
 	                       ps->p->is, page+1, pc, sw, sh, ps->p->lang);
 
 	recursive_wrap(top, pc);
@@ -173,13 +169,11 @@ static cairo_surface_t *print_render_thumbnail(int w, int h, void *bvp, void *vp
 	struct presentation *p = ps->p;
 	SCBlock *scblocks = bvp;
 	cairo_surface_t *surf;
-	SCBlock *stylesheets[2];
 	struct frame *top;
 
-	stylesheets[0] = p->stylesheet;
-	stylesheets[1] = NULL;
-	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height, stylesheets, NULL,
-	                 p->is, ps->slide_number++, &top, p->lang);
+	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height,
+	                 p->stylesheet, NULL, p->is, ps->slide_number++,
+	                 &top, p->lang);
 	frame_free(top);
 
 	return surf;
@@ -189,7 +183,6 @@ static cairo_surface_t *print_render_thumbnail(int w, int h, void *bvp, void *vp
 static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
                                   struct print_stuff *ps)
 {
-	SCBlock *stylesheets[3];
 	SCCallbackList *cbl;
 	PangoContext *pc;
 	int i, n_pages;
@@ -203,17 +196,10 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 
 	ps->is = imagestore_new(ps->storename);
 
-	if ( ps->p->stylesheet != NULL ) {
-		stylesheets[0] = ps->p->stylesheet;
-		stylesheets[1] = NULL;
-	} else {
-		stylesheets[0] = NULL;
-	}
-
 	pc = gtk_print_context_create_pango_context(ctx);
 
 	dummy_top = sc_block_new_parent(ps->p->scblocks, "presentation");
-	ps->top = interp_and_shape(dummy_top, stylesheets, cbl,
+	ps->top = interp_and_shape(dummy_top, ps->p->stylesheet, cbl,
 	                           ps->is, 0, pc,
 	                           gtk_print_context_get_width(ctx),
 	                           gtk_print_context_get_height(ctx),

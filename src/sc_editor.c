@@ -195,8 +195,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 			w = e->log_w;
 			h = e->log_h;
 		}
-		e->top = interp_and_shape(e->scblocks,
-		                          e->stylesheets, e->cbl,
+		e->top = interp_and_shape(e->scblocks, e->stylesheet, e->cbl,
 		                          e->is, e->slidenum, pc,
 		                          w, h, e->lang);
 		e->top->scblocks = e->scblocks;
@@ -407,8 +406,7 @@ static void full_rerender(SCEditor *e)
 
 	pc = gdk_pango_context_get();
 
-	e->top = interp_and_shape(e->scblocks,
-	                          e->stylesheets, e->cbl,
+	e->top = interp_and_shape(e->scblocks, e->stylesheet, e->cbl,
 	                          e->is, e->slidenum,
 	                          pc, e->log_w, 0.0, e->lang);
 
@@ -2035,34 +2033,9 @@ void sc_editor_set_top_frame_editable(SCEditor *e, int top_frame_editable)
 }
 
 
-static SCBlock **copy_ss_list(SCBlock **stylesheets)
+void sc_editor_set_stylesheet(SCEditor *e, SCBlock *stylesheet)
 {
-	int n_ss = 0;
-	int i = 0;
-	SCBlock **ssc;
-
-	if ( stylesheets == NULL ) return NULL;
-
-	while ( stylesheets[n_ss] != NULL ) n_ss++;
-	n_ss++;  /* One more for sentinel */
-
-	ssc = malloc(n_ss*sizeof(SCBlock *));
-	if ( ssc == NULL ) return NULL;
-
-	for ( i=0; i<n_ss; i++ ) ssc[i] = stylesheets[i];
-
-	return ssc;
-}
-
-
-void sc_editor_set_stylesheets(SCEditor *e, SCBlock **stylesheets)
-{
-	int i = 0;;
-	while ( e->stylesheets[i] != NULL ) {
-		sc_block_free(e->stylesheets[i++]);
-	}
-	free(e->stylesheets);
-	e->stylesheets = copy_ss_list(stylesheets);
+	e->stylesheet = stylesheet;
 }
 
 
@@ -2152,7 +2125,7 @@ void sc_editor_set_imagestore(SCEditor *e, ImageStore *is)
 }
 
 
-SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
+SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet,
                         PangoLanguage *lang, const char *storename)
 {
 	SCEditor *sceditor;
@@ -2182,7 +2155,7 @@ SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
 	sceditor->para_highlight = 0;
 	sc_editor_remove_cursor(sceditor);
 
-	sceditor->stylesheets = copy_ss_list(stylesheets);
+	sceditor->stylesheet = stylesheet;
 
 	sceditor->bg_pixbuf = NULL;
 

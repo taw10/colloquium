@@ -58,6 +58,8 @@ static void set_ss(struct presentation *p, const char *find, const char *seti)
 			fprintf(stderr, "WARNING: Couldn't create stylesheet\n");
 			return;
 		}
+		sc_block_append_p(p->stylesheet, p->scblocks);
+		p->scblocks = p->stylesheet;
 	}
 	bl = p->stylesheet;
 
@@ -97,6 +99,7 @@ static void default_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
 	set_ss(se->priv->p, "font", font);
 	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
@@ -109,6 +112,7 @@ static void default_colour_sig(GtkColorButton *widget, StylesheetEditor *se)
 	set_ss(se->priv->p, "fgcol", col);
 	g_free(col);
 	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
@@ -140,6 +144,9 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
 	gtk_widget_class_bind_template_callback(widget_class, default_font_sig);
 	gtk_widget_class_bind_template_callback(widget_class, default_colour_sig);
+
+	g_signal_new("changed", COLLOQUIUM_TYPE_STYLESHEET_EDITOR,
+	             G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
 

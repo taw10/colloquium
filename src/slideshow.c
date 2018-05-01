@@ -54,7 +54,6 @@ void sc_slideshow_class_init(SCSlideshowClass *klass)
 static void slideshow_rerender(SCSlideshow *ss)
 {
 	int n;
-	SCBlock *stylesheets[2];
 	gint w, h;
 
 	if ( ss->cur_slide == NULL ) return;
@@ -63,14 +62,11 @@ static void slideshow_rerender(SCSlideshow *ss)
 		cairo_surface_destroy(ss->surface);
 	}
 
-	stylesheets[0] = ss->p->stylesheet;
-	stylesheets[1] = NULL;
-
 	n = slide_number(ss->p, ss->cur_slide);
 	ss->surface = render_sc(ss->cur_slide,
 	                        ss->slide_width, ss->slide_height,
 	                        ss->p->slide_width, ss->p->slide_height,
-	                        stylesheets, NULL, ss->p->is, n,
+	                        ss->p->stylesheet, NULL, ss->p->is, n,
 	                        &ss->top, ss->p->lang);
 
 	w = gtk_widget_get_allocated_width(GTK_WIDGET(ss->drawingarea));

@@ -94,7 +94,7 @@ struct _sceditor
 	double               log_w;  /* Size of surface in "SC units" */
 	double               log_h;
 	SCBlock             *scblocks;
-	SCBlock             **stylesheets;
+	SCBlock             *stylesheet;
 	ImageStore          *is;
 	SCCallbackList      *cbl;
 	struct frame        *top;
@@ -168,10 +168,10 @@ typedef struct _sceditor SCEditor;
 typedef struct _sceditorclass SCEditorClass;
 
 extern void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks);
-extern void sc_editor_set_stylesheets(SCEditor *e, SCBlock **stylesheets);
+extern void sc_editor_set_stylesheet(SCEditor *e, SCBlock *stylesheet);
 extern SCBlock *sc_editor_get_scblock(SCEditor *e);
 extern GtkWidget *sc_editor_get_widget(SCEditor *e);
-extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock **stylesheets,
+extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet,
                                PangoLanguage *lang, const char *storename);
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);

@@ -30,10 +30,6 @@
 #include <pango/pango.h>
 #include <cairo.h>
 
-#include "sc_parse.h"
-#include "sc_interp.h"
-#include "imagestore.h"
-
 
 typedef enum
 {
@@ -57,6 +53,10 @@ enum para_type
 };
 
 typedef struct _paragraph Paragraph;
+
+#include "sc_parse.h"
+#include "sc_interp.h"
+#include "imagestore.h"
 
 
 struct edit_pos

@@ -71,6 +71,9 @@ extern struct frame *sc_interp_get_frame(SCInterpreter *scin);
 extern PangoFont *sc_interp_get_font(SCInterpreter *scin);
 extern PangoFontDescription *sc_interp_get_fontdesc(SCInterpreter *scin);
 extern double *sc_interp_get_fgcol(SCInterpreter *scin);
+extern double *sc_interp_get_bgcol(SCInterpreter *scin);
+extern double *sc_interp_get_bgcol2(SCInterpreter *scin);
+extern GradientType sc_interp_get_bggrad(SCInterpreter *scin);
 
 extern int sc_interp_get_slide_size(SCInterpreter *scin, double *w, double *h);
 extern SCBlock *sc_interp_get_macro_real_block(SCInterpreter *scin);

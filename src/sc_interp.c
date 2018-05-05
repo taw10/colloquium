@@ -59,6 +59,9 @@ struct sc_state
 	PangoFont *font;
 	PangoAlignment alignment;
 	double col[4];
+	double bgcol[4];
+	double bgcol2[4];
+	GradientType bggrad;
 	int ascent;
 	int height;
 	float paraspace[4];
@@ -286,6 +289,27 @@ double *sc_interp_get_fgcol(SCInterpreter *scin)
 }
 
 
+double *sc_interp_get_bgcol(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->bgcol;
+}
+
+
+double *sc_interp_get_bgcol2(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->bgcol2;
+}
+
+
+GradientType sc_interp_get_bggrad(SCInterpreter *scin)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	return st->bggrad;
+}
+
+
 int sc_interp_get_ascent(SCInterpreter *scin)
 {
 	struct sc_state *st = &scin->state[scin->j];
@@ -450,39 +474,56 @@ static void set_colour(SCInterpreter *scin, const char *colour)
 }
 
 
-static void set_frame_bgcolour(struct frame *fr, const char *colour)
+static void update_bg(SCInterpreter *scin)
 {
-	GdkRGBA col;
+	struct sc_state *st = &scin->state[scin->j];
+	struct frame *fr = sc_interp_get_frame(scin);
 
 	if ( fr == NULL ) return;
 
+	fr->bgcol[0] = st->bgcol[0];
+	fr->bgcol[1] = st->bgcol[1];
+	fr->bgcol[2] = st->bgcol[2];
+	fr->bgcol[3] = st->bgcol[3];
+	fr->bgcol2[0] = st->bgcol2[0];
+	fr->bgcol2[1] = st->bgcol2[1];
+	fr->bgcol2[2] = st->bgcol2[2];
+	fr->bgcol2[3] = st->bgcol2[3];
+	fr->grad = st->bggrad;
+}
+
+
+static void set_bgcol(SCInterpreter *scin, const char *colour)
+{
+	GdkRGBA col;
+	struct sc_state *st = &scin->state[scin->j];
+
 	if ( colour == NULL ) {
 		printf(_("Invalid colour\n"));
-		fr->bgcol[0] = 0.0;
-		fr->bgcol[1] = 0.0;
-		fr->bgcol[2] = 0.0;
-		fr->bgcol[3] = 1.0;
+		st->bgcol[0] = 0.0;
+		st->bgcol[1] = 0.0;
+		st->bgcol[2] = 0.0;
+		st->bgcol[3] = 1.0;
 		return;
 	}
 
 	gdk_rgba_parse(&col, colour);
 
-	fr->bgcol[0] = col.red;
-	fr->bgcol[1] = col.green;
-	fr->bgcol[2] = col.blue;
-	fr->bgcol[3] = col.alpha;
-	fr->grad = GRAD_NONE;
+	st->bgcol[0] = col.red;
+	st->bgcol[1] = col.green;
+	st->bgcol[2] = col.blue;
+	st->bgcol[3] = col.alpha;
+	st->bggrad = GRAD_NONE;
 }
 
 
-static void set_frame_bggrad(struct frame *fr, const char *options,
-                             GradientType grad)
+static void set_bggrad(SCInterpreter *scin, const char *options,
+                       GradientType grad)
 {
+	struct sc_state *st = &scin->state[scin->j];
 	GdkRGBA col1, col2;
 	char *n2;
 	char *optcopy = strdup(options);
-
-	if ( fr == NULL ) return;
 
 	if ( options == NULL ) {
 		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), options);
@@ -500,17 +541,17 @@ static void set_frame_bggrad(struct frame *fr, const char *options,
 	gdk_rgba_parse(&col1, optcopy);
 	gdk_rgba_parse(&col2, &n2[1]);
 
-	fr->bgcol[0] = col1.red;
-	fr->bgcol[1] = col1.green;
-	fr->bgcol[2] = col1.blue;
-	fr->bgcol[3] = col1.alpha;
+	st->bgcol[0] = col1.red;
+	st->bgcol[1] = col1.green;
+	st->bgcol[2] = col1.blue;
+	st->bgcol[3] = col1.alpha;
 
-	fr->bgcol2[0] = col2.red;
-	fr->bgcol2[1] = col2.green;
-	fr->bgcol2[2] = col2.blue;
-	fr->bgcol2[3] = col2.alpha;
+	st->bgcol2[0] = col2.red;
+	st->bgcol2[1] = col2.green;
+	st->bgcol2[2] = col2.blue;
+	st->bgcol2[3] = col2.alpha;
 
-	fr->grad = grad;
+	st->bggrad = grad;
 
 	free(optcopy);
 }
@@ -640,9 +681,10 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 
 	/* The "ultimate" default font */
 	if ( scin->pc != NULL ) {
+		set_frame(scin, top);
 		set_font(scin, "Cantarell Regular 14");
 		set_colour(scin, "#000000");
-		set_frame(scin, top);
+		update_bg(scin);
 	}
 
 	return scin;
@@ -1072,6 +1114,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
+		update_bg(scin);
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "newpara")==0 ) {
@@ -1237,16 +1280,21 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 
 		} else if ( strcmp(name, "bgcol") == 0 ) {
 			maybe_recurse_before(scin, child);
-			set_frame_bgcolour(sc_interp_get_frame(scin), options);
+			set_bgcol(scin, options);
+			update_bg(scin);
 			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "bggradh") == 0 ) {
-			set_frame_bggrad(sc_interp_get_frame(scin), options,
-			                 GRAD_HORIZ);
+			maybe_recurse_before(scin, child);
+			set_bggrad(scin, options, GRAD_HORIZ);
+			update_bg(scin);
+			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "bggradv") == 0 ) {
-			set_frame_bggrad(sc_interp_get_frame(scin), options,
-			                 GRAD_VERT);
+			maybe_recurse_before(scin, child);
+			set_bggrad(scin, options, GRAD_VERT);
+			update_bg(scin);
+			maybe_recurse_after(scin, child);
 
 		} else if ( strcmp(name, "paraspace") == 0 ) {
 			maybe_recurse_before(scin, child);
@@ -1400,15 +1448,16 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 			set_colour(scin, options);
 
 		} else if ( strcmp(name, "bgcol") == 0 ) {
-			set_frame_bgcolour(sc_interp_get_frame(scin), options);
+			set_bgcol(scin, options);
+			update_bg(scin);
 
 		} else if ( strcmp(name, "bggradh") == 0 ) {
-			set_frame_bggrad(sc_interp_get_frame(scin), options,
-			                 GRAD_HORIZ);
+			set_bggrad(scin, options, GRAD_HORIZ);
+			update_bg(scin);
 
 		} else if ( strcmp(name, "bggradv") == 0 ) {
-			set_frame_bggrad(sc_interp_get_frame(scin), options,
-			                 GRAD_VERT);
+			set_bggrad(scin, options, GRAD_VERT);
+			update_bg(scin);
 
 		} else if ( strcmp(name, "paraspace") == 0 ) {
 			set_paraspace(scin, options);

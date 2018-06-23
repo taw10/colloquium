@@ -135,8 +135,6 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	g_type_class_add_private(gobject_class, sizeof(StylesheetEditorPrivate));
 
 	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor,
-	                                     default_style_ss);
-	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor,
 	                                     default_style_font);
 	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor,
 	                                     default_style_fgcol);
@@ -157,9 +155,6 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	PangoFontDescription *fontdesc;
 	double *col;
 	GdkRGBA rgba;
-	GtkTextBuffer *buf;
-	char *sc;
-	SCBlock *ss;
 
 	scin = sc_interp_new(NULL, NULL, NULL, NULL);
 	sc_interp_run_stylesheet(scin, se->priv->p->stylesheet);  /* NULL stylesheet is OK */
@@ -176,19 +171,6 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	rgba.blue = col[2];
 	rgba.alpha = col[3];
 	gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(se->default_style_fgcol), &rgba);
-
-	ss = se->priv->p->stylesheet;
-	if ( ss != NULL ) {
-		const char *name = sc_block_name(ss);
-		if ( (name != NULL) && (strcmp(name, "stylesheet")==0) ) {
-			ss = sc_block_child(ss);
-		}
-
-		sc = serialise_sc_block_chain(ss);
-		buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(se->default_style_ss));
-		gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buf), sc, -1);
-		free(sc);
-	}
 
 	sc_interp_destroy(scin);
 }

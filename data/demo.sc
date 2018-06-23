@@ -1,22 +1,20 @@
 \stylesheet{
 
-	\font[Cantarell Regular 14]
-	\bggradv[#333333,#000055]
-	\fgcol[#c5c5c5]
+	\style[narrative]{\font[Cantarell Regular 16]\paraspace[0,0,10,10]\pad[10,10,10,10]\fgcol[#222222]\bgcol[#ffffff]}
+	\style[slide]{\bggradv[#333333,#000055]\slidesize[1024x768]\style[frame]{\fgcol[#c5c5c5]}}
 
-	\slidesize[1024x768]
-	\ss[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\center\contents}
-	\ss[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}
-	\ss[footer]{\f[0.97fx30u+0+740]{\ralign\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 1 March 2018} | \bold{Slide} \slidenumber}}}
-	\ss[credit]{\f[600ux30u+700+700]{\fontsize[11]\contents}}
-	\ss[bp]{➤ }
+	\def[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\center\contents}
+	\def[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}
+	\def[footer]{\f[0.97fx30u+0+740]{\ralign\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 1 March 2018} | \bold{Slide} \slidenumber}}}
+	\def[credit]{\f[600ux30u+700+700]{\fontsize[11]\contents}}
+	\def[bp]{➤ }
 
 	\template[slide]{\slide{\slidetitle{New slide}\footer}}
 	\template[bp,name="Bullet point"]{\bp{}}
 	\template[credit,name="Credit"]{\credit{Image: }}
 
-}\paraspace[0,0,10,10]\pad[10,10,10,10]\fgcol[#222222]\bgcol[#ffffff]\fontsize[40]{\bold{}Hi there, welcome to \bold{Colloquium}!}
-\fontsize[16]It looks like this is the first time you've used Colloquium.  Keep reading to understand a little bit about how Colloquium works and how to use it.
+}\fontsize[40]{\bold{}Hi there, welcome to \bold{Colloquium}!}
+It looks like this is the first time you've used Colloquium.  Keep reading to understand a little bit about how Colloquium works and how to use it.
 Colloquium works differently to other presentation programs. Colloquium makes \italic{narrative, not slides,} the centre of attention.  Slides come when you need to illustrate something.  This window is called the \oblique{narrative editor}.  Your slides are embedded into the narrative text, like this:\slide{
 \prestitle{Welcome to Colloquium}
 

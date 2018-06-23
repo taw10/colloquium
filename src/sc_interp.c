@@ -1438,6 +1438,9 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 		} else if ( strcmp(name, "ss") == 0 ) {
 			try_add_macro(scin, options, sc_block_child(bl));
 
+		} else if ( strcmp(name, "def") == 0 ) {
+			try_add_macro(scin, options, sc_block_child(bl));
+
 		} else if ( strcmp(name, "template") == 0 ) {
 			try_add_template(scin, options, sc_block_child(bl));
 

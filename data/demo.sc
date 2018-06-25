@@ -40,7 +40,7 @@ It will probably crash and lose your work a few times.  Save and back up your wo
 
 However, in years of use it has \bold{never} crashed on me in front of an audience.  You will find most bugs in the editing features, not playback.
 
-Creating a backup slide deck in PDF format (File->Export slides as PDF) is a wise safety measure.
+Creating a backup slide deck in PDF format (File->Export slides as PDF) is nevertheless a wise safety measure.
 
 Please report all bugs here:
 https://www.bitwiz.me.uk/tracker}\f[452.2ux431.0u+64.8+168.9]{\image[1fx1f+0+0,filename="alpha_warning.svg"]{}}}

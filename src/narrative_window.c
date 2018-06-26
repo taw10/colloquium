@@ -205,8 +205,6 @@ static void update_template_menus(NarrativeWindow *nw)
 	templates = get_templates(nw->p->stylesheet, &n_templates);
 
 	for ( i=0; i<n_templates; i++ ) {
-		printf("%2i: %s %s\n", i, templates[i].name,
-		       templates[i].friendlyname);
 		free(templates[i].name);
 		free(templates[i].friendlyname);
 		sc_block_free(templates[i].scblock);

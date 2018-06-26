@@ -1,7 +1,9 @@
 \stylesheet{
 
 	\style[narrative]{\font[Cantarell Regular 16]\paraspace[0,0,10,10]\pad[10,10,10,10]\fgcol[#222222]\bgcol[#ffffff]}
-	\style[slide]{\bggradv[#333333,#000055]\slidesize[1024x768]\style[frame]{\fgcol[#c5c5c5]}}
+	\style[slide]{\bggradv[#333333,#000055]}
+	\style[frame]{\fgcol[#c5c5c5]}
+	\slidesize[1024x768]
 
 	\def[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\center\contents}
 	\def[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}

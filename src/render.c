@@ -211,7 +211,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
 	top->col[2] = sc_interp_get_fgcol(scin)[2];
 	top->col[3] = sc_interp_get_fgcol(scin)[3];
 
-	sc_interp_add_blocks(scin, sc_block_child(scblocks));
+	sc_interp_add_block(scin, scblocks);
 
 	sc_interp_destroy(scin);
 

@@ -76,6 +76,10 @@ struct sc_state
 	int max_macros;
 	struct macro *macros;  /* Contents need to be copied on push */
 
+	int n_styles;
+	int max_styles;
+	struct macro *styles;  /* Contents need to be copied on push */
+
 	int n_templates;
 	int max_templates;
 	struct template *templates;
@@ -653,6 +657,14 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 		free(scin);
 		return NULL;
 	}
+	st->n_styles = 0;
+	st->max_styles = 16;
+	st->styles = malloc(16*sizeof(struct macro));
+	if ( st->styles == NULL ) {
+		free(scin->state);
+		free(scin);
+		return NULL;
+	}
 	st->n_templates = 0;
 	st->max_templates = 16;
 	st->templates = malloc(16*sizeof(struct template));
@@ -676,7 +688,15 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->col[2] = 0.0;
 	st->col[3] = 1.0;
 	st->alignment = PANGO_ALIGN_LEFT;
-
+	st->bgcol[0] = 1.0;
+	st->bgcol[1] = 0.0;
+	st->bgcol[2] = 0.0;
+	st->bgcol[3] = 1.0;
+	st->bgcol2[0] = 1.0;
+	st->bgcol2[1] = 0.0;
+	st->bgcol2[2] = 0.0;
+	st->bgcol2[3] = 1.0;
+	st->bggrad = GRAD_NONE;
 	scin->lang = lang;
 
 	/* The "ultimate" default font */
@@ -1063,6 +1083,20 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 }
 
 
+static void run_style(SCInterpreter *scin, const char *sname)
+{
+	int i;
+	struct sc_state *st = &scin->state[scin->j];
+
+	for ( i=0; i<st->n_styles; i++ ) {
+		if ( strcmp(sname, st->styles[i].name) == 0 ) {
+			sc_interp_add_blocks(scin, st->styles[i].bl);
+			return;
+		}
+	}
+}
+
+
 static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 {
 	const char *name = sc_block_name(bl);
@@ -1114,7 +1148,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
-		update_bg(scin);
+		run_style(scin, "frame");
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "newpara")==0 ) {
@@ -1195,122 +1229,188 @@ static void run_editable(SCInterpreter *scin, SCBlock *contents)
 }
 
 
-int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
+int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 {
+	const char *name = sc_block_name(bl);
+	const char *options = sc_block_options(bl);
+	SCBlock *child = sc_block_child(bl);
+
 	//printf("Running this --------->\n");
 	//show_sc_blocks(bl);
 	//printf("<------------\n");
 
-	while ( bl != NULL ) {
+	if ( check_macro(name, scin) ) {
+		sc_interp_save(scin);
+		exec_macro(bl, scin, child);
+		sc_interp_restore(scin);
 
-		const char *name = sc_block_name(bl);
-		const char *options = sc_block_options(bl);
-		SCBlock *child = sc_block_child(bl);
+	} else if ( check_callback(scin, bl) ) {
+		/* Handled in check_callback, don't do anything else */
 
-		if ( check_macro(name, scin) ) {
-			sc_interp_save(scin);
-			exec_macro(bl, scin, child);
-			sc_interp_restore(scin);
+	} else if ((sc_interp_get_frame(scin) != NULL)
+	  && check_outputs(bl, scin) ) {
+		/* Block handled as output thing */
 
-		} else if ( check_callback(scin, bl) ) {
-			/* Handled in check_callback, don't do anything else */
+	} else if ( name == NULL ) {
+		/* Dummy to ensure name != NULL below */
 
-		} else if ((sc_interp_get_frame(scin) != NULL)
-		  && check_outputs(bl, scin) ) {
-			/* Block handled as output thing */
+	} else if ( strcmp(name, "presentation") == 0 ) {
+		maybe_recurse_before(scin, child);
+		run_style(scin, "narrative");
+		maybe_recurse_after(scin, child);
 
-		} else if ( name == NULL ) {
-			/* Dummy to ensure name != NULL below */
+	} else if ( strcmp(name, "stylesheet") == 0 ) {
+		/* Ignore (see sc_interp_run_stylesheet)  */
 
-		} else if ( strcmp(name, "font") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_font(scin, options);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "slide") == 0 ) {
+		maybe_recurse_before(scin, child);
+		run_style(scin, "slide");
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "fontsize") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_fontsize(scin, options);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "font") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_font(scin, options);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "bold") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_bold(scin);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "fontsize") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_fontsize(scin, options);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "oblique") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_oblique(scin);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "bold") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_bold(scin);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "italic") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_italic(scin);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "oblique") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_oblique(scin);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "lalign") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_alignment(scin, PANGO_ALIGN_LEFT);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "italic") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_italic(scin);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "ralign") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_alignment(scin, PANGO_ALIGN_RIGHT);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "lalign") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_alignment(scin, PANGO_ALIGN_LEFT);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "center") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_alignment(scin, PANGO_ALIGN_CENTER);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "ralign") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_alignment(scin, PANGO_ALIGN_RIGHT);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "fgcol") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_colour(scin, options);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "center") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_alignment(scin, PANGO_ALIGN_CENTER);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "contents") == 0 ) {
-			run_macro_contents(scin);
+	} else if ( strcmp(name, "fgcol") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_colour(scin, options);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "editable") == 0 ) {
-			run_editable(scin, child);
+	} else if ( strcmp(name, "contents") == 0 ) {
+		run_macro_contents(scin);
 
-		} else if ( strcmp(name, "pad") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_padding(sc_interp_get_frame(scin), options);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "editable") == 0 ) {
+		run_editable(scin, child);
 
-		} else if ( strcmp(name, "bgcol") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_bgcol(scin, options);
-			update_bg(scin);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "pad") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_padding(sc_interp_get_frame(scin), options);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "bggradh") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_bggrad(scin, options, GRAD_HORIZ);
-			update_bg(scin);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "bgcol") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_bgcol(scin, options);
+		update_bg(scin);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "bggradv") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_bggrad(scin, options, GRAD_VERT);
-			update_bg(scin);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "bggradh") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_bggrad(scin, options, GRAD_HORIZ);
+		update_bg(scin);
+		maybe_recurse_after(scin, child);
 
-		} else if ( strcmp(name, "paraspace") == 0 ) {
-			maybe_recurse_before(scin, child);
-			set_paraspace(scin, options);
-			maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "bggradv") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_bggrad(scin, options, GRAD_VERT);
+		update_bg(scin);
+		maybe_recurse_after(scin, child);
 
-		} else {
+	} else if ( strcmp(name, "paraspace") == 0 ) {
+		maybe_recurse_before(scin, child);
+		set_paraspace(scin, options);
+		maybe_recurse_after(scin, child);
 
-			//fprintf(stderr, "Don't know what to do with this:\n");
-			//show_sc_block(bl, "");
+	} else {
 
-		}
-
-		bl = sc_block_next(bl);
+		fprintf(stderr, "Don't know what to do with this:\n");
+		show_sc_block(bl, "");
 
 	}
+
+	return 0;
+}
+
+
+int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
+{
+	while ( bl != NULL ) {
+		if ( sc_interp_add_block(scin, bl) ) return 1;
+		bl = sc_block_next(bl);
+	}
+
+	return 0;
+}
+
+
+static int try_add_style(SCInterpreter *scin, const char *options, SCBlock *bl)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	char *nn;
+	char *comma;
+	int i;
+
+	nn = strdup(options);
+	comma = strchr(nn, ',');
+	if ( comma != NULL ) {
+		comma[0] = '\0';
+	}
+
+	for ( i=0; i<st->n_styles; i++ ) {
+		if ( strcmp(st->styles[i].name, nn) == 0 ) {
+			st->styles[i].name = nn;
+			st->styles[i].bl = bl;
+			st->styles[i].prev = NULL;  /* FIXME: Stacking */
+			return 0;
+		}
+	}
+
+	if ( st->max_styles == st->n_styles ) {
+
+		struct macro *styles_new;
+
+		styles_new = realloc(st->styles, sizeof(struct macro)
+		                     * (st->max_styles+16));
+		if ( styles_new == NULL ) {
+			fprintf(stderr, _("Failed to add style.\n"));
+			return 1;
+		}
+
+		st->styles = styles_new;
+		st->max_styles += 16;
+
+	}
+
+	i = st->n_styles++;
+
+	st->styles[i].name = nn;
+	st->styles[i].bl = bl;
+	st->styles[i].prev = NULL;  /* FIXME: Stacking */
 
 	return 0;
 }
@@ -1435,11 +1535,14 @@ void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
 
 			/* Do nothing */
 
-		} else if ( strcmp(name, "ss") == 0 ) {
-			try_add_macro(scin, options, sc_block_child(bl));
-
 		} else if ( strcmp(name, "def") == 0 ) {
 			try_add_macro(scin, options, sc_block_child(bl));
+
+		} else if ( strcmp(name, "ss") == 0 ) {  /* Backward compatibility */
+			try_add_macro(scin, options, sc_block_child(bl));
+
+		} else if ( strcmp(name, "style") == 0 ) {
+			try_add_style(scin, options, sc_block_child(bl));
 
 		} else if ( strcmp(name, "template") == 0 ) {
 			try_add_template(scin, options, sc_block_child(bl));

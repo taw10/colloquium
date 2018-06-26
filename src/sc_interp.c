@@ -689,12 +689,12 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->col[3] = 1.0;
 	st->alignment = PANGO_ALIGN_LEFT;
 	st->bgcol[0] = 1.0;
-	st->bgcol[1] = 0.0;
-	st->bgcol[2] = 0.0;
+	st->bgcol[1] = 1.0;
+	st->bgcol[2] = 1.0;
 	st->bgcol[3] = 1.0;
 	st->bgcol2[0] = 1.0;
-	st->bgcol2[1] = 0.0;
-	st->bgcol2[2] = 0.0;
+	st->bgcol2[1] = 1.0;
+	st->bgcol2[2] = 1.0;
 	st->bgcol2[3] = 1.0;
 	st->bggrad = GRAD_NONE;
 	scin->lang = lang;

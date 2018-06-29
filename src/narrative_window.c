@@ -55,6 +55,7 @@ struct _narrative_window
 	struct presentation *p;
 	SCBlock             *dummy_top;
 	SCSlideshow         *show;
+	int                  show_no_slides;
 	PRClock             *pr_clock;
 };
 
@@ -407,7 +408,7 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 	                          sc_editor_get_cursor_para(nw->sceditor)+1);
 
 	/* If we only have one monitor, don't try to do paragraph counting */
-	if ( ss->single_monitor ) {
+	if ( ss->single_monitor && !nw->show_no_slides ) {
 		int i, max;
 		max = sc_editor_get_num_paras(nw->sceditor);
 		for ( i=sc_editor_get_cursor_para(nw->sceditor); i<max; i++ ) {
@@ -615,6 +616,8 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
+	nw->show_no_slides = 0;
+
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
 		 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->show), "destroy",
@@ -636,6 +639,8 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
+	nw->show_no_slides = 1;
+
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
 		 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->show), "destroy",
@@ -656,6 +661,8 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 
 	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
+
+	nw->show_no_slides = 0;
 
 	g_signal_connect(G_OBJECT(nw->show), "key-press-event",
 		 G_CALLBACK(nw_key_press_sig), nw);

@@ -763,6 +763,8 @@ static void set_padding(struct frame *fr, const char *opts)
 
 	if ( parse_tuple(opts, p) ) return;
 
+	if ( fr == NULL ) return;
+
 	fr->pad_l = p[0];
 	fr->pad_r = p[1];
 	fr->pad_t = p[2];
@@ -1083,7 +1085,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 }
 
 
-static void run_style(SCInterpreter *scin, const char *sname)
+void sc_interp_run_style(SCInterpreter *scin, const char *sname)
 {
 	int i;
 	struct sc_state *st = &scin->state[scin->j];
@@ -1148,7 +1150,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
-		run_style(scin, "frame");
+		sc_interp_run_style(scin, "frame");
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "newpara")==0 ) {
@@ -1256,7 +1258,7 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 
 	} else if ( strcmp(name, "presentation") == 0 ) {
 		maybe_recurse_before(scin, child);
-		run_style(scin, "narrative");
+		sc_interp_run_style(scin, "narrative");
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "stylesheet") == 0 ) {
@@ -1264,7 +1266,7 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 
 	} else if ( strcmp(name, "slide") == 0 ) {
 		maybe_recurse_before(scin, child);
-		run_style(scin, "slide");
+		sc_interp_run_style(scin, "slide");
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "font") == 0 ) {

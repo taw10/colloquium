@@ -573,6 +573,7 @@ double total_height(struct frame *fr)
 
 Paragraph *last_para(struct frame *fr)
 {
+	if ( fr == NULL ) return NULL;
 	if ( fr->paras == NULL ) return NULL;
 	return fr->paras[fr->n_paras-1];
 }

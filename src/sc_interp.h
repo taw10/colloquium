@@ -53,6 +53,7 @@ extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
 extern int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl);
 
 extern void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl);
+extern void sc_interp_run_style(SCInterpreter *scin, const char *sname);
 extern void add_macro(SCInterpreter *scin, const char *mname,
                       const char *contents);
 

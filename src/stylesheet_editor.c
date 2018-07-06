@@ -93,7 +93,7 @@ static void revert_sig(GtkButton *button, StylesheetEditor *widget)
 }
 
 
-static void default_font_sig(GtkFontButton *widget, StylesheetEditor *se)
+static void narrative_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
 	const gchar *font;
 	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
@@ -103,7 +103,7 @@ static void default_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 }
 
 
-static void default_colour_sig(GtkColorButton *widget, StylesheetEditor *se)
+static void narrative_fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
 	GdkRGBA rgba;
 	gchar *col;
@@ -116,6 +116,21 @@ static void default_colour_sig(GtkColorButton *widget, StylesheetEditor *se)
 }
 
 
+static void narrative_bgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
+{
+}
+
+
+static void narrative_bgcol2_sig(GtkColorButton *widget, StylesheetEditor *se)
+{
+}
+
+
+static void narrative_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
+{
+}
+
+
 static void stylesheet_editor_init(StylesheetEditor *se)
 {
 	se->priv = G_TYPE_INSTANCE_GET_PRIVATE(se, COLLOQUIUM_TYPE_STYLESHEET_EDITOR,
@@ -123,6 +138,10 @@ static void stylesheet_editor_init(StylesheetEditor *se)
 	gtk_widget_init_template(GTK_WIDGET(se));
 }
 
+
+#define SE_BIND_CHILD(a, b) \
+	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor, a); \
+	gtk_widget_class_bind_template_callback(widget_class, b);
 
 void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 {
@@ -134,14 +153,15 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 
 	g_type_class_add_private(gobject_class, sizeof(StylesheetEditorPrivate));
 
-	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor,
-	                                     default_style_font);
-	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor,
-	                                     default_style_fgcol);
+
+	/* Narrative style */
+	SE_BIND_CHILD(narrative_style_font, narrative_font_sig);
+	SE_BIND_CHILD(narrative_style_fgcol, narrative_fgcol_sig);
+	SE_BIND_CHILD(narrative_style_bgcol, narrative_bgcol_sig);
+	SE_BIND_CHILD(narrative_style_bgcol2, narrative_bgcol2_sig);
+	SE_BIND_CHILD(narrative_style_bggrad, narrative_bggrad_sig);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
-	gtk_widget_class_bind_template_callback(widget_class, default_font_sig);
-	gtk_widget_class_bind_template_callback(widget_class, default_colour_sig);
 
 	g_signal_new("changed", COLLOQUIUM_TYPE_STYLESHEET_EDITOR,
 	             G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
@@ -159,10 +179,13 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	scin = sc_interp_new(NULL, NULL, NULL, NULL);
 	sc_interp_run_stylesheet(scin, se->priv->p->stylesheet);  /* NULL stylesheet is OK */
 
-	/* Default style */
+	/* Narrative style */
+	sc_interp_save(scin);
+	sc_interp_run_style(scin, "narrative");
+
 	fontdesc = sc_interp_get_fontdesc(scin);
 	fontname = pango_font_description_to_string(fontdesc);
-	gtk_font_button_set_font_name(GTK_FONT_BUTTON(se->default_style_font), fontname);
+	gtk_font_button_set_font_name(GTK_FONT_BUTTON(se->narrative_style_font), fontname);
 	g_free(fontname);
 
 	col = sc_interp_get_fgcol(scin);
@@ -170,7 +193,27 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	rgba.green = col[1];
 	rgba.blue = col[2];
 	rgba.alpha = col[3];
-	gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(se->default_style_fgcol), &rgba);
+	gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(se->narrative_style_fgcol), &rgba);
+
+	col = sc_interp_get_bgcol(scin);
+	rgba.red = col[0];
+	rgba.green = col[1];
+	rgba.blue = col[2];
+	rgba.alpha = col[3];
+	gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(se->narrative_style_bgcol), &rgba);
+
+	col = sc_interp_get_bgcol2(scin);
+	rgba.red = col[0];
+	rgba.green = col[1];
+	rgba.blue = col[2];
+	rgba.alpha = col[3];
+	gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(se->narrative_style_bgcol2), &rgba);
+
+	sc_interp_restore(scin);
+
+	/* Slide style */
+
+	/* Slide->Frame style */
 
 	sc_interp_destroy(scin);
 }

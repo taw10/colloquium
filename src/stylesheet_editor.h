@@ -57,9 +57,11 @@ typedef struct _sspriv StylesheetEditorPrivate;
 struct _stylesheeteditor
 {
 	GtkDialog parent_instance;
-	GtkWidget *default_style_font;
-	GtkWidget *default_style_fgcol;
-	GtkWidget *default_style_ss;
+	GtkWidget *narrative_style_font;
+	GtkWidget *narrative_style_fgcol;
+	GtkWidget *narrative_style_bgcol;
+	GtkWidget *narrative_style_bgcol2;
+	GtkWidget *narrative_style_bggrad;
 	StylesheetEditorPrivate *priv;
 };
 

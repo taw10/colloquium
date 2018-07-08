@@ -107,6 +107,7 @@
                         <property name="receives_default">True</property>
                         <property name="font">Sans 12</property>
                         <property name="preview_text">Preview text</property>
+                        <signal name="font-set" handler="narrative_font_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -119,6 +120,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="narrative_fgcol_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -156,10 +158,11 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <items>
-                          <item translatable="yes">Flat colour</item>
-                          <item translatable="yes">Horizontal gradient</item>
-                          <item translatable="yes">Vertical gradient</item>
+                          <item id="flat" translatable="yes">Flat colour</item>
+                          <item id="horiz" translatable="yes">Horizontal gradient</item>
+                          <item id="vert" translatable="yes">Vertical gradient</item>
                         </items>
+                        <signal name="changed" handler="narrative_bggrad_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -172,6 +175,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="narrative_bgcol_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -184,6 +188,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="narrative_bgcol2_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -668,7 +673,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBoxText">
+                      <object class="GtkComboBoxText" id="slide_style_bggrad">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <items>
@@ -676,6 +681,7 @@
                           <item translatable="yes">Horizontal gradient</item>
                           <item translatable="yes">Vertical gradient</item>
                         </items>
+                        <signal name="changed" handler="slide_bggrad_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -684,10 +690,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton">
+                      <object class="GtkColorButton" id="slide_style_bgcol">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="slide_bgcol_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -696,10 +703,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton">
+                      <object class="GtkColorButton" id="slide_style_bgcol2">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="slide_bgcol2_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -756,12 +764,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkFontButton">
+                      <object class="GtkFontButton" id="frame_style_font">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="font">Sans 12</property>
                         <property name="preview_text">Preview text</property>
+                        <signal name="font-set" handler="frame_font_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -770,10 +779,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton">
+                      <object class="GtkColorButton" id="frame_style_fgcol">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="frame_fgcol_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -807,7 +817,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBoxText">
+                      <object class="GtkComboBoxText" id="frame_style_bggrad">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <items>
@@ -815,6 +825,7 @@
                           <item translatable="yes">Horizontal gradient</item>
                           <item translatable="yes">Vertical gradient</item>
                         </items>
+                        <signal name="changed" handler="frame_bggrad_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -823,10 +834,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton">
+                      <object class="GtkColorButton" id="frame_style_bgcol">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="frame_bgcol_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -835,10 +847,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton">
+                      <object class="GtkColorButton" id="frame_style_bgcol2">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="color-set" handler="frame_bgcol2_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>

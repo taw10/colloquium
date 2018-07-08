@@ -62,6 +62,14 @@ struct _stylesheeteditor
 	GtkWidget *narrative_style_bgcol;
 	GtkWidget *narrative_style_bgcol2;
 	GtkWidget *narrative_style_bggrad;
+	GtkWidget *slide_style_bgcol;
+	GtkWidget *slide_style_bgcol2;
+	GtkWidget *slide_style_bggrad;
+	GtkWidget *frame_style_font;
+	GtkWidget *frame_style_fgcol;
+	GtkWidget *frame_style_bgcol;
+	GtkWidget *frame_style_bgcol2;
+	GtkWidget *frame_style_bggrad;
 	StylesheetEditorPrivate *priv;
 };
 

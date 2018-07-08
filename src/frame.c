@@ -970,7 +970,6 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	}
 
 	if ( para->n_runs == 0 ) {
-		fprintf(stderr, _("pos_trail_to_offset: No runs\n"));
 		return 0;
 	}
 

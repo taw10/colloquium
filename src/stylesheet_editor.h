@@ -30,6 +30,7 @@
 #include <gtk/gtk.h>
 
 #include "presentation.h"
+#include "frame.h"
 
 #define COLLOQUIUM_TYPE_STYLESHEET_EDITOR (stylesheet_editor_get_type())
 
@@ -71,6 +72,16 @@ struct _stylesheeteditor
 	GtkWidget *frame_style_bgcol2;
 	GtkWidget *frame_style_bggrad;
 	StylesheetEditorPrivate *priv;
+
+	GdkRGBA       narrative_bgcol;
+	GdkRGBA       narrative_bgcol2;
+	GradientType  narrative_bggrad;
+	GdkRGBA       slide_bgcol;
+	GdkRGBA       slide_bgcol2;
+	GradientType  slide_bggrad;
+	GdkRGBA       frame_bgcol;
+	GdkRGBA       frame_bgcol2;
+	GradientType  frame_bggrad;
 };
 
 

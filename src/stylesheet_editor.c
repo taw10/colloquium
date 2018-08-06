@@ -46,38 +46,52 @@ struct _sspriv
 };
 
 
-static void find_replace(SCBlock *parent, const char *find, const char *seti)
+static SCBlock *find_block(SCBlock *bl, const char *find)
 {
-	SCBlock *bl = sc_block_child(parent);
-
 	while ( bl != NULL ) {
 
 		const char *name = sc_block_name(bl);
 		if ( (name != NULL) && (strcmp(name, find)==0) ) {
-			printf("replaced '%s' with '%s'\n", sc_block_options(bl),
-			       seti);
-			sc_block_set_options(bl, strdup(seti));
-			return;
+			return bl;
 		}
 
 		bl = sc_block_next(bl);
 
 	}
+
+	return NULL;
 }
 
 
-static void set_ss(struct presentation *p, const char *style_name,
-                   const char *find, const char *seti)
+static void find_replace(SCBlock *parent, const char *find, const char *seti)
 {
-	const char *name;
+	SCBlock *bl = find_block(sc_block_child(parent), find);
+
+	if ( bl != NULL ) {
+
+		printf("replacing '%s' with '%s'\n", sc_block_options(bl), seti);
+		sc_block_set_options(bl, strdup(seti));
+
+	} else {
+
+		/* Block not found -> create it */
+		sc_block_append_inside(bl, strdup(find), strdup(seti), NULL);
+
+	}
+}
+
+
+static SCBlock *find_or_create_style(struct presentation *p, const char *style_name)
+{
 	SCBlock *bl;
+	const char *name;
 
 	/* If no stylesheet yet, create one now */
 	if ( p->stylesheet == NULL ) {
 		p->stylesheet = sc_parse("\\stylesheet");
 		if ( p->stylesheet == NULL ) {
 			fprintf(stderr, "WARNING: Couldn't create stylesheet\n");
-			return;
+			return NULL;
 		}
 		sc_block_append_p(p->stylesheet, p->scblocks);
 		p->scblocks = p->stylesheet;
@@ -96,9 +110,7 @@ static void set_ss(struct presentation *p, const char *style_name,
 		if ( (name != NULL) && (strcmp(name, "style")==0)
 		  && (strcmp(options, style_name)==0) )
 		{
-			printf("found style %s\n", options);
-			find_replace(bl, find, seti);
-			return;
+			return bl;
 		}
 
 		bl = sc_block_next(bl);
@@ -106,8 +118,104 @@ static void set_ss(struct presentation *p, const char *style_name,
 	}
 
 	/* Not found -> add style */
-	bl = sc_block_append_inside(p->stylesheet, strdup("style"), strdup(style_name), NULL);
-	sc_block_append_inside(bl, strdup(find), strdup(seti), NULL);
+	return sc_block_append_inside(p->stylesheet, strdup("style"),
+	                              strdup(style_name), NULL);
+}
+
+
+static void set_ss(struct presentation *p, const char *style_name,
+                   const char *find, const char *seti)
+{
+	SCBlock *bl = find_or_create_style(p, style_name);
+	if ( bl == NULL ) {
+		fprintf(stderr, "WARNING: Couldn't find style\n");
+		return;
+	}
+	find_replace(bl, find, seti);
+}
+
+
+static void set_ss_bg_block(SCBlock *bl, GradientType bggrad,
+                            GdkRGBA col1, GdkRGBA col2)
+{
+	char tmp[64];
+
+	switch ( bggrad ) {
+
+		case GRAD_NONE :
+		sc_block_set_name(bl, strdup("bgcol"));
+		snprintf(tmp, 63, "#%.2x%.2x%.2x",
+		         (int)(col1.red*255), (int)(col1.green*255), (int)(col1.blue*255));
+		sc_block_set_options(bl, strdup(tmp));
+		break;
+
+		case GRAD_VERT :
+		sc_block_set_name(bl, strdup("bggradv"));
+		snprintf(tmp, 63, "#%.2x%.2x%.2x,#%.2x%.2x%.2x",
+		         (int)(col1.red*255), (int)(col1.green*255), (int)(col1.blue*255),
+		         (int)(col2.red*255), (int)(col2.green*255), (int)(col2.blue*255));
+		sc_block_set_options(bl, strdup(tmp));
+		break;
+
+		case GRAD_HORIZ :
+		sc_block_set_name(bl, strdup("bggradh"));
+		snprintf(tmp, 63, "#%.2x%.2x%.2x,#%.2x%.2x%.2x",
+		         (int)(col1.red*255), (int)(col1.green*255), (int)(col1.blue*255),
+		         (int)(col2.red*255), (int)(col2.green*255), (int)(col2.blue*255));
+		sc_block_set_options(bl, strdup(tmp));
+		break;
+
+		case GRAD_NOBG :
+		printf("no bg\n");
+		sc_block_set_name(bl, NULL);
+		sc_block_set_options(bl, NULL);
+		sc_block_set_contents(bl, NULL);
+		break;
+
+	}
+}
+
+
+static int try_set_block(SCBlock **parent, const char *name,
+                         GradientType bggrad, GdkRGBA col1, GdkRGBA col2)
+{
+	SCBlock *ibl;
+
+	ibl = find_block(sc_block_child(*parent), name);
+	if ( ibl != NULL ) {
+		if ( bggrad != GRAD_NOBG ) {
+			set_ss_bg_block(ibl, bggrad, col1, col2);
+			return 1;
+		} else {
+			sc_block_delete(parent, ibl);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+static void update_bg(struct presentation *p, const char *style_name,
+                      GradientType bggrad, GdkRGBA col1, GdkRGBA col2)
+{
+	int done;
+	SCBlock *bl;
+
+	bl = find_or_create_style(p, style_name);
+	if ( bl == NULL ) {
+		fprintf(stderr, "WARNING: Couldn't find style\n");
+		return;
+	}
+
+	/* FIXME: What if there are two of these? */
+	done = try_set_block(&bl, "bgcol", bggrad, col1, col2);
+	if ( !done ) done = try_set_block(&bl, "bggradv", bggrad, col1, col2);
+	if ( !done ) done = try_set_block(&bl, "bggradh", bggrad, col1, col2);
+	if ( !done && bggrad != GRAD_NOBG ) {
+		SCBlock *ibl = sc_block_append_inside(bl, NULL, NULL, NULL);
+		set_ss_bg_block(ibl, bggrad, col1, col2);
+	}
 }
 
 
@@ -119,9 +227,11 @@ static void revert_sig(GtkButton *button, StylesheetEditor *widget)
 
 static GradientType id_to_gradtype(const gchar *id)
 {
+	assert(id != NULL);
 	if ( strcmp(id, "flat") == 0 ) return GRAD_NONE;
 	if ( strcmp(id, "horiz") == 0 ) return GRAD_HORIZ;
 	if ( strcmp(id, "vert") == 0 ) return GRAD_VERT;
+	if ( strcmp(id, "none") == 0 ) return GRAD_NOBG;
 	return GRAD_NONE;
 }
 
@@ -151,19 +261,6 @@ static void set_col(GtkColorButton *widget, StylesheetEditor *se,
 }
 
 
-static void set_bggrad(GtkComboBox *widget, StylesheetEditor *se,
-                       const char *style_name)
-{
-	const gchar *id;
-	GradientType grad;
-	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
-	grad = id_to_gradtype(id);
-	//set_ss(se->priv->p, style_name, "bggrad", grad);
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-}
-
-
 static void narrative_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
 	set_font(widget, se, "narrative");
@@ -178,37 +275,76 @@ static void narrative_fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 
 static void narrative_bgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "narrative", "bgcol");
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
+	                           &se->narrative_bgcol);
+	update_bg(se->priv->p, "narrative", se->narrative_bggrad,
+	          se->narrative_bgcol, se->narrative_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void narrative_bgcol2_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "narrative", "bgcol2");
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
+	                           &se->narrative_bgcol2);
+	update_bg(se->priv->p, "narrative", se->narrative_bggrad,
+	          se->narrative_bgcol, se->narrative_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void narrative_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
 {
-	set_bggrad(widget, se, "narrative");
+	const gchar *id;
+	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
+	se->narrative_bggrad = id_to_gradtype(id);
+	update_bg(se->priv->p, "narrative", se->narrative_bggrad,
+	          se->narrative_bgcol, se->narrative_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void slide_bgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "slide", "bgcol");
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
+	                           &se->slide_bgcol);
+	update_bg(se->priv->p, "slide", se->slide_bggrad,
+	          se->slide_bgcol, se->slide_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void slide_bgcol2_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "slide", "bgcol2");
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
+	                           &se->slide_bgcol2);
+	update_bg(se->priv->p, "slide", se->slide_bggrad,
+	          se->slide_bgcol, se->slide_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void slide_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
 {
-	set_bggrad(widget, se, "slide");
+	const gchar *id;
+
+	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
+	se->slide_bggrad = id_to_gradtype(id);
+	update_bg(se->priv->p, "slide", se->slide_bggrad,
+	          se->slide_bgcol, se->slide_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
@@ -226,19 +362,38 @@ static void frame_fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 
 static void frame_bgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "frame", "bgcol");
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
+	                           &se->frame_bgcol);
+	update_bg(se->priv->p, "frame", se->frame_bggrad,
+	          se->frame_bgcol, se->frame_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void frame_bgcol2_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "frame", "bgcol2");
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
+	                           &se->frame_bgcol);
+	update_bg(se->priv->p, "frame", se->frame_bggrad,
+	          se->frame_bgcol, se->frame_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void frame_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
 {
-	set_bggrad(widget, se, "frame");
+	const gchar *id;
+	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
+	se->frame_bggrad = id_to_gradtype(id);
+	update_bg(se->priv->p, "frame", se->frame_bggrad,
+	          se->frame_bgcol, se->frame_bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
@@ -314,6 +469,8 @@ static void set_from_interp_bggrad(SCInterpreter *scin, GtkWidget *w)
 		case GRAD_NONE : id = "flat"; break;
 		case GRAD_HORIZ : id = "horiz"; break;
 		case GRAD_VERT : id = "vert"; break;
+		case GRAD_NOBG : id = "none"; break;
+		default : id = NULL; break;
 	}
 
 	gtk_combo_box_set_active_id(GTK_COMBO_BOX(w), id);
@@ -335,8 +492,11 @@ static void set_from_interp_font(SCInterpreter *scin, GtkWidget *w)
 static void set_values_from_presentation(StylesheetEditor *se)
 {
 	SCInterpreter *scin;
+	PangoContext *pc;
 
-	scin = sc_interp_new(NULL, NULL, NULL, NULL);
+	pc = gdk_pango_context_get();
+
+	scin = sc_interp_new(pc, NULL, NULL, NULL);
 	sc_interp_run_stylesheet(scin, se->priv->p->stylesheet);  /* NULL stylesheet is OK */
 
 	/* Narrative style */
@@ -345,15 +505,23 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	set_from_interp_font(scin, se->narrative_style_font);
 	set_from_interp_col(sc_interp_get_fgcol(scin), se->narrative_style_fgcol);
 	set_from_interp_col(sc_interp_get_bgcol(scin), se->narrative_style_bgcol);
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->narrative_style_bgcol),
+	                           &se->narrative_bgcol);
 	set_from_interp_col(sc_interp_get_bgcol2(scin), se->narrative_style_bgcol2);
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->narrative_style_bgcol2),
+	                           &se->narrative_bgcol2);
 	set_from_interp_bggrad(scin, se->narrative_style_bggrad);
 	sc_interp_restore(scin);
 
 	/* Slide style */
 	sc_interp_save(scin);
-	sc_interp_run_style(scin, "silde");
+	sc_interp_run_style(scin, "slide");
 	set_from_interp_col(sc_interp_get_bgcol(scin), se->slide_style_bgcol);
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->slide_style_bgcol),
+	                           &se->slide_bgcol);
 	set_from_interp_col(sc_interp_get_bgcol2(scin), se->slide_style_bgcol2);
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->slide_style_bgcol2),
+	                           &se->slide_bgcol2);
 	set_from_interp_bggrad(scin, se->slide_style_bggrad);
 	sc_interp_restore(scin);
 
@@ -363,7 +531,11 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	set_from_interp_font(scin, se->frame_style_font);
 	set_from_interp_col(sc_interp_get_fgcol(scin), se->frame_style_fgcol);
 	set_from_interp_col(sc_interp_get_bgcol(scin), se->frame_style_bgcol);
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->frame_style_bgcol),
+	                           &se->frame_bgcol);
 	set_from_interp_col(sc_interp_get_bgcol2(scin), se->frame_style_bgcol2);
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->frame_style_bgcol2),
+	                           &se->frame_bgcol2);
 	set_from_interp_bggrad(scin, se->frame_style_bggrad);
 	sc_interp_restore(scin);
 

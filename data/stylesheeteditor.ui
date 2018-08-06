@@ -824,6 +824,7 @@
                           <item id="flat" translatable="yes">Flat colour</item>
                           <item id="horiz" translatable="yes">Horizontal gradient</item>
                           <item id="vert" translatable="yes">Vertical gradient</item>
+                          <item id="none" translatable="yes">None</item>
                         </items>
                         <signal name="changed" handler="frame_bggrad_sig" swapped="no"/>
                       </object>

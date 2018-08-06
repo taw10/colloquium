@@ -48,6 +48,8 @@ static void do_background(cairo_t *cr, struct frame *fr)
 {
 	cairo_pattern_t *patt = NULL;
 
+	if ( fr->grad == GRAD_NOBG ) return;  /* Should not end up here */
+
 	cairo_new_path(cr);
 	cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
 
@@ -82,6 +84,9 @@ static void do_background(cairo_t *cr, struct frame *fr)
 			                                    fr->bgcol2[1],
 			                                    fr->bgcol2[2]);
 		cairo_set_source(cr, patt);
+		break;
+
+		case GRAD_NOBG:
 		break;
 
 	}

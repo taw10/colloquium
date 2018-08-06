@@ -677,9 +677,9 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <items>
-                          <item translatable="yes">Flat colour</item>
-                          <item translatable="yes">Horizontal gradient</item>
-                          <item translatable="yes">Vertical gradient</item>
+                          <item id="flat" translatable="yes">Flat colour</item>
+                          <item id="horiz" translatable="yes">Horizontal gradient</item>
+                          <item id="vert" translatable="yes">Vertical gradient</item>
                         </items>
                         <signal name="changed" handler="slide_bggrad_sig" swapped="no"/>
                       </object>
@@ -821,9 +821,9 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <items>
-                          <item translatable="yes">Flat colour</item>
-                          <item translatable="yes">Horizontal gradient</item>
-                          <item translatable="yes">Vertical gradient</item>
+                          <item id="flat" translatable="yes">Flat colour</item>
+                          <item id="horiz" translatable="yes">Horizontal gradient</item>
+                          <item id="vert" translatable="yes">Vertical gradient</item>
                         </items>
                         <signal name="changed" handler="frame_bggrad_sig" swapped="no"/>
                       </object>

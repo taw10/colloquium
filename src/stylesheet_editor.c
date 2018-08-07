@@ -75,7 +75,7 @@ static void find_replace(SCBlock *parent, const char *find, const char *seti)
 	} else {
 
 		/* Block not found -> create it */
-		sc_block_append_inside(bl, strdup(find), strdup(seti), NULL);
+		sc_block_append_inside(parent, strdup(find), strdup(seti), NULL);
 
 	}
 }

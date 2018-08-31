@@ -47,6 +47,9 @@ $ sudo dnf install  gtk3-devel
 or
 $ sudo apt install libgtk-3-dev
 
+If you're running OS X, please install Homebrew (https://brew.sh), and the all dependencies:
+$ brew install gettext meson ninja gtk+3
+
 Then set up the build directory using Meson:
 $ meson builddir   # where "builddir" is your name for the build directory
 

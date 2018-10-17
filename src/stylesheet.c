@@ -74,6 +74,11 @@ char *stylesheet_lookup(Stylesheet *ss, const char *path)
 	node = json_path_query(path, ss->root, &err);
 	array = json_node_get_array(node);
 
+	if ( json_array_get_length(array) < 1 ) {
+		json_node_unref(node);
+		return NULL;
+	}
+
 	v = json_array_get_string_element(array, 0);
 	if ( v == NULL ) return NULL;
 

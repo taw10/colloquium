@@ -1,56 +1,40 @@
 {
 	"narrative": {
-		"font": "Comfortaa 20",
+		"font": "Comfortaa 16",
 		"fgcol": "#000000",
-		"bggradv": "#729fcf,#d3d7cf"
+		"pad": "10,10,10,10"
 	},
 
 	"slide": {
 		"width": 1280,
 		"height": 720,
-		"bggrad": "vertical",
-		"bgcol1": "#729fcf",
-		"bgcol2": "#d3d7cf",
+		"bggradv": "#729fcf,#d3d7cf",
 		"frame": {
-			"font": "Comfortaa 20"
+			"font": "Comfortaa 20",
+			"bgcol": "#ffffff00"
 		},
 		"slidetitle": {
-			"width": "1f",
-			"height": "90u",
-			"posx": 0,
-			"posy": 0,
-			"padl": 30,
-			"padr": 30,
-			"padt": 30,
-			"padb": 30,
+			"geometry": "1fx90u+0+0",
+			"pad": "30,30,30,30",
 			"fgcol": "#000000",
-			"font": "Comfortaa Bold 40"
+			"font": "Comfortaa Bold 40",
+			"bgcol": "#ffffff00"
 		},
 		"prestitle": {
-			"width": "1f",
-			"height": "240u",
-			"posx": 0,
-			"posy": 160,
-			"padl": 50,
-			"padr": 50,
-			"padt": 50,
-			"padb": 50,
+			"geometry": "1fx240u+0+160",
+			"pad": "50,50,50,50",
 			"fgcol": "#000000",
 			"font": "Comfortaa Bold 45",
-			"alignment": "center"
+			"alignment": "center",
+			"bgcol": "#ffffff00"
 		},
 		"author": {
-			"width": "1f",
-			"height": "240u",
-			"posx": 0,
-			"posy": 360,
-			"padl": 80,
-			"padr": 80,
-			"padt": 80,
-			"padb": 80,
+			"geometry": "1fx240u+0+360",
+			"pad": "80,80,80,80",
 			"fgcol": "#000000",
 			"font": "Comfortaa 20",
-			"alignment": "center"
+			"alignment": "center",
+			"bgcol": "#ffffff00"
 		}
 	}
 }

@@ -38,14 +38,6 @@
 #include "utils.h"
 
 
-struct macro
-{
-	char *name;
-	SCBlock *bl;
-	struct macro *prev;  /* Previous declaration, or NULL */
-};
-
-
 struct template
 {
 	char *name;
@@ -72,23 +64,10 @@ struct sc_state
 
 	struct frame *fr;  /* The current frame */
 
-	int n_macros;
-	int max_macros;
-	struct macro *macros;  /* Contents need to be copied on push */
-
-	int n_styles;
-	int max_styles;
-	struct macro *styles;  /* Contents need to be copied on push */
-
 	int n_templates;
 	int max_templates;
 	struct template *templates;
-
-	SCBlock *macro_contents;  /* If running a macro, the child block of the caller */
-	SCBlock *macro_real_block;  /* If running a macro, the block which called the macro */
-	int macro_editable;  /* If running a macro, whether this bit can be edited or not */
 };
-
 
 struct _scinterp
 {
@@ -245,9 +224,6 @@ static int check_callback(SCInterpreter *scin, SCBlock *bl)
 		SCBlock *rbl;
 
 		rbl = bl;
-		if ( sc_interp_get_macro_real_block(scin) != NULL ) {
-			bl = sc_interp_get_macro_real_block(scin);
-		}
 
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
@@ -611,13 +587,6 @@ struct frame *sc_interp_get_frame(SCInterpreter *scin)
 }
 
 
-SCBlock *sc_interp_get_macro_real_block(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->macro_real_block;
-}
-
-
 static void set_frame(SCInterpreter *scin, struct frame *fr)
 {
 	struct sc_state *st = &scin->state[scin->j];
@@ -649,22 +618,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	scin->cbl = NULL;
 
 	st = &scin->state[0];
-	st->n_macros = 0;
-	st->max_macros = 16;
-	st->macros = malloc(16*sizeof(struct macro));
-	if ( st->macros == NULL ) {
-		free(scin->state);
-		free(scin);
-		return NULL;
-	}
-	st->n_styles = 0;
-	st->max_styles = 16;
-	st->styles = malloc(16*sizeof(struct macro));
-	if ( st->styles == NULL ) {
-		free(scin->state);
-		free(scin);
-		return NULL;
-	}
 	st->n_templates = 0;
 	st->max_templates = 16;
 	st->templates = malloc(16*sizeof(struct template));
@@ -673,9 +626,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 		free(scin);
 		return NULL;
 	}
-	st->macro_contents = NULL;
-	st->macro_real_block = NULL;
-	st->macro_editable = 0;
 	st->fr = NULL;
 	st->paraspace[0] = 0.0;
 	st->paraspace[1] = 0.0;
@@ -713,7 +663,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 
 void sc_interp_destroy(SCInterpreter *scin)
 {
-	/* FIXME: Free all templates and macros */
+	/* FIXME: Free all templates */
 
 	/* Empty the stack */
 	while ( scin->j > 0 ) {
@@ -1024,14 +974,6 @@ static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child)
 }
 
 
-static int in_macro(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	if ( st->macro_contents == NULL ) return 0;
-	return 1;
-}
-
-
 static void add_newpara(struct frame *fr, SCBlock *bl, SCBlock *mrb)
 {
 	Paragraph *last_para;
@@ -1065,9 +1007,6 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	col = sc_interp_get_fgcol(scin);
 
 	rbl = bl;
-	if ( st->macro_real_block != NULL ) {
-		bl = st->macro_real_block;
-	}
 
 	para = last_para(fr);
 	if ( (para == NULL) || (para_type(para) != PARA_TYPE_TEXT) ) {
@@ -1085,26 +1024,11 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 }
 
 
-void sc_interp_run_style(SCInterpreter *scin, const char *sname)
-{
-	int i;
-	struct sc_state *st = &scin->state[scin->j];
-
-	for ( i=0; i<st->n_styles; i++ ) {
-		if ( strcmp(sname, st->styles[i].name) == 0 ) {
-			sc_interp_add_blocks(scin, st->styles[i].bl);
-			return;
-		}
-	}
-}
-
-
 static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 {
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
 	SCBlock *child = sc_block_child(bl);
-	struct sc_state *st = &scin->state[scin->j];
 
 	if ( name == NULL ) {
 		add_text(sc_interp_get_frame(scin),
@@ -1117,9 +1041,6 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		                         &w, &h, &filename) == 0 )
 		{
 			SCBlock *rbl = bl;
-			if ( st->macro_real_block != NULL ) {
-				bl = st->macro_real_block;
-			}
 			add_image_para(sc_interp_get_frame(scin), bl, rbl,
 			               filename, scin->is, w, h, 1);
 			free(filename);
@@ -1134,11 +1055,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		fr = add_subframe(sc_interp_get_frame(scin));
 		fr->scblocks = bl;
-		if ( in_macro(scin) ) {
-			fr->resizable = 0;
-		} else {
-			fr->resizable = 1;
-		}
+		fr->resizable = 1;
 		if ( fr == NULL ) {
 			fprintf(stderr, _("Failed to add frame.\n"));
 			return 1;
@@ -1150,16 +1067,13 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 
 		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
-		sc_interp_run_style(scin, "frame");
+		/* FIXME: Set frame style */
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "newpara")==0 ) {
 
 		struct frame *fr = sc_interp_get_frame(scin);
 		SCBlock *rbl = bl;
-		if ( st->macro_real_block != NULL ) {
-			bl = st->macro_real_block;
-		}
 		add_newpara(fr, bl, rbl);
 
 	} else {
@@ -1167,67 +1081,6 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 	}
 
 	return 1;  /* handled */
-}
-
-
-static int check_macro(const char *name, SCInterpreter *scin)
-{
-	int i;
-	struct sc_state *st = &scin->state[scin->j];
-
-	if ( name == NULL ) return 0;
-
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-
-static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	int i;
-	const char *name;
-
-	name = sc_block_name(bl);
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			sc_interp_save(scin);
-			scin->state[scin->j].macro_real_block = bl;
-			scin->state[scin->j].macro_contents = child;
-			sc_interp_add_blocks(scin, scin->state[scin->j].macros[i].bl);
-			sc_interp_restore(scin);
-			break; /* Stop iterating, because "st" is now invalid */
-		}
-	}
-}
-
-
-static void run_macro_contents(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	SCBlock *contents = st->macro_contents;
-
-	sc_interp_save(scin);
-	scin->state[scin->j].macro_real_block = NULL;
-	sc_interp_add_blocks(scin, contents);
-	sc_interp_restore(scin);
-}
-
-
-static void run_editable(SCInterpreter *scin, SCBlock *contents)
-{
-	//struct sc_state *st = &scin->state[scin->j];
-
-	sc_interp_save(scin);
-	//scin->state[scin->j].macro_real_block = NULL;
-	scin->state[scin->j].macro_editable = 1;
-	sc_interp_add_blocks(scin, contents);
-	sc_interp_restore(scin);
 }
 
 
@@ -1241,12 +1094,7 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 	//show_sc_blocks(bl);
 	//printf("<------------\n");
 
-	if ( check_macro(name, scin) ) {
-		sc_interp_save(scin);
-		exec_macro(bl, scin, child);
-		sc_interp_restore(scin);
-
-	} else if ( check_callback(scin, bl) ) {
+	if ( check_callback(scin, bl) ) {
 		/* Handled in check_callback, don't do anything else */
 
 	} else if ((sc_interp_get_frame(scin) != NULL)
@@ -1258,7 +1106,7 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 
 	} else if ( strcmp(name, "presentation") == 0 ) {
 		maybe_recurse_before(scin, child);
-		sc_interp_run_style(scin, "narrative");
+		/* FIXME: Apply narrative style */
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "stylesheet") == 0 ) {
@@ -1266,7 +1114,7 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 
 	} else if ( strcmp(name, "slide") == 0 ) {
 		maybe_recurse_before(scin, child);
-		sc_interp_run_style(scin, "slide");
+		/* FIXME: Apply slide style */
 		maybe_recurse_after(scin, child);
 
 	} else if ( strcmp(name, "font") == 0 ) {
@@ -1313,12 +1161,6 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 		maybe_recurse_before(scin, child);
 		set_colour(scin, options);
 		maybe_recurse_after(scin, child);
-
-	} else if ( strcmp(name, "contents") == 0 ) {
-		run_macro_contents(scin);
-
-	} else if ( strcmp(name, "editable") == 0 ) {
-		run_editable(scin, child);
 
 	} else if ( strcmp(name, "pad") == 0 ) {
 		maybe_recurse_before(scin, child);
@@ -1370,102 +1212,6 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
 }
 
 
-static int try_add_style(SCInterpreter *scin, const char *options, SCBlock *bl)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	char *nn;
-	char *comma;
-	int i;
-
-	nn = strdup(options);
-	comma = strchr(nn, ',');
-	if ( comma != NULL ) {
-		comma[0] = '\0';
-	}
-
-	for ( i=0; i<st->n_styles; i++ ) {
-		if ( strcmp(st->styles[i].name, nn) == 0 ) {
-			st->styles[i].name = nn;
-			st->styles[i].bl = bl;
-			st->styles[i].prev = NULL;  /* FIXME: Stacking */
-			return 0;
-		}
-	}
-
-	if ( st->max_styles == st->n_styles ) {
-
-		struct macro *styles_new;
-
-		styles_new = realloc(st->styles, sizeof(struct macro)
-		                     * (st->max_styles+16));
-		if ( styles_new == NULL ) {
-			fprintf(stderr, _("Failed to add style.\n"));
-			return 1;
-		}
-
-		st->styles = styles_new;
-		st->max_styles += 16;
-
-	}
-
-	i = st->n_styles++;
-
-	st->styles[i].name = nn;
-	st->styles[i].bl = bl;
-	st->styles[i].prev = NULL;  /* FIXME: Stacking */
-
-	return 0;
-}
-
-
-static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	char *nn;
-	char *comma;
-	int i;
-
-	nn = strdup(options);
-	comma = strchr(nn, ',');
-	if ( comma != NULL ) {
-		comma[0] = '\0';
-	}
-
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, nn) == 0 ) {
-			st->macros[i].name = nn;
-			st->macros[i].bl = bl;
-			st->macros[i].prev = NULL;  /* FIXME: Stacking */
-			return 0;
-		}
-	}
-
-	if ( st->max_macros == st->n_macros ) {
-
-		struct macro *macros_new;
-
-		macros_new = realloc(st->macros, sizeof(struct macro)
-		                     * (st->max_macros+16));
-		if ( macros_new == NULL ) {
-			fprintf(stderr, _("Failed to add macro.\n"));
-			return 1;
-		}
-
-		st->macros = macros_new;
-		st->max_macros += 16;
-
-	}
-
-	i = st->n_macros++;
-
-	st->macros[i].name = nn;
-	st->macros[i].bl = bl;
-	st->macros[i].prev = NULL;  /* FIXME: Stacking */
-
-	return 0;
-}
-
-
 static int try_add_template(SCInterpreter *scin, const char *options, SCBlock *bl)
 {
 	struct sc_state *st = &scin->state[scin->j];
@@ -1507,85 +1253,6 @@ static int try_add_template(SCInterpreter *scin, const char *options, SCBlock *b
 	st->templates[i].name = nn;
 	st->templates[i].bl = bl;
 
-	return 0;
-}
-
-void add_macro(SCInterpreter *scin, const char *mname, const char *contents)
-{
-	SCBlock *bl = sc_parse(contents);
-	try_add_macro(scin, mname, bl);
-}
-
-
-void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
-{
-	if ( bl == NULL ) return;
-
-	if ( strcmp(sc_block_name(bl), "stylesheet") != 0 ) {
-		fprintf(stderr, _("Style sheet isn't a style sheet.\n"));
-		return;
-	}
-
-	bl = sc_block_child(bl);
-
-	while ( bl != NULL ) {
-
-		const char *name = sc_block_name(bl);
-		const char *options = sc_block_options(bl);
-
-		if ( name == NULL ) {
-
-			/* Do nothing */
-
-		} else if ( strcmp(name, "def") == 0 ) {
-			try_add_macro(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "ss") == 0 ) {  /* Backward compatibility */
-			try_add_macro(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "style") == 0 ) {
-			try_add_style(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "template") == 0 ) {
-			try_add_template(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "font") == 0 ) {
-			set_font(scin, options);
-
-		} else if ( strcmp(name, "fgcol") == 0 ) {
-			set_colour(scin, options);
-
-		} else if ( strcmp(name, "bgcol") == 0 ) {
-			set_bgcol(scin, options);
-			update_bg(scin);
-
-		} else if ( strcmp(name, "bggradh") == 0 ) {
-			set_bggrad(scin, options, GRAD_HORIZ);
-			update_bg(scin);
-
-		} else if ( strcmp(name, "bggradv") == 0 ) {
-			set_bggrad(scin, options, GRAD_VERT);
-			update_bg(scin);
-
-		} else if ( strcmp(name, "paraspace") == 0 ) {
-			set_paraspace(scin, options);
-
-		} else if ( strcmp(name, "slidesize") == 0 ) {
-			set_slide_size(scin, options);
-
-		}
-
-		bl = sc_block_next(bl);
-
-	}
-}
-
-
-int sc_interp_get_slide_size(SCInterpreter *scin, double *w, double *h)
-{
-	if ( !scin->state->have_size ) return 1;
-	*w = scin->state->slide_width;
-	*h = scin->state->slide_height;
 	return 0;
 }
 

@@ -491,55 +491,7 @@ static void set_from_interp_font(SCInterpreter *scin, GtkWidget *w)
 
 static void set_values_from_presentation(StylesheetEditor *se)
 {
-	SCInterpreter *scin;
-	PangoContext *pc;
-
-	pc = gdk_pango_context_get();
-
-	scin = sc_interp_new(pc, NULL, NULL, NULL);
-	sc_interp_run_stylesheet(scin, se->priv->p->stylesheet);  /* NULL stylesheet is OK */
-
-	/* Narrative style */
-	sc_interp_save(scin);
-	sc_interp_run_style(scin, "narrative");
-	set_from_interp_font(scin, se->narrative_style_font);
-	set_from_interp_col(sc_interp_get_fgcol(scin), se->narrative_style_fgcol);
-	set_from_interp_col(sc_interp_get_bgcol(scin), se->narrative_style_bgcol);
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->narrative_style_bgcol),
-	                           &se->narrative_bgcol);
-	set_from_interp_col(sc_interp_get_bgcol2(scin), se->narrative_style_bgcol2);
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->narrative_style_bgcol2),
-	                           &se->narrative_bgcol2);
-	set_from_interp_bggrad(scin, se->narrative_style_bggrad);
-	sc_interp_restore(scin);
-
-	/* Slide style */
-	sc_interp_save(scin);
-	sc_interp_run_style(scin, "slide");
-	set_from_interp_col(sc_interp_get_bgcol(scin), se->slide_style_bgcol);
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->slide_style_bgcol),
-	                           &se->slide_bgcol);
-	set_from_interp_col(sc_interp_get_bgcol2(scin), se->slide_style_bgcol2);
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->slide_style_bgcol2),
-	                           &se->slide_bgcol2);
-	set_from_interp_bggrad(scin, se->slide_style_bggrad);
-	sc_interp_restore(scin);
-
-	/* Slide->Frame style */
-	sc_interp_save(scin);
-	sc_interp_run_style(scin, "frame");
-	set_from_interp_font(scin, se->frame_style_font);
-	set_from_interp_col(sc_interp_get_fgcol(scin), se->frame_style_fgcol);
-	set_from_interp_col(sc_interp_get_bgcol(scin), se->frame_style_bgcol);
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->frame_style_bgcol),
-	                           &se->frame_bgcol);
-	set_from_interp_col(sc_interp_get_bgcol2(scin), se->frame_style_bgcol2);
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->frame_style_bgcol2),
-	                           &se->frame_bgcol2);
-	set_from_interp_bggrad(scin, se->frame_style_bggrad);
-	sc_interp_restore(scin);
-
-	sc_interp_destroy(scin);
+	/* FIXME: From JSON */
 }
 
 

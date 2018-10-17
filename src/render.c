@@ -183,7 +183,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
                                PangoLanguage *lang)
 {
 	SCInterpreter *scin;
-	char snum[64];
+//	char snum[64];
 	struct frame *top;
 
 	top = frame_new();
@@ -203,12 +203,13 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
 
 	sc_interp_set_callbacks(scin, cbl);
 
-	snprintf(snum, 63, "%i", slide_number);
-	add_macro(scin, "slidenumber", snum);
-
-	if ( stylesheet != NULL ) {
-		sc_interp_run_stylesheet(scin, stylesheet);
-	}
+	/* FIXME: Set up slide number and style sheet */
+//	snprintf(snum, 63, "%i", slide_number);
+//	add_macro(scin, "slidenumber", snum);
+//
+//	if ( stylesheet != NULL ) {
+//		sc_interp_run_stylesheet(scin, stylesheet);
+//	}
 
 	top->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
 	top->col[0] = sc_interp_get_fgcol(scin)[0];

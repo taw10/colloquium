@@ -281,21 +281,7 @@ static void install_stylesheet(struct presentation *p)
 
 static void set_slide_size_from_stylesheet(struct presentation *p)
 {
-	SCInterpreter *scin;
-	double w, h;
-	int r;
-
-	if ( p->stylesheet == NULL ) return;
-
-	scin = sc_interp_new(NULL, NULL, NULL, NULL);
-	sc_interp_run_stylesheet(scin, p->stylesheet);  /* ss == NULL is OK */
-	r = sc_interp_get_slide_size(scin, &w, &h);
-	sc_interp_destroy(scin);
-
-	if ( r == 0 ) {
-		p->slide_width = w;
-		p->slide_height = h;
-	}
+	/* FIXME: From JSON */
 }
 
 

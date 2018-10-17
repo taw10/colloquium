@@ -965,11 +965,12 @@ static void maybe_recurse_before(SCInterpreter *scin, SCBlock *child)
 }
 
 
-static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child)
+static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child,
+                                Stylesheet *ss)
 {
 	if ( child == NULL ) return;
 
-	sc_interp_add_blocks(scin, child);
+	sc_interp_add_blocks(scin, child, ss);
 	sc_interp_restore(scin);
 }
 
@@ -1024,7 +1025,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 }
 
 
-static int check_outputs(SCBlock *bl, SCInterpreter *scin)
+static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 {
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
@@ -1068,7 +1069,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		maybe_recurse_before(scin, child);
 		set_frame(scin, fr);
 		/* FIXME: Set frame style */
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "newpara")==0 ) {
 
@@ -1084,7 +1085,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 }
 
 
-int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
+int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 {
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
@@ -1098,7 +1099,7 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 		/* Handled in check_callback, don't do anything else */
 
 	} else if ((sc_interp_get_frame(scin) != NULL)
-	  && check_outputs(bl, scin) ) {
+	  && check_outputs(bl, scin, ss) ) {
 		/* Block handled as output thing */
 
 	} else if ( name == NULL ) {
@@ -1106,89 +1107,89 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 
 	} else if ( strcmp(name, "presentation") == 0 ) {
 		maybe_recurse_before(scin, child);
+		set_bgcol(scin, "#ff00ff");
+		update_bg(scin);
+		printf("pres\n");
 		/* FIXME: Apply narrative style */
-		maybe_recurse_after(scin, child);
-
-	} else if ( strcmp(name, "stylesheet") == 0 ) {
-		/* Ignore (see sc_interp_run_stylesheet)  */
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "slide") == 0 ) {
 		maybe_recurse_before(scin, child);
 		/* FIXME: Apply slide style */
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "font") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_font(scin, options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "fontsize") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_fontsize(scin, options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bold") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bold(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "oblique") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_oblique(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "italic") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_italic(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "lalign") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_alignment(scin, PANGO_ALIGN_LEFT);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "ralign") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_alignment(scin, PANGO_ALIGN_RIGHT);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "center") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_alignment(scin, PANGO_ALIGN_CENTER);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "fgcol") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_colour(scin, options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "pad") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_padding(sc_interp_get_frame(scin), options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bgcol") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bgcol(scin, options);
 		update_bg(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bggradh") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bggrad(scin, options, GRAD_HORIZ);
 		update_bg(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bggradv") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bggrad(scin, options, GRAD_VERT);
 		update_bg(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "paraspace") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_paraspace(scin, options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else {
 
@@ -1201,10 +1202,10 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 }
 
 
-int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
+int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 {
 	while ( bl != NULL ) {
-		if ( sc_interp_add_block(scin, bl) ) return 1;
+		if ( sc_interp_add_block(scin, bl, ss) ) return 1;
 		bl = sc_block_next(bl);
 	}
 

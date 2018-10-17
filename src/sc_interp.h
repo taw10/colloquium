@@ -41,6 +41,7 @@ typedef int (*SCCallbackClickFunc)(double x, double y, void *, void *);
 
 #include "frame.h"
 #include "imagestore.h"
+#include "stylesheet.h"
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
                                     ImageStore *is, struct frame *top);
@@ -49,8 +50,8 @@ extern void sc_interp_destroy(SCInterpreter *scin);
 extern void sc_interp_save(SCInterpreter *scin);
 extern void sc_interp_restore(SCInterpreter *scin);
 
-extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
-extern int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl);
+extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss);
+extern int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss);
 
 extern void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl);
 extern void sc_interp_run_style(SCInterpreter *scin, const char *sname);

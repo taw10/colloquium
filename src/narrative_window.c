@@ -185,7 +185,7 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static struct template_id *get_templates(SCBlock *ss, int *n)
+static struct template_id *get_templates(Stylesheet *ss, int *n)
 {
 	/* FIXME: From JSON stylesheet */
 	*n = 0;
@@ -210,7 +210,7 @@ static void update_template_menus(NarrativeWindow *nw)
 }
 
 
-static SCBlock *get_slide_template(SCBlock *ss)
+static SCBlock *get_slide_template(Stylesheet *ss)
 {
 	struct template_id *templates;
 	int i, n_templates;
@@ -244,36 +244,20 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 	if ( response == GTK_RESPONSE_ACCEPT ) {
 
 		char *filename;
-		char *stext;
+		Stylesheet *new_ss;
 
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-		printf("Loading %s\n",filename);
 
-		stext = load_everything(filename);
-		if ( stext != NULL ) {
+		new_ss = stylesheet_load(filename);
+		if ( new_ss != NULL ) {
 
-			SCBlock *bl;
-			SCBlock *ss;
-			bl = sc_parse(stext);
-			free(stext);
-			ss = find_stylesheet(bl);
+			stylesheet_free(nw->p->stylesheet);
+			nw->p->stylesheet = new_ss;
+			sc_editor_set_stylesheet(nw->sceditor, new_ss);
 
-			if ( ss != NULL ) {
+			/* Full rerender */
+			sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
 
-				/* Substitute the style sheet in
-				 * presentation Storycode */
-				replace_stylesheet(nw->p, ss);
-
-				sc_editor_set_stylesheet(nw->sceditor, ss);
-
-				/* Full rerender, first block may have
-				 * changed */
-				sc_editor_set_scblock(nw->sceditor,
-				                      nw->dummy_top);
-
-			} else {
-				fprintf(stderr, _("Not a style sheet\n"));
-			}
 		} else {
 			fprintf(stderr, _("Failed to load\n"));
 		}

@@ -34,6 +34,7 @@ struct presentation;
 #include "slideshow.h"
 #include "narrative_window.h"
 #include "slide_window.h"
+#include "stylesheet.h"
 
 struct menu_pl;
 
@@ -56,15 +57,13 @@ struct presentation
 	double            slide_width;
 	double            slide_height;
 
-	SCBlock          *stylesheet;
 	SCBlock          *scblocks;
+	Stylesheet       *stylesheet;
 
 };
 
 
 extern struct presentation *new_presentation(const char *imagestore);
-extern SCBlock *find_stylesheet(SCBlock *bl);
-extern int replace_stylesheet(struct presentation *p, SCBlock *ss);
 extern void free_presentation(struct presentation *p);
 
 extern char *get_titlebar_string(struct presentation *p);

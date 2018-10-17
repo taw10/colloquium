@@ -2033,7 +2033,7 @@ void sc_editor_set_top_frame_editable(SCEditor *e, int top_frame_editable)
 }
 
 
-void sc_editor_set_stylesheet(SCEditor *e, SCBlock *stylesheet)
+void sc_editor_set_stylesheet(SCEditor *e, Stylesheet *stylesheet)
 {
 	e->stylesheet = stylesheet;
 }
@@ -2125,7 +2125,7 @@ void sc_editor_set_imagestore(SCEditor *e, ImageStore *is)
 }
 
 
-SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet,
+SCEditor *sc_editor_new(SCBlock *scblocks, Stylesheet *stylesheet,
                         PangoLanguage *lang, const char *storename)
 {
 	SCEditor *sceditor;

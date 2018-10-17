@@ -32,6 +32,7 @@
 
 #include "frame.h"
 #include "sc_interp.h"
+#include "stylesheet.h"
 
 struct presentation;
 
@@ -94,7 +95,7 @@ struct _sceditor
 	double               log_w;  /* Size of surface in "SC units" */
 	double               log_h;
 	SCBlock             *scblocks;
-	SCBlock             *stylesheet;
+	Stylesheet          *stylesheet;
 	ImageStore          *is;
 	SCCallbackList      *cbl;
 	struct frame        *top;
@@ -168,10 +169,10 @@ typedef struct _sceditor SCEditor;
 typedef struct _sceditorclass SCEditorClass;
 
 extern void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks);
-extern void sc_editor_set_stylesheet(SCEditor *e, SCBlock *stylesheet);
+extern void sc_editor_set_stylesheet(SCEditor *e, Stylesheet *stylesheet);
 extern SCBlock *sc_editor_get_scblock(SCEditor *e);
 extern GtkWidget *sc_editor_get_widget(SCEditor *e);
-extern SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet,
+extern SCEditor *sc_editor_new(SCBlock *scblocks, Stylesheet *stylesheet,
                                PangoLanguage *lang, const char *storename);
 extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);

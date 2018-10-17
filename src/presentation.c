@@ -226,59 +226,6 @@ SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 }
 
 
-int replace_stylesheet(struct presentation *p, SCBlock *ss)
-{
-	/* Create style sheet from union of old and new,
-	 * preferring items from the new one */
-
-	/* If there was no stylesheet before, add a dummy one */
-	if ( p->stylesheet == NULL ) {
-		p->stylesheet = sc_block_append_end(p->scblocks,
-		                                    "stylesheet", NULL, NULL);
-	}
-
-	/* Cut the old stylesheet out of the presentation,
-	 * and put in the new one */
-	sc_block_substitute(&p->scblocks, p->stylesheet, ss);
-	p->stylesheet = ss;
-
-	return 0;
-}
-
-
-SCBlock *find_stylesheet(SCBlock *bl)
-{
-	while ( bl != NULL ) {
-
-		const char *name = sc_block_name(bl);
-
-		if ( (name != NULL) && (strcmp(name, "stylesheet") == 0) ) {
-			return bl;
-		}
-
-		bl = sc_block_next(bl);
-
-	}
-
-	return NULL;
-}
-
-
-static void install_stylesheet(struct presentation *p)
-{
-	if ( p->stylesheet != NULL ) {
-		fprintf(stderr, _("Duplicate style sheet!\n"));
-		return;
-	}
-
-	p->stylesheet = find_stylesheet(p->scblocks);
-
-	if ( p->stylesheet == NULL ) {
-		fprintf(stderr, _("No style sheet.\n"));
-	}
-}
-
-
 static void set_slide_size_from_stylesheet(struct presentation *p)
 {
 	/* FIXME: From JSON */
@@ -310,7 +257,8 @@ int load_presentation(struct presentation *p, GFile *file)
 		return r;  /* Error */
 	}
 
-	install_stylesheet(p);
+	p->stylesheet = stylesheet_load("stylesheet.json");  /* FIXME: ! */
+
 	set_slide_size_from_stylesheet(p);
 
 	assert(p->uri == NULL);

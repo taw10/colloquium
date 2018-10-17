@@ -176,7 +176,7 @@ int recursive_wrap(struct frame *fr, PangoContext *pc)
 }
 
 
-struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
+struct frame *interp_and_shape(SCBlock *scblocks, Stylesheet *stylesheet,
                                SCCallbackList *cbl, ImageStore *is,
                                int slide_number,
                                PangoContext *pc, double w, double h,
@@ -227,7 +227,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
 
 static struct frame *render_sc_with_context(SCBlock *scblocks,
                                  cairo_t *cr, double log_w, double log_h,
-                                 SCBlock *stylesheet, SCCallbackList *cbl,
+                                 Stylesheet *stylesheet, SCCallbackList *cbl,
                                  ImageStore *is,
                                  int slide_number, PangoLanguage *lang,
 				 PangoContext *pc)
@@ -251,7 +251,7 @@ static struct frame *render_sc_with_context(SCBlock *scblocks,
 
 cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                            double log_w, double log_h,
-                           SCBlock *stylesheet, SCCallbackList *cbl,
+                           Stylesheet *stylesheet, SCCallbackList *cbl,
                            ImageStore *is,
                            int slide_number, struct frame **ptop,
                            PangoLanguage *lang)

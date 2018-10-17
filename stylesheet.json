@@ -1,0 +1,56 @@
+{
+	"narrative": {
+		"font": "Comfortaa 20",
+		"fgcol": "#000000",
+		"bggradv": "#729fcf,#d3d7cf"
+	},
+
+	"slide": {
+		"width": 1280,
+		"height": 720,
+		"bggrad": "vertical",
+		"bgcol1": "#729fcf",
+		"bgcol2": "#d3d7cf",
+		"frame": {
+			"font": "Comfortaa 20"
+		},
+		"slidetitle": {
+			"width": "1f",
+			"height": "90u",
+			"posx": 0,
+			"posy": 0,
+			"padl": 30,
+			"padr": 30,
+			"padt": 30,
+			"padb": 30,
+			"fgcol": "#000000",
+			"font": "Comfortaa Bold 40"
+		},
+		"prestitle": {
+			"width": "1f",
+			"height": "240u",
+			"posx": 0,
+			"posy": 160,
+			"padl": 50,
+			"padr": 50,
+			"padt": 50,
+			"padb": 50,
+			"fgcol": "#000000",
+			"font": "Comfortaa Bold 45",
+			"alignment": "center"
+		},
+		"author": {
+			"width": "1f",
+			"height": "240u",
+			"posx": 0,
+			"posy": 360,
+			"padl": 80,
+			"padr": 80,
+			"padt": 80,
+			"padb": 80,
+			"fgcol": "#000000",
+			"font": "Comfortaa 20",
+			"alignment": "center"
+		}
+	}
+}

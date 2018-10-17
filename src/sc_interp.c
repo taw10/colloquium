@@ -1085,6 +1085,27 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 }
 
 
+static void apply_style(SCInterpreter *scin, Stylesheet *ss, const char *path)
+{
+	char fullpath[256];
+	size_t len;
+	char *bgcol1;
+
+	len = strlen(path);
+	if ( len > 160 ) {
+		fprintf(stderr, "Can't apply style: path too long.\n");
+		return;
+	}
+
+	strcpy(fullpath, path);
+	strcat(fullpath, ".bggradv");
+	bgcol1 = stylesheet_lookup(ss, fullpath);
+	set_bggrad(scin, bgcol1, GRAD_VERT);
+
+	update_bg(scin);
+}
+
+
 int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 {
 	const char *name = sc_block_name(bl);
@@ -1107,10 +1128,7 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 
 	} else if ( strcmp(name, "presentation") == 0 ) {
 		maybe_recurse_before(scin, child);
-		set_bgcol(scin, "#ff00ff");
-		update_bg(scin);
-		printf("pres\n");
-		/* FIXME: Apply narrative style */
+		apply_style(scin, ss, "$.narrative");
 		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "slide") == 0 ) {

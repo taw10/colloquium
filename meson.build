@@ -48,7 +48,7 @@ executable('colloquium',
             'src/stylesheet_editor.c',
            ],
            gresources,
-           dependencies : [gtkdep, mdep],
+           dependencies : [gtkdep, mdep, jsondep],
            install : true)
 
 # Desktop file

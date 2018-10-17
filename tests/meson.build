@@ -13,3 +13,7 @@ test('Simple rendering', e)
 e = executable('render_test_sc1', 'render_test_sc1.c', basic_rendering,
                dependencies : [gtkdep, mdep])
 test('Simple StoryCode rendering', e)
+
+e = executable('json_test', 'json_test.c', '../src/sc_parse.c',
+               dependencies : [mdep, jsondep])
+test('JSON parsing', e)

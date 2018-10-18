@@ -1045,6 +1045,12 @@ static void apply_style(SCInterpreter *scin, Stylesheet *ss, const char *path)
 	result = stylesheet_lookup(ss, fullpath);
 	if ( result != NULL ) set_padding(sc_interp_get_frame(scin), result);
 
+	/* Paragraph spacing */
+	strcpy(fullpath, path);
+	strcat(fullpath, ".paraspace");
+	result = stylesheet_lookup(ss, fullpath);
+	if ( result != NULL ) set_paraspace(scin, result);
+
 	update_bg(scin);
 }
 

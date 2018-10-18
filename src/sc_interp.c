@@ -679,34 +679,6 @@ void sc_interp_destroy(SCInterpreter *scin)
 }
 
 
-static int parse_double(const char *a, float v[2])
-{
-	int nn;
-
-	nn = sscanf(a, "%fx%f", &v[0], &v[1]);
-	if ( nn != 2 ) {
-		fprintf(stderr, _("Invalid size '%s'\n"), a);
-		return 1;
-	}
-
-	return 0;
-}
-
-
-static int parse_tuple(const char *a, float v[4])
-{
-	int nn;
-
-	nn = sscanf(a, "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]);
-	if ( nn != 4 ) {
-		fprintf(stderr, _("Invalid tuple '%s'\n"), a);
-		return 1;
-	}
-
-	return 0;
-}
-
-
 static void set_padding(struct frame *fr, const char *opts)
 {
 	float p[4];

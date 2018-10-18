@@ -228,7 +228,16 @@ SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 
 static void set_slide_size_from_stylesheet(struct presentation *p)
 {
-	/* FIXME: From JSON */
+	char *result;
+
+	result = stylesheet_lookup(p->stylesheet, "$.slide.size");
+	if ( result != NULL ) {
+		float v[2];
+		if ( parse_double(result, v) == 0 ) {
+			p->slide_width = v[0];
+			p->slide_height = v[1];
+		}
+	}
 }
 
 

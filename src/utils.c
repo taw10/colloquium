@@ -109,6 +109,34 @@ static char *fgets_long(FILE *fh, size_t *lp)
 }
 
 
+int parse_double(const char *a, float v[2])
+{
+	int nn;
+
+	nn = sscanf(a, "%fx%f", &v[0], &v[1]);
+	if ( nn != 2 ) {
+		fprintf(stderr, _("Invalid size '%s'\n"), a);
+		return 1;
+	}
+
+	return 0;
+}
+
+
+int parse_tuple(const char *a, float v[4])
+{
+	int nn;
+
+	nn = sscanf(a, "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]);
+	if ( nn != 4 ) {
+		fprintf(stderr, _("Invalid tuple '%s'\n"), a);
+		return 1;
+	}
+
+	return 0;
+}
+
+
 char *load_everything(const char *filename)
 {
 	FILE *fh;

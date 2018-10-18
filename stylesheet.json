@@ -2,12 +2,12 @@
 	"narrative": {
 		"font": "Comfortaa 16",
 		"fgcol": "#000000",
-		"pad": "10,10,10,10"
+		"pad": "10,10,10,10",
+		"paraspace": "5,5,5,5"
 	},
 
 	"slide": {
-		"width": 1280,
-		"height": 720,
+		"size": "1280x720",
 		"bggradv": "#729fcf,#d3d7cf",
 		"frame": {
 			"font": "Comfortaa 20",

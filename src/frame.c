@@ -39,7 +39,6 @@
 struct text_run
 {
 	SCBlock              *scblock;   /* If macro, this is \macro */
-	SCBlock              *rscblock;  /* The block with the actual text */
 	PangoFontDescription *fontdesc;
 	double                col[4];
 };
@@ -61,7 +60,6 @@ struct _paragraph
 	/* For anything other than PARA_TYPE_TEXT
 	 * (for text paragraphs, these things are in the runs) */
 	SCBlock         *scblock;
-	SCBlock         *rscblock;
 
 	/* For PARA_TYPE_IMAGE */
 	char            *filename;
@@ -279,17 +277,17 @@ static size_t run_text_len(const struct text_run *run)
 		return 0;
 	}
 
-	if ( run->rscblock == NULL ) {
-		fprintf(stderr, _("NULL rscblock in run_text_len\n"));
+	if ( run->scblock == NULL ) {
+		fprintf(stderr, _("NULL scblock in run_text_len\n"));
 		return 0;
 	}
 
-	if ( sc_block_contents(run->rscblock) == NULL ) {
-		fprintf(stderr, _("NULL rscblock contents in run_text_len\n"));
+	if ( sc_block_contents(run->scblock) == NULL ) {
+		fprintf(stderr, _("NULL scblock contents in run_text_len\n"));
 		return 0;
 	}
 
-	return strlen(sc_block_contents(run->rscblock));
+	return strlen(sc_block_contents(run->scblock));
 }
 
 
@@ -340,7 +338,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 		size_t run_len;
 		guint16 r, g, b;
 
-		run_text = sc_block_contents(para->runs[i].rscblock);
+		run_text = sc_block_contents(para->runs[i].scblock);
 		run_len = strlen(run_text);
 
 		attr = pango_attr_font_desc_new(para->runs[i].fontdesc);
@@ -396,7 +394,7 @@ void set_newline_at_end(Paragraph *para, SCBlock *bl)
 }
 
 
-void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
+void add_run(Paragraph *para, SCBlock *scblock,
              PangoFontDescription *fdesc, double col[4])
 {
 	struct text_run *runs_new;
@@ -410,7 +408,6 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 
 	para->runs = runs_new;
 	para->runs[para->n_runs].scblock = scblock;
-	para->runs[para->n_runs].rscblock = rscblock;
 	para->runs[para->n_runs].fontdesc = pango_font_description_copy(fdesc);
 	para->runs[para->n_runs].col[0] = col[0];
 	para->runs[para->n_runs].col[1] = col[1];
@@ -421,7 +418,7 @@ void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
 }
 
 
-Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl)
+Paragraph *create_paragraph(struct frame *fr, SCBlock *bl)
 {
 	Paragraph **paras_new;
 	Paragraph *pnew;
@@ -439,7 +436,6 @@ Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl)
 	 * However, this can easily be changed */
 	pnew->type = PARA_TYPE_TEXT;
 	pnew->scblock = bl;
-	pnew->rscblock = rbl;
 	pnew->n_runs = 0;
 	pnew->runs = NULL;
 	pnew->layout = NULL;
@@ -481,8 +477,7 @@ Paragraph *insert_paragraph(struct frame *fr, int pos)
 }
 
 
-Paragraph *add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
-                             double w, double h,
+Paragraph *add_callback_para(struct frame *fr, SCBlock *bl, double w, double h,
                              SCCallbackDrawFunc draw_func,
                              SCCallbackClickFunc click_func, void *bvp,
                              void *vp)
@@ -492,7 +487,7 @@ Paragraph *add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 	if ( (fr->n_paras > 0) && (fr->paras[fr->n_paras-1]->empty) ) {
 		pnew = fr->paras[fr->n_paras-1];
 	} else {
-		pnew = create_paragraph(fr, bl, rbl);
+		pnew = create_paragraph(fr, bl);
 		if ( pnew == NULL ) {
 			fprintf(stderr, _("Failed to add callback paragraph\n"));
 			return NULL;
@@ -501,7 +496,6 @@ Paragraph *add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 
 	pnew->type = PARA_TYPE_CALLBACK;
 	pnew->scblock = bl;
-	pnew->rscblock = rbl;
 	pnew->cb_w = w;
 	pnew->cb_h = h;
 	pnew->draw_func = draw_func;
@@ -515,7 +509,7 @@ Paragraph *add_callback_para(struct frame *fr, SCBlock *bl, SCBlock *rbl,
 }
 
 
-void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
+void add_image_para(struct frame *fr, SCBlock *scblock,
                     const char *filename,
                     ImageStore *is, double w, double h, int editable)
 {
@@ -530,7 +524,7 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 	if ( (fr->n_paras > 0) && (fr->paras[fr->n_paras-1]->empty) ) {
 		pnew = fr->paras[fr->n_paras-1];
 	} else {
-		pnew = create_paragraph(fr, scblock, rscblock);
+		pnew = create_paragraph(fr, scblock);
 		if ( pnew == NULL ) {
 			fprintf(stderr, _("Failed to add image paragraph\n"));
 			return;
@@ -545,7 +539,6 @@ void add_image_para(struct frame *fr, SCBlock *scblock, SCBlock *rscblock,
 
 	pnew->type = PARA_TYPE_IMAGE;
 	pnew->scblock = scblock;
-	pnew->rscblock = rscblock;
 	pnew->filename = strdup(filename);
 	pnew->image_w = w;
 	pnew->image_h = h;
@@ -726,11 +719,6 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 
 	if ( para->type != PARA_TYPE_TEXT ) return;
 
-	if ( para->scblock != para->rscblock ) {
-		fprintf(stderr, _("Need to add run, but paragraph not editable\n"));
-		return;
-	}
-
 	if ( para->scblock != NULL ) {
 
 		bl = sc_block_prepend(para->scblock, fr->scblocks);
@@ -750,8 +738,7 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 	}
 
 	para->scblock = bl;
-	para->rscblock = bl;
-	add_run(para, bl, bl, fr->fontdesc, fr->col);
+	add_run(para, bl, fr->fontdesc, fr->col);
 	wrap_paragraph(para, NULL, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 }
 
@@ -987,7 +974,7 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
-	if ( sc_block_contents(run->rscblock) == NULL ) {
+	if ( sc_block_contents(run->scblock) == NULL ) {
 		fprintf(stderr, _("pos_trail_to_offset: No contents "
 		        "(%p name=%s, options=%s)\n"),
 		        run->scblock, sc_block_name(run->scblock),
@@ -996,7 +983,7 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 	}
 
 	/* Get the text for the run */
-	run_text = sc_block_contents(run->rscblock);
+	run_text = sc_block_contents(run->scblock);
 
 	/* Turn  the paragraph offset into a run offset */
 	para_offset_of_run = get_paragraph_offset(para, nrun);
@@ -1035,11 +1022,6 @@ int position_editable(struct frame *fr, struct edit_pos cp)
 
 	para = fr->paras[cp.para];
 
-	if ( para->scblock != para->rscblock ) {
-		fprintf(stderr, _("Paragraph is not editable.\n"));
-		return 0;
-	}
-
 	if ( para->type != PARA_TYPE_TEXT ) {
 		fprintf(stderr, _("Paragraph is not text.\n"));
 		return 0;
@@ -1052,7 +1034,7 @@ int position_editable(struct frame *fr, struct edit_pos cp)
 		return 0;
 	}
 
-	return (para->runs[run].scblock == para->runs[run].rscblock);
+	return 1;
 }
 
 
@@ -1074,31 +1056,9 @@ void insert_text_in_paragraph(Paragraph *para, size_t offs, const char *t)
 		size_t run_offs;
 		run = &para->runs[nrun];
 		run_offs = offs - get_paragraph_offset(para, nrun);
-		sc_insert_text(run->rscblock, run_offs, t);
+		sc_insert_text(run->scblock, run_offs, t);
 	}
 }
-
-
-static SCBlock *pos_to_rscblock(struct frame *fr, struct edit_pos p)
-{
-	int run;
-	size_t paraoffs;
-	Paragraph *para;
-
-	para = fr->paras[p.para];
-
-	if ( para->type != PARA_TYPE_TEXT ) {
-		return NULL;
-	}
-
-	paraoffs = pos_trail_to_offset(para, p.pos, p.trail);
-
-	run = which_run(para, paraoffs);
-	assert(run < para->n_runs);
-
-	return para->runs[run].rscblock;
-}
-
 
 
 static SCBlock *pos_to_scblock(struct frame *fr, struct edit_pos p,
@@ -1192,17 +1152,9 @@ static Paragraph *scan_runs_for_scblock(struct frame *fr, int pn1, int pn2,
 			*run = 0;
 			return fr->paras[i];
 		}
-		if ( fr->paras[i]->rscblock == bl ) {
-			*run = 0;
-			return fr->paras[i];
-		}
 
 		/* Check all runs */
 		for ( j=0; j<fr->paras[i]->n_runs; j++ ) {
-			if ( fr->paras[i]->runs[j].rscblock == bl ) {
-				*run = j;
-				return fr->paras[i];
-			}
 			if ( fr->paras[i]->runs[j].scblock == bl ) {
 				*run = j;
 				return fr->paras[i];
@@ -1440,7 +1392,6 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 {
 	int i;
 	SCBlock *p1scblock, *p2scblock;
-	SCBlock *p1rscblock, *p2rscblock;
 	enum para_type type1, type2;
 	size_t p2offs;
 	SCBlock *scblock;
@@ -1467,8 +1418,6 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	/* Find SC positions for start and end */
 	p1scblock = pos_to_scblock(fr, p1, &type1);
 	p2scblock = pos_to_scblock(fr, p2, &type2);
-	p1rscblock = pos_to_rscblock(fr, p1);
-	p2rscblock = pos_to_rscblock(fr, p2);
 	p2offs = pos_to_offset(fr, p2);
 	wrap_end = p2.para;
 
@@ -1512,9 +1461,9 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 		printf("  offs %li\n", (long int)p1offs);
 		if ( p1offs != 0 ) {
 			printf("Partial delete\n");
-			printf("contents '%s'\n", sc_block_contents(p1rscblock));
+			printf("contents '%s'\n", sc_block_contents(p1scblock));
 			printf("from offs %li\n", (long int)p1offs);
-			scblock_delete_text(p1rscblock, p1offs, -1);
+			scblock_delete_text(p1scblock, p1offs, -1);
 		} else {
 			printf("Deleting the whole text SCBlock\n");
 			sc_block_delete(&fr->scblocks, p1scblock);
@@ -1564,8 +1513,8 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 	if ( type2 == PARA_TYPE_TEXT ) {
 		size_t len;
 		printf("  offs %li\n", (long int)p2offs);
-		if ( sc_block_contents(p2rscblock) != NULL ) {
-			len = strlen(sc_block_contents(p2rscblock));
+		if ( sc_block_contents(p2scblock) != NULL ) {
+			len = strlen(sc_block_contents(p2scblock));
 		} else {
 			len = 0;
 		}
@@ -1580,9 +1529,9 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 			                       NULL);
 		} else if ( p2offs > 0 ) {
 			printf("Partial delete\n");
-			printf("contents '%s'\n", sc_block_contents(p2rscblock));
+			printf("contents '%s'\n", sc_block_contents(p2scblock));
 			printf("up to offs %li\n", (long int)p2offs);
-			scblock_delete_text(p2rscblock, 0, p2offs);
+			scblock_delete_text(p2scblock, 0, p2offs);
 		} /* else do nothing */
 	} else {
 		printf("Deleting the whole non-text SCBlock\n");
@@ -1610,10 +1559,10 @@ void show_para(Paragraph *p)
 
 		printf(_("%i runs:\n"), p->n_runs);
 		for ( i=0; i<p->n_runs; i++ ) {
-			printf(_("  Run %2i: SCBlock %p/%p %s '%s'\n"),
-			       i, p->runs[i].scblock, p->runs[i].rscblock,
+			printf(_("  Run %2i: SCBlock %p %s '%s'\n"),
+			       i, p->runs[i].scblock,
 			       pango_font_description_to_string(p->runs[i].fontdesc),
-			       sc_block_contents(p->runs[i].rscblock));
+			       sc_block_contents(p->runs[i].scblock));
 		}
 
 	} else if ( p->type == PARA_TYPE_IMAGE ) {
@@ -1695,9 +1644,8 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			end = sc_block_append(np, NULL, NULL, strdup(""), NULL);
 
 			pnew->n_runs = 0;
-			add_run(pnew, end, end, fr->fontdesc, fr->col);
+			add_run(pnew, end, fr->fontdesc, fr->col);
 			pnew->scblock = end;
-			pnew->rscblock = end;
 
 			wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 
@@ -1710,12 +1658,11 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		/* Split the run (and SCBlock) into two */
 		double col[4] = {0,0,0,0};
 		struct text_run *rn;
-		int macro = 0;
 
 		printf("Splitting run %i.  Before:\n", run);
 		show_para(para);
 
-		add_run(para, NULL, NULL, NULL, col);
+		add_run(para, NULL, NULL, col);
 		/* -2 here because add_run increased para->n_runs by 1 */
 		memmove(&para->runs[run+2], &para->runs[run+1],
 		        (para->n_runs - run - 2)*sizeof(struct text_run));
@@ -1723,19 +1670,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		rr = &para->runs[run]; /* Because add_run realloced the runs */
 		rn = &para->runs[run+1];
 
-		if ( rr->rscblock != rr->scblock) {
-			macro = 1;
-		}
-
-		rn->rscblock = sc_block_split(rr->rscblock, run_offs);
-
-		if ( !macro ) {
-			/* Literal text block */
-			rn->scblock = rn->rscblock;
-		} else {
-			/* Macro block */
-			rn->scblock = rr->scblock;
-		}
+		rn->scblock = sc_block_split(rr->scblock, run_offs);
 
 		rn->fontdesc = pango_font_description_copy(rr->fontdesc);
 		rn->col[0] = rr->col[0];
@@ -1752,11 +1687,10 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	for ( i=run+1; i<para->n_runs; i++ ) {
 		double col[4] = {0,0,0,0};
 		printf("Moving run %i to pos %i\n", i, pnew->n_runs);
-		add_run(pnew, NULL, NULL, NULL, col);
+		add_run(pnew, NULL, NULL, col);
 		pnew->runs[pnew->n_runs-1] = para->runs[i];
 	}
 	pnew->scblock = pnew->runs[0].scblock;
-	pnew->rscblock = pnew->runs[0].rscblock;
 
 	/* Truncate the first paragraph at the appropriate position */
 	para->n_runs = run+1;
@@ -1768,7 +1702,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	show_para(pnew);
 
 	/* Add a \newpara after the end of the first paragraph's SC */
-	nnp = sc_block_append(rr->rscblock, strdup("newpara"), NULL, NULL, NULL);
+	nnp = sc_block_append(rr->scblock, strdup("newpara"), NULL, NULL, NULL);
 	set_newline_at_end(pnew, get_newline_at_end(para));
 	set_newline_at_end(para, nnp);
 
@@ -1853,12 +1787,6 @@ SCBlock *para_scblock(Paragraph *para)
 }
 
 
-SCBlock *para_rscblock(Paragraph *para)
-{
-	return para->rscblock;
-}
-
-
 enum para_type para_type(Paragraph *para)
 {
 	return para->type;
@@ -1872,13 +1800,11 @@ int para_debug_num_runs(Paragraph *para)
 }
 
 
-int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock,
-                        SCBlock **rscblock)
+int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock)
 {
 	if ( para->type != PARA_TYPE_TEXT ) return 1;
 	if ( i >= para->n_runs ) return 1;
 
 	*scblock = para->runs[i].scblock;
-	*rscblock = para->runs[i].rscblock;
 	return 0;
 }

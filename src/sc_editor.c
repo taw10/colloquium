@@ -999,7 +999,7 @@ static void insert_text(char *t, SCEditor *e)
 			fprintf(stderr, _("Failed to insert paragraph\n"));
 			return;
 		}
-		add_run(pnew, ad, ad, e->cursor_frame->fontdesc,
+		add_run(pnew, ad, e->cursor_frame->fontdesc,
 		        e->cursor_frame->col);
 
 		wrap_frame(e->cursor_frame, e->pc);
@@ -1222,7 +1222,7 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
 	}
 	scblocks = sc_block_append(scblocks, NULL, NULL, strdup(""), NULL);
 
-	add_run(para, scblocks, scblocks, fr->fontdesc, fr->col);
+	add_run(para, scblocks, fr->fontdesc, fr->col);
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 }
 

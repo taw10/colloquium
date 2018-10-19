@@ -135,20 +135,19 @@ extern void set_newline_at_end(Paragraph *para, SCBlock *bl);
 extern void check_run(struct frame *fr, int pn);
 extern void show_edit_pos(struct edit_pos a);
 
-extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
+extern void add_run(Paragraph *para, SCBlock *scblock,
                     PangoFontDescription *fdesc, double col[4]);
 
 extern Paragraph *insert_paragraph(struct frame *fr, int pos);
 
 extern Paragraph *add_callback_para(struct frame *fr, SCBlock *scblock,
-                                    SCBlock *rscblock,
                                     double w, double h,
                                     SCCallbackDrawFunc draw_func,
                                     SCCallbackClickFunc click_func, void *bvp,
                                     void *vp);
 
 extern void add_image_para(struct frame *fr, SCBlock *scblock,
-                           SCBlock *rscblock, const char *filename,
+                           const char *filename,
                            ImageStore *is, double w, double h, int editable);
 
 extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
@@ -198,14 +197,12 @@ extern int get_sc_pos(struct frame *fr, int pn, size_t pos,
 
 extern void *get_para_bvp(Paragraph *para);
 
-extern Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl);
+extern Paragraph *create_paragraph(struct frame *fr, SCBlock *bl);
 
 extern enum para_type para_type(Paragraph *para);
 extern SCBlock *para_scblock(Paragraph *para);
-extern SCBlock *para_rscblock(Paragraph *para);
 
 extern int para_debug_num_runs(Paragraph *para);
-extern int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock,
-                               SCBlock **rscblock);
+extern int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock);
 
 #endif	/* FRAME_H */

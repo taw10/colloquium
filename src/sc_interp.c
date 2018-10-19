@@ -221,9 +221,6 @@ static int check_callback(SCInterpreter *scin, SCBlock *bl)
 		double w, h;
 		int r;
 		void *bvp;
-		SCBlock *rbl;
-
-		rbl = bl;
 
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
@@ -231,7 +228,7 @@ static int check_callback(SCInterpreter *scin, SCBlock *bl)
 			struct sc_state *st = &scin->state[scin->j];
 			Paragraph *pnew;
 			pnew = add_callback_para(sc_interp_get_frame(scin),
-			                         bl, rbl, w, h,
+			                         bl, w, h,
 			                         cbl->draw_funcs[i],
 			                         cbl->click_funcs[i],
 			                         bvp, cbl->vps[i]);
@@ -947,7 +944,7 @@ static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child,
 }
 
 
-static void add_newpara(struct frame *fr, SCBlock *bl, SCBlock *mrb)
+static void add_newpara(struct frame *fr, SCBlock *bl)
 {
 	Paragraph *last_para;
 
@@ -958,7 +955,7 @@ static void add_newpara(struct frame *fr, SCBlock *bl, SCBlock *mrb)
 
 	/* The block after the \newpara will always be the first one of the
 	 * next paragraph, by definition, even if it's \f or another \newpara */
-	create_paragraph(fr, sc_block_next(mrb), sc_block_next(bl));
+	create_paragraph(fr, sc_block_next(bl));
 }
 
 
@@ -970,7 +967,6 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	PangoFontDescription *fontdesc;
 	double *col;
 	struct sc_state *st = &scin->state[scin->j];
-	SCBlock *rbl;
 	Paragraph *para;
 
 	/* Empty block? */
@@ -979,18 +975,16 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
 
-	rbl = bl;
-
 	para = last_para(fr);
 	if ( (para == NULL) || (para_type(para) != PARA_TYPE_TEXT) ) {
 		/* Last paragraph is not text.
 		 *  or: no paragraphs yet.
 		 *    Either way: Create the first one */
-		para = create_paragraph(fr, bl, rbl);
+		para = create_paragraph(fr, bl);
 	}
 
 	set_para_alignment(para, st->alignment);
-	add_run(para, bl, rbl, fontdesc, col);
+	add_run(para, bl, fontdesc, col);
 	set_para_spacing(para, st->paraspace);
 
 	return 0;
@@ -1115,8 +1109,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 		if ( parse_image_options(options, sc_interp_get_frame(scin),
 		                         &w, &h, &filename) == 0 )
 		{
-			SCBlock *rbl = bl;
-			add_image_para(sc_interp_get_frame(scin), bl, rbl,
+			add_image_para(sc_interp_get_frame(scin), bl,
 			               filename, scin->is, w, h, 1);
 			free(filename);
 		} else {
@@ -1138,8 +1131,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 
 	} else if ( strcmp(name, "newpara")==0 ) {
 		struct frame *fr = sc_interp_get_frame(scin);
-		SCBlock *rbl = bl;
-		add_newpara(fr, bl, rbl);
+		add_newpara(fr, bl);
 
 	} else {
 		return 0;

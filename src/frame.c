@@ -733,7 +733,7 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 		/* If the paragraph's SCBlock is NULL, it means this paragraph
 		 * is right at the end of the document.  The last thing in the
 		 * document is something like \newpara. */
-		bl = sc_block_append_end(fr->scblocks, NULL, NULL, strdup(""));
+		bl = sc_block_append_inside(fr->scblocks, NULL, NULL, strdup(""));
 
 	}
 

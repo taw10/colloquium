@@ -384,7 +384,7 @@ void sc_editor_ensure_cursor(SCEditor *e)
 }
 
 
-void sc_editor_remove_cursor(SCEditor *e)
+static void sc_editor_remove_cursor(SCEditor *e)
 {
 	e->cursor_frame = NULL;
 	e->cpos.para = 0;
@@ -1979,27 +1979,9 @@ void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
 }
 
 
-SCBlock *sc_editor_get_scblock(SCEditor *e)
-{
-	return e->scblocks;
-}
-
-
 static void update_size_request(SCEditor *e)
 {
 	gtk_widget_set_size_request(GTK_WIDGET(e), 0, e->h + 2.0*e->min_border);
-}
-
-
-void sc_editor_set_size(SCEditor *e, int w, int h)
-{
-	e->w = w;
-	e->h = h;
-	update_size_request(e);
-	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
-		full_rerender(e);
-		sc_editor_redraw(e);
-	}
 }
 
 

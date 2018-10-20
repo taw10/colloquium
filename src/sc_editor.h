@@ -170,11 +170,8 @@ typedef struct _sceditorclass SCEditorClass;
 
 extern void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks);
 extern void sc_editor_set_stylesheet(SCEditor *e, Stylesheet *stylesheet);
-extern SCBlock *sc_editor_get_scblock(SCEditor *e);
-extern GtkWidget *sc_editor_get_widget(SCEditor *e);
 extern SCEditor *sc_editor_new(SCBlock *scblocks, Stylesheet *stylesheet,
                                PangoLanguage *lang, const char *storename);
-extern void sc_editor_set_size(SCEditor *e, int w, int h);
 extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
 extern void sc_editor_set_flow(SCEditor *e, int flow);
 extern void sc_editor_set_scale(SCEditor *e, int scale);
@@ -189,7 +186,6 @@ extern void sc_editor_paste(SCEditor *e);
 extern void sc_editor_add_storycode(SCEditor *e, const char *sc);
 extern void sc_editor_copy_selected_frame(SCEditor *e);
 extern void sc_editor_delete_selected_frame(SCEditor *e);
-extern void sc_editor_remove_cursor(SCEditor *e);
 extern void sc_editor_ensure_cursor(SCEditor *e);
 extern SCBlock *split_paragraph_at_cursor(SCEditor *e);
 

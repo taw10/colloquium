@@ -109,7 +109,7 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
 
 
 /* Change the editor's slide to "np" */
-void change_edit_slide(SlideWindow *sw, SCBlock *np)
+static void change_edit_slide(SlideWindow *sw, SCBlock *np)
 {
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, np));
 

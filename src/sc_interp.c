@@ -86,6 +86,17 @@ struct _sccallbacklist
 };
 
 
+static int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
+{
+	while ( bl != NULL ) {
+		if ( sc_interp_add_block(scin, bl, ss) ) return 1;
+		bl = sc_block_next(bl);
+	}
+
+	return 0;
+}
+
+
 SCCallbackList *sc_callback_list_new()
 {
 	SCCallbackList *cbl;
@@ -252,41 +263,6 @@ double *sc_interp_get_fgcol(SCInterpreter *scin)
 {
 	struct sc_state *st = &scin->state[scin->j];
 	return st->col;
-}
-
-
-double *sc_interp_get_bgcol(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->bgcol;
-}
-
-
-double *sc_interp_get_bgcol2(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->bgcol2;
-}
-
-
-GradientType sc_interp_get_bggrad(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->bggrad;
-}
-
-
-int sc_interp_get_ascent(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->ascent;
-}
-
-
-int sc_interp_get_height(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->height;
 }
 
 
@@ -683,19 +659,6 @@ static void set_paraspace(SCInterpreter *scin, const char *opts)
 	st->paraspace[3] = p[3];
 
 	set_para_spacing(last_para(sc_interp_get_frame(scin)), p);
-}
-
-
-static void set_slide_size(SCInterpreter *scin, const char *opts)
-{
-	float p[2];
-	struct sc_state *st = &scin->state[scin->j];
-
-	if ( parse_double(opts, p) ) return;
-
-	st->slide_width = p[0];
-	st->slide_height = p[1];
-	st->have_size = 1;
 }
 
 
@@ -1228,17 +1191,6 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 		fprintf(stderr, "Don't know what to do with this:\n");
 		show_sc_block(bl, "");
 
-	}
-
-	return 0;
-}
-
-
-int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
-{
-	while ( bl != NULL ) {
-		if ( sc_interp_add_block(scin, bl, ss) ) return 1;
-		bl = sc_block_next(bl);
 	}
 
 	return 0;

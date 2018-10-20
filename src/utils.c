@@ -54,61 +54,6 @@ int safe_strcmp(const char *a, const char *b)
 }
 
 
-static char *fgets_long(FILE *fh, size_t *lp)
-{
-	char *line;
-	size_t la;
-	size_t l = 0;
-
-	la = 1024;
-	line = malloc(la);
-	if ( line == NULL ) return NULL;
-
-	do {
-
-		int r;
-
-		r = fgetc(fh);
-		if ( r == EOF ) {
-			if ( l == 0 ) {
-				free(line);
-				*lp = 0;
-				return NULL;
-			} else {
-				line[l++] = '\0';
-				*lp = l;
-				return line;
-			}
-		}
-
-		line[l++] = r;
-
-		if ( r == '\n' ) {
-			line[l++] = '\0';
-			*lp = l;
-			return line;
-		}
-
-		if ( l == la ) {
-
-			char *ln;
-
-			la += 1024;
-			ln = realloc(line, la);
-			if ( ln == NULL ) {
-				free(line);
-				*lp = 0;
-				return NULL;
-			}
-
-			line = ln;
-
-		}
-
-	} while ( 1 );
-}
-
-
 int parse_double(const char *a, float v[2])
 {
 	int nn;
@@ -136,36 +81,3 @@ int parse_tuple(const char *a, float v[4])
 	return 0;
 }
 
-
-char *load_everything(const char *filename)
-{
-	FILE *fh;
-	size_t el = 1;
-	char *everything = strdup("");
-
-	fh = fopen(filename, "r");
-	if ( fh == NULL ) return NULL;
-
-	while ( !feof(fh) ) {
-
-		size_t len = 0;
-		char *line = fgets_long(fh, &len);
-
-		if ( line != NULL ) {
-
-			everything = realloc(everything, el+len);
-			if ( everything == NULL ) {
-				fprintf(stderr, _("Failed to allocate memory\n"));
-				return NULL;
-			}
-			el += len;
-
-			strcat(everything, line);
-		}
-
-	}
-
-	fclose(fh);
-
-	return everything;
-}

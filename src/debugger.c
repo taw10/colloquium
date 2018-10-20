@@ -118,7 +118,8 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 		}
 	}
 
-	snprintf(tmp, 255, "Newline at end: %p", get_newline_at_end(para));
+	snprintf(tmp, 255, "Newline at end: %p",
+	         para_debug_get_newline_at_end(para));
 	plot_text(cr, ypos, fontdesc, tmp);
 }
 

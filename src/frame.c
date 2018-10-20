@@ -184,7 +184,7 @@ struct frame *add_subframe(struct frame *fr)
 }
 
 
-void show_hierarchy(struct frame *fr, const char *t)
+void show_frame_hierarchy(struct frame *fr, const char *t)
 {
 	int i;
 	char tn[1024];
@@ -195,62 +195,9 @@ void show_hierarchy(struct frame *fr, const char *t)
 	printf(_("%s%p (%.2f x %.2f)\n"), t, fr, fr->w, fr->h);
 
 	for ( i=0; i<fr->num_children; i++ ) {
-		show_hierarchy(fr->children[i], tn);
+		show_frame_hierarchy(fr->children[i], tn);
 	}
 
-}
-
-
-static struct frame *find_parent(struct frame *fr, struct frame *search)
-{
-	int i;
-
-	for ( i=0; i<fr->num_children; i++ ) {
-		if ( fr->children[i] == search ) {
-			return fr;
-		}
-	}
-
-	for ( i=0; i<fr->num_children; i++ ) {
-		struct frame *tt;
-		tt = find_parent(fr->children[i], search);
-		if ( tt != NULL ) return tt;
-	}
-
-	return NULL;
-}
-
-
-void delete_subframe(struct frame *top, struct frame *fr)
-{
-	struct frame *parent;
-	int i, idx, found;
-
-	parent = find_parent(top, fr);
-	if ( parent == NULL ) {
-		fprintf(stderr, _("Couldn't find parent when deleting frame.\n"));
-		return;
-	}
-
-	found = 0;
-	for ( i=0; i<parent->num_children; i++ ) {
-		if ( parent->children[i] == fr ) {
-			idx = i;
-			found = 1;
-			break;
-		}
-	}
-
-	if ( !found ) {
-		fprintf(stderr, _("Couldn't find child when deleting frame.\n"));
-		return;
-	}
-
-	for ( i=idx; i<parent->num_children-1; i++ ) {
-		parent->children[i] = parent->children[i+1];
-	}
-
-	parent->num_children--;
 }
 
 
@@ -382,9 +329,15 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 	para->height = pango_units_to_double(rect.height);
 }
 
-SCBlock *get_newline_at_end(Paragraph *para)
+static SCBlock *get_newline_at_end(Paragraph *para)
 {
 	return para->newline_at_end;
+}
+
+
+SCBlock *para_debug_get_newline_at_end(Paragraph *para)
+{
+	return get_newline_at_end(para);
 }
 
 
@@ -655,7 +608,7 @@ void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is)
 }
 
 
-size_t end_offset_of_para(struct frame *fr, int pn)
+static size_t end_offset_of_para(struct frame *fr, int pn)
 {
 	int i;
 	size_t total = 0;
@@ -891,11 +844,6 @@ void cursor_moveh(struct frame *fr, struct edit_pos *cp, signed int dir)
 	}
 
 	cp->pos = np;
-}
-
-
-void cursor_movev(struct frame *fr, struct edit_pos *cp, signed int dir)
-{
 }
 
 

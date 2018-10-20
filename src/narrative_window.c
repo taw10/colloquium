@@ -185,59 +185,6 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static struct template_id *get_templates(Stylesheet *ss, int *n)
-{
-	/* FIXME: From JSON stylesheet */
-	*n = 0;
-	return NULL;
-}
-
-
-static void update_template_menus(NarrativeWindow *nw)
-{
-	struct template_id *templates;
-	int i, n_templates;
-
-	templates = get_templates(nw->p->stylesheet, &n_templates);
-
-	for ( i=0; i<n_templates; i++ ) {
-		free(templates[i].name);
-		free(templates[i].friendlyname);
-		sc_block_free(templates[i].scblock);
-	}
-
-	free(templates);
-}
-
-
-static SCBlock *get_slide_template(Stylesheet *ss)
-{
-	struct template_id *templates;
-	int i, n_templates;
-	SCBlock *ret = NULL;
-
-	templates = get_templates(ss, &n_templates);
-
-	for ( i=0; i<n_templates; i++ ) {
-		if ( strcmp(templates[i].name, "slide") == 0 ) {
-			ret = templates[i].scblock;
-		} else {
-			sc_block_free(templates[i].scblock);
-		}
-		free(templates[i].name);
-		free(templates[i].friendlyname);
-	}
-	free(templates);
-
-        /* No template? */
-        if ( ret == NULL ) {
-		ret = sc_parse("\\slide{}");
-	}
-
-	return ret;  /* NB this is a copy of the one owned by the interpreter */
-}
-
-
 static gint load_ss_response_sig(GtkWidget *d, gint response,
                                  NarrativeWindow *nw)
 {
@@ -330,9 +277,8 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 	/* Split the current paragraph */
 	nsblock = split_paragraph_at_cursor(nw->sceditor);
 
-	/* Get the template */
-	templ = get_slide_template(nw->p->stylesheet); /* our copy */
-	show_sc_blocks(templ);
+	/* FIXME: Template from JSON */
+	templ = sc_parse("\\slide{}");
 
 	/* Link the new SCBlock in */
 	if ( nsblock != NULL ) {
@@ -865,7 +811,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	                               "win.last");
 
 	update_toolbar(nw);
-	update_template_menus(nw);
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),

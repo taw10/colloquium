@@ -87,15 +87,4 @@ extern int sc_interp_get_height(SCInterpreter *scin);
 extern void update_geom(struct frame *fr);
 
 
-struct template_id
-{
-	char *name;
-	char *friendlyname;
-	SCBlock *scblock;
-};
-
-extern struct template_id *sc_interp_get_templates(SCInterpreter *scin,
-                                                   int *np);
-
-
 #endif	/* SC_INTERP_H */

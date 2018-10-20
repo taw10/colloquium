@@ -38,13 +38,6 @@
 #include "utils.h"
 
 
-struct template
-{
-	char *name;
-	SCBlock *bl;
-};
-
-
 struct sc_state
 {
 	PangoFontDescription *fontdesc;
@@ -63,10 +56,6 @@ struct sc_state
 	double slide_height;
 
 	struct frame *fr;  /* The current frame */
-
-	int n_templates;
-	int max_templates;
-	struct template *templates;
 };
 
 struct _scinterp
@@ -615,14 +604,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	scin->cbl = NULL;
 
 	st = &scin->state[0];
-	st->n_templates = 0;
-	st->max_templates = 16;
-	st->templates = malloc(16*sizeof(struct template));
-	if ( st->templates == NULL ) {
-		free(scin->state);
-		free(scin);
-		return NULL;
-	}
 	st->fr = NULL;
 	st->paraspace[0] = 0.0;
 	st->paraspace[1] = 0.0;
@@ -660,8 +641,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 
 void sc_interp_destroy(SCInterpreter *scin)
 {
-	/* FIXME: Free all templates */
-
 	/* Empty the stack */
 	while ( scin->j > 0 ) {
 		sc_interp_restore(scin);
@@ -1265,66 +1244,3 @@ int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 	return 0;
 }
 
-
-static int try_add_template(SCInterpreter *scin, const char *options, SCBlock *bl)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	char *nn;
-	char *comma;
-	int i;
-
-	nn = strdup(options);
-	comma = strchr(nn, ',');
-	if ( comma != NULL ) {
-		comma[0] = '\0';
-	}
-
-	for ( i=0; i<st->n_templates; i++ ) {
-		if ( strcmp(st->templates[i].name, nn) == 0 ) {
-			fprintf(stderr, _("Duplicate template '%s'\n"), nn);
-			return 0;
-		}
-	}
-
-	if ( st->max_templates == st->n_templates ) {
-
-		struct template *templates_new;
-
-		templates_new = realloc(st->templates, sizeof(struct template)
-		                     * (st->max_templates+16));
-		if ( templates_new == NULL ) {
-			fprintf(stderr, _("Failed to add templates\n"));
-			return 1;
-		}
-
-		st->templates = templates_new;
-		st->max_templates += 16;
-
-	}
-
-	i = st->n_templates++;
-
-	st->templates[i].name = nn;
-	st->templates[i].bl = bl;
-
-	return 0;
-}
-
-
-struct template_id *sc_interp_get_templates(SCInterpreter *scin, int *np)
-{
-	struct template_id *list;
-	int i;
-
-	list = malloc(sizeof(struct template_id)*scin->state->n_templates);
-	if ( list == NULL ) return NULL;
-
-	for ( i=0; i<scin->state->n_templates; i++ ) {
-		list[i].name = strdup(scin->state->templates[i].name);
-		list[i].friendlyname = strdup(scin->state->templates[i].name);
-		list[i].scblock = sc_block_copy(scin->state->templates[i].bl);
-	}
-
-	*np = scin->state->n_templates;
-	return list;
-}

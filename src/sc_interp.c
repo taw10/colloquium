@@ -989,6 +989,22 @@ static void apply_style(SCInterpreter *scin, Stylesheet *ss, const char *path)
 	result = stylesheet_lookup(ss, fullpath);
 	if ( result != NULL ) set_paraspace(scin, result);
 
+	/* Alignment */
+	strcpy(fullpath, path);
+	strcat(fullpath, ".alignment");
+	result = stylesheet_lookup(ss, fullpath);
+	if ( result != NULL ) {
+		if ( strcmp(result, "center") == 0 ) {
+			set_alignment(scin, PANGO_ALIGN_CENTER);
+		}
+		if ( strcmp(result, "left") == 0 ) {
+			set_alignment(scin, PANGO_ALIGN_LEFT);
+		}
+		if ( strcmp(result, "right") == 0 ) {
+			set_alignment(scin, PANGO_ALIGN_RIGHT);
+		}
+	}
+
 	update_bg(scin);
 }
 

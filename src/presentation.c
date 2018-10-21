@@ -246,6 +246,7 @@ int load_presentation(struct presentation *p, GFile *file)
 	int r = 0;
 	char *everything;
 	GFile *ssfile;
+	GFile *parent;
 	gchar *ssuri;
 
 	assert(p->completely_empty);
@@ -269,6 +270,8 @@ int load_presentation(struct presentation *p, GFile *file)
 	}
 
 	p->stylesheet = NULL;
+
+	/* First choice: /same/directory/<presentation>.ss */
 	ssuri = g_file_get_uri(file);
 	if ( ssuri != NULL ) {
 		size_t l = strlen(ssuri);
@@ -280,11 +283,34 @@ int load_presentation(struct presentation *p, GFile *file)
 			g_free(ssuri);
 		}
 	}
+
+	/* Second choice: /same/directory/stylesheet.ss */
 	if ( p->stylesheet == NULL ) {
-		ssfile = g_file_new_for_path("./stylesheet.json");
+		parent = g_file_get_parent(file);
+		if ( parent != NULL ) {
+			ssfile = g_file_get_child(parent, "stylesheet.ss");
+			if ( ssfile != NULL ) {
+				p->stylesheet = stylesheet_load(ssfile);
+				g_object_unref(ssfile);
+			}
+		}
+	}
+
+	/* Third choice: <cwd>/stylesheet.ss */
+	if ( p->stylesheet == NULL ) {
+		ssfile = g_file_new_for_path("./stylesheet.ss");
 		p->stylesheet = stylesheet_load(ssfile);
 		g_object_unref(ssfile);
 	}
+
+	/* Fourth choice: internal default stylesheet */
+	if ( p->stylesheet == NULL ) {
+		ssfile = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
+		p->stylesheet = stylesheet_load(ssfile);
+		g_object_unref(ssfile);
+	}
+
+	/* Last resort is NULL stylesheet and SCInterpreter's defaults */
 
 	set_slide_size_from_stylesheet(p);
 

@@ -49,6 +49,8 @@ Stylesheet *stylesheet_load(GFile *file)
 	char *everything;
 	gsize len;
 
+	printf("Trying stylesheet '%s'\n", g_file_get_uri(file));
+
 	ss = calloc(1, sizeof(Stylesheet));
 	if ( ss == NULL ) return NULL;
 

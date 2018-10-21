@@ -29,8 +29,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <gio/gio.h>
 
 #include "stylesheet.h"
+#include "utils.h"
 
 
 struct _stylesheet {
@@ -38,19 +40,27 @@ struct _stylesheet {
 };
 
 
-Stylesheet *stylesheet_load(const char *filename)
+Stylesheet *stylesheet_load(GFile *file)
 {
 	JsonParser *parser;
 	gboolean r;
 	GError *err = NULL;
 	Stylesheet *ss;
+	char *everything;
+	gsize len;
 
 	ss = calloc(1, sizeof(Stylesheet));
 	if ( ss == NULL ) return NULL;
 
 	parser = json_parser_new();
 
-	r = json_parser_load_from_file(parser, filename, &err);
+	if ( !g_file_load_contents(file, NULL, &everything, &len, NULL, NULL) ) {
+		fprintf(stderr, _("Failed to load stylesheet '%s'\n"),
+		        g_file_get_uri(file));
+		return NULL;
+	}
+
+	r = json_parser_load_from_data(parser, everything, len, &err);
 	if ( r == FALSE ) {
 		fprintf(stderr, "Failed to load style sheet: '%s'\n", err->message);
 		return NULL;

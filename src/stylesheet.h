@@ -27,9 +27,11 @@
 #include <config.h>
 #endif
 
+#include <gio/gio.h>
+
 typedef struct _stylesheet Stylesheet;
 
-extern Stylesheet *stylesheet_load(const char *filename);
+extern Stylesheet *stylesheet_load(GFile *file);
 extern char *stylesheet_lookup(Stylesheet *ss, const char *path);
 extern void stylesheet_free(Stylesheet *ss);
 

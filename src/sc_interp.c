@@ -945,6 +945,8 @@ static void apply_style(SCInterpreter *scin, Stylesheet *ss, const char *path)
 		return;
 	}
 
+	if ( ss == NULL ) return;
+
 	/* Font */
 	strcpy(fullpath, path);
 	strcat(fullpath, ".font");

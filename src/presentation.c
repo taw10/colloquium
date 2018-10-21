@@ -245,6 +245,8 @@ int load_presentation(struct presentation *p, GFile *file)
 {
 	int r = 0;
 	char *everything;
+	GFile *ssfile;
+	gchar *ssuri;
 
 	assert(p->completely_empty);
 
@@ -266,7 +268,23 @@ int load_presentation(struct presentation *p, GFile *file)
 		return r;  /* Error */
 	}
 
-	p->stylesheet = stylesheet_load("stylesheet.json");  /* FIXME: ! */
+	p->stylesheet = NULL;
+	ssuri = g_file_get_uri(file);
+	if ( ssuri != NULL ) {
+		size_t l = strlen(ssuri);
+		if ( ssuri[l-3] == '.' && ssuri[l-2] == 's' && ssuri[l-1] =='c' ) {
+			ssuri[l-1] = 's';
+			ssfile = g_file_new_for_uri(ssuri);
+			p->stylesheet = stylesheet_load(ssfile);
+			g_object_unref(ssfile);
+			g_free(ssuri);
+		}
+	}
+	if ( p->stylesheet == NULL ) {
+		ssfile = g_file_new_for_path("./stylesheet.json");
+		p->stylesheet = stylesheet_load(ssfile);
+		g_object_unref(ssfile);
+	}
 
 	set_slide_size_from_stylesheet(p);
 

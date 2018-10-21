@@ -190,12 +190,12 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 {
 	if ( response == GTK_RESPONSE_ACCEPT ) {
 
-		char *filename;
+		GFile *file;
 		Stylesheet *new_ss;
 
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+		file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
 
-		new_ss = stylesheet_load(filename);
+		new_ss = stylesheet_load(file);
 		if ( new_ss != NULL ) {
 
 			stylesheet_free(nw->p->stylesheet);
@@ -209,7 +209,7 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 			fprintf(stderr, _("Failed to load\n"));
 		}
 
-		g_free(filename);
+		g_object_unref(file);
 
 	}
 

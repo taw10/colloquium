@@ -237,7 +237,10 @@ static void print_narrative(GtkPrintOperation *op, GtkPrintContext *ctx,
 		h += paragraph_height(ps->top->paras[i]);
 		if ( h > page_height ) return;
 
+		cairo_save(cr);
 		render_paragraph(cr, ps->top->paras[i], ps->p->is);
+		cairo_restore(cr);
+
 		cairo_translate(cr, 0.0, paragraph_height(ps->top->paras[i]));
 
 	}

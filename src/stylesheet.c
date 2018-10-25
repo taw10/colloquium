@@ -92,7 +92,10 @@ char *stylesheet_lookup(Stylesheet *ss, const char *path)
 	}
 
 	v = json_array_get_string_element(array, 0);
-	if ( v == NULL ) return NULL;
+	if ( v == NULL ) {
+		printf("%s not a string\n", path);
+		return NULL;
+	}
 
 	ret = strdup(v);
 	json_node_unref(node);

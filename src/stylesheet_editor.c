@@ -235,7 +235,6 @@ static void update_bg(struct presentation *p, const char *style_name,
 	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col1w), &rgba);
 	if ( rgba.alpha < 0.000001 ) rgba.alpha = 0.0;
 	col1 = gdk_rgba_to_string(&rgba);
-	printf("got colour %s\n", col1);
 
 	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col2w), &rgba);
 	col2 = gdk_rgba_to_string(&rgba);

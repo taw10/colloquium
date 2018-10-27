@@ -584,7 +584,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->bgcol2[1] = 1.0;
 	st->bgcol2[2] = 1.0;
 	st->bgcol2[3] = 1.0;
-	st->bggrad = GRAD_NOBG;
+	st->bggrad = GRAD_NONE;
 	scin->lang = lang;
 
 	/* The "ultimate" default font */

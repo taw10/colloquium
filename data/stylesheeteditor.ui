@@ -210,6 +210,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="narrative_fgcol_sig" swapped="no"/>
                       </object>
                       <packing>
@@ -251,7 +252,6 @@
                           <item id="flat" translatable="yes">Flat colour</item>
                           <item id="horiz" translatable="yes">Horizontal gradient</item>
                           <item id="vert" translatable="yes">Vertical gradient</item>
-                          <item id="none" translatable="yes">None</item>
                         </items>
                         <signal name="changed" handler="narrative_bg_sig" swapped="no"/>
                       </object>
@@ -266,6 +266,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="narrative_bg_sig" swapped="no"/>
                       </object>
                       <packing>
@@ -279,6 +280,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="narrative_bg_sig" swapped="no"/>
                       </object>
                       <packing>
@@ -717,6 +719,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="slide_bg_sig" swapped="no"/>
                       </object>
                       <packing>
@@ -730,6 +733,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="slide_bg_sig" swapped="no"/>
                       </object>
                       <packing>
@@ -822,6 +826,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="frame_fgcol_sig" swapped="no"/>
                       </object>
                       <packing>
@@ -863,7 +868,6 @@
                           <item id="flat" translatable="yes">Flat colour</item>
                           <item id="horiz" translatable="yes">Horizontal gradient</item>
                           <item id="vert" translatable="yes">Vertical gradient</item>
-                          <item id="none" translatable="yes">None</item>
                         </items>
                         <signal name="changed" handler="frame_bg_sig" swapped="no"/>
                       </object>
@@ -878,6 +882,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="frame_bg_sig" swapped="no"/>
                       </object>
                       <packing>
@@ -891,6 +896,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="use_alpha">True</property>
                         <signal name="color-set" handler="frame_bg_sig" swapped="no"/>
                       </object>
                       <packing>

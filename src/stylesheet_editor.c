@@ -117,16 +117,10 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
 		GdkRGBA rgba;
 		found = 1;
 		if ( gdk_rgba_parse(&rgba, result) == TRUE ) {
-			if ( rgba.alpha == 0.0 ) {
-				gtk_combo_box_set_active_id(GTK_COMBO_BOX(wgrad), "none");
-				gtk_widget_set_sensitive(wcol, FALSE);
-				gtk_widget_set_sensitive(wcol2, FALSE);
-			} else {
-				gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(wcol), &rgba);
-				gtk_combo_box_set_active_id(GTK_COMBO_BOX(wgrad), "flat");
-				gtk_widget_set_sensitive(wcol, TRUE);
-				gtk_widget_set_sensitive(wcol2, FALSE);
-			}
+			gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(wcol), &rgba);
+			gtk_combo_box_set_active_id(GTK_COMBO_BOX(wgrad), "flat");
+			gtk_widget_set_sensitive(wcol, TRUE);
+			gtk_widget_set_sensitive(wcol2, FALSE);
 		} else {
 			fprintf(stderr, _("Failed to parse colour: %s\n"), result);
 		}
@@ -159,8 +153,14 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
 	}
 
 	if ( !found ) {
-		gtk_combo_box_set_active_id(GTK_COMBO_BOX(wgrad), "none");
-		gtk_widget_set_sensitive(wcol, FALSE);
+		GdkRGBA rgba;
+		rgba.red = 1.0;
+		rgba.green = 1.0;
+		rgba.blue = 1.0;
+		rgba.alpha = 0.0;
+		gtk_combo_box_set_active_id(GTK_COMBO_BOX(wgrad), "flat");
+		gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(wcol), &rgba);
+		gtk_widget_set_sensitive(wcol, TRUE);
 		gtk_widget_set_sensitive(wcol2, FALSE);
 	}
 }
@@ -215,7 +215,6 @@ static GradientType id_to_gradtype(const gchar *id)
 	if ( strcmp(id, "flat") == 0 ) return GRAD_NONE;
 	if ( strcmp(id, "horiz") == 0 ) return GRAD_HORIZ;
 	if ( strcmp(id, "vert") == 0 ) return GRAD_VERT;
-	if ( strcmp(id, "none") == 0 ) return GRAD_NOBG;
 	return GRAD_NONE;
 }
 
@@ -234,7 +233,9 @@ static void update_bg(struct presentation *p, const char *style_name,
 	g = id_to_gradtype(id);
 
 	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col1w), &rgba);
+	if ( rgba.alpha < 0.000001 ) rgba.alpha = 0.0;
 	col1 = gdk_rgba_to_string(&rgba);
+	printf("got colour %s\n", col1);
 
 	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col2w), &rgba);
 	col2 = gdk_rgba_to_string(&rgba);
@@ -242,13 +243,6 @@ static void update_bg(struct presentation *p, const char *style_name,
 	gradient = g_strconcat(col1, ",", col2, NULL);
 
 	switch ( g ) {
-
-		case GRAD_NOBG :
-		stylesheet_set(p->stylesheet, style_name, "bgcol",
-		               "rgba(0,0,0,0)");
-		stylesheet_delete(p->stylesheet, style_name, "bggradv");
-		stylesheet_delete(p->stylesheet, style_name, "bggradh");
-		break;
 
 		case GRAD_NONE :
 		stylesheet_set(p->stylesheet, style_name, "bgcol",

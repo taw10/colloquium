@@ -42,8 +42,7 @@ typedef enum
 {
 	GRAD_NONE,
 	GRAD_HORIZ,
-	GRAD_VERT,
-	GRAD_NOBG
+	GRAD_VERT
 } GradientType;
 
 enum para_type

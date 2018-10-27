@@ -185,105 +185,31 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static struct template_id *get_templates(SCBlock *ss, int *n)
-{
-	struct template_id *list;
-	SCInterpreter *scin;
-
-	scin = sc_interp_new(NULL, NULL, NULL, NULL);
-	sc_interp_run_stylesheet(scin, ss);  /* ss == NULL is OK */
-	list = sc_interp_get_templates(scin, n);
-	sc_interp_destroy(scin);
-	return list;
-}
-
-
-static void update_template_menus(NarrativeWindow *nw)
-{
-	struct template_id *templates;
-	int i, n_templates;
-
-	templates = get_templates(nw->p->stylesheet, &n_templates);
-
-	for ( i=0; i<n_templates; i++ ) {
-		free(templates[i].name);
-		free(templates[i].friendlyname);
-		sc_block_free(templates[i].scblock);
-	}
-
-	free(templates);
-}
-
-
-static SCBlock *get_slide_template(SCBlock *ss)
-{
-	struct template_id *templates;
-	int i, n_templates;
-	SCBlock *ret = NULL;
-
-	templates = get_templates(ss, &n_templates);
-
-	for ( i=0; i<n_templates; i++ ) {
-		if ( strcmp(templates[i].name, "slide") == 0 ) {
-			ret = templates[i].scblock;
-		} else {
-			sc_block_free(templates[i].scblock);
-		}
-		free(templates[i].name);
-		free(templates[i].friendlyname);
-	}
-	free(templates);
-
-        /* No template? */
-        if ( ret == NULL ) {
-		ret = sc_parse("\\slide{}");
-	}
-
-	return ret;  /* NB this is a copy of the one owned by the interpreter */
-}
-
-
 static gint load_ss_response_sig(GtkWidget *d, gint response,
                                  NarrativeWindow *nw)
 {
 	if ( response == GTK_RESPONSE_ACCEPT ) {
 
-		char *filename;
-		char *stext;
+		GFile *file;
+		Stylesheet *new_ss;
 
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-		printf("Loading %s\n",filename);
+		file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
 
-		stext = load_everything(filename);
-		if ( stext != NULL ) {
+		new_ss = stylesheet_load(file);
+		if ( new_ss != NULL ) {
 
-			SCBlock *bl;
-			SCBlock *ss;
-			bl = sc_parse(stext);
-			free(stext);
-			ss = find_stylesheet(bl);
+			stylesheet_free(nw->p->stylesheet);
+			nw->p->stylesheet = new_ss;
+			sc_editor_set_stylesheet(nw->sceditor, new_ss);
 
-			if ( ss != NULL ) {
+			/* Full rerender */
+			sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
 
-				/* Substitute the style sheet in
-				 * presentation Storycode */
-				replace_stylesheet(nw->p, ss);
-
-				sc_editor_set_stylesheet(nw->sceditor, ss);
-
-				/* Full rerender, first block may have
-				 * changed */
-				sc_editor_set_scblock(nw->sceditor,
-				                      nw->dummy_top);
-
-			} else {
-				fprintf(stderr, _("Not a style sheet\n"));
-			}
 		} else {
 			fprintf(stderr, _("Failed to load\n"));
 		}
 
-		g_free(filename);
+		g_object_unref(file);
 
 	}
 
@@ -351,9 +277,8 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 	/* Split the current paragraph */
 	nsblock = split_paragraph_at_cursor(nw->sceditor);
 
-	/* Get the template */
-	templ = get_slide_template(nw->p->stylesheet); /* our copy */
-	show_sc_blocks(templ);
+	/* FIXME: Template from JSON */
+	templ = sc_parse("\\slide{}");
 
 	/* Link the new SCBlock in */
 	if ( nsblock != NULL ) {
@@ -886,7 +811,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	                               "win.last");
 
 	update_toolbar(nw);
-	update_template_menus(nw);
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),

@@ -1,21 +1,4 @@
-\stylesheet{
-
-	\style[narrative]{\font[Cantarell Regular 16]\paraspace[0,0,10,10]\pad[10,10,10,10]\fgcol[#222222]\bgcol[#ffffff]}
-	\style[slide]{\bggradv[#333333,#000055]}
-	\style[frame]{\fgcol[#c5c5c5]}
-	\slidesize[1024x768]
-
-	\def[prestitle]{\f[1fx140u+0+0]\pad[20,20,20,20]\fontsize[64]\fgcol[#eeeeee]\center\contents}
-	\def[slidetitle]{\f[1fx90u+0+0]\pad[20,20,20,20]\fontsize[36]\fgcol[#eeeeee]\contents}
-	\def[footer]{\f[0.97fx30u+0+740]{\ralign\editable{\fontsize[11]\bold{T. A. White} | \editable{A demonstration talk | 1 March 2018} | \bold{Slide} \slidenumber}}}
-	\def[credit]{\f[600ux30u+700+700]{\fontsize[11]\contents}}
-	\def[bp]{➤ }
-
-	\template[slide]{\slide{\slidetitle{New slide}\footer}}
-	\template[bp,name="Bullet point"]{\bp{}}
-	\template[credit,name="Credit"]{\credit{Image: }}
-
-}\fontsize[40]{\bold{}Hi there, welcome to \bold{Colloquium}!}
+\fontsize[40]{\bold{}Hi there, welcome to \bold{Colloquium}!}
 It looks like this is the first time you've used Colloquium.  Keep reading to understand a little bit about how Colloquium works and how to use it.
 Colloquium works differently to other presentation programs. Colloquium makes \italic{narrative, not slides,} the centre of attention.  Slides come when you need to illustrate something.  This window is called the \oblique{narrative editor}.  Your slides are embedded into the narrative text, like this:\slide{
 \prestitle{Welcome to Colloquium}
@@ -36,7 +19,7 @@ What is the narrative window for?  Well, it's up to you!  Here are some suggesti
 \bp{}Use it as a journal, adding slides whenever you have an illustration.  You'll have a ready-made presentation on your activity, with no extra effort!
 Besides this, Colloquium has some features which will help you when you come to give your presentation.  In the "Tools" menu, you'll find the presentation clock and the test card.
 Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
-Now, a short warning:\slide{\slidetitle{Alpha test software}\footer\f[394.9ux428.0u+571.9+178.8]{Colloquium is "alpha test" software.
+Now, a short warning:\slide{\slidetitle{Alpha test software}\footer\f[391.8ux473.5u+567.8+143.7]{Colloquium is "alpha test" software.
 
 It will probably crash and lose your work a few times.  Save and back up your work as frequently as possible.
 
@@ -45,5 +28,5 @@ However, in years of use it has \bold{never} crashed on me in front of an audien
 Creating a backup slide deck in PDF format (File->Export slides as PDF) is nevertheless a wise safety measure.
 
 Please report all bugs here:
-https://www.bitwiz.me.uk/tracker}\f[452.2ux431.0u+64.8+168.9]{\image[1fx1f+0+0,filename="alpha_warning.svg"]{}}}
+https://github.com/taw10/colloquium/issues}\f[452.2ux431.0u+64.8+168.9]{\image[1fx1f+0+0,filename="alpha_warning.svg"]{}}\f[2.1ux10.3u+959.6+665.7]{}\f[0.0ux31.0u+957.5+654.3]{}}
 That's enough to get you started.  I hope you enjoy using Colloquium!

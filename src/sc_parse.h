@@ -37,14 +37,11 @@ extern SCBlock *sc_parse(const char *sc);
 extern SCBlock *sc_block_new(void);
 extern void sc_block_free(SCBlock *bl);
 
-extern SCBlock *sc_block_copy(const SCBlock *bl);
-
 extern SCBlock *sc_block_next(const SCBlock *bl);
 extern SCBlock *sc_block_child(const SCBlock *bl);
 extern const char *sc_block_name(const SCBlock *bl);
 extern const char *sc_block_options(const SCBlock *bl);
 extern const char *sc_block_contents(const SCBlock *bl);
-extern void sc_block_substitute(SCBlock **top, SCBlock *old, SCBlock *new);
 
 extern SCBlock *sc_block_append(SCBlock *bl,
                                 char *name, char *opt, char *contents,
@@ -68,9 +65,6 @@ extern SCBlock *sc_block_insert_after(SCBlock *afterme,
                                       char *name, char *opt, char *contents);
 
 extern int sc_block_delete(SCBlock **top, SCBlock *deleteme);
-extern int sc_block_unlink(SCBlock **top, SCBlock *deleteme);
-
-extern SCBlock *find_last_child(SCBlock *bl);
 
 
 extern void sc_block_set_name(SCBlock *bl, char *nam);
@@ -84,7 +78,6 @@ extern void show_sc_blocks(const SCBlock *bl);
 extern void show_sc_block(const SCBlock *bl, const char *prefix);
 
 extern char *serialise_sc_block(const SCBlock *bl);
-extern char *serialise_sc_block_chain(const SCBlock *bl);
 extern int save_sc_block(GOutputStream *fh, const SCBlock *bl);
 
 extern size_t scblock_delete_text(SCBlock *b, ssize_t o1, ssize_t o2);

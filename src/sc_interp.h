@@ -41,6 +41,7 @@ typedef int (*SCCallbackClickFunc)(double x, double y, void *, void *);
 
 #include "frame.h"
 #include "imagestore.h"
+#include "stylesheet.h"
 
 extern SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
                                     ImageStore *is, struct frame *top);
@@ -49,13 +50,7 @@ extern void sc_interp_destroy(SCInterpreter *scin);
 extern void sc_interp_save(SCInterpreter *scin);
 extern void sc_interp_restore(SCInterpreter *scin);
 
-extern int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl);
-extern int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl);
-
-extern void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl);
-extern void sc_interp_run_style(SCInterpreter *scin, const char *sname);
-extern void add_macro(SCInterpreter *scin, const char *mname,
-                      const char *contents);
+extern int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss);
 
 
 /* Callback lists */
@@ -73,28 +68,8 @@ extern struct frame *sc_interp_get_frame(SCInterpreter *scin);
 extern PangoFont *sc_interp_get_font(SCInterpreter *scin);
 extern PangoFontDescription *sc_interp_get_fontdesc(SCInterpreter *scin);
 extern double *sc_interp_get_fgcol(SCInterpreter *scin);
-extern double *sc_interp_get_bgcol(SCInterpreter *scin);
-extern double *sc_interp_get_bgcol2(SCInterpreter *scin);
-extern GradientType sc_interp_get_bggrad(SCInterpreter *scin);
-
-extern int sc_interp_get_slide_size(SCInterpreter *scin, double *w, double *h);
-extern SCBlock *sc_interp_get_macro_real_block(SCInterpreter *scin);
-
-extern int sc_interp_get_ascent(SCInterpreter *scin);
-extern int sc_interp_get_height(SCInterpreter *scin);
 
 extern void update_geom(struct frame *fr);
-
-
-struct template_id
-{
-	char *name;
-	char *friendlyname;
-	SCBlock *scblock;
-};
-
-extern struct template_id *sc_interp_get_templates(SCInterpreter *scin,
-                                                   int *np);
 
 
 #endif	/* SC_INTERP_H */

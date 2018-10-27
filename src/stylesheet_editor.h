@@ -63,6 +63,16 @@ struct _stylesheeteditor
 	GtkWidget *narrative_style_bgcol;
 	GtkWidget *narrative_style_bgcol2;
 	GtkWidget *narrative_style_bggrad;
+	GtkWidget *narrative_style_paraspace_l;
+	GtkWidget *narrative_style_paraspace_r;
+	GtkWidget *narrative_style_paraspace_t;
+	GtkWidget *narrative_style_paraspace_b;
+	GtkWidget *narrative_style_padding_l;
+	GtkWidget *narrative_style_padding_r;
+	GtkWidget *narrative_style_padding_t;
+	GtkWidget *narrative_style_padding_b;
+	GtkWidget *slide_size_w;
+	GtkWidget *slide_size_h;
 	GtkWidget *slide_style_bgcol;
 	GtkWidget *slide_style_bgcol2;
 	GtkWidget *slide_style_bggrad;
@@ -71,19 +81,16 @@ struct _stylesheeteditor
 	GtkWidget *frame_style_bgcol;
 	GtkWidget *frame_style_bgcol2;
 	GtkWidget *frame_style_bggrad;
+	GtkWidget *frame_style_paraspace_l;
+	GtkWidget *frame_style_paraspace_r;
+	GtkWidget *frame_style_paraspace_t;
+	GtkWidget *frame_style_paraspace_b;
+	GtkWidget *frame_style_padding_l;
+	GtkWidget *frame_style_padding_r;
+	GtkWidget *frame_style_padding_t;
+	GtkWidget *frame_style_padding_b;
 	StylesheetEditorPrivate *priv;
-
-	GdkRGBA       narrative_bgcol;
-	GdkRGBA       narrative_bgcol2;
-	GradientType  narrative_bggrad;
-	GdkRGBA       slide_bgcol;
-	GdkRGBA       slide_bgcol2;
-	GradientType  slide_bggrad;
-	GdkRGBA       frame_bgcol;
-	GdkRGBA       frame_bgcol2;
-	GradientType  frame_bggrad;
 };
-
 
 struct _stylesheeteditorclass
 {

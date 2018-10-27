@@ -48,8 +48,6 @@ static void do_background(cairo_t *cr, struct frame *fr)
 {
 	cairo_pattern_t *patt = NULL;
 
-	if ( fr->grad == GRAD_NOBG ) return;  /* Should not end up here */
-
 	cairo_new_path(cr);
 	cairo_rectangle(cr, 0.0, 0.0, fr->w, fr->h);
 
@@ -84,9 +82,6 @@ static void do_background(cairo_t *cr, struct frame *fr)
 			                                    fr->bgcol2[1],
 			                                    fr->bgcol2[2]);
 		cairo_set_source(cr, patt);
-		break;
-
-		case GRAD_NOBG:
 		break;
 
 	}
@@ -176,14 +171,14 @@ int recursive_wrap(struct frame *fr, PangoContext *pc)
 }
 
 
-struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
+struct frame *interp_and_shape(SCBlock *scblocks, Stylesheet *stylesheet,
                                SCCallbackList *cbl, ImageStore *is,
                                int slide_number,
                                PangoContext *pc, double w, double h,
                                PangoLanguage *lang)
 {
 	SCInterpreter *scin;
-	char snum[64];
+//	char snum[64];
 	struct frame *top;
 
 	top = frame_new();
@@ -203,12 +198,13 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
 
 	sc_interp_set_callbacks(scin, cbl);
 
-	snprintf(snum, 63, "%i", slide_number);
-	add_macro(scin, "slidenumber", snum);
-
-	if ( stylesheet != NULL ) {
-		sc_interp_run_stylesheet(scin, stylesheet);
-	}
+	/* FIXME: Set up slide number and style sheet */
+//	snprintf(snum, 63, "%i", slide_number);
+//	add_macro(scin, "slidenumber", snum);
+//
+//	if ( stylesheet != NULL ) {
+//		sc_interp_run_stylesheet(scin, stylesheet);
+//	}
 
 	top->fontdesc = pango_font_description_copy(sc_interp_get_fontdesc(scin));
 	top->col[0] = sc_interp_get_fgcol(scin)[0];
@@ -216,7 +212,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
 	top->col[2] = sc_interp_get_fgcol(scin)[2];
 	top->col[3] = sc_interp_get_fgcol(scin)[3];
 
-	sc_interp_add_block(scin, scblocks);
+	sc_interp_add_block(scin, scblocks, stylesheet);
 
 	sc_interp_destroy(scin);
 
@@ -226,7 +222,7 @@ struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
 
 static struct frame *render_sc_with_context(SCBlock *scblocks,
                                  cairo_t *cr, double log_w, double log_h,
-                                 SCBlock *stylesheet, SCCallbackList *cbl,
+                                 Stylesheet *stylesheet, SCCallbackList *cbl,
                                  ImageStore *is,
                                  int slide_number, PangoLanguage *lang,
 				 PangoContext *pc)
@@ -250,7 +246,7 @@ static struct frame *render_sc_with_context(SCBlock *scblocks,
 
 cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                            double log_w, double log_h,
-                           SCBlock *stylesheet, SCCallbackList *cbl,
+                           Stylesheet *stylesheet, SCCallbackList *cbl,
                            ImageStore *is,
                            int slide_number, struct frame **ptop,
                            PangoLanguage *lang)

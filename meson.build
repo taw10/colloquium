@@ -19,6 +19,7 @@ subdir('po')
 
 # Dependencies
 gtkdep = dependency('gtk+-3.0')
+jsondep = dependency('json-glib-1.0')
 cc = meson.get_compiler('c')
 mdep = cc.find_library('m', required : false)
 
@@ -44,10 +45,11 @@ executable('colloquium',
             'src/print.c',
             'src/sc_parse.c',
             'src/utils.c',
+            'src/stylesheet.c',
             'src/stylesheet_editor.c',
            ],
            gresources,
-           dependencies : [gtkdep, mdep],
+           dependencies : [gtkdep, mdep, jsondep],
            install : true)
 
 # Desktop file

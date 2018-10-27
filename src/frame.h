@@ -42,8 +42,7 @@ typedef enum
 {
 	GRAD_NONE,
 	GRAD_HORIZ,
-	GRAD_VERT,
-	GRAD_NOBG
+	GRAD_VERT
 } GradientType;
 
 enum para_type
@@ -115,8 +114,6 @@ struct frame
 extern struct frame *frame_new(void);
 extern void frame_free(struct frame *fr);
 extern struct frame *add_subframe(struct frame *fr);
-extern void show_hierarchy(struct frame *fr, const char *t);
-extern void delete_subframe(struct frame *top, struct frame *fr);
 extern struct frame *find_frame_with_scblocks(struct frame *top,
                                               SCBlock *scblocks);
 
@@ -130,31 +127,26 @@ extern void set_para_alignment(Paragraph *para, PangoAlignment align);
 extern double paragraph_height(Paragraph *para);
 extern void render_paragraph(cairo_t *cr, Paragraph *para, ImageStore *is);
 
-extern SCBlock *get_newline_at_end(Paragraph *para);
 extern void set_newline_at_end(Paragraph *para, SCBlock *bl);
-extern void check_run(struct frame *fr, int pn);
 extern void show_edit_pos(struct edit_pos a);
 
-extern void add_run(Paragraph *para, SCBlock *scblock, SCBlock *rscblock,
+extern void add_run(Paragraph *para, SCBlock *scblock,
                     PangoFontDescription *fdesc, double col[4]);
 
 extern Paragraph *insert_paragraph(struct frame *fr, int pos);
 
 extern Paragraph *add_callback_para(struct frame *fr, SCBlock *scblock,
-                                    SCBlock *rscblock,
                                     double w, double h,
                                     SCCallbackDrawFunc draw_func,
                                     SCCallbackClickFunc click_func, void *bvp,
                                     void *vp);
 
 extern void add_image_para(struct frame *fr, SCBlock *scblock,
-                           SCBlock *rscblock, const char *filename,
+                           const char *filename,
                            ImageStore *is, double w, double h, int editable);
 
 extern void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
                            size_t sel_start, size_t sel_end);
-
-extern size_t end_offset_of_para(struct frame *fr, int pn);
 
 extern int find_cursor(struct frame *fr, double x, double y,
                        struct edit_pos *pos);
@@ -175,8 +167,6 @@ extern int get_cursor_pos(struct frame *fr, int cursor_para, int cursor_pos,
 
 extern void cursor_moveh(struct frame *fr, struct edit_pos *cp, signed int dir);
 
-extern void cursor_movev(struct frame *fr, struct edit_pos *cp, signed int dir);
-
 extern void check_callback_click(struct frame *fr, int para);
 
 extern size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail);
@@ -187,25 +177,24 @@ extern void insert_text_in_paragraph(Paragraph *para, size_t offs,
 extern void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_pos p2,
                                    double wrap_w);
 
-extern size_t delete_text_in_paragraph(struct frame *fr, int npara, size_t offs0, ssize_t offs2);
-
 extern SCBlock *split_paragraph(struct frame *fr, int pn, size_t pos,
                                 PangoContext *pc);
 extern SCBlock *block_at_cursor(struct frame *fr, int para, size_t pos);
+
+extern void show_frame_hierarchy(struct frame *fr, const char *t);
 
 extern int get_sc_pos(struct frame *fr, int pn, size_t pos,
                       SCBlock **bl, size_t *ppos);
 
 extern void *get_para_bvp(Paragraph *para);
 
-extern Paragraph *create_paragraph(struct frame *fr, SCBlock *bl, SCBlock *rbl);
+extern Paragraph *create_paragraph(struct frame *fr, SCBlock *bl);
 
 extern enum para_type para_type(Paragraph *para);
 extern SCBlock *para_scblock(Paragraph *para);
-extern SCBlock *para_rscblock(Paragraph *para);
 
+extern SCBlock *para_debug_get_newline_at_end(Paragraph *para);
 extern int para_debug_num_runs(Paragraph *para);
-extern int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock,
-                               SCBlock **rscblock);
+extern int para_debug_run_info(Paragraph *para, int i, SCBlock **scblock);
 
 #endif	/* FRAME_H */

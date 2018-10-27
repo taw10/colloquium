@@ -320,12 +320,6 @@ int colloquium_get_hidepointer(Colloquium *app)
 }
 
 
-GtkBuilder *colloquium_get_uibuilder(Colloquium *app)
-{
-	return app->builder;
-}
-
-
 static void colloquium_startup(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);

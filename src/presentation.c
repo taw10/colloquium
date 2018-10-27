@@ -67,6 +67,59 @@ char *get_titlebar_string(struct presentation *p)
 }
 
 
+static void find_and_load_stylesheet(struct presentation *p, GFile *file)
+{
+	GFile *ssfile;
+	GFile *parent;
+	gchar *ssuri;
+
+	if ( file != NULL ) {
+
+		/* First choice: /same/directory/<presentation>.ss */
+		ssuri = g_file_get_uri(file);
+		if ( ssuri != NULL ) {
+			size_t l = strlen(ssuri);
+			if ( ssuri[l-3] == '.' && ssuri[l-2] == 's' && ssuri[l-1] =='c' ) {
+				ssuri[l-1] = 's';
+				ssfile = g_file_new_for_uri(ssuri);
+				p->stylesheet = stylesheet_load(ssfile);
+				g_object_unref(ssfile);
+				g_free(ssuri);
+			}
+		}
+
+		/* Second choice: /same/directory/stylesheet.ss */
+		if ( p->stylesheet == NULL ) {
+			parent = g_file_get_parent(file);
+			if ( parent != NULL ) {
+				ssfile = g_file_get_child(parent, "stylesheet.ss");
+				if ( ssfile != NULL ) {
+					p->stylesheet = stylesheet_load(ssfile);
+					g_object_unref(ssfile);
+				}
+			}
+		}
+
+	}
+
+	/* Third choice: <cwd>/stylesheet.ss */
+	if ( p->stylesheet == NULL ) {
+		ssfile = g_file_new_for_path("./stylesheet.ss");
+		p->stylesheet = stylesheet_load(ssfile);
+		g_object_unref(ssfile);
+	}
+
+	/* Fourth choice: internal default stylesheet */
+	if ( p->stylesheet == NULL ) {
+		ssfile = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
+		p->stylesheet = stylesheet_load(ssfile);
+		g_object_unref(ssfile);
+	}
+
+	/* Last resort is NULL stylesheet and SCInterpreter's defaults */
+}
+
+
 struct presentation *new_presentation(const char *imagestore)
 {
 	struct presentation *new;
@@ -88,6 +141,8 @@ struct presentation *new_presentation(const char *imagestore)
 	new->is = imagestore_new(imagestore);
 
 	new->lang = pango_language_get_default();
+
+	find_and_load_stylesheet(new, NULL);
 
 	return new;
 }
@@ -226,75 +281,17 @@ SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 }
 
 
-int replace_stylesheet(struct presentation *p, SCBlock *ss)
-{
-	/* Create style sheet from union of old and new,
-	 * preferring items from the new one */
-
-	/* If there was no stylesheet before, add a dummy one */
-	if ( p->stylesheet == NULL ) {
-		p->stylesheet = sc_block_append_end(p->scblocks,
-		                                    "stylesheet", NULL, NULL);
-	}
-
-	/* Cut the old stylesheet out of the presentation,
-	 * and put in the new one */
-	sc_block_substitute(&p->scblocks, p->stylesheet, ss);
-	p->stylesheet = ss;
-
-	return 0;
-}
-
-
-SCBlock *find_stylesheet(SCBlock *bl)
-{
-	while ( bl != NULL ) {
-
-		const char *name = sc_block_name(bl);
-
-		if ( (name != NULL) && (strcmp(name, "stylesheet") == 0) ) {
-			return bl;
-		}
-
-		bl = sc_block_next(bl);
-
-	}
-
-	return NULL;
-}
-
-
-static void install_stylesheet(struct presentation *p)
-{
-	if ( p->stylesheet != NULL ) {
-		fprintf(stderr, _("Duplicate style sheet!\n"));
-		return;
-	}
-
-	p->stylesheet = find_stylesheet(p->scblocks);
-
-	if ( p->stylesheet == NULL ) {
-		fprintf(stderr, _("No style sheet.\n"));
-	}
-}
-
-
 static void set_slide_size_from_stylesheet(struct presentation *p)
 {
-	SCInterpreter *scin;
-	double w, h;
-	int r;
+	char *result;
 
-	if ( p->stylesheet == NULL ) return;
-
-	scin = sc_interp_new(NULL, NULL, NULL, NULL);
-	sc_interp_run_stylesheet(scin, p->stylesheet);  /* ss == NULL is OK */
-	r = sc_interp_get_slide_size(scin, &w, &h);
-	sc_interp_destroy(scin);
-
-	if ( r == 0 ) {
-		p->slide_width = w;
-		p->slide_height = h;
+	result = stylesheet_lookup(p->stylesheet, "$.slide", "size");
+	if ( result != NULL ) {
+		float v[2];
+		if ( parse_double(result, v) == 0 ) {
+			p->slide_width = v[0];
+			p->slide_height = v[1];
+		}
 	}
 }
 
@@ -324,7 +321,10 @@ int load_presentation(struct presentation *p, GFile *file)
 		return r;  /* Error */
 	}
 
-	install_stylesheet(p);
+	p->stylesheet = NULL;
+
+	find_and_load_stylesheet(p, file);
+
 	set_slide_size_from_stylesheet(p);
 
 	assert(p->uri == NULL);

@@ -35,7 +35,7 @@
 /* Convienience function to run the entire pipeline */
 extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
                                   double log_w, double log_h,
-                                  SCBlock *stylesheet, SCCallbackList *cbl,
+                                  Stylesheet *stylesheet, SCCallbackList *cbl,
                                   ImageStore *is,
                                   int slide_number, struct frame **ptop,
                                   PangoLanguage *lang);
@@ -44,7 +44,7 @@ extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
  * Needs to be followed by: wrap_contents() (recursively)
  *                          recursive_draw()
  */
-extern struct frame *interp_and_shape(SCBlock *scblocks, SCBlock *stylesheet,
+extern struct frame *interp_and_shape(SCBlock *scblocks, Stylesheet *stylesheet,
                                       SCCallbackList *cbl,
                                       ImageStore *is,
                                       int slide_number, PangoContext *pc,

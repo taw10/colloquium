@@ -54,9 +54,6 @@ struct print_stuff
 	struct frame *top;
 	int start_paras[256];
 	int slide_number;
-
-	ImageStore *is;
-	const char *storename;
 };
 
 
@@ -194,13 +191,11 @@ static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
 	sc_callback_list_add_callback(cbl, "slide", print_create_thumbnail,
 	                              print_render_thumbnail, NULL, ps);
 
-	ps->is = imagestore_new(ps->storename);
-
 	pc = gtk_print_context_create_pango_context(ctx);
 
 	dummy_top = sc_block_new_parent(ps->p->scblocks, "presentation");
 	ps->top = interp_and_shape(dummy_top, ps->p->stylesheet, cbl,
-	                           ps->is, 0, pc,
+	                           ps->p->is, 0, pc,
 	                           gtk_print_context_get_width(ctx),
 	                           gtk_print_context_get_height(ctx),
 	                           ps->p->lang);
@@ -242,7 +237,10 @@ static void print_narrative(GtkPrintOperation *op, GtkPrintContext *ctx,
 		h += paragraph_height(ps->top->paras[i]);
 		if ( h > page_height ) return;
 
-		render_paragraph(cr, ps->top->paras[i], ps->is);
+		cairo_save(cr);
+		render_paragraph(cr, ps->top->paras[i], ps->p->is);
+		cairo_restore(cr);
+
 		cairo_translate(cr, 0.0, paragraph_height(ps->top->paras[i]));
 
 	}

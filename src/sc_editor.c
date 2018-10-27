@@ -384,7 +384,7 @@ void sc_editor_ensure_cursor(SCEditor *e)
 }
 
 
-void sc_editor_remove_cursor(SCEditor *e)
+static void sc_editor_remove_cursor(SCEditor *e)
 {
 	e->cursor_frame = NULL;
 	e->cpos.para = 0;
@@ -999,7 +999,7 @@ static void insert_text(char *t, SCEditor *e)
 			fprintf(stderr, _("Failed to insert paragraph\n"));
 			return;
 		}
-		add_run(pnew, ad, ad, e->cursor_frame->fontdesc,
+		add_run(pnew, ad, e->cursor_frame->fontdesc,
 		        e->cursor_frame->col);
 
 		wrap_frame(e->cursor_frame, e->pc);
@@ -1222,7 +1222,7 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
 	}
 	scblocks = sc_block_append(scblocks, NULL, NULL, strdup(""), NULL);
 
-	add_run(para, scblocks, scblocks, fr->fontdesc, fr->col);
+	add_run(para, scblocks, fr->fontdesc, fr->col);
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 }
 
@@ -1979,27 +1979,9 @@ void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks)
 }
 
 
-SCBlock *sc_editor_get_scblock(SCEditor *e)
-{
-	return e->scblocks;
-}
-
-
 static void update_size_request(SCEditor *e)
 {
 	gtk_widget_set_size_request(GTK_WIDGET(e), 0, e->h + 2.0*e->min_border);
-}
-
-
-void sc_editor_set_size(SCEditor *e, int w, int h)
-{
-	e->w = w;
-	e->h = h;
-	update_size_request(e);
-	if ( gtk_widget_get_mapped(GTK_WIDGET(e)) ) {
-		full_rerender(e);
-		sc_editor_redraw(e);
-	}
 }
 
 
@@ -2033,7 +2015,7 @@ void sc_editor_set_top_frame_editable(SCEditor *e, int top_frame_editable)
 }
 
 
-void sc_editor_set_stylesheet(SCEditor *e, SCBlock *stylesheet)
+void sc_editor_set_stylesheet(SCEditor *e, Stylesheet *stylesheet)
 {
 	e->stylesheet = stylesheet;
 }
@@ -2125,7 +2107,7 @@ void sc_editor_set_imagestore(SCEditor *e, ImageStore *is)
 }
 
 
-SCEditor *sc_editor_new(SCBlock *scblocks, SCBlock *stylesheet,
+SCEditor *sc_editor_new(SCBlock *scblocks, Stylesheet *stylesheet,
                         PangoLanguage *lang, const char *storename)
 {
 	SCEditor *sceditor;

@@ -264,26 +264,8 @@ static SCBlock *sc_find_parent(SCBlock *top, SCBlock *find)
 }
 
 
-void sc_block_substitute(SCBlock **top, SCBlock *old, SCBlock *new)
-{
-	if ( old == NULL ) {
-		fprintf(stderr, _("Substituting nothing!\n"));
-		return;
-	}
-
-	if ( old == *top ) {
-		/* It is the first block */
-		new->next = old->next;
-		*top = new;
-	} else {
-		sc_block_unlink(top, old);
-		sc_block_append_p(*top, new);
-	}
-}
-
-
 /* Unlink "deleteme", which is somewhere under "top" */
-int sc_block_unlink(SCBlock **top, SCBlock *deleteme)
+static int sc_block_unlink(SCBlock **top, SCBlock *deleteme)
 {
 	SCBlock *parent = sc_find_parent(*top, deleteme);
 	if ( parent == NULL ) {
@@ -407,36 +389,6 @@ char *serialise_sc_block(const SCBlock *bl)
 	if ( (bl->name != NULL) &&
 	     ((bl->contents != NULL) || (bl->child != NULL)) ) {
 		strcat(a, "}");
-	}
-
-	return a;
-}
-
-
-/* Serialise an entire chain of blocks */
-char *serialise_sc_block_chain(const SCBlock *bl)
-{
-	char *a = strdup("");
-	size_t len = 1;
-
-	if ( a == NULL ) return NULL;
-
-	while ( bl != NULL ) {
-
-		char *c = serialise_sc_block(bl);
-		if ( c == NULL ) {
-			free(a);
-			return NULL;
-		}
-
-		len += strlen(c);
-		a = realloc(a, len);
-		if ( a == NULL ) return NULL;
-		strcat(a, c);
-		free(c);
-
-		bl = bl->next;
-
 	}
 
 	return a;
@@ -770,17 +722,6 @@ void sc_block_set_contents(SCBlock *bl, char *con)
 }
 
 
-SCBlock *find_last_child(SCBlock *bl)
-{
-	if ( bl == NULL ) return NULL;
-	if ( bl->child == NULL ) return NULL;
-
-	bl = bl->child;
-	while ( bl->next != NULL ) bl = bl->next;
-	return bl;
-}
-
-
 void sc_insert_text(SCBlock *b1, size_t o1, const char *t)
 {
 	if ( b1->contents == NULL ) {
@@ -847,37 +788,6 @@ size_t scblock_delete_text(SCBlock *b, ssize_t o1, ssize_t o2)
 	memmove(b->contents+o1, b->contents+o2, len-o2+1);
 
 	return o2-o1;
-}
-
-
-/* Create a deep copy of "bl", including all its children */
-SCBlock *sc_block_copy(const SCBlock *bl)
-{
-	SCBlock *copy;
-	SCBlock *first_copy;
-
-	first_copy = sc_block_new();
-
-	copy = first_copy;
-	do {
-
-		if ( bl->name != NULL ) copy->name = strdup(bl->name);
-		if ( bl->options != NULL ) copy->options = strdup(bl->options);
-		if ( bl->contents != NULL ) copy->contents = strdup(bl->contents);
-		if ( bl->child != NULL ) copy->child = sc_block_copy(bl->child);
-
-		bl = bl->next;
-
-		if ( bl != NULL ) {
-			SCBlock *nn;
-			nn = sc_block_new();
-			copy->next = nn;
-			copy = nn;
-		}
-
-	} while ( bl != NULL );
-
-	return first_copy;
 }
 
 

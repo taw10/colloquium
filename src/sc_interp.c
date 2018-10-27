@@ -38,21 +38,6 @@
 #include "utils.h"
 
 
-struct macro
-{
-	char *name;
-	SCBlock *bl;
-	struct macro *prev;  /* Previous declaration, or NULL */
-};
-
-
-struct template
-{
-	char *name;
-	SCBlock *bl;
-};
-
-
 struct sc_state
 {
 	PangoFontDescription *fontdesc;
@@ -71,24 +56,7 @@ struct sc_state
 	double slide_height;
 
 	struct frame *fr;  /* The current frame */
-
-	int n_macros;
-	int max_macros;
-	struct macro *macros;  /* Contents need to be copied on push */
-
-	int n_styles;
-	int max_styles;
-	struct macro *styles;  /* Contents need to be copied on push */
-
-	int n_templates;
-	int max_templates;
-	struct template *templates;
-
-	SCBlock *macro_contents;  /* If running a macro, the child block of the caller */
-	SCBlock *macro_real_block;  /* If running a macro, the block which called the macro */
-	int macro_editable;  /* If running a macro, whether this bit can be edited or not */
 };
-
 
 struct _scinterp
 {
@@ -116,6 +84,17 @@ struct _sccallbacklist
 	SCCallbackClickFunc *click_funcs;
 	void **vps;
 };
+
+
+static int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
+{
+	while ( bl != NULL ) {
+		if ( sc_interp_add_block(scin, bl, ss) ) return 1;
+		bl = sc_block_next(bl);
+	}
+
+	return 0;
+}
 
 
 SCCallbackList *sc_callback_list_new()
@@ -242,12 +221,6 @@ static int check_callback(SCInterpreter *scin, SCBlock *bl)
 		double w, h;
 		int r;
 		void *bvp;
-		SCBlock *rbl;
-
-		rbl = bl;
-		if ( sc_interp_get_macro_real_block(scin) != NULL ) {
-			bl = sc_interp_get_macro_real_block(scin);
-		}
 
 		if ( strcmp(cbl->names[i], name) != 0 ) continue;
 		r = cbl->box_funcs[i](scin, bl, &w, &h, &bvp, cbl->vps[i]);
@@ -255,7 +228,7 @@ static int check_callback(SCInterpreter *scin, SCBlock *bl)
 			struct sc_state *st = &scin->state[scin->j];
 			Paragraph *pnew;
 			pnew = add_callback_para(sc_interp_get_frame(scin),
-			                         bl, rbl, w, h,
+			                         bl, w, h,
 			                         cbl->draw_funcs[i],
 			                         cbl->click_funcs[i],
 			                         bvp, cbl->vps[i]);
@@ -290,41 +263,6 @@ double *sc_interp_get_fgcol(SCInterpreter *scin)
 {
 	struct sc_state *st = &scin->state[scin->j];
 	return st->col;
-}
-
-
-double *sc_interp_get_bgcol(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->bgcol;
-}
-
-
-double *sc_interp_get_bgcol2(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->bgcol2;
-}
-
-
-GradientType sc_interp_get_bggrad(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->bggrad;
-}
-
-
-int sc_interp_get_ascent(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->ascent;
-}
-
-
-int sc_interp_get_height(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->height;
 }
 
 
@@ -526,38 +464,22 @@ static void set_bggrad(SCInterpreter *scin, const char *options,
 {
 	struct sc_state *st = &scin->state[scin->j];
 	GdkRGBA col1, col2;
-	char *n2;
-	char *optcopy = strdup(options);
 
-	if ( options == NULL ) {
-		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), options);
-		return;
+	if ( parse_colour_duo(options, &col1, &col2) == 0 ) {
+
+		st->bgcol[0] = col1.red;
+		st->bgcol[1] = col1.green;
+		st->bgcol[2] = col1.blue;
+		st->bgcol[3] = col1.alpha;
+
+		st->bgcol2[0] = col2.red;
+		st->bgcol2[1] = col2.green;
+		st->bgcol2[2] = col2.blue;
+		st->bgcol2[3] = col2.alpha;
+
+		st->bggrad = grad;
+
 	}
-
-	n2 = strchr(optcopy, ',');
-	if ( n2 == NULL ) {
-		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), options);
-		return;
-	}
-
-	n2[0] = '\0';
-
-	gdk_rgba_parse(&col1, optcopy);
-	gdk_rgba_parse(&col2, &n2[1]);
-
-	st->bgcol[0] = col1.red;
-	st->bgcol[1] = col1.green;
-	st->bgcol[2] = col1.blue;
-	st->bgcol[3] = col1.alpha;
-
-	st->bgcol2[0] = col2.red;
-	st->bgcol2[1] = col2.green;
-	st->bgcol2[2] = col2.blue;
-	st->bgcol2[3] = col2.alpha;
-
-	st->bggrad = grad;
-
-	free(optcopy);
 }
 
 
@@ -611,13 +533,6 @@ struct frame *sc_interp_get_frame(SCInterpreter *scin)
 }
 
 
-SCBlock *sc_interp_get_macro_real_block(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->macro_real_block;
-}
-
-
 static void set_frame(SCInterpreter *scin, struct frame *fr)
 {
 	struct sc_state *st = &scin->state[scin->j];
@@ -649,33 +564,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	scin->cbl = NULL;
 
 	st = &scin->state[0];
-	st->n_macros = 0;
-	st->max_macros = 16;
-	st->macros = malloc(16*sizeof(struct macro));
-	if ( st->macros == NULL ) {
-		free(scin->state);
-		free(scin);
-		return NULL;
-	}
-	st->n_styles = 0;
-	st->max_styles = 16;
-	st->styles = malloc(16*sizeof(struct macro));
-	if ( st->styles == NULL ) {
-		free(scin->state);
-		free(scin);
-		return NULL;
-	}
-	st->n_templates = 0;
-	st->max_templates = 16;
-	st->templates = malloc(16*sizeof(struct template));
-	if ( st->templates == NULL ) {
-		free(scin->state);
-		free(scin);
-		return NULL;
-	}
-	st->macro_contents = NULL;
-	st->macro_real_block = NULL;
-	st->macro_editable = 0;
 	st->fr = NULL;
 	st->paraspace[0] = 0.0;
 	st->paraspace[1] = 0.0;
@@ -696,7 +584,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->bgcol2[1] = 1.0;
 	st->bgcol2[2] = 1.0;
 	st->bgcol2[3] = 1.0;
-	st->bggrad = GRAD_NOBG;
+	st->bggrad = GRAD_NONE;
 	scin->lang = lang;
 
 	/* The "ultimate" default font */
@@ -713,8 +601,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 
 void sc_interp_destroy(SCInterpreter *scin)
 {
-	/* FIXME: Free all templates and macros */
-
 	/* Empty the stack */
 	while ( scin->j > 0 ) {
 		sc_interp_restore(scin);
@@ -726,34 +612,6 @@ void sc_interp_destroy(SCInterpreter *scin)
 
 	free(scin->state);
 	free(scin);
-}
-
-
-static int parse_double(const char *a, float v[2])
-{
-	int nn;
-
-	nn = sscanf(a, "%fx%f", &v[0], &v[1]);
-	if ( nn != 2 ) {
-		fprintf(stderr, _("Invalid size '%s'\n"), a);
-		return 1;
-	}
-
-	return 0;
-}
-
-
-static int parse_tuple(const char *a, float v[4])
-{
-	int nn;
-
-	nn = sscanf(a, "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]);
-	if ( nn != 4 ) {
-		fprintf(stderr, _("Invalid tuple '%s'\n"), a);
-		return 1;
-	}
-
-	return 0;
 }
 
 
@@ -785,19 +643,6 @@ static void set_paraspace(SCInterpreter *scin, const char *opts)
 	st->paraspace[3] = p[3];
 
 	set_para_spacing(last_para(sc_interp_get_frame(scin)), p);
-}
-
-
-static void set_slide_size(SCInterpreter *scin, const char *opts)
-{
-	float p[2];
-	struct sc_state *st = &scin->state[scin->j];
-
-	if ( parse_double(opts, p) ) return;
-
-	st->slide_width = p[0];
-	st->slide_height = p[1];
-	st->have_size = 1;
 }
 
 
@@ -1015,24 +860,17 @@ static void maybe_recurse_before(SCInterpreter *scin, SCBlock *child)
 }
 
 
-static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child)
+static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child,
+                                Stylesheet *ss)
 {
 	if ( child == NULL ) return;
 
-	sc_interp_add_blocks(scin, child);
+	sc_interp_add_blocks(scin, child, ss);
 	sc_interp_restore(scin);
 }
 
 
-static int in_macro(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	if ( st->macro_contents == NULL ) return 0;
-	return 1;
-}
-
-
-static void add_newpara(struct frame *fr, SCBlock *bl, SCBlock *mrb)
+static void add_newpara(struct frame *fr, SCBlock *bl)
 {
 	Paragraph *last_para;
 
@@ -1043,7 +881,7 @@ static void add_newpara(struct frame *fr, SCBlock *bl, SCBlock *mrb)
 
 	/* The block after the \newpara will always be the first one of the
 	 * next paragraph, by definition, even if it's \f or another \newpara */
-	create_paragraph(fr, sc_block_next(mrb), sc_block_next(bl));
+	create_paragraph(fr, sc_block_next(bl));
 }
 
 
@@ -1055,7 +893,6 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	PangoFontDescription *fontdesc;
 	double *col;
 	struct sc_state *st = &scin->state[scin->j];
-	SCBlock *rbl;
 	Paragraph *para;
 
 	/* Empty block? */
@@ -1064,47 +901,113 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
 
-	rbl = bl;
-	if ( st->macro_real_block != NULL ) {
-		bl = st->macro_real_block;
-	}
-
 	para = last_para(fr);
 	if ( (para == NULL) || (para_type(para) != PARA_TYPE_TEXT) ) {
 		/* Last paragraph is not text.
 		 *  or: no paragraphs yet.
 		 *    Either way: Create the first one */
-		para = create_paragraph(fr, bl, rbl);
+		para = create_paragraph(fr, bl);
 	}
 
 	set_para_alignment(para, st->alignment);
-	add_run(para, bl, rbl, fontdesc, col);
+	add_run(para, bl, fontdesc, col);
 	set_para_spacing(para, st->paraspace);
 
 	return 0;
 }
 
 
-void sc_interp_run_style(SCInterpreter *scin, const char *sname)
+static void apply_style(SCInterpreter *scin, Stylesheet *ss, const char *path)
 {
-	int i;
-	struct sc_state *st = &scin->state[scin->j];
+	char *result;
 
-	for ( i=0; i<st->n_styles; i++ ) {
-		if ( strcmp(sname, st->styles[i].name) == 0 ) {
-			sc_interp_add_blocks(scin, st->styles[i].bl);
-			return;
+	if ( ss == NULL ) return;
+
+	/* Font */
+	result = stylesheet_lookup(ss, path, "font");
+	if ( result != NULL ) set_font(scin, result);
+
+	/* Foreground colour */
+	result = stylesheet_lookup(ss, path, "fgcol");
+	if ( result != NULL ) set_colour(scin, result);
+
+	/* Background (vertical gradient) */
+	result = stylesheet_lookup(ss, path, "bggradv");
+	if ( result != NULL ) set_bggrad(scin, result, GRAD_VERT);
+
+	/* Background (horizontal gradient) */
+	result = stylesheet_lookup(ss, path, "bggradh");
+	if ( result != NULL ) set_bggrad(scin, result, GRAD_HORIZ);
+
+	/* Background (solid colour) */
+	result = stylesheet_lookup(ss, path, "bgcol");
+	if ( result != NULL ) set_bgcol(scin, result);
+
+	/* Padding */
+	result = stylesheet_lookup(ss, path, "pad");
+	if ( result != NULL ) set_padding(sc_interp_get_frame(scin), result);
+
+	/* Paragraph spacing */
+	result = stylesheet_lookup(ss, path, "paraspace");
+	if ( result != NULL ) set_paraspace(scin, result);
+
+	/* Alignment */
+	result = stylesheet_lookup(ss, path, "alignment");
+	if ( result != NULL ) {
+		if ( strcmp(result, "center") == 0 ) {
+			set_alignment(scin, PANGO_ALIGN_CENTER);
+		}
+		if ( strcmp(result, "left") == 0 ) {
+			set_alignment(scin, PANGO_ALIGN_LEFT);
+		}
+		if ( strcmp(result, "right") == 0 ) {
+			set_alignment(scin, PANGO_ALIGN_RIGHT);
 		}
 	}
+
+	update_bg(scin);
 }
 
 
-static int check_outputs(SCBlock *bl, SCInterpreter *scin)
+static void output_frame(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss,
+                         const char *stylename)
+{
+	struct frame *fr;
+	SCBlock *child = sc_block_child(bl);
+	const char *options = sc_block_options(bl);
+	char *result;
+
+	fr = add_subframe(sc_interp_get_frame(scin));
+	fr->scblocks = bl;
+	fr->resizable = 1;
+	if ( fr == NULL ) {
+		fprintf(stderr, _("Failed to add frame.\n"));
+		return;
+	}
+
+	/* Lowest priority: current state of interpreter */
+	set_frame_default_style(fr, scin);
+
+	/* Next priority: geometry from stylesheet */
+	result = stylesheet_lookup(ss, stylename, "geometry");
+	if ( result != NULL ) {
+		parse_frame_options(fr, sc_interp_get_frame(scin), result);
+	}
+
+	/* Highest priority: parameters to \f (or \slidetitle etc) */
+	parse_frame_options(fr, sc_interp_get_frame(scin), options);
+
+	maybe_recurse_before(scin, child);
+	set_frame(scin, fr);
+	apply_style(scin, ss, stylename);
+	maybe_recurse_after(scin, child, ss);
+}
+
+
+static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 {
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
-	SCBlock *child = sc_block_child(bl);
-	struct sc_state *st = &scin->state[scin->j];
 
 	if ( name == NULL ) {
 		add_text(sc_interp_get_frame(scin),
@@ -1116,11 +1019,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		if ( parse_image_options(options, sc_interp_get_frame(scin),
 		                         &w, &h, &filename) == 0 )
 		{
-			SCBlock *rbl = bl;
-			if ( st->macro_real_block != NULL ) {
-				bl = st->macro_real_block;
-			}
-			add_image_para(sc_interp_get_frame(scin), bl, rbl,
+			add_image_para(sc_interp_get_frame(scin), bl,
 			               filename, scin->is, w, h, 1);
 			free(filename);
 		} else {
@@ -1129,38 +1028,20 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 		}
 
 	} else if ( strcmp(name, "f")==0 ) {
+		output_frame(scin, bl, ss, "$.slide.frame");
 
-		struct frame *fr;
+	} else if ( strcmp(name, "slidetitle")==0 ) {
+		output_frame(scin, bl, ss, "$.slide.slidetitle");
 
-		fr = add_subframe(sc_interp_get_frame(scin));
-		fr->scblocks = bl;
-		if ( in_macro(scin) ) {
-			fr->resizable = 0;
-		} else {
-			fr->resizable = 1;
-		}
-		if ( fr == NULL ) {
-			fprintf(stderr, _("Failed to add frame.\n"));
-			return 1;
-		}
+	} else if ( strcmp(name, "prestitle")==0 ) {
+		output_frame(scin, bl, ss, "$.slide.prestitle");
 
-		set_frame_default_style(fr, scin);
-
-		parse_frame_options(fr, sc_interp_get_frame(scin), options);
-
-		maybe_recurse_before(scin, child);
-		set_frame(scin, fr);
-		sc_interp_run_style(scin, "frame");
-		maybe_recurse_after(scin, child);
+	} else if ( strcmp(name, "author")==0 ) {
+		output_frame(scin, bl, ss, "$.slide.author");
 
 	} else if ( strcmp(name, "newpara")==0 ) {
-
 		struct frame *fr = sc_interp_get_frame(scin);
-		SCBlock *rbl = bl;
-		if ( st->macro_real_block != NULL ) {
-			bl = st->macro_real_block;
-		}
-		add_newpara(fr, bl, rbl);
+		add_newpara(fr, bl);
 
 	} else {
 		return 0;
@@ -1170,68 +1051,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin)
 }
 
 
-static int check_macro(const char *name, SCInterpreter *scin)
-{
-	int i;
-	struct sc_state *st = &scin->state[scin->j];
-
-	if ( name == NULL ) return 0;
-
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-
-static void exec_macro(SCBlock *bl, SCInterpreter *scin, SCBlock *child)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	int i;
-	const char *name;
-
-	name = sc_block_name(bl);
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, name) == 0 ) {
-			sc_interp_save(scin);
-			scin->state[scin->j].macro_real_block = bl;
-			scin->state[scin->j].macro_contents = child;
-			sc_interp_add_blocks(scin, scin->state[scin->j].macros[i].bl);
-			sc_interp_restore(scin);
-			break; /* Stop iterating, because "st" is now invalid */
-		}
-	}
-}
-
-
-static void run_macro_contents(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	SCBlock *contents = st->macro_contents;
-
-	sc_interp_save(scin);
-	scin->state[scin->j].macro_real_block = NULL;
-	sc_interp_add_blocks(scin, contents);
-	sc_interp_restore(scin);
-}
-
-
-static void run_editable(SCInterpreter *scin, SCBlock *contents)
-{
-	//struct sc_state *st = &scin->state[scin->j];
-
-	sc_interp_save(scin);
-	//scin->state[scin->j].macro_real_block = NULL;
-	scin->state[scin->j].macro_editable = 1;
-	sc_interp_add_blocks(scin, contents);
-	sc_interp_restore(scin);
-}
-
-
-int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
+int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 {
 	const char *name = sc_block_name(bl);
 	const char *options = sc_block_options(bl);
@@ -1241,16 +1061,11 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 	//show_sc_blocks(bl);
 	//printf("<------------\n");
 
-	if ( check_macro(name, scin) ) {
-		sc_interp_save(scin);
-		exec_macro(bl, scin, child);
-		sc_interp_restore(scin);
-
-	} else if ( check_callback(scin, bl) ) {
+	if ( check_callback(scin, bl) ) {
 		/* Handled in check_callback, don't do anything else */
 
 	} else if ((sc_interp_get_frame(scin) != NULL)
-	  && check_outputs(bl, scin) ) {
+	  && check_outputs(bl, scin, ss) ) {
 		/* Block handled as output thing */
 
 	} else if ( name == NULL ) {
@@ -1258,95 +1073,86 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 
 	} else if ( strcmp(name, "presentation") == 0 ) {
 		maybe_recurse_before(scin, child);
-		sc_interp_run_style(scin, "narrative");
-		maybe_recurse_after(scin, child);
-
-	} else if ( strcmp(name, "stylesheet") == 0 ) {
-		/* Ignore (see sc_interp_run_stylesheet)  */
+		apply_style(scin, ss, "$.narrative");
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "slide") == 0 ) {
 		maybe_recurse_before(scin, child);
-		sc_interp_run_style(scin, "slide");
-		maybe_recurse_after(scin, child);
+		apply_style(scin, ss, "$.slide");
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "font") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_font(scin, options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "fontsize") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_fontsize(scin, options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bold") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bold(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "oblique") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_oblique(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "italic") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_italic(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "lalign") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_alignment(scin, PANGO_ALIGN_LEFT);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "ralign") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_alignment(scin, PANGO_ALIGN_RIGHT);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "center") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_alignment(scin, PANGO_ALIGN_CENTER);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "fgcol") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_colour(scin, options);
-		maybe_recurse_after(scin, child);
-
-	} else if ( strcmp(name, "contents") == 0 ) {
-		run_macro_contents(scin);
-
-	} else if ( strcmp(name, "editable") == 0 ) {
-		run_editable(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "pad") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_padding(sc_interp_get_frame(scin), options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bgcol") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bgcol(scin, options);
 		update_bg(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bggradh") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bggrad(scin, options, GRAD_HORIZ);
 		update_bg(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bggradv") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_bggrad(scin, options, GRAD_VERT);
 		update_bg(scin);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "paraspace") == 0 ) {
 		maybe_recurse_before(scin, child);
 		set_paraspace(scin, options);
-		maybe_recurse_after(scin, child);
+		maybe_recurse_after(scin, child, ss);
 
 	} else {
 
@@ -1358,252 +1164,3 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl)
 	return 0;
 }
 
-
-int sc_interp_add_blocks(SCInterpreter *scin, SCBlock *bl)
-{
-	while ( bl != NULL ) {
-		if ( sc_interp_add_block(scin, bl) ) return 1;
-		bl = sc_block_next(bl);
-	}
-
-	return 0;
-}
-
-
-static int try_add_style(SCInterpreter *scin, const char *options, SCBlock *bl)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	char *nn;
-	char *comma;
-	int i;
-
-	nn = strdup(options);
-	comma = strchr(nn, ',');
-	if ( comma != NULL ) {
-		comma[0] = '\0';
-	}
-
-	for ( i=0; i<st->n_styles; i++ ) {
-		if ( strcmp(st->styles[i].name, nn) == 0 ) {
-			st->styles[i].name = nn;
-			st->styles[i].bl = bl;
-			st->styles[i].prev = NULL;  /* FIXME: Stacking */
-			return 0;
-		}
-	}
-
-	if ( st->max_styles == st->n_styles ) {
-
-		struct macro *styles_new;
-
-		styles_new = realloc(st->styles, sizeof(struct macro)
-		                     * (st->max_styles+16));
-		if ( styles_new == NULL ) {
-			fprintf(stderr, _("Failed to add style.\n"));
-			return 1;
-		}
-
-		st->styles = styles_new;
-		st->max_styles += 16;
-
-	}
-
-	i = st->n_styles++;
-
-	st->styles[i].name = nn;
-	st->styles[i].bl = bl;
-	st->styles[i].prev = NULL;  /* FIXME: Stacking */
-
-	return 0;
-}
-
-
-static int try_add_macro(SCInterpreter *scin, const char *options, SCBlock *bl)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	char *nn;
-	char *comma;
-	int i;
-
-	nn = strdup(options);
-	comma = strchr(nn, ',');
-	if ( comma != NULL ) {
-		comma[0] = '\0';
-	}
-
-	for ( i=0; i<st->n_macros; i++ ) {
-		if ( strcmp(st->macros[i].name, nn) == 0 ) {
-			st->macros[i].name = nn;
-			st->macros[i].bl = bl;
-			st->macros[i].prev = NULL;  /* FIXME: Stacking */
-			return 0;
-		}
-	}
-
-	if ( st->max_macros == st->n_macros ) {
-
-		struct macro *macros_new;
-
-		macros_new = realloc(st->macros, sizeof(struct macro)
-		                     * (st->max_macros+16));
-		if ( macros_new == NULL ) {
-			fprintf(stderr, _("Failed to add macro.\n"));
-			return 1;
-		}
-
-		st->macros = macros_new;
-		st->max_macros += 16;
-
-	}
-
-	i = st->n_macros++;
-
-	st->macros[i].name = nn;
-	st->macros[i].bl = bl;
-	st->macros[i].prev = NULL;  /* FIXME: Stacking */
-
-	return 0;
-}
-
-
-static int try_add_template(SCInterpreter *scin, const char *options, SCBlock *bl)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	char *nn;
-	char *comma;
-	int i;
-
-	nn = strdup(options);
-	comma = strchr(nn, ',');
-	if ( comma != NULL ) {
-		comma[0] = '\0';
-	}
-
-	for ( i=0; i<st->n_templates; i++ ) {
-		if ( strcmp(st->templates[i].name, nn) == 0 ) {
-			fprintf(stderr, _("Duplicate template '%s'\n"), nn);
-			return 0;
-		}
-	}
-
-	if ( st->max_templates == st->n_templates ) {
-
-		struct template *templates_new;
-
-		templates_new = realloc(st->templates, sizeof(struct template)
-		                     * (st->max_templates+16));
-		if ( templates_new == NULL ) {
-			fprintf(stderr, _("Failed to add templates\n"));
-			return 1;
-		}
-
-		st->templates = templates_new;
-		st->max_templates += 16;
-
-	}
-
-	i = st->n_templates++;
-
-	st->templates[i].name = nn;
-	st->templates[i].bl = bl;
-
-	return 0;
-}
-
-void add_macro(SCInterpreter *scin, const char *mname, const char *contents)
-{
-	SCBlock *bl = sc_parse(contents);
-	try_add_macro(scin, mname, bl);
-}
-
-
-void sc_interp_run_stylesheet(SCInterpreter *scin, SCBlock *bl)
-{
-	if ( bl == NULL ) return;
-
-	if ( strcmp(sc_block_name(bl), "stylesheet") != 0 ) {
-		fprintf(stderr, _("Style sheet isn't a style sheet.\n"));
-		return;
-	}
-
-	bl = sc_block_child(bl);
-
-	while ( bl != NULL ) {
-
-		const char *name = sc_block_name(bl);
-		const char *options = sc_block_options(bl);
-
-		if ( name == NULL ) {
-
-			/* Do nothing */
-
-		} else if ( strcmp(name, "def") == 0 ) {
-			try_add_macro(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "ss") == 0 ) {  /* Backward compatibility */
-			try_add_macro(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "style") == 0 ) {
-			try_add_style(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "template") == 0 ) {
-			try_add_template(scin, options, sc_block_child(bl));
-
-		} else if ( strcmp(name, "font") == 0 ) {
-			set_font(scin, options);
-
-		} else if ( strcmp(name, "fgcol") == 0 ) {
-			set_colour(scin, options);
-
-		} else if ( strcmp(name, "bgcol") == 0 ) {
-			set_bgcol(scin, options);
-			update_bg(scin);
-
-		} else if ( strcmp(name, "bggradh") == 0 ) {
-			set_bggrad(scin, options, GRAD_HORIZ);
-			update_bg(scin);
-
-		} else if ( strcmp(name, "bggradv") == 0 ) {
-			set_bggrad(scin, options, GRAD_VERT);
-			update_bg(scin);
-
-		} else if ( strcmp(name, "paraspace") == 0 ) {
-			set_paraspace(scin, options);
-
-		} else if ( strcmp(name, "slidesize") == 0 ) {
-			set_slide_size(scin, options);
-
-		}
-
-		bl = sc_block_next(bl);
-
-	}
-}
-
-
-int sc_interp_get_slide_size(SCInterpreter *scin, double *w, double *h)
-{
-	if ( !scin->state->have_size ) return 1;
-	*w = scin->state->slide_width;
-	*h = scin->state->slide_height;
-	return 0;
-}
-
-
-struct template_id *sc_interp_get_templates(SCInterpreter *scin, int *np)
-{
-	struct template_id *list;
-	int i;
-
-	list = malloc(sizeof(struct template_id)*scin->state->n_templates);
-	if ( list == NULL ) return NULL;
-
-	for ( i=0; i<scin->state->n_templates; i++ ) {
-		list[i].name = strdup(scin->state->templates[i].name);
-		list[i].friendlyname = strdup(scin->state->templates[i].name);
-		list[i].scblock = sc_block_copy(scin->state->templates[i].bl);
-	}
-
-	*np = scin->state->n_templates;
-	return list;
-}

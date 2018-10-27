@@ -253,7 +253,7 @@
                           <item id="vert" translatable="yes">Vertical gradient</item>
                           <item id="none" translatable="yes">None</item>
                         </items>
-                        <signal name="changed" handler="narrative_bggrad_sig" swapped="no"/>
+                        <signal name="changed" handler="narrative_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -266,7 +266,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="color-set" handler="narrative_bgcol_sig" swapped="no"/>
+                        <signal name="color-set" handler="narrative_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -279,7 +279,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="color-set" handler="narrative_bgcol2_sig" swapped="no"/>
+                        <signal name="color-set" handler="narrative_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -372,7 +372,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment1</property>
-                                <signal name="change-value" handler="narrative_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -384,7 +384,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment2</property>
-                                <signal name="change-value" handler="narrative_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -396,7 +396,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment3</property>
-                                <signal name="change-value" handler="narrative_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -408,7 +408,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment4</property>
-                                <signal name="change-value" handler="narrative_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -511,7 +511,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment5</property>
-                                <signal name="change-value" handler="narrative_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -523,7 +523,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment6</property>
-                                <signal name="change-value" handler="narrative_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -535,7 +535,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment7</property>
-                                <signal name="change-value" handler="narrative_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -547,7 +547,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment8</property>
-                                <signal name="change-value" handler="narrative_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="narrative_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -622,7 +622,7 @@
                         <property name="adjustment">adjustment17</property>
                         <property name="numeric">True</property>
                         <property name="value">1024</property>
-                        <signal name="change-value" handler="slide_size_sig" swapped="no"/>
+                        <signal name="value-changed" handler="slide_size_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -650,7 +650,7 @@
                         <property name="adjustment">adjustment18</property>
                         <property name="numeric">True</property>
                         <property name="value">768</property>
-                        <signal name="change-value" handler="slide_size_sig" swapped="no"/>
+                        <signal name="value-changed" handler="slide_size_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -704,7 +704,7 @@
                           <item id="horiz" translatable="yes">Horizontal gradient</item>
                           <item id="vert" translatable="yes">Vertical gradient</item>
                         </items>
-                        <signal name="changed" handler="slide_bggrad_sig" swapped="no"/>
+                        <signal name="changed" handler="slide_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -717,7 +717,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="color-set" handler="slide_bgcol_sig" swapped="no"/>
+                        <signal name="color-set" handler="slide_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -730,7 +730,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="color-set" handler="slide_bgcol2_sig" swapped="no"/>
+                        <signal name="color-set" handler="slide_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -865,7 +865,7 @@
                           <item id="vert" translatable="yes">Vertical gradient</item>
                           <item id="none" translatable="yes">None</item>
                         </items>
-                        <signal name="changed" handler="frame_bggrad_sig" swapped="no"/>
+                        <signal name="changed" handler="frame_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -878,7 +878,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="color-set" handler="frame_bgcol_sig" swapped="no"/>
+                        <signal name="color-set" handler="frame_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -891,7 +891,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="color-set" handler="frame_bgcol2_sig" swapped="no"/>
+                        <signal name="color-set" handler="frame_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -984,7 +984,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment9</property>
-                                <signal name="change-value" handler="frame_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -996,7 +996,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment10</property>
-                                <signal name="change-value" handler="frame_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1008,7 +1008,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment11</property>
-                                <signal name="change-value" handler="frame_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -1020,7 +1020,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment12</property>
-                                <signal name="change-value" handler="frame_paraspace_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_paraspace_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -1123,7 +1123,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment13</property>
-                                <signal name="change-value" handler="frame_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1135,7 +1135,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment14</property>
-                                <signal name="change-value" handler="frame_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1147,7 +1147,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment15</property>
-                                <signal name="change-value" handler="frame_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -1159,7 +1159,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="adjustment">adjustment16</property>
-                                <signal name="change-value" handler="frame_padding_sig" swapped="no"/>
+                                <signal name="value-changed" handler="frame_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>

@@ -464,38 +464,22 @@ static void set_bggrad(SCInterpreter *scin, const char *options,
 {
 	struct sc_state *st = &scin->state[scin->j];
 	GdkRGBA col1, col2;
-	char *n2;
-	char *optcopy = strdup(options);
 
-	if ( options == NULL ) {
-		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), options);
-		return;
+	if ( parse_colour_duo(options, &col1, &col2) == 0 ) {
+
+		st->bgcol[0] = col1.red;
+		st->bgcol[1] = col1.green;
+		st->bgcol[2] = col1.blue;
+		st->bgcol[3] = col1.alpha;
+
+		st->bgcol2[0] = col2.red;
+		st->bgcol2[1] = col2.green;
+		st->bgcol2[2] = col2.blue;
+		st->bgcol2[3] = col2.alpha;
+
+		st->bggrad = grad;
+
 	}
-
-	n2 = strchr(optcopy, ',');
-	if ( n2 == NULL ) {
-		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), options);
-		return;
-	}
-
-	n2[0] = '\0';
-
-	gdk_rgba_parse(&col1, optcopy);
-	gdk_rgba_parse(&col2, &n2[1]);
-
-	st->bgcol[0] = col1.red;
-	st->bgcol[1] = col1.green;
-	st->bgcol[2] = col1.blue;
-	st->bgcol[3] = col1.alpha;
-
-	st->bgcol2[0] = col2.red;
-	st->bgcol2[1] = col2.green;
-	st->bgcol2[2] = col2.blue;
-	st->bgcol2[3] = col2.alpha;
-
-	st->bggrad = grad;
-
-	free(optcopy);
 }
 
 

@@ -28,12 +28,20 @@
 #endif
 
 #include <gio/gio.h>
+#include <gdk/gdk.h>
 
 typedef struct _stylesheet Stylesheet;
 
 extern Stylesheet *stylesheet_load(GFile *file);
 
+extern int parse_colour_duo(const char *a, GdkRGBA *col1, GdkRGBA *col2);
+
 extern char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key);
+
+extern int stylesheet_set(Stylesheet *ss, const char *path, const char *key,
+                          const char *new_val);
+
+extern int stylesheet_delete(Stylesheet *ss, const char *path, const char *key);
 
 extern void stylesheet_free(Stylesheet *ss);
 

@@ -47,34 +47,6 @@ struct _sspriv
 };
 
 
-static int colour_duo_parse(const char *a, GdkRGBA *col1, GdkRGBA *col2)
-{
-	char *acopy;
-	char *n2;
-
-	acopy = strdup(a);
-	if ( acopy == NULL ) return 1;
-
-	n2 = strchr(acopy, ',');
-	if ( n2 == NULL ) {
-		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), a);
-		return 1;
-	}
-
-	n2[0] = '\0';
-
-	if ( gdk_rgba_parse(col1, acopy) != TRUE ) {
-		fprintf(stderr, _("Failed to parse colour: %s\n"), acopy);
-	}
-	if ( gdk_rgba_parse(col2, &n2[1]) != TRUE ) {
-		fprintf(stderr, _("Failed to parse colour: %s\n"), &n2[1]);
-	}
-
-	free(acopy);
-	return 0;
-}
-
-
 static void set_font_from_ss(Stylesheet *ss, const char *path, GtkWidget *w)
 {
 	char *result = stylesheet_lookup(ss, path, "font");
@@ -164,7 +136,7 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
 	if ( result != NULL ) {
 		GdkRGBA rgba1, rgba2;
 		found = 1;
-		if ( colour_duo_parse(result, &rgba1, &rgba2) == 0 ) {
+		if ( parse_colour_duo(result, &rgba1, &rgba2) == 0 ) {
 			gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(wcol), &rgba1);
 			gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(wcol2), &rgba2);
 			gtk_combo_box_set_active_id(GTK_COMBO_BOX(wgrad), "vert");
@@ -177,7 +149,7 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
 	if ( result != NULL ) {
 		GdkRGBA rgba1, rgba2;
 		found = 1;
-		if ( colour_duo_parse(result, &rgba1, &rgba2) == 0 ) {
+		if ( parse_colour_duo(result, &rgba1, &rgba2) == 0 ) {
 			gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(wcol), &rgba1);
 			gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(wcol2), &rgba2);
 			gtk_combo_box_set_active_id(GTK_COMBO_BOX(wgrad), "horiz");
@@ -237,19 +209,6 @@ static void set_values_from_presentation(StylesheetEditor *se)
 }
 
 
-static void update_bg(struct presentation *p, const char *style_name,
-                      GradientType bggrad, GdkRGBA col1, GdkRGBA col2)
-{
-	/* FIXME: set in JSON */
-}
-
-
-static void revert_sig(GtkButton *button, StylesheetEditor *widget)
-{
-	printf("click revert!\n");
-}
-
-
 static GradientType id_to_gradtype(const gchar *id)
 {
 	assert(id != NULL);
@@ -261,12 +220,98 @@ static GradientType id_to_gradtype(const gchar *id)
 }
 
 
+static void update_bg(struct presentation *p, const char *style_name,
+                      GtkWidget *bggradw, GtkWidget *col1w, GtkWidget*col2w)
+{
+	GradientType g;
+	const gchar *id;
+	GdkRGBA rgba;
+	gchar *col1;
+	gchar *col2;
+	gchar *gradient;
+
+	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(bggradw));
+	g = id_to_gradtype(id);
+
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col1w), &rgba);
+	col1 = gdk_rgba_to_string(&rgba);
+
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col2w), &rgba);
+	col2 = gdk_rgba_to_string(&rgba);
+
+	gradient = g_strconcat(col1, ",", col2, NULL);
+
+	switch ( g ) {
+
+		case GRAD_NOBG :
+		stylesheet_set(p->stylesheet, style_name, "bgcol",
+		               "rgba(0,0,0,0)");
+		stylesheet_delete(p->stylesheet, style_name, "bggradv");
+		stylesheet_delete(p->stylesheet, style_name, "bggradh");
+		break;
+
+		case GRAD_NONE :
+		stylesheet_set(p->stylesheet, style_name, "bgcol",
+		               col1);
+		stylesheet_delete(p->stylesheet, style_name, "bggradv");
+		stylesheet_delete(p->stylesheet, style_name, "bggradh");
+		break;
+
+		case GRAD_HORIZ :
+		stylesheet_set(p->stylesheet, style_name, "bggradh",
+		               gradient);
+		stylesheet_delete(p->stylesheet, style_name, "bggradv");
+		stylesheet_delete(p->stylesheet, style_name, "bgcol");
+		break;
+
+		case GRAD_VERT :
+		stylesheet_set(p->stylesheet, style_name, "bggradv",
+		               gradient);
+		stylesheet_delete(p->stylesheet, style_name, "bggradh");
+		stylesheet_delete(p->stylesheet, style_name, "bgcol");
+		break;
+
+	}
+
+	g_free(gradient);
+	g_free(col1);
+	g_free(col2);
+}
+
+
+static void update_spacing(struct presentation *p, const char *style_name,
+                           const char *key, GtkWidget *wl, GtkWidget *wr,
+                           GtkWidget *wt, GtkWidget *wb)
+{
+	int v[4];
+	char tmp[256];
+
+	v[0] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(wl));
+	v[1] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(wr));
+	v[2] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(wt));
+	v[3] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(wb));
+
+	if ( snprintf(tmp, 256, "%i,%i,%i,%i", v[0], v[1], v[2], v[3]) >= 256 ) {
+		fprintf(stderr, _("Spacing too long\n"));
+	} else {
+		stylesheet_set(p->stylesheet, style_name, key, tmp);
+	}
+}
+
+
+static void revert_sig(GtkButton *button, StylesheetEditor *widget)
+{
+	printf("click revert!\n");
+}
+
+
 static void set_font(GtkFontButton *widget, StylesheetEditor *se,
                      const char *style_name)
 {
-//	const gchar *font;
-//	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
-	/* FIXME: set in JSON */
+	const gchar *font;
+	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
+
+	stylesheet_set(se->priv->p->stylesheet, style_name, "font", font);
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
 }
@@ -279,7 +324,7 @@ static void set_col(GtkColorButton *widget, StylesheetEditor *se,
 	gchar *col;
 	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget), &rgba);
 	col = gdk_rgba_to_string(&rgba);
-	/* FIXME: Set in JSON */
+	stylesheet_set(se->priv->p->stylesheet, style_name, "fgcol", col);
 	g_free(col);
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
@@ -288,48 +333,22 @@ static void set_col(GtkColorButton *widget, StylesheetEditor *se,
 
 static void narrative_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
-	set_font(widget, se, "narrative");
+	set_font(widget, se, "$.narrative");
 }
 
 
 static void narrative_fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "narrative", "fgcol");
+	set_col(widget, se, "$.narrative", "fgcol");
 }
 
 
-static void narrative_bgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
+static void narrative_bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
-	                           &se->narrative_bgcol);
-	update_bg(se->priv->p, "narrative", se->narrative_bggrad,
-	          se->narrative_bgcol, se->narrative_bgcol2);
-
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-}
-
-
-static void narrative_bgcol2_sig(GtkColorButton *widget, StylesheetEditor *se)
-{
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
-	                           &se->narrative_bgcol2);
-	update_bg(se->priv->p, "narrative", se->narrative_bggrad,
-	          se->narrative_bgcol, se->narrative_bgcol2);
-
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-}
-
-
-static void narrative_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
-{
-	const gchar *id;
-	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
-	se->narrative_bggrad = id_to_gradtype(id);
-	update_bg(se->priv->p, "narrative", se->narrative_bggrad,
-	          se->narrative_bgcol, se->narrative_bgcol2);
-
+	update_bg(se->priv->p, "$.narrative",
+	          se->narrative_style_bggrad,
+	          se->narrative_style_bgcol,
+	          se->narrative_style_bgcol2);
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
 }
@@ -337,42 +356,31 @@ static void narrative_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
 
 static void slide_size_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
-}
+	int w, h;
+	char tmp[256];
 
+	w = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(se->slide_size_w));
+	h = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(se->slide_size_h));
 
-static void slide_bgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
-{
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
-	                           &se->slide_bgcol);
-	update_bg(se->priv->p, "slide", se->slide_bggrad,
-	          se->slide_bgcol, se->slide_bgcol2);
-
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-}
-
-
-static void slide_bgcol2_sig(GtkColorButton *widget, StylesheetEditor *se)
-{
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
-	                           &se->slide_bgcol2);
-	update_bg(se->priv->p, "slide", se->slide_bggrad,
-	          se->slide_bgcol, se->slide_bgcol2);
+	if ( snprintf(tmp, 256, "%ix%i", w, h) >= 256 ) {
+		fprintf(stderr, _("Slide size too long\n"));
+	} else {
+		stylesheet_set(se->priv->p->stylesheet, "$.slide", "size", tmp);
+		se->priv->p->slide_width = w;
+		se->priv->p->slide_height = h;
+	}
 
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
 }
 
 
-static void slide_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
+static void slide_bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	const gchar *id;
-
-	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
-	se->slide_bggrad = id_to_gradtype(id);
-	update_bg(se->priv->p, "slide", se->slide_bggrad,
-	          se->slide_bgcol, se->slide_bgcol2);
-
+	update_bg(se->priv->p, "$.slide",
+	          se->slide_style_bggrad,
+	          se->slide_style_bgcol,
+	          se->slide_style_bgcol2);
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
 }
@@ -380,48 +388,22 @@ static void slide_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
 
 static void frame_font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
-	set_font(widget, se, "frame");
+	set_font(widget, se, "$.slide.frame");
 }
 
 
 static void frame_fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	set_col(widget, se, "frame", "fgcol");
+	set_col(widget, se, "$.slide.frame", "fgcol");
 }
 
 
-static void frame_bgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
+static void frame_bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
-	                           &se->frame_bgcol);
-	update_bg(se->priv->p, "frame", se->frame_bggrad,
-	          se->frame_bgcol, se->frame_bgcol2);
-
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-}
-
-
-static void frame_bgcol2_sig(GtkColorButton *widget, StylesheetEditor *se)
-{
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget),
-	                           &se->frame_bgcol);
-	update_bg(se->priv->p, "frame", se->frame_bggrad,
-	          se->frame_bgcol, se->frame_bgcol2);
-
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-}
-
-
-static void frame_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
-{
-	const gchar *id;
-	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
-	se->frame_bggrad = id_to_gradtype(id);
-	update_bg(se->priv->p, "frame", se->frame_bggrad,
-	          se->frame_bgcol, se->frame_bgcol2);
-
+	update_bg(se->priv->p, "$.slide.frame",
+	          se->frame_style_bggrad,
+	          se->frame_style_bgcol,
+	          se->frame_style_bgcol2);
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
 }
@@ -429,21 +411,49 @@ static void frame_bggrad_sig(GtkComboBox *widget, StylesheetEditor *se)
 
 static void frame_padding_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
+	update_spacing(se->priv->p, "$.slide.frame", "pad",
+	               se->frame_style_padding_l,
+	               se->frame_style_padding_r,
+	               se->frame_style_padding_t,
+	               se->frame_style_padding_b);
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void frame_paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
+	update_spacing(se->priv->p, "$.slide.frame", "paraspace",
+	               se->frame_style_paraspace_l,
+	               se->frame_style_paraspace_r,
+	               se->frame_style_paraspace_t,
+	               se->frame_style_paraspace_b);
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void narrative_padding_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
+	update_spacing(se->priv->p, "$.narrative", "pad",
+	               se->narrative_style_padding_l,
+	               se->narrative_style_padding_r,
+	               se->narrative_style_padding_t,
+	               se->narrative_style_padding_b);
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void narrative_paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
+	update_spacing(se->priv->p, "$.narrative", "paraspace",
+	               se->narrative_style_paraspace_l,
+	               se->narrative_style_paraspace_r,
+	               se->narrative_style_paraspace_t,
+	               se->narrative_style_paraspace_b);
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
@@ -473,9 +483,9 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	/* Narrative style */
 	SE_BIND_CHILD(narrative_style_font, narrative_font_sig);
 	SE_BIND_CHILD(narrative_style_fgcol, narrative_fgcol_sig);
-	SE_BIND_CHILD(narrative_style_bgcol, narrative_bgcol_sig);
-	SE_BIND_CHILD(narrative_style_bgcol2, narrative_bgcol2_sig);
-	SE_BIND_CHILD(narrative_style_bggrad, narrative_bggrad_sig);
+	SE_BIND_CHILD(narrative_style_bgcol, narrative_bg_sig);
+	SE_BIND_CHILD(narrative_style_bgcol2, narrative_bg_sig);
+	SE_BIND_CHILD(narrative_style_bggrad, narrative_bg_sig);
 	SE_BIND_CHILD(narrative_style_paraspace_l, narrative_paraspace_sig);
 	SE_BIND_CHILD(narrative_style_paraspace_r, narrative_paraspace_sig);
 	SE_BIND_CHILD(narrative_style_paraspace_t, narrative_paraspace_sig);
@@ -488,16 +498,16 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	/* Slide style */
 	SE_BIND_CHILD(slide_size_w, slide_size_sig);
 	SE_BIND_CHILD(slide_size_h, slide_size_sig);
-	SE_BIND_CHILD(slide_style_bgcol, slide_bgcol_sig);
-	SE_BIND_CHILD(slide_style_bgcol2, slide_bgcol2_sig);
-	SE_BIND_CHILD(slide_style_bggrad, slide_bggrad_sig);
+	SE_BIND_CHILD(slide_style_bgcol, slide_bg_sig);
+	SE_BIND_CHILD(slide_style_bgcol2, slide_bg_sig);
+	SE_BIND_CHILD(slide_style_bggrad, slide_bg_sig);
 
 	/* Slide->frame style */
 	SE_BIND_CHILD(frame_style_font, frame_font_sig);
 	SE_BIND_CHILD(frame_style_fgcol, frame_fgcol_sig);
-	SE_BIND_CHILD(frame_style_bgcol, frame_bgcol_sig);
-	SE_BIND_CHILD(frame_style_bgcol2, frame_bgcol2_sig);
-	SE_BIND_CHILD(frame_style_bggrad, frame_bggrad_sig);
+	SE_BIND_CHILD(frame_style_bgcol, frame_bg_sig);
+	SE_BIND_CHILD(frame_style_bgcol2, frame_bg_sig);
+	SE_BIND_CHILD(frame_style_bggrad, frame_bg_sig);
 	SE_BIND_CHILD(frame_style_paraspace_l, frame_paraspace_sig);
 	SE_BIND_CHILD(frame_style_paraspace_r, frame_paraspace_sig);
 	SE_BIND_CHILD(frame_style_paraspace_t, frame_paraspace_sig);

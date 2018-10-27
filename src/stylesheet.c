@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <gio/gio.h>
+#include <gdk/gdk.h>
 
 #include "stylesheet.h"
 #include "utils.h"
@@ -38,6 +39,50 @@
 struct _stylesheet {
 	JsonNode *root;
 };
+
+
+static int find_comma(const char *a)
+{
+	int i = 0;
+	int in_brackets = 0;
+	size_t len = strlen(a);
+
+	do {
+		if ( (a[i] == ',') && !in_brackets ) return i;
+		if ( a[i] == '(' ) in_brackets++;
+		if ( a[i] == ')' ) in_brackets--;
+		i++;
+	} while ( i < len );
+	return 0;
+}
+
+
+int parse_colour_duo(const char *a, GdkRGBA *col1, GdkRGBA *col2)
+{
+	char *acopy;
+	int cpos;
+
+	acopy = strdup(a);
+	if ( acopy == NULL ) return 1;
+
+	cpos = find_comma(acopy);
+	if ( cpos == 0 ) {
+		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), a);
+		return 1;
+	}
+
+	acopy[cpos] = '\0';
+
+	if ( gdk_rgba_parse(col1, acopy) != TRUE ) {
+		fprintf(stderr, _("Failed to parse colour: %s\n"), acopy);
+	}
+	if ( gdk_rgba_parse(col2, &acopy[cpos+1]) != TRUE ) {
+		fprintf(stderr, _("Failed to parse colour: %s\n"), &acopy[cpos+1]);
+	}
+
+	free(acopy);
+	return 0;
+}
 
 
 Stylesheet *stylesheet_load(GFile *file)
@@ -75,13 +120,13 @@ Stylesheet *stylesheet_load(GFile *file)
 }
 
 
-char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key)
+static JsonObject *find_stylesheet_object(Stylesheet *ss, const char *path,
+                                          JsonNode **freeme)
 {
 	JsonNode *node;
 	JsonObject *obj;
 	JsonArray *array;
 	GError *err = NULL;
-	char *ret = NULL;
 
 	node = json_path_query(path, ss->root, &err);
 	array = json_node_get_array(node);
@@ -95,8 +140,22 @@ char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key)
 	obj = json_array_get_object_element(array, 0);
 	if ( obj == NULL ) {
 		printf("%s not a JSON object\n", path);
+		json_node_unref(node);
 		return NULL;
 	}
+
+	*freeme = node;
+	return obj;
+}
+
+
+char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key)
+{
+	JsonObject *obj;
+	char *ret = NULL;
+	JsonNode *node = NULL;
+
+	obj = find_stylesheet_object(ss, path, &node);
 
 	if ( json_object_has_member(obj, key) ) {
 
@@ -110,9 +169,45 @@ char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key)
 
 	} /* else not found, too bad */
 
-	json_node_unref(node);
-
+	if ( node != NULL ) json_node_unref(node);
 	return ret;
+}
+
+
+int stylesheet_set(Stylesheet *ss, const char *path, const char *key,
+                    const char *new_val)
+{
+	JsonObject *obj;
+	JsonNode *node = NULL;
+	int r = 1;
+
+	obj = find_stylesheet_object(ss, path, &node);
+	if ( obj != NULL ) {
+		json_object_set_string_member(obj, key, new_val);
+		r = 0;
+	} /* else most likely the object (e.g. "$.slide", "$.slide.frame",
+	   * "$.narrative" etc doesn't exist */
+
+	if ( node != NULL ) json_node_unref(node);
+	return r;
+}
+
+
+int stylesheet_delete(Stylesheet *ss, const char *path, const char *key)
+{
+	JsonObject *obj;
+	JsonNode *node = NULL;
+	int r = 1;
+
+	obj = find_stylesheet_object(ss, path, &node);
+	if ( obj != NULL ) {
+		json_object_remove_member(obj, key);
+		r = 0;
+	} /* else most likely the object (e.g. "$.slide", "$.slide.frame",
+	   * "$.narrative" etc doesn't exist */
+
+	if ( node != NULL ) json_node_unref(node);
+	return r;
 }
 
 

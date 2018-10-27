@@ -90,18 +90,7 @@ struct _stylesheeteditor
 	GtkWidget *frame_style_padding_t;
 	GtkWidget *frame_style_padding_b;
 	StylesheetEditorPrivate *priv;
-
-	GdkRGBA       narrative_bgcol;
-	GdkRGBA       narrative_bgcol2;
-	GradientType  narrative_bggrad;
-	GdkRGBA       slide_bgcol;
-	GdkRGBA       slide_bgcol2;
-	GradientType  slide_bggrad;
-	GdkRGBA       frame_bgcol;
-	GdkRGBA       frame_bgcol2;
-	GradientType  frame_bggrad;
 };
-
 
 struct _stylesheeteditorclass
 {

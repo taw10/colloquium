@@ -155,6 +155,11 @@ char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key)
 	char *ret = NULL;
 	JsonNode *node = NULL;
 
+	if ( ss == NULL ) {
+		fprintf(stderr, _("No stylesheet!\n"));
+		return NULL;
+	}
+
 	obj = find_stylesheet_object(ss, path, &node);
 
 	if ( json_object_has_member(obj, key) ) {
@@ -181,6 +186,11 @@ int stylesheet_set(Stylesheet *ss, const char *path, const char *key,
 	JsonNode *node = NULL;
 	int r = 1;
 
+	if ( ss == NULL ) {
+		fprintf(stderr, _("No stylesheet!\n"));
+		return 1;
+	}
+
 	obj = find_stylesheet_object(ss, path, &node);
 	if ( obj != NULL ) {
 		json_object_set_string_member(obj, key, new_val);
@@ -198,6 +208,11 @@ int stylesheet_delete(Stylesheet *ss, const char *path, const char *key)
 	JsonObject *obj;
 	JsonNode *node = NULL;
 	int r = 1;
+
+	if ( ss == NULL ) {
+		fprintf(stderr, _("No stylesheet!\n"));
+		return 1;
+	}
 
 	obj = find_stylesheet_object(ss, path, &node);
 	if ( obj != NULL ) {

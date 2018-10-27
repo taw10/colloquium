@@ -77,7 +77,7 @@ static int colour_duo_parse(const char *a, GdkRGBA *col1, GdkRGBA *col2)
 
 static void set_font_from_ss(Stylesheet *ss, const char *path, GtkWidget *w)
 {
-	char *result = stylesheet_lookup(ss, path);
+	char *result = stylesheet_lookup(ss, path, "font");
 	if ( result != NULL ) {
 		gtk_font_button_set_font_name(GTK_FONT_BUTTON(w), result);
 	}
@@ -86,7 +86,7 @@ static void set_font_from_ss(Stylesheet *ss, const char *path, GtkWidget *w)
 
 static void set_col_from_ss(Stylesheet *ss, const char *path, GtkWidget *w)
 {
-	char *result = stylesheet_lookup(ss, path);
+	char *result = stylesheet_lookup(ss, path, "fgcol");
 	if ( result != NULL ) {
 		GdkRGBA rgba;
 		if ( gdk_rgba_parse(&rgba, result) == TRUE ) {
@@ -96,11 +96,11 @@ static void set_col_from_ss(Stylesheet *ss, const char *path, GtkWidget *w)
 }
 
 
-static void set_vals_from_ss(Stylesheet *ss, const char *path,
+static void set_vals_from_ss(Stylesheet *ss, const char *path, const char *key,
                              GtkWidget *wl, GtkWidget *wr,
                              GtkWidget *wt, GtkWidget *wb)
 {
-	char *result = stylesheet_lookup(ss, path);
+	char *result = stylesheet_lookup(ss, path, key);
 	if ( result != NULL ) {
 		float v[4];
 		if ( parse_tuple(result, v) == 0 ) {
@@ -120,7 +120,7 @@ static void set_vals_from_ss(Stylesheet *ss, const char *path,
 static void set_size_from_ss(Stylesheet *ss, const char *path,
                              GtkWidget *ww, GtkWidget *wh)
 {
-	char *result = stylesheet_lookup(ss, path);
+	char *result = stylesheet_lookup(ss, path, "size");
 	if ( result != NULL ) {
 		float v[2];
 		if ( parse_double(result, v) == 0 ) {
@@ -138,12 +138,9 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
                            GtkWidget *wcol2, GtkWidget *wgrad)
 {
 	char *result;
-	char fullpath[256];
 	int found = 0;
 
-	strcpy(fullpath, path);
-	strcat(fullpath, ".bgcol");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "bgcol");
 	if ( result != NULL ) {
 		GdkRGBA rgba;
 		found = 1;
@@ -163,9 +160,7 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
 		}
 	}
 
-	strcpy(fullpath, path);
-	strcat(fullpath, ".bggradv");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "bggradv");
 	if ( result != NULL ) {
 		GdkRGBA rgba1, rgba2;
 		found = 1;
@@ -178,9 +173,7 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
 		}
 	}
 
-	strcpy(fullpath, path);
-	strcat(fullpath, ".bggradh");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "bggradh");
 	if ( result != NULL ) {
 		GdkRGBA rgba1, rgba2;
 		found = 1;
@@ -206,41 +199,41 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	Stylesheet *ss = se->priv->p->stylesheet;
 
 	/* Narrative */
-	set_font_from_ss(ss, "$.narrative.font", se->narrative_style_font);
-	set_col_from_ss(ss, "$.narrative.fgcol", se->narrative_style_fgcol);
+	set_font_from_ss(ss, "$.narrative", se->narrative_style_font);
+	set_col_from_ss(ss, "$.narrative", se->narrative_style_fgcol);
 	set_bg_from_ss(ss, "$.narrative", se->narrative_style_bgcol,
 	                                  se->narrative_style_bgcol2,
 	                                  se->narrative_style_bggrad);
-	set_vals_from_ss(ss, "$.narrative.pad", se->narrative_style_padding_l,
-	                                        se->narrative_style_padding_r,
-	                                        se->narrative_style_padding_t,
-	                                        se->narrative_style_padding_b);
-	set_vals_from_ss(ss, "$.narrative.paraspace", se->narrative_style_paraspace_l,
-	                                              se->narrative_style_paraspace_r,
-	                                              se->narrative_style_paraspace_t,
-	                                              se->narrative_style_paraspace_b);
+	set_vals_from_ss(ss, "$.narrative", "pad", se->narrative_style_padding_l,
+	                                           se->narrative_style_padding_r,
+	                                           se->narrative_style_padding_t,
+	                                           se->narrative_style_padding_b);
+	set_vals_from_ss(ss, "$.narrative", "paraspace", se->narrative_style_paraspace_l,
+	                                                 se->narrative_style_paraspace_r,
+	                                                 se->narrative_style_paraspace_t,
+	                                                 se->narrative_style_paraspace_b);
 
 	/* Slides */
-	set_size_from_ss(ss, "$.slide.size", se->slide_size_w, se->slide_size_h);
+	set_size_from_ss(ss, "$.slide", se->slide_size_w, se->slide_size_h);
 	set_bg_from_ss(ss, "$.slide", se->slide_style_bgcol,
 	                              se->slide_style_bgcol2,
 	                              se->slide_style_bggrad);
 
 
 	/* Frames */
-	set_font_from_ss(ss, "$.slide.frame.font", se->frame_style_font);
-	set_col_from_ss(ss, "$.slide.frame.fgcol", se->frame_style_fgcol);
+	set_font_from_ss(ss, "$.slide.frame", se->frame_style_font);
+	set_col_from_ss(ss, "$.slide.frame", se->frame_style_fgcol);
 	set_bg_from_ss(ss, "$.slide.frame", se->frame_style_bgcol,
 	                                    se->frame_style_bgcol2,
 	                                    se->frame_style_bggrad);
-	set_vals_from_ss(ss, "$.slide.frame.pad", se->frame_style_padding_l,
-	                                          se->frame_style_padding_r,
-	                                          se->frame_style_padding_t,
-	                                          se->frame_style_padding_b);
-	set_vals_from_ss(ss, "$.slide.frame.paraspace", se->frame_style_paraspace_l,
-	                                                se->frame_style_paraspace_r,
-	                                                se->frame_style_paraspace_t,
-	                                                se->frame_style_paraspace_b);
+	set_vals_from_ss(ss, "$.slide.frame", "pad", se->frame_style_padding_l,
+	                                             se->frame_style_padding_r,
+	                                             se->frame_style_padding_t,
+	                                             se->frame_style_padding_b);
+	set_vals_from_ss(ss, "$.slide.frame", "paraspace", se->frame_style_paraspace_l,
+	                                                   se->frame_style_paraspace_r,
+	                                                   se->frame_style_paraspace_t,
+	                                                   se->frame_style_paraspace_b);
 }
 
 

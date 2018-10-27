@@ -935,64 +935,40 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 
 static void apply_style(SCInterpreter *scin, Stylesheet *ss, const char *path)
 {
-	char fullpath[256];
-	size_t len;
 	char *result;
-
-	len = strlen(path);
-	if ( len > 160 ) {
-		fprintf(stderr, "Can't apply style: path too long.\n");
-		return;
-	}
 
 	if ( ss == NULL ) return;
 
 	/* Font */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".font");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "font");
 	if ( result != NULL ) set_font(scin, result);
 
 	/* Foreground colour */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".fgcol");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "fgcol");
 	if ( result != NULL ) set_colour(scin, result);
 
 	/* Background (vertical gradient) */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".bggradv");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "bggradv");
 	if ( result != NULL ) set_bggrad(scin, result, GRAD_VERT);
 
 	/* Background (horizontal gradient) */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".bggradh");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "bggradh");
 	if ( result != NULL ) set_bggrad(scin, result, GRAD_HORIZ);
 
 	/* Background (solid colour) */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".bgcol");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "bgcol");
 	if ( result != NULL ) set_bgcol(scin, result);
 
 	/* Padding */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".pad");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "pad");
 	if ( result != NULL ) set_padding(sc_interp_get_frame(scin), result);
 
 	/* Paragraph spacing */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".paraspace");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "paraspace");
 	if ( result != NULL ) set_paraspace(scin, result);
 
 	/* Alignment */
-	strcpy(fullpath, path);
-	strcat(fullpath, ".alignment");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, path, "alignment");
 	if ( result != NULL ) {
 		if ( strcmp(result, "center") == 0 ) {
 			set_alignment(scin, PANGO_ALIGN_CENTER);
@@ -1015,15 +991,7 @@ static void output_frame(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss,
 	struct frame *fr;
 	SCBlock *child = sc_block_child(bl);
 	const char *options = sc_block_options(bl);
-	char fullpath[256];
-	size_t len;
 	char *result;
-
-	len = strlen(stylename);
-	if ( len > 160 ) {
-		fprintf(stderr, "Can't apply style: path too long.\n");
-		return;
-	}
 
 	fr = add_subframe(sc_interp_get_frame(scin));
 	fr->scblocks = bl;
@@ -1037,9 +1005,7 @@ static void output_frame(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss,
 	set_frame_default_style(fr, scin);
 
 	/* Next priority: geometry from stylesheet */
-	strcpy(fullpath, stylename);
-	strcat(fullpath, ".geometry");
-	result = stylesheet_lookup(ss, fullpath);
+	result = stylesheet_lookup(ss, stylename, "geometry");
 	if ( result != NULL ) {
 		parse_frame_options(fr, sc_interp_get_frame(scin), result);
 	}

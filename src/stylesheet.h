@@ -32,7 +32,9 @@
 typedef struct _stylesheet Stylesheet;
 
 extern Stylesheet *stylesheet_load(GFile *file);
-extern char *stylesheet_lookup(Stylesheet *ss, const char *path);
+
+extern char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key);
+
 extern void stylesheet_free(Stylesheet *ss);
 
 #endif	/* STYLESHEET_H */

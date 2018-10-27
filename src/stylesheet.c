@@ -75,30 +75,43 @@ Stylesheet *stylesheet_load(GFile *file)
 }
 
 
-char *stylesheet_lookup(Stylesheet *ss, const char *path)
+char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key)
 {
 	JsonNode *node;
+	JsonObject *obj;
 	JsonArray *array;
 	GError *err = NULL;
-	char *ret;
-	const gchar *v;
+	char *ret = NULL;
 
 	node = json_path_query(path, ss->root, &err);
 	array = json_node_get_array(node);
 
-	if ( json_array_get_length(array) < 1 ) {
+	if ( json_array_get_length(array) != 1 ) {
 		json_node_unref(node);
+		fprintf(stderr, "More than one result in SS lookup (%s)!\n", path);
 		return NULL;
 	}
 
-	v = json_array_get_string_element(array, 0);
-	if ( v == NULL ) {
-		printf("%s not a string\n", path);
+	obj = json_array_get_object_element(array, 0);
+	if ( obj == NULL ) {
+		printf("%s not a JSON object\n", path);
 		return NULL;
 	}
 
-	ret = strdup(v);
+	if ( json_object_has_member(obj, key) ) {
+
+		const gchar *v;
+		v = json_object_get_string_member(obj, key);
+		if ( v != NULL ) {
+			ret = strdup(v);
+		} else {
+			fprintf(stderr, "Error retrieving %s.%s\n", path, key);
+		}
+
+	} /* else not found, too bad */
+
 	json_node_unref(node);
+
 	return ret;
 }
 

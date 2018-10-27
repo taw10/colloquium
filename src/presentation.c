@@ -230,7 +230,7 @@ static void set_slide_size_from_stylesheet(struct presentation *p)
 {
 	char *result;
 
-	result = stylesheet_lookup(p->stylesheet, "$.slide.size");
+	result = stylesheet_lookup(p->stylesheet, "$.slide", "size");
 	if ( result != NULL ) {
 		float v[2];
 		if ( parse_double(result, v) == 0 ) {

@@ -44,7 +44,8 @@ void free_presentation(struct presentation *p)
 	int final = 0;
 
 	/* FIXME: Loads of stuff leaks here */
-	free(p->uri);
+	g_object_unref(p->file);
+	g_object_unref(p->stylesheet_from);
 	imagestore_destroy(p->is);
 	free(p);
 
@@ -56,12 +57,10 @@ void free_presentation(struct presentation *p)
 
 char *get_titlebar_string(struct presentation *p)
 {
-	if ( p == NULL || p->uri == NULL ) {
+	if ( p == NULL || p->file == NULL ) {
 		return strdup(_("(untitled)"));
 	} else {
-		GFile *f = g_file_new_for_uri(p->uri);
-		char *bn = g_file_get_basename(f);
-		g_object_unref(f);
+		char *bn = g_file_get_basename(p->file);
 		return bn;
 	}
 }
@@ -129,7 +128,8 @@ struct presentation *new_presentation(const char *imagestore)
 	new = calloc(1, sizeof(struct presentation));
 	if ( new == NULL ) return NULL;
 
-	new->uri = NULL;
+	new->file = NULL;
+	new->stylesheet_from = NULL;
 
 	new->scblocks = NULL;
 
@@ -169,6 +169,9 @@ int save_presentation(struct presentation *p, GFile *file, GFile *ssfile)
 	g_object_unref(fh);
 
 	if ( ssfile != NULL ) {
+		char *uri = g_file_get_uri(ssfile);
+		printf(_("Saving stylesheet to %s\n"), uri);
+		g_free(uri);
 		sr = stylesheet_save(p->stylesheet, ssfile);
 		if ( sr ) {
 			fprintf(stderr, _("Couldn't save stylesheet\n"));
@@ -181,7 +184,7 @@ int save_presentation(struct presentation *p, GFile *file, GFile *ssfile)
 	if ( r || sr ) return 1;
 
 	imagestore_set_parent(p->is, g_file_get_parent(file));
-	p->uri = g_file_get_uri(file);
+	p->file = file;
 	p->saved = 1;
 	update_titlebar(p->narrative_window);
 	return 0;
@@ -343,8 +346,10 @@ int load_presentation(struct presentation *p, GFile *file)
 
 	set_slide_size_from_stylesheet(p);
 
-	assert(p->uri == NULL);
-	p->uri = g_file_get_uri(file);
+	assert(p->file == NULL);
+	p->file = file;
+	g_object_ref(file);
+
 	imagestore_set_parent(p->is, g_file_get_parent(file));
 
 	return 0;

@@ -196,15 +196,12 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	GFile *file;
 
-	if ( nw->p->uri == NULL ) {
+	if ( nw->p->file == NULL ) {
 		return saveas_sig(NULL, NULL, nw);
 	}
 
-	file = g_file_new_for_uri(nw->p->uri);
-	save_presentation(nw->p, file, nw->p->stylesheet_from);
-	g_object_unref(file);
+	save_presentation(nw->p, nw->p->file, nw->p->stylesheet_from);
 }
 
 

@@ -40,7 +40,7 @@ struct menu_pl;
 
 struct presentation
 {
-	char             *uri;
+	GFile            *file;
 	GFile            *stylesheet_from;
 	int               completely_empty;
 	int               saved;

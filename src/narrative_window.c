@@ -99,15 +99,22 @@ static void update_toolbar(NarrativeWindow *nw)
 }
 
 
-static gint saveas_response_sig(GtkWidget *d, gint response,
-                                NarrativeWindow *nw)
+struct saveas_info
 {
-	if ( response == GTK_RESPONSE_ACCEPT ) {
+	NarrativeWindow *nw;
+	GtkWidget *filechooser;
+};
 
-		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
 
-		if ( save_presentation(nw->p, file) ) {
-			show_error(nw, _("Failed to save presentation"));
+static gint saveas_response_sig(GtkWidget *d, gint response,
+                                struct saveas_info *si)
+{
+	if ( response == 1 ) {  /* hard-coded number in Glade file */
+
+		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(si->filechooser));
+
+		if ( save_presentation(si->nw->p, file) ) {
+			show_error(si->nw, _("Failed to save presentation"));
 		}
 
 		g_object_unref(file);
@@ -115,6 +122,7 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 	}
 
 	gtk_widget_destroy(d);
+	free(si);
 
 	return 0;
 }
@@ -123,19 +131,22 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	GtkWidget *d;
+	GtkBuilder *builder;
 	NarrativeWindow *nw = vp;
+	struct saveas_info *si;
 
-	d = gtk_file_chooser_dialog_new(_("Save Presentation"),
-	                                GTK_WINDOW(nw->window),
-	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
-	                                _("_Save"), GTK_RESPONSE_ACCEPT,
-	                                NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
-	                                               TRUE);
+	si = malloc(sizeof(struct saveas_info));
+	if ( si == NULL ) return;
 
-	g_signal_connect(G_OBJECT(d), "response",
-	                 G_CALLBACK(saveas_response_sig), nw);
+	si->nw = nw;
+
+	builder = gtk_builder_new_from_resource("/uk/me/bitwiz/Colloquium/savepresentation.ui");
+	gtk_builder_add_callback_symbol(builder, "saveas_response_sig",
+	                                G_CALLBACK(saveas_response_sig));
+	gtk_builder_connect_signals(builder, si);
+	d = GTK_WIDGET(gtk_builder_get_object(builder, "savepresentation"));
+	si->filechooser = GTK_WIDGET(gtk_builder_get_object(builder, "filechooser"));
+	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(nw->window));
 
 	gtk_widget_show_all(d);
 }

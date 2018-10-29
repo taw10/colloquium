@@ -12,7 +12,10 @@ src/sc_interp.c
 src/sc_parse.c
 src/slideshow.c
 src/slide_window.c
+src/stylesheet.c
+src/stylesheet_editor.c
 src/testcard.c
 src/utils.c
 data/menus.ui
 data/stylesheeteditor.ui
+data/savepresentation.ui

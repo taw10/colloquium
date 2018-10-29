@@ -103,6 +103,11 @@ struct saveas_info
 {
 	NarrativeWindow *nw;
 	GtkWidget *filechooser;
+
+	/* Radio buttons for how to save stylesheet */
+	GtkWidget *privatess;
+	GtkWidget *folderss;
+	GtkWidget *noss;
 };
 
 
@@ -112,12 +117,38 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 	if ( response == 1 ) {  /* hard-coded number in Glade file */
 
 		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(si->filechooser));
+		GFile *ssfile = NULL;
 
-		if ( save_presentation(si->nw->p, file) ) {
+		if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(si->privatess)) ) {
+			gchar *ssuri;
+			ssuri = g_file_get_uri(file);
+			if ( ssuri != NULL ) {
+				size_t l = strlen(ssuri);
+				if ( ssuri[l-3] == '.' && ssuri[l-2] == 's' && ssuri[l-1] =='c' ) {
+					ssuri[l-1] = 's';
+					ssfile = g_file_new_for_uri(ssuri);
+					g_free(ssuri);
+				}
+			}
+		} else if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(si->folderss)) ) {
+			GFile *parent;
+			parent = g_file_get_parent(file);
+			if ( parent != NULL ) {
+				ssfile = g_file_get_child(parent, "stylesheet.ss");
+				g_object_unref(parent);
+			}
+		} else if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(si->noss)) ) {
+			/* Do nothing */
+		} else {
+			fprintf(stderr, _("Couldn't determine how to save stylesheet!\n"));
+		}
+
+		if ( save_presentation(si->nw->p, file, ssfile) ) {
 			show_error(si->nw, _("Failed to save presentation"));
 		}
 
 		g_object_unref(file);
+		g_object_unref(ssfile);
 
 	}
 
@@ -146,6 +177,9 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	gtk_builder_connect_signals(builder, si);
 	d = GTK_WIDGET(gtk_builder_get_object(builder, "savepresentation"));
 	si->filechooser = GTK_WIDGET(gtk_builder_get_object(builder, "filechooser"));
+	si->privatess = GTK_WIDGET(gtk_builder_get_object(builder, "privatess"));
+	si->folderss = GTK_WIDGET(gtk_builder_get_object(builder, "folderss"));
+	si->noss = GTK_WIDGET(gtk_builder_get_object(builder, "noss"));
 	gtk_window_set_transient_for(GTK_WINDOW(d), GTK_WINDOW(nw->window));
 
 	gtk_widget_show_all(d);
@@ -169,7 +203,7 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	}
 
 	file = g_file_new_for_uri(nw->p->uri);
-	save_presentation(nw->p, file);
+	save_presentation(nw->p, file, nw->p->stylesheet_from);
 	g_object_unref(file);
 }
 

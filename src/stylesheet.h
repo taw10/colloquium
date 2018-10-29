@@ -34,6 +34,8 @@ typedef struct _stylesheet Stylesheet;
 
 extern Stylesheet *stylesheet_load(GFile *file);
 
+extern int stylesheet_save(Stylesheet *ss, GFile *file);
+
 extern int parse_colour_duo(const char *a, GdkRGBA *col1, GdkRGBA *col2);
 
 extern char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key);

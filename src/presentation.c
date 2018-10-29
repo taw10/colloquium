@@ -83,7 +83,7 @@ static void find_and_load_stylesheet(struct presentation *p, GFile *file)
 				ssuri[l-1] = 's';
 				ssfile = g_file_new_for_uri(ssuri);
 				p->stylesheet = stylesheet_load(ssfile);
-				g_object_unref(ssfile);
+				p->stylesheet_from = ssfile;
 				g_free(ssuri);
 			}
 		}
@@ -95,8 +95,9 @@ static void find_and_load_stylesheet(struct presentation *p, GFile *file)
 				ssfile = g_file_get_child(parent, "stylesheet.ss");
 				if ( ssfile != NULL ) {
 					p->stylesheet = stylesheet_load(ssfile);
-					g_object_unref(ssfile);
+					p->stylesheet_from = ssfile;
 				}
+				g_object_unref(parent);
 			}
 		}
 
@@ -106,13 +107,14 @@ static void find_and_load_stylesheet(struct presentation *p, GFile *file)
 	if ( p->stylesheet == NULL ) {
 		ssfile = g_file_new_for_path("./stylesheet.ss");
 		p->stylesheet = stylesheet_load(ssfile);
-		g_object_unref(ssfile);
+		p->stylesheet_from = ssfile;
 	}
 
 	/* Fourth choice: internal default stylesheet */
 	if ( p->stylesheet == NULL ) {
 		ssfile = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
 		p->stylesheet = stylesheet_load(ssfile);
+		p->stylesheet_from = NULL;
 		g_object_unref(ssfile);
 	}
 
@@ -148,10 +150,11 @@ struct presentation *new_presentation(const char *imagestore)
 }
 
 
-int save_presentation(struct presentation *p, GFile *file)
+int save_presentation(struct presentation *p, GFile *file, GFile *ssfile)
 {
 	GFileOutputStream *fh;
 	int r;
+	int sr;
 	GError *error = NULL;
 
 	fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
@@ -160,9 +163,22 @@ int save_presentation(struct presentation *p, GFile *file)
 		return 1;
 	}
 	r = save_sc_block(G_OUTPUT_STREAM(fh), p->scblocks);
+	if ( r ) {
+		fprintf(stderr, _("Couldn't save presentation\n"));
+	}
 	g_object_unref(fh);
 
-	if ( r ) return 1;
+	if ( ssfile != NULL ) {
+		sr = stylesheet_save(p->stylesheet, ssfile);
+		if ( sr ) {
+			fprintf(stderr, _("Couldn't save stylesheet\n"));
+		}
+	} else {
+		fprintf(stderr, _("Not updating default stylesheet\n"));
+		sr = 0;
+	}
+
+	if ( r || sr ) return 1;
 
 	imagestore_set_parent(p->is, g_file_get_parent(file));
 	p->uri = g_file_get_uri(file);

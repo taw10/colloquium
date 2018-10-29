@@ -232,3 +232,28 @@ void stylesheet_free(Stylesheet *ss)
 	free(ss);
 }
 
+
+int stylesheet_save(Stylesheet *ss, GFile *file)
+{
+	JsonGenerator *gen;
+	GError *error = NULL;
+	GFileOutputStream *fh;
+
+	fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
+	if ( fh == NULL ) {
+		fprintf(stderr, _("Open failed: %s\n"), error->message);
+		return 1;
+	}
+
+	gen = json_generator_new();
+	json_generator_set_root(gen, ss->root);
+	json_generator_set_pretty(gen, TRUE);
+	json_generator_set_indent(gen, 1);
+	json_generator_set_indent_char(gen, '\t');
+	if ( !json_generator_to_stream(gen, G_OUTPUT_STREAM(fh), NULL, &error) ) {
+		fprintf(stderr, _("Open failed: %s\n"), error->message);
+		return 1;
+	}
+	g_object_unref(fh);
+	return 0;
+}

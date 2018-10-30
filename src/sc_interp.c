@@ -44,16 +44,9 @@ struct sc_state
 	PangoFont *font;
 	PangoAlignment alignment;
 	double col[4];
-	double bgcol[4];
-	double bgcol2[4];
-	GradientType bggrad;
 	int ascent;
 	int height;
 	float paraspace[4];
-
-	int have_size;
-	double slide_width;
-	double slide_height;
 
 	struct frame *fr;  /* The current frame */
 };
@@ -434,68 +427,54 @@ static void set_colour(SCInterpreter *scin, const char *colour)
 }
 
 
-static void update_bg(SCInterpreter *scin)
+static void set_bgcol(SCInterpreter *scin, const char *colour)
 {
-	struct sc_state *st = &scin->state[scin->j];
+	GdkRGBA col;
 	struct frame *fr = sc_interp_get_frame(scin);
 
 	if ( fr == NULL ) return;
 
-	fr->bgcol[0] = st->bgcol[0];
-	fr->bgcol[1] = st->bgcol[1];
-	fr->bgcol[2] = st->bgcol[2];
-	fr->bgcol[3] = st->bgcol[3];
-	fr->bgcol2[0] = st->bgcol2[0];
-	fr->bgcol2[1] = st->bgcol2[1];
-	fr->bgcol2[2] = st->bgcol2[2];
-	fr->bgcol2[3] = st->bgcol2[3];
-	fr->grad = st->bggrad;
-}
-
-
-static void set_bgcol(SCInterpreter *scin, const char *colour)
-{
-	GdkRGBA col;
-	struct sc_state *st = &scin->state[scin->j];
-
 	if ( colour == NULL ) {
 		printf(_("Invalid colour\n"));
-		st->bgcol[0] = 0.0;
-		st->bgcol[1] = 0.0;
-		st->bgcol[2] = 0.0;
-		st->bgcol[3] = 1.0;
 		return;
 	}
 
 	gdk_rgba_parse(&col, colour);
 
-	st->bgcol[0] = col.red;
-	st->bgcol[1] = col.green;
-	st->bgcol[2] = col.blue;
-	st->bgcol[3] = col.alpha;
-	st->bggrad = GRAD_NONE;
+	fr->bgcol[0] = col.red;
+	fr->bgcol[1] = col.green;
+	fr->bgcol[2] = col.blue;
+	fr->bgcol[3] = col.alpha;
+	fr->grad = GRAD_NONE;
 }
 
 
 static void set_bggrad(SCInterpreter *scin, const char *options,
                        GradientType grad)
 {
-	struct sc_state *st = &scin->state[scin->j];
+	struct frame *fr = sc_interp_get_frame(scin);
 	GdkRGBA col1, col2;
+
+	if ( fr == NULL ) return;
+
+	if ( options == NULL ) {
+		printf(_("Invalid colour\n"));
+		return;
+	}
 
 	if ( parse_colour_duo(options, &col1, &col2) == 0 ) {
 
-		st->bgcol[0] = col1.red;
-		st->bgcol[1] = col1.green;
-		st->bgcol[2] = col1.blue;
-		st->bgcol[3] = col1.alpha;
+		fr->bgcol[0] = col1.red;
+		fr->bgcol[1] = col1.green;
+		fr->bgcol[2] = col1.blue;
+		fr->bgcol[3] = col1.alpha;
 
-		st->bgcol2[0] = col2.red;
-		st->bgcol2[1] = col2.green;
-		st->bgcol2[2] = col2.blue;
-		st->bgcol2[3] = col2.alpha;
+		fr->bgcol2[0] = col2.red;
+		fr->bgcol2[1] = col2.green;
+		fr->bgcol2[2] = col2.blue;
+		fr->bgcol2[3] = col2.alpha;
 
-		st->bggrad = grad;
+		fr->grad = grad;
 
 	}
 }
@@ -588,21 +567,11 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->paraspace[2] = 0.0;
 	st->paraspace[3] = 0.0;
 	st->fontdesc = NULL;
-	st->have_size = 0;
 	st->col[0] = 0.0;
 	st->col[1] = 0.0;
 	st->col[2] = 0.0;
 	st->col[3] = 1.0;
 	st->alignment = PANGO_ALIGN_LEFT;
-	st->bgcol[0] = 1.0;
-	st->bgcol[1] = 1.0;
-	st->bgcol[2] = 1.0;
-	st->bgcol[3] = 1.0;
-	st->bgcol2[0] = 1.0;
-	st->bgcol2[1] = 1.0;
-	st->bgcol2[2] = 1.0;
-	st->bgcol2[3] = 1.0;
-	st->bggrad = GRAD_NONE;
 	scin->lang = lang;
 
 	/* The "ultimate" default font */
@@ -610,7 +579,6 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 		set_frame(scin, top);
 		set_font(scin, "Cantarell Regular 14");
 		set_colour(scin, "#000000");
-		update_bg(scin);
 	}
 
 	return scin;
@@ -982,8 +950,6 @@ static void apply_style(SCInterpreter *scin, Stylesheet *ss, const char *path)
 			set_alignment(scin, PANGO_ALIGN_RIGHT);
 		}
 	}
-
-	update_bg(scin);
 }
 
 
@@ -1151,22 +1117,13 @@ int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss)
 		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bgcol") == 0 ) {
-		maybe_recurse_before(scin, child);
 		set_bgcol(scin, options);
-		update_bg(scin);
-		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bggradh") == 0 ) {
-		maybe_recurse_before(scin, child);
 		set_bggrad(scin, options, GRAD_HORIZ);
-		update_bg(scin);
-		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "bggradv") == 0 ) {
-		maybe_recurse_before(scin, child);
 		set_bggrad(scin, options, GRAD_VERT);
-		update_bg(scin);
-		maybe_recurse_after(scin, child, ss);
 
 	} else if ( strcmp(name, "paraspace") == 0 ) {
 		maybe_recurse_before(scin, child);

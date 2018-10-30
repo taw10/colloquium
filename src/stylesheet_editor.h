@@ -71,6 +71,7 @@ struct _stylesheeteditor
 	GtkWidget *narrative_style_padding_r;
 	GtkWidget *narrative_style_padding_t;
 	GtkWidget *narrative_style_padding_b;
+	GtkWidget *narrative_style_alignment;
 	GtkWidget *slide_size_w;
 	GtkWidget *slide_size_h;
 	GtkWidget *slide_style_bgcol;
@@ -89,6 +90,7 @@ struct _stylesheeteditor
 	GtkWidget *frame_style_padding_r;
 	GtkWidget *frame_style_padding_t;
 	GtkWidget *frame_style_padding_b;
+	GtkWidget *frame_style_alignment;
 	StylesheetEditorPrivate *priv;
 };
 

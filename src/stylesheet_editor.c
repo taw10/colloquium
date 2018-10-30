@@ -106,6 +106,27 @@ static void set_size_from_ss(Stylesheet *ss, const char *path,
 	}
 }
 
+
+static int alignment_ok(const char *a)
+{
+	if ( a == NULL ) return 0;
+	if ( strcmp(a, "left") == 0 ) return 1;
+	if ( strcmp(a, "center") == 0 ) return 1;
+	if ( strcmp(a, "right") == 0 ) return 1;
+	return 0;
+}
+
+
+static void set_alignment_from_ss(Stylesheet *ss, const char *path,
+                                  GtkWidget *d)
+{
+	char *result = stylesheet_lookup(ss, path, "alignment");
+	if ( alignment_ok(result) ) {
+		gtk_combo_box_set_active_id(GTK_COMBO_BOX(d), result);
+	}
+}
+
+
 static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
                            GtkWidget *wcol2, GtkWidget *wgrad)
 {
@@ -173,6 +194,7 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	/* Narrative */
 	set_font_from_ss(ss, "$.narrative", se->narrative_style_font);
 	set_col_from_ss(ss, "$.narrative", se->narrative_style_fgcol);
+	set_alignment_from_ss(ss, "$.narrative", se->narrative_style_alignment);
 	set_bg_from_ss(ss, "$.narrative", se->narrative_style_bgcol,
 	                                  se->narrative_style_bgcol2,
 	                                  se->narrative_style_bggrad);
@@ -195,6 +217,7 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	/* Frames */
 	set_font_from_ss(ss, "$.slide.frame", se->frame_style_font);
 	set_col_from_ss(ss, "$.slide.frame", se->frame_style_fgcol);
+	set_alignment_from_ss(ss, "$.slide.frame", se->frame_style_alignment);
 	set_bg_from_ss(ss, "$.slide.frame", se->frame_style_bgcol,
 	                                    se->frame_style_bgcol2,
 	                                    se->frame_style_bggrad);
@@ -347,6 +370,15 @@ static void narrative_bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 }
 
 
+static void narrative_alignment_sig(GtkComboBoxText *widget, StylesheetEditor *se)
+{
+	const gchar *id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
+	stylesheet_set(se->priv->p->stylesheet, "$.narrative", "alignment", id);
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
+}
+
+
 static void slide_size_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
 	int w, h;
@@ -426,6 +458,15 @@ static void frame_paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 }
 
 
+static void frame_alignment_sig(GtkComboBoxText *widget, StylesheetEditor *se)
+{
+	const gchar *id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
+	stylesheet_set(se->priv->p->stylesheet, "$.slide.frame", "alignment", id);
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
+}
+
+
 static void narrative_padding_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
 	update_spacing(se->priv->p, "$.narrative", "pad",
@@ -487,6 +528,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	SE_BIND_CHILD(narrative_style_padding_r, narrative_padding_sig);
 	SE_BIND_CHILD(narrative_style_padding_t, narrative_padding_sig);
 	SE_BIND_CHILD(narrative_style_padding_b, narrative_padding_sig);
+	SE_BIND_CHILD(narrative_style_alignment, narrative_alignment_sig);
 
 	/* Slide style */
 	SE_BIND_CHILD(slide_size_w, slide_size_sig);
@@ -509,6 +551,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	SE_BIND_CHILD(frame_style_padding_r, frame_padding_sig);
 	SE_BIND_CHILD(frame_style_padding_t, frame_padding_sig);
 	SE_BIND_CHILD(frame_style_padding_b, frame_padding_sig);
+	SE_BIND_CHILD(frame_style_alignment, frame_alignment_sig);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
 

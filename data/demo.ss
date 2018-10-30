@@ -14,7 +14,7 @@
 			"font": "Cantarell Regular 14",
 			"pad": "0,0,0,0",
 			"fgcol": "#c5c5c5",
-			"bgcol": "#ffffff00",
+			"bgcol": "rgba(0,0,0,0)",
 			"paraspace": "5,5,5,5"
 		},
 		"slidetitle": {
@@ -22,7 +22,7 @@
 			"pad": "20,20,20,20",
 			"fgcol": "#eeeeee",
 			"font": "Cantarell Regular 36",
-			"bgcol": "#ffffff00"
+			"bgcol": "rgba(0,0,0,0)"
 		},
 		"prestitle": {
 			"geometry": "1fx140u+0+0",
@@ -30,7 +30,7 @@
 			"fgcol": "#eeeeee",
 			"font": "Cantarell Regular 64",
 			"alignment": "center",
-			"bgcol": "#ffffff00"
+			"bgcol": "rgba(0,0,0,0)"
 		},
 		"_comment": "Add footer, credit and bp"
 	}

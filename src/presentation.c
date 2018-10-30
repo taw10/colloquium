@@ -177,7 +177,7 @@ int save_presentation(struct presentation *p, GFile *file, GFile *ssfile)
 			g_object_ref(p->stylesheet_from);
 		}
 	} else {
-		fprintf(stderr, _("Not updating default stylesheet\n"));
+		fprintf(stderr, _("Not saving the stylesheet\n"));
 		sr = 0;
 	}
 

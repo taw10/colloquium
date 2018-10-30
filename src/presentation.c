@@ -110,6 +110,7 @@ static void find_and_load_stylesheet(struct presentation *p, GFile *file)
 	}
 
 	/* Last resort is NULL stylesheet and SCInterpreter's defaults */
+	/* We keep a reference to the GFile */
 }
 
 
@@ -168,6 +169,13 @@ int save_presentation(struct presentation *p, GFile *file, GFile *ssfile)
 		if ( sr ) {
 			fprintf(stderr, _("Couldn't save stylesheet\n"));
 		}
+		if ( p->stylesheet_from != ssfile ) {
+			if ( p->stylesheet_from != NULL ) {
+				g_object_unref(p->stylesheet_from);
+			}
+			p->stylesheet_from = ssfile;
+			g_object_ref(p->stylesheet_from);
+		}
 	} else {
 		fprintf(stderr, _("Not updating default stylesheet\n"));
 		sr = 0;
@@ -176,7 +184,12 @@ int save_presentation(struct presentation *p, GFile *file, GFile *ssfile)
 	if ( r || sr ) return 1;
 
 	imagestore_set_parent(p->is, g_file_get_parent(file));
-	p->file = file;
+
+	if ( p->file != file ) {
+		if ( p->file != NULL ) g_object_unref(p->file);
+		p->file = file;
+		g_object_ref(p->file);
+	}
 	p->saved = 1;
 	update_titlebar(p->narrative_window);
 	return 0;

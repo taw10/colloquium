@@ -147,6 +147,7 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 			show_error(si->nw, _("Failed to save presentation"));
 		}
 
+		/* save_presentation keeps a reference to both of these */
 		g_object_unref(file);
 		g_object_unref(ssfile);
 

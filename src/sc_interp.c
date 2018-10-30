@@ -105,19 +105,44 @@ SCCallbackList *sc_callback_list_new()
 	if ( cbl == NULL ) return NULL;
 
 	cbl->names = calloc(8, sizeof(char *));
-	if ( cbl->names == NULL ) return NULL;
+	if ( cbl->names == NULL ) {
+		free(cbl);
+		return NULL;
+	}
 
 	cbl->box_funcs = calloc(8, sizeof(cbl->box_funcs[0]));
-	if ( cbl->box_funcs == NULL ) return NULL;
+	if ( cbl->box_funcs == NULL ) {
+		free(cbl->names);
+		free(cbl);
+		return NULL;
+	}
 
 	cbl->draw_funcs = calloc(8, sizeof(cbl->draw_funcs[0]));
-	if ( cbl->draw_funcs == NULL ) return NULL;
+	if ( cbl->draw_funcs == NULL ) {
+		free(cbl->box_funcs);
+		free(cbl->names);
+		free(cbl);
+		return NULL;
+	}
 
 	cbl->click_funcs = calloc(8, sizeof(cbl->click_funcs[0]));
-	if ( cbl->click_funcs == NULL ) return NULL;
+	if ( cbl->click_funcs == NULL ) {
+		free(cbl->draw_funcs);
+		free(cbl->box_funcs);
+		free(cbl->names);
+		free(cbl);
+		return NULL;
+	}
 
 	cbl->vps = calloc(8, sizeof(cbl->vps[0]));
-	if ( cbl->vps == NULL ) return NULL;
+	if ( cbl->vps == NULL ) {
+		free(cbl->click_funcs);
+		free(cbl->draw_funcs);
+		free(cbl->box_funcs);
+		free(cbl->names);
+		free(cbl);
+		return NULL;
+	}
 
 	cbl->max_callbacks = 8;
 	cbl->n_callbacks = 0;
@@ -978,12 +1003,13 @@ static void output_frame(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss,
 	char *result;
 
 	fr = add_subframe(sc_interp_get_frame(scin));
-	fr->scblocks = bl;
-	fr->resizable = 1;
 	if ( fr == NULL ) {
 		fprintf(stderr, _("Failed to add frame.\n"));
 		return;
 	}
+
+	fr->scblocks = bl;
+	fr->resizable = 1;
 
 	/* Lowest priority: current state of interpreter */
 	set_frame_default_style(fr, scin);

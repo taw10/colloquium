@@ -732,10 +732,16 @@ GActionEntry nw_entries[] = {
 void update_titlebar(NarrativeWindow *nw)
 {
 	char *title;
+	char *title_new;
 
 	title = get_titlebar_string(nw->p);
-	title = realloc(title, strlen(title)+16);
-	if ( title == NULL ) return;
+	title_new = realloc(title, strlen(title)+16);
+	if ( title_new == NULL ) {
+		free(title);
+		return;
+	} else {
+		title = title_new;
+	}
 
 	strcat(title, " - Colloquium");
 	if ( !nw->p->saved ) {

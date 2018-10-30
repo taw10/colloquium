@@ -306,6 +306,8 @@ int sc_block_delete(SCBlock **top, SCBlock *deleteme)
 /* Frees "bl" and all its children (but not the blocks following it) */
 void sc_block_free(SCBlock *bl)
 {
+	if ( bl == NULL ) return;
+
 	if ( bl->child != NULL ) {
 		SCBlock *ch = bl->child;
 		while ( ch != NULL ) {
@@ -370,6 +372,7 @@ char *serialise_sc_block(const SCBlock *bl)
 	ch = bl->child;
 	while ( ch != NULL ) {
 
+		char *anew;
 		char *c = serialise_sc_block(ch);
 		if ( c == NULL ) {
 			free(a);
@@ -377,8 +380,14 @@ char *serialise_sc_block(const SCBlock *bl)
 		}
 
 		len += strlen(c);
-		a = realloc(a, len);
-		if ( a == NULL ) return NULL;
+
+		anew = realloc(a, len);
+		if ( anew == NULL ) {
+			return NULL;
+		} else {
+			a = anew;
+		}
+
 		strcat(a, c);
 		free(c);
 
@@ -724,15 +733,27 @@ void sc_block_set_contents(SCBlock *bl, char *con)
 
 void sc_insert_text(SCBlock *b1, size_t o1, const char *t)
 {
+	size_t len;
+	char *cnew;
+	char *tmp;
+	char *p1;
+
 	if ( b1->contents == NULL ) {
 		b1->contents = strdup(t);
 		return;
 	}
-	size_t len = strlen(b1->contents)+1+strlen(t);
-	char *cnew = realloc(b1->contents, len);
-	char *tmp = malloc(len);
-	char *p1 = cnew + o1;
-	if ( (cnew == NULL) || (tmp == NULL) ) return;
+	len = strlen(b1->contents)+1+strlen(t);
+
+	cnew = realloc(b1->contents, len);
+	if ( cnew == NULL ) return;
+
+	tmp = malloc(len);
+	if ( tmp == NULL ) {
+		free(cnew);
+		return;
+	}
+
+	p1 = cnew + o1;
 	strcpy(tmp, p1);
 	strcpy(p1, t);
 	strcpy(p1+strlen(t), tmp);

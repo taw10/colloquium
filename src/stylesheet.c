@@ -104,12 +104,14 @@ Stylesheet *stylesheet_load(GFile *file)
 	if ( !g_file_load_contents(file, NULL, &everything, &len, NULL, NULL) ) {
 		fprintf(stderr, _("Failed to load stylesheet '%s'\n"),
 		        g_file_get_uri(file));
+		free(ss);
 		return NULL;
 	}
 
 	r = json_parser_load_from_data(parser, everything, len, &err);
 	if ( r == FALSE ) {
 		fprintf(stderr, "Failed to load style sheet: '%s'\n", err->message);
+		free(ss);
 		return NULL;
 	}
 

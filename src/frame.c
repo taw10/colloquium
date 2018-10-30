@@ -698,13 +698,15 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 
 int find_cursor(struct frame *fr, double x, double y, struct edit_pos *pos)
 {
-	double pad = fr->pad_t;
+	double pad;
 	int i;
 
 	if ( fr == NULL ) {
 		fprintf(stderr, _("Cursor frame is NULL.\n"));
 		return 1;
 	}
+
+	pad = fr->pad_t;
 
 	for ( i=0; i<fr->n_paras; i++ ) {
 		double npos = pad + paragraph_height(fr->paras[i]);

@@ -657,24 +657,6 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void nw_update_titlebar(NarrativeWindow *nw)
-{
-	char *tb = get_titlebar_string(nw->p);
-
-	if ( nw->p->slidewindow != NULL ) {
-
-		char *title;
-
-		title = malloc(strlen(tb)+14);
-		sprintf(title, "%s - Colloquium", tb);
-		gtk_window_set_title(GTK_WINDOW(nw->window), title);
-		free(title);
-
-       }
-
-}
-
-
 static int create_thumbnail(SCInterpreter *scin, SCBlock *bl,
                             double *w, double *h, void **bvp, void *vp)
 {
@@ -762,6 +744,9 @@ void update_titlebar(NarrativeWindow *nw)
 		strcat(title, " *");
 	}
 	gtk_window_set_title(GTK_WINDOW(nw->window), title);
+
+	/* FIXME: Update all slide windows belonging to this NW */
+
 	free(title);
 }
 
@@ -794,8 +779,6 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
 	                                G_N_ELEMENTS(nw_entries), nw);
-
-	nw_update_titlebar(nw);
 
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);

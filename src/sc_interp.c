@@ -270,13 +270,6 @@ static int check_callback(SCInterpreter *scin, SCBlock *bl)
 }
 
 
-PangoFont *sc_interp_get_font(SCInterpreter *scin)
-{
-	struct sc_state *st = &scin->state[scin->j];
-	return st->font;
-}
-
-
 PangoFontDescription *sc_interp_get_fontdesc(SCInterpreter *scin)
 {
 	struct sc_state *st = &scin->state[scin->j];

@@ -41,17 +41,11 @@
 
 void free_presentation(struct presentation *p)
 {
-	int final = 0;
-
 	/* FIXME: Loads of stuff leaks here */
 	g_object_unref(p->file);
 	g_object_unref(p->stylesheet_from);
 	imagestore_destroy(p->is);
 	free(p);
-
-	if ( final ) {
-		gtk_main_quit();
-	}
 }
 
 
@@ -69,13 +63,11 @@ char *get_titlebar_string(struct presentation *p)
 static void find_and_load_stylesheet(struct presentation *p, GFile *file)
 {
 	GFile *ssfile;
-	GFile *parent;
-	gchar *ssuri;
 
 	if ( file != NULL ) {
 
 		/* First choice: /same/directory/<presentation>.ss */
-		ssuri = g_file_get_uri(file);
+		gchar *ssuri = g_file_get_uri(file);
 		if ( ssuri != NULL ) {
 			size_t l = strlen(ssuri);
 			if ( ssuri[l-3] == '.' && ssuri[l-2] == 's' && ssuri[l-1] =='c' ) {
@@ -89,7 +81,7 @@ static void find_and_load_stylesheet(struct presentation *p, GFile *file)
 
 		/* Second choice: /same/directory/stylesheet.ss */
 		if ( p->stylesheet == NULL ) {
-			parent = g_file_get_parent(file);
+			GFile *parent = g_file_get_parent(file);
 			if ( parent != NULL ) {
 				ssfile = g_file_get_child(parent, "stylesheet.ss");
 				if ( ssfile != NULL ) {

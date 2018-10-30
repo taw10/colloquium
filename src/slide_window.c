@@ -61,18 +61,6 @@ struct _slidewindow
 	SCBlock             *scblocks;
 
 	SCEditor            *sceditor;
-
-	struct menu_pl      *style_menu;
-	int                  n_style_menu;
-};
-
-
-/* Inelegance to make furniture selection menus work */
-struct menu_pl
-{
-	SlideWindow *sw;
-	char *style_name;
-	GtkWidget *widget;
 };
 
 
@@ -177,12 +165,6 @@ static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
 {
 	SlideWindow *sw = vp;
 	change_slide_last(sw);
-}
-
-
-void slidewindow_redraw(SlideWindow *sw)
-{
-	sc_editor_redraw(sw->sceditor);
 }
 
 

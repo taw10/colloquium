@@ -764,9 +764,9 @@ static void draw_resize_handle(cairo_t *cr, double x, double y)
 
 static void draw_overlay(cairo_t *cr, SCEditor *e)
 {
-	double x, y, w, h;
-
 	if ( e->selection != NULL ) {
+
+		double x, y, w, h;
 
 		draw_editing_box(cr, e->selection);
 
@@ -2138,8 +2138,6 @@ SCEditor *sc_editor_new(SCBlock *scblocks, Stylesheet *stylesheet,
 	sc_editor_remove_cursor(sceditor);
 
 	sceditor->stylesheet = stylesheet;
-
-	sceditor->bg_pixbuf = NULL;
 
 	err = NULL;
 	sceditor->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/Colloquium/sky.png",

@@ -567,11 +567,10 @@ static void separate_newlines(SCBlock *bl)
 {
 	while ( bl != NULL ) {
 
-		char *npos;
 		const char *contents = sc_block_contents(bl);
 
 		if ( contents != NULL ) {
-			npos = strchr(contents, '\n');
+			char *npos = strchr(contents, '\n');
 			if ( npos != NULL ) {
 				SCBlock *nb = NULL;
 				if ( npos == contents ) {

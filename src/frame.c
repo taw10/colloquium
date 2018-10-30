@@ -78,12 +78,6 @@ struct _paragraph
 };
 
 
-PangoLayout *paragraph_layout(Paragraph *para)
-{
-	return para->layout;
-}
-
-
 /* Returns the height of the paragraph including all spacing, padding etc */
 double paragraph_height(Paragraph *para)
 {
@@ -1502,10 +1496,11 @@ void delete_text_from_frame(struct frame *fr, struct edit_pos p1, struct edit_po
 
 void show_para(Paragraph *p)
 {
-	int i;
 	printf(_("Paragraph %p\n"), p);
 
 	if ( p->type == PARA_TYPE_TEXT ) {
+
+		int i;
 
 		printf(_("%i runs:\n"), p->n_runs);
 		for ( i=0; i<p->n_runs; i++ ) {

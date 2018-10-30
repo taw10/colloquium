@@ -471,21 +471,21 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-       GtkWidget *d;
+	GtkWidget *d;
 
-       d = gtk_file_chooser_dialog_new(_("Export PDF"),
-                                       NULL,
-                                       GTK_FILE_CHOOSER_ACTION_SAVE,
-                                       _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                       _("_Export"), GTK_RESPONSE_ACCEPT,
-                                       NULL);
-       gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
-                                                      TRUE);
+	d = gtk_file_chooser_dialog_new(_("Export PDF"),
+	                                NULL,
+	                                GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
+	                                _("_Export"), GTK_RESPONSE_ACCEPT,
+	                                NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
+	                                               TRUE);
 
-       g_signal_connect(G_OBJECT(d), "response",
-                        G_CALLBACK(export_pdf_response_sig), nw->p);
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(export_pdf_response_sig), nw->p);
 
-       gtk_widget_show_all(d);
+	gtk_widget_show_all(d);
 }
 
 

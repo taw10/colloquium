@@ -32,4 +32,6 @@ typedef struct _slidewindow SlideWindow;
 extern SlideWindow *slide_window_open(struct presentation *p, SCBlock *scblocks,
                                       GApplication *app);
 
+extern void slide_window_update(SlideWindow *sw);
+
 #endif	/* SLIDEWINDOW_H */

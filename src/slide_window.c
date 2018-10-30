@@ -96,11 +96,16 @@ static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+void slide_window_update(SlideWindow *sw)
+{
+	sc_editor_set_scblock(sw->sceditor, sw->scblocks);
+}
+
+
 /* Change the editor's slide to "np" */
 static void change_edit_slide(SlideWindow *sw, SCBlock *np)
 {
 	sc_editor_set_slidenum(sw->sceditor, slide_number(sw->p, np));
-
 	sc_editor_set_scblock(sw->sceditor, np);
 	sw->scblocks = np;
 }
@@ -170,7 +175,7 @@ static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
 
 static gboolean sw_close_sig(GtkWidget *w, SlideWindow *sw)
 {
-	sw->p->slidewindow = NULL;
+	narrative_window_sw_closed(sw->p->narrative_window, sw);
 	return FALSE;
 }
 

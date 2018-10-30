@@ -49,7 +49,6 @@ struct presentation
 	ImageStore       *is;
 
 	NarrativeWindow  *narrative_window;
-	SlideWindow      *slidewindow;
 
 	struct pr_clock  *clock;
 

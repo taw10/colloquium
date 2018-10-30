@@ -30,9 +30,13 @@
 
 typedef struct _narrative_window NarrativeWindow;
 
+#include "slide_window.h"
+
 extern NarrativeWindow *narrative_window_new(struct presentation *p,
                                              GApplication *app);
 
 extern void update_titlebar(NarrativeWindow *nw);
+
+extern void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw);
 
 #endif	/* NARRATIVE_WINDOW_H */

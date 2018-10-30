@@ -57,6 +57,8 @@ struct _narrative_window
 	SCSlideshow         *show;
 	int                  show_no_slides;
 	PRClock             *pr_clock;
+	SlideWindow         *slidewindows[16];
+	int                  n_slidewindows;
 };
 
 
@@ -277,11 +279,18 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 
 static void stylesheet_changed_sig(GtkWidget *da, NarrativeWindow *nw)
 {
+	int i;
+
 	/* It might have changed (been created) since last time */
 	sc_editor_set_stylesheet(nw->sceditor, nw->p->stylesheet);
 
 	/* Full rerender, first block may have changed */
 	sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
+
+	/* Full rerender of all slide windows */
+	for ( i=0; i<nw->n_slidewindows; i++ ) {
+		slide_window_update(nw->slidewindows[i]);
+	}
 }
 
 
@@ -691,11 +700,17 @@ static int click_thumbnail(double x, double y, void *bvp, void *vp)
 {
 	struct presentation *p = vp;
 	SCBlock *scblocks = bvp;
+	NarrativeWindow *nw = p->narrative_window;
 
 	if ( p->narrative_window->show != NULL ) {
-		sc_slideshow_set_slide(p->narrative_window->show, scblocks);
+		sc_slideshow_set_slide(nw->show, scblocks);
 	} else {
-		slide_window_open(p, scblocks, p->narrative_window->app);
+		if ( nw->n_slidewindows >= 16 ) {
+			show_error(nw, _("Too many open slide windows"));
+		} else {
+			nw->slidewindows[nw->n_slidewindows++] = slide_window_open(p, scblocks,
+			                                                           p->narrative_window->app);
+		}
 	}
 
 	return 0;
@@ -751,6 +766,29 @@ void update_titlebar(NarrativeWindow *nw)
 }
 
 
+void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw)
+{
+	int i;
+	int found = 0;
+
+	for ( i=0; i<nw->n_slidewindows; i++ ) {
+		if ( nw->slidewindows[i] == sw ) {
+
+			int j;
+			for ( j=i; j<nw->n_slidewindows-1; j++ ) {
+				nw->slidewindows[j] = nw->slidewindows[j+1];
+			}
+			nw->n_slidewindows--;
+			found = 1;
+		}
+	}
+
+	if ( !found ) {
+		fprintf(stderr, "Couldn't find slide window in narrative record\n");
+	}
+}
+
+
 NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp)
 {
 	NarrativeWindow *nw;
@@ -772,6 +810,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 
 	nw->app = papp;
 	nw->p = p;
+	nw->n_slidewindows = 0;
 
 	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
 	p->narrative_window = nw;

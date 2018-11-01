@@ -1,8 +1,6 @@
 /*
  * render_test.c
  *
- * Rendering test
- *
  * Copyright © 2012-2014 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
@@ -31,11 +29,11 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 #include <string.h>
+#include <assert.h>
 
 #include "../src/sc_parse.h"
 #include "../src/render.h"
 #include "../src/frame.h"
-#include "../src/presentation.h"
 
 
 const char *sc = "\\test{\\font[Sorts Mill Goudy 32]Lorem ipsum dolor sit amet, consect-etur adipiscing elit.\n\\font[Serif 17]Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. \\font[Edrip 32]{Nam tincidunt congue enim, ut porta lorem \\font[Edrip Bold 32]{lacinia} consectetur.} Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. \\wibble{Aenean} ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros. Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. \\font[Serif Bold 17]{Cum sociis natoque penatibus et magnis dis parturient} montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.}";
@@ -43,7 +41,7 @@ const char *sc = "\\test{\\font[Sorts Mill Goudy 32]Lorem ipsum dolor sit amet, 
 static gint mw_destroy(GtkWidget *w, void *p)
 {
 	gtk_main_quit();
-	return 0;
+	exit(0);
 }
 
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)

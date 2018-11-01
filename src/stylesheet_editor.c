@@ -44,6 +44,7 @@ G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
 struct _sspriv
 {
 	struct presentation *p;
+	char *ssdata;
 };
 
 
@@ -315,9 +316,12 @@ static void update_spacing(struct presentation *p, const char *style_name,
 }
 
 
-static void revert_sig(GtkButton *button, StylesheetEditor *widget)
+static void revert_sig(GtkButton *button, StylesheetEditor *se)
 {
-	printf("click revert!\n");
+	stylesheet_set_data(se->priv->p->stylesheet,
+	                    se->priv->ssdata);
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
@@ -491,6 +495,14 @@ static void narrative_paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 }
 
 
+static void stylesheet_editor_finalize(GObject *obj)
+{
+	StylesheetEditor *se = COLLOQUIUM_STYLESHEET_EDITOR(obj);
+	free(se->priv->ssdata);
+	G_OBJECT_CLASS(stylesheet_editor_parent_class)->finalize(obj);
+}
+
+
 static void stylesheet_editor_init(StylesheetEditor *se)
 {
 	se->priv = G_TYPE_INSTANCE_GET_PRIVATE(se, COLLOQUIUM_TYPE_STYLESHEET_EDITOR,
@@ -512,7 +524,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	                                    "/uk/me/bitwiz/Colloquium/stylesheeteditor.ui");
 
 	g_type_class_add_private(gobject_class, sizeof(StylesheetEditorPrivate));
-
+	gobject_class->finalize = stylesheet_editor_finalize;
 
 	/* Narrative style */
 	SE_BIND_CHILD(narrative_style_font, narrative_font_sig);
@@ -569,6 +581,8 @@ StylesheetEditor *stylesheet_editor_new(struct presentation *p)
 
 	se->priv->p = p;
 	set_values_from_presentation(se);
+
+	se->priv->ssdata = stylesheet_data(p->stylesheet);
 
 	return se;
 }

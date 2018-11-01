@@ -36,6 +36,10 @@ extern Stylesheet *stylesheet_load(GFile *file);
 
 extern int stylesheet_save(Stylesheet *ss, GFile *file);
 
+extern char *stylesheet_data(Stylesheet *ss);
+
+extern void stylesheet_set_data(Stylesheet *ss, const char *data);
+
 extern int parse_colour_duo(const char *a, GdkRGBA *col1, GdkRGBA *col2);
 
 extern char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key);

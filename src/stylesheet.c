@@ -230,7 +230,7 @@ int stylesheet_delete(Stylesheet *ss, const char *path, const char *key)
 
 void stylesheet_free(Stylesheet *ss)
 {
-	g_object_unref(ss->root);
+	json_node_unref(ss->root);
 	free(ss);
 }
 
@@ -258,4 +258,24 @@ int stylesheet_save(Stylesheet *ss, GFile *file)
 	}
 	g_object_unref(fh);
 	return 0;
+}
+
+
+char *stylesheet_data(Stylesheet *ss)
+{
+	return json_to_string(ss->root, FALSE);
+}
+
+
+void stylesheet_set_data(Stylesheet *ss, const char *data)
+{
+	JsonNode *new_root;
+	GError *err = NULL;
+	new_root = json_from_string(data, &err);
+	if ( new_root == NULL ) {
+		fprintf(stderr, "Internal parse error: %s\n", err->message);
+		return;
+	}
+	json_node_unref(ss->root);
+	ss->root = new_root;
 }

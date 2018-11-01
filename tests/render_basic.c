@@ -1,7 +1,7 @@
 /*
- * render_test_sc1.c
+ * tests/render_basic.c
  *
- * Copyright © 2012-2014 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2012-2018 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -36,15 +36,13 @@
 #include "../src/frame.h"
 
 
-const char *sc = "\\test{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. Nam tincidunt congue enim, ut porta lorem lacinia consectetur. \\f[0.5fx0.5f+100+40]{\\bgcol[#ff00ff]Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros.} Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.}";
-
+const char *sc = "\\test{\\font[Sorts Mill Goudy 32]Lorem ipsum dolor sit amet, consect-etur adipiscing elit.\n\\font[Serif 17]Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec consectetur ante hendrerit. Donec et mollis dolor. Praesent et diam eget libero egestas mattis sit amet vitae augue. \\font[Edrip 32]{Nam tincidunt congue enim, ut porta lorem \\font[Edrip Bold 32]{lacinia} consectetur.} Donec ut libero sed arcu vehicula ultricies a non tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. \\wibble{Aenean} ut gravida lorem. Ut turpis felis, pulvinar a semper sed, adipiscing id dolor. Pellentesque auctor nisi id magna consequat sagittis. Curabitur dapibus enim sit amet elit pharetra tincidunt feugiat nisl imperdiet. Ut convallis libero in urna ultrices accumsan. Donec sed odio eros. Donec viverra mi quis quam pulvinar at malesuada arcu rhoncus. \\font[Serif Bold 17]{Cum sociis natoque penatibus et magnis dis parturient} montes, nascetur ridiculus mus. In rutrum accumsan ultricies. Mauris vitae nisi at sem facilisis semper ac in est.}";
 
 static gint mw_destroy(GtkWidget *w, void *p)
 {
 	gtk_main_quit();
 	exit(0);
 }
-
 
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, gpointer data)
 {
@@ -82,6 +80,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "SC parse failed.\n");
 		return 1;
 	}
+
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
 	drawingarea = gtk_drawing_area_new();

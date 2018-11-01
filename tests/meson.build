@@ -16,5 +16,6 @@ e = executable('render_subframe', 'render_subframe.c', basic_rendering,
 test('Rendering with subframes', e)
 
 e = executable('json_test', 'json_test.c', '../src/sc_parse.c',
-               dependencies : [mdep, jsondep])
+               '../src/stylesheet.c',
+               gresources, dependencies : [mdep, jsondep, gtkdep])
 test('JSON parsing', e)

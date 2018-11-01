@@ -31,72 +31,19 @@
 #include <json-glib/json-glib.h>
 
 #include "../src/sc_parse.h"
-
-typedef struct {
-	JsonNode *root;
-} Stylesheet;
-
-
-Stylesheet *stylesheet_load(const char *filename)
-{
-	JsonParser *parser;
-	gboolean r;
-	GError *err = NULL;
-	Stylesheet *ss;
-
-	ss = calloc(1, sizeof(Stylesheet));
-	if ( ss == NULL ) return NULL;
-
-	parser = json_parser_new();
-
-	r = json_parser_load_from_file(parser, filename, &err);
-	if ( r == FALSE ) {
-		fprintf(stderr, "Failed to load style sheet: '%s'\n", err->message);
-		return NULL;
-	}
-
-	ss->root = json_parser_steal_root(parser);
-	g_object_unref(parser);
-
-	return ss;
-}
-
-
-char *stylesheet_lookup(Stylesheet *ss, const char *path)
-{
-	JsonNode *node;
-	JsonArray *array;
-	GError *err = NULL;
-	char *ret;
-	const gchar *v;
-
-	node = json_path_query(path, ss->root, &err);
-	array = json_node_get_array(node);
-
-	v = json_array_get_string_element(array, 0);
-	if ( v == NULL ) return NULL;
-
-	ret = strdup(v);
-	json_node_unref(node);
-	return ret;
-}
+#include "../src/stylesheet.h"
 
 
 int main(int argc, char *argv[])
 {
-	SCBlock *bl;
 	Stylesheet *ss;
+	GFile *ssfile;
 
-	ss = stylesheet_load("test.ss");
-	printf("Frame background: '%s'\n", stylesheet_lookup(ss, "$.slide.frame.bgcol1"));
-
-	bl = sc_parse("\\wibble{}\\f{wibble \\bg[muhu]{wobble\nwibble\nwabble}}\\frib[\\f] f");
-	if ( bl == NULL ) {
-		printf("Failed to parse SC\n");
-		return 1;
-	}
-
-	show_sc_blocks(bl);
+	ssfile = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
+	ss = stylesheet_load(ssfile);
+	printf("Frame bgcol: '%s'\n", stylesheet_lookup(ss, "$.slide.frame", "bgcol"));
+	printf("Frame font: '%s'\n", stylesheet_lookup(ss, "$.slide.frame", "font"));
+	printf("Narrative fgcol: '%s'\n", stylesheet_lookup(ss, "$.narrative", "fgcol"));
 
 	return 0;
 }

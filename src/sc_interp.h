@@ -31,6 +31,9 @@
 
 struct frame;
 
+#define SCCONST_SLIDENUMBER (0)
+#define NUM_SC_CONSTANTS (1)
+
 struct presentation;
 typedef struct _scinterp SCInterpreter;
 typedef struct _sccallbacklist SCCallbackList;
@@ -52,6 +55,8 @@ extern void sc_interp_restore(SCInterpreter *scin);
 
 extern int sc_interp_add_block(SCInterpreter *scin, SCBlock *bl, Stylesheet *ss);
 
+extern void sc_interp_set_constant(SCInterpreter *scin, unsigned int constant,
+                                   const char *val);
 
 /* Callback lists */
 extern SCCallbackList *sc_callback_list_new();

@@ -131,7 +131,8 @@ extern void set_newline_at_end(Paragraph *para, SCBlock *bl);
 extern void show_edit_pos(struct edit_pos a);
 
 extern void add_run(Paragraph *para, SCBlock *scblock,
-                    PangoFontDescription *fdesc, double col[4]);
+                    PangoFontDescription *fdesc, double col[4],
+                    const char *real_text);
 
 extern Paragraph *insert_paragraph(struct frame *fr, int pos);
 

@@ -1000,7 +1000,7 @@ static void insert_text(char *t, SCEditor *e)
 			return;
 		}
 		add_run(pnew, ad, e->cursor_frame->fontdesc,
-		        e->cursor_frame->col);
+		        e->cursor_frame->col, NULL);
 
 		wrap_frame(e->cursor_frame, e->pc);
 
@@ -1222,7 +1222,7 @@ static void check_paragraph(struct frame *fr, PangoContext *pc,
 	}
 	scblocks = sc_block_append(scblocks, NULL, NULL, strdup(""), NULL);
 
-	add_run(para, scblocks, fr->fontdesc, fr->col);
+	add_run(para, scblocks, fr->fontdesc, fr->col, NULL);
 	wrap_paragraph(para, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 }
 

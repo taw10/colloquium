@@ -47,6 +47,7 @@ struct sc_state
 	int ascent;
 	int height;
 	float paraspace[4];
+	char *constants[NUM_SC_CONSTANTS];
 
 	struct frame *fr;  /* The current frame */
 };
@@ -480,6 +481,24 @@ static void set_bggrad(SCInterpreter *scin, const char *options,
 }
 
 
+static char *get_constant(SCInterpreter *scin, unsigned int constant)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	if ( constant >= NUM_SC_CONSTANTS ) return NULL;
+	return st->constants[constant];
+}
+
+
+void sc_interp_set_constant(SCInterpreter *scin, unsigned int constant,
+                            const char *val)
+{
+	struct sc_state *st = &scin->state[scin->j];
+	if ( constant >= NUM_SC_CONSTANTS ) return;
+	if ( val == NULL ) return;
+	st->constants[constant] = strdup(val);
+}
+
+
 void sc_interp_save(SCInterpreter *scin)
 {
 	if ( scin->j+1 == scin->max_state ) {
@@ -512,11 +531,20 @@ void sc_interp_restore(SCInterpreter *scin)
 	struct sc_state *st = &scin->state[scin->j];
 
 	if ( scin->j > 0 ) {
+
+		int i;
+
 		if ( st->fontdesc != scin->state[scin->j-1].fontdesc )
 		{
 			pango_font_description_free(st->fontdesc);
 		} /* else the font is the same as the previous one, and we
 		   * don't need to free it just yet */
+
+		for ( i=0; i<NUM_SC_CONSTANTS; i++ ) {
+			if ( st->constants[i] != scin->state[scin->j-1].constants[i] ) {
+				free(st->constants[i]);
+			}  /* same logic as above */
+		}
 	}
 
 	scin->j--;
@@ -542,6 +570,7 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 {
 	SCInterpreter *scin;
 	struct sc_state *st;
+	int i;
 
 	scin = malloc(sizeof(SCInterpreter));
 	if ( scin == NULL ) return NULL;
@@ -559,7 +588,9 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	scin->s_constants = NULL;
 	scin->p_constants = NULL;
 	scin->cbl = NULL;
+	scin->lang = lang;
 
+	/* Initial state */
 	st = &scin->state[0];
 	st->fr = NULL;
 	st->paraspace[0] = 0.0;
@@ -572,7 +603,9 @@ SCInterpreter *sc_interp_new(PangoContext *pc, PangoLanguage *lang,
 	st->col[2] = 0.0;
 	st->col[3] = 1.0;
 	st->alignment = PANGO_ALIGN_LEFT;
-	scin->lang = lang;
+	for ( i=0; i<NUM_SC_CONSTANTS; i++ ) {
+		st->constants[i] = NULL;
+	}
 
 	/* The "ultimate" default font */
 	if ( scin->pc != NULL ) {
@@ -873,7 +906,8 @@ static void add_newpara(struct frame *fr, SCBlock *bl)
 
 /* Add the SCBlock to the text in 'frame', at the end */
 static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
-                    PangoLanguage *lang, int editable, SCInterpreter *scin)
+                    PangoLanguage *lang, int editable, SCInterpreter *scin,
+                    const char *real_text)
 {
 	const char *text = sc_block_contents(bl);
 	PangoFontDescription *fontdesc;
@@ -882,7 +916,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	Paragraph *para;
 
 	/* Empty block? */
-	if ( text == NULL ) return 1;
+	if ( text == NULL && real_text == NULL ) return 1;
 
 	fontdesc = sc_interp_get_fontdesc(scin);
 	col = sc_interp_get_fgcol(scin);
@@ -896,7 +930,7 @@ static int add_text(struct frame *fr, PangoContext *pc, SCBlock *bl,
 	}
 
 	set_para_alignment(para, st->alignment);
-	add_run(para, bl, fontdesc, col);
+	add_run(para, bl, fontdesc, col, real_text);
 	set_para_spacing(para, st->paraspace);
 
 	return 0;
@@ -996,7 +1030,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 
 	if ( name == NULL ) {
 		add_text(sc_interp_get_frame(scin),
-		         scin->pc, bl, scin->lang, 1, scin);
+		         scin->pc, bl, scin->lang, 1, scin, NULL);
 
 	} else if ( strcmp(name, "image")==0 ) {
 		double w, h;
@@ -1024,9 +1058,19 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 	} else if ( strcmp(name, "author")==0 ) {
 		output_frame(scin, bl, ss, "$.slide.author");
 
+	} else if ( strcmp(name, "footer")==0 ) {
+		output_frame(scin, bl, ss, "$.slide.footer");
+
 	} else if ( strcmp(name, "newpara")==0 ) {
 		struct frame *fr = sc_interp_get_frame(scin);
 		add_newpara(fr, bl);
+
+	} else if ( strcmp(name, "slidenumber")==0 ) {
+		char *con = get_constant(scin, SCCONST_SLIDENUMBER);
+		if ( con != NULL ) {
+			add_text(sc_interp_get_frame(scin), scin->pc, bl,
+			         scin->lang, 1, scin, con);
+		}
 
 	} else {
 		return 0;

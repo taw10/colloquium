@@ -38,7 +38,8 @@
 
 struct text_run
 {
-	SCBlock              *scblock;   /* If macro, this is \macro */
+	SCBlock              *scblock;
+	char                 *real_text;  /* Usually NULL */
 	PangoFontDescription *fontdesc;
 	double                col[4];
 };
@@ -129,6 +130,7 @@ static void free_paragraph(Paragraph *para)
 
 	for ( i=0; i<para->n_runs; i++ ) {
 		pango_font_description_free(para->runs[i].fontdesc);
+		free(para->runs[i].real_text);  /* free(NULL) is OK */
 	}
 	free(para->runs);
 	if ( para->layout != NULL ) g_object_unref(para->layout);
@@ -211,6 +213,26 @@ struct frame *find_frame_with_scblocks(struct frame *fr, SCBlock *scblocks)
 }
 
 
+static const char *text_for_run(const struct text_run *run)
+{
+	if ( run == NULL ) {
+		fprintf(stderr, _("NULL run passed to text_for_run\n"));
+		return 0;
+	}
+
+	if ( run->scblock == NULL ) {
+		fprintf(stderr, _("NULL scblock in text_for_run\n"));
+		return 0;
+	}
+
+	if ( run->real_text != NULL ) {
+		return run->real_text;
+	}
+
+	return sc_block_contents(run->scblock);
+}
+
+
 static size_t run_text_len(const struct text_run *run)
 {
 	if ( run == NULL ) {
@@ -221,6 +243,10 @@ static size_t run_text_len(const struct text_run *run)
 	if ( run->scblock == NULL ) {
 		fprintf(stderr, _("NULL scblock in run_text_len\n"));
 		return 0;
+	}
+
+	if ( run->real_text != NULL ) {
+		return strlen(run->real_text);
 	}
 
 	if ( sc_block_contents(run->scblock) == NULL ) {
@@ -279,7 +305,7 @@ void wrap_paragraph(Paragraph *para, PangoContext *pc, double w,
 		size_t run_len;
 		guint16 r, g, b;
 
-		run_text = sc_block_contents(para->runs[i].scblock);
+		run_text = text_for_run(&para->runs[i]);
 		run_len = strlen(run_text);
 
 		attr = pango_attr_font_desc_new(para->runs[i].fontdesc);
@@ -342,7 +368,7 @@ void set_newline_at_end(Paragraph *para, SCBlock *bl)
 
 
 void add_run(Paragraph *para, SCBlock *scblock,
-             PangoFontDescription *fdesc, double col[4])
+             PangoFontDescription *fdesc, double col[4], const char *real_text)
 {
 	struct text_run *runs_new;
 
@@ -355,6 +381,11 @@ void add_run(Paragraph *para, SCBlock *scblock,
 
 	para->runs = runs_new;
 	para->runs[para->n_runs].scblock = scblock;
+	if ( real_text != NULL ) {
+		para->runs[para->n_runs].real_text = strdup(real_text);
+	} else {
+		para->runs[para->n_runs].real_text = NULL;
+	}
 	para->runs[para->n_runs].fontdesc = pango_font_description_copy(fdesc);
 	para->runs[para->n_runs].col[0] = col[0];
 	para->runs[para->n_runs].col[1] = col[1];
@@ -685,7 +716,7 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 	}
 
 	para->scblock = bl;
-	add_run(para, bl, fr->fontdesc, fr->col);
+	add_run(para, bl, fr->fontdesc, fr->col, NULL);
 	wrap_paragraph(para, NULL, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 }
 
@@ -918,7 +949,9 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
-	if ( sc_block_contents(run->scblock) == NULL ) {
+	/* Get the text for the run */
+	run_text = text_for_run(run);
+	if ( run_text == NULL ) {
 		fprintf(stderr, _("pos_trail_to_offset: No contents "
 		        "(%p name=%s, options=%s)\n"),
 		        run->scblock, sc_block_name(run->scblock),
@@ -926,8 +959,6 @@ size_t pos_trail_to_offset(Paragraph *para, size_t offs, int trail)
 		return 0;
 	}
 
-	/* Get the text for the run */
-	run_text = sc_block_contents(run->scblock);
 
 	/* Turn  the paragraph offset into a run offset */
 	para_offset_of_run = get_paragraph_offset(para, nrun);
@@ -977,6 +1008,8 @@ int position_editable(struct frame *fr, struct edit_pos cp)
 		fprintf(stderr, _("Couldn't find run!\n"));
 		return 0;
 	}
+
+	if ( para->runs[run].real_text != NULL ) return 0;
 
 	return 1;
 }
@@ -1589,7 +1622,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			end = sc_block_append(np, NULL, NULL, strdup(""), NULL);
 
 			pnew->n_runs = 0;
-			add_run(pnew, end, fr->fontdesc, fr->col);
+			add_run(pnew, end, fr->fontdesc, fr->col, NULL);
 			pnew->scblock = end;
 
 			wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);
@@ -1607,7 +1640,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 		printf("Splitting run %i.  Before:\n", run);
 		show_para(para);
 
-		add_run(para, NULL, NULL, col);
+		add_run(para, NULL, NULL, col, NULL);
 		/* -2 here because add_run increased para->n_runs by 1 */
 		memmove(&para->runs[run+2], &para->runs[run+1],
 		        (para->n_runs - run - 2)*sizeof(struct text_run));
@@ -1632,7 +1665,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 	for ( i=run+1; i<para->n_runs; i++ ) {
 		double col[4] = {0,0,0,0};
 		printf("Moving run %i to pos %i\n", i, pnew->n_runs);
-		add_run(pnew, NULL, NULL, col);
+		add_run(pnew, NULL, NULL, col, NULL);
 		pnew->runs[pnew->n_runs-1] = para->runs[i];
 	}
 	pnew->scblock = pnew->runs[0].scblock;

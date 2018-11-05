@@ -1310,13 +1310,15 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="active">0</property>
+                    <property name="active_id">slidetitle</property>
                     <items>
-                      <item translatable="yes">Presentation title</item>
-                      <item translatable="yes">Presentation author</item>
-                      <item translatable="yes">Slide title</item>
-                      <item translatable="yes">Slide footer</item>
-                      <item translatable="yes">Slide credit</item>
+                      <item id="prestitle" translatable="yes">Presentation title</item>
+                      <item id="presauthor" translatable="yes">Presentation author</item>
+                      <item id="slidetitle" translatable="yes">Slide title</item>
+                      <item id="slidefooter" translatable="yes">Slide footer</item>
+                      <item id="slidecredit" translatable="yes">Slide credit</item>
                     </items>
+                    <signal name="changed" handler="furniture_selector_change_sig" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>

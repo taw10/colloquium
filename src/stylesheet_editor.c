@@ -495,6 +495,13 @@ static void narrative_paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 }
 
 
+static void furniture_selector_change_sig(GtkComboBoxText *widget, StylesheetEditor *se)
+{
+	const gchar *id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
+	printf("furniture %s\n", id);
+}
+
+
 static void stylesheet_editor_finalize(GObject *obj)
 {
 	StylesheetEditor *se = COLLOQUIUM_STYLESHEET_EDITOR(obj);
@@ -564,6 +571,9 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	SE_BIND_CHILD(frame_style_padding_t, frame_padding_sig);
 	SE_BIND_CHILD(frame_style_padding_b, frame_padding_sig);
 	SE_BIND_CHILD(frame_style_alignment, frame_alignment_sig);
+
+	/* Furniture */
+	SE_BIND_CHILD(furniture_selector, furniture_selector_change_sig);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
 

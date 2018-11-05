@@ -91,6 +91,7 @@ struct _stylesheeteditor
 	GtkWidget *frame_style_padding_t;
 	GtkWidget *frame_style_padding_b;
 	GtkWidget *frame_style_alignment;
+	GtkWidget *furniture_selector;
 	StylesheetEditorPrivate *priv;
 };
 

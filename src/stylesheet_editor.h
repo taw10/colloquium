@@ -92,6 +92,26 @@ struct _stylesheeteditor
 	GtkWidget *frame_style_padding_b;
 	GtkWidget *frame_style_alignment;
 	GtkWidget *furniture_selector;
+	GtkWidget *furniture_paraspace_l;
+	GtkWidget *furniture_paraspace_r;
+	GtkWidget *furniture_paraspace_t;
+	GtkWidget *furniture_paraspace_b;
+	GtkWidget *furniture_padding_l;
+	GtkWidget *furniture_padding_r;
+	GtkWidget *furniture_padding_t;
+	GtkWidget *furniture_padding_b;
+	GtkWidget *furniture_font;
+	GtkWidget *furniture_fgcol;
+	GtkWidget *furniture_bgcol;
+	GtkWidget *furniture_bgcol2;
+	GtkWidget *furniture_bggrad;
+	GtkWidget *furniture_alignment;
+	GtkWidget *furniture_w;
+	GtkWidget *furniture_h;
+	GtkWidget *furniture_x;
+	GtkWidget *furniture_y;
+	GtkWidget *furniture_w_units;
+	GtkWidget *furniture_h_units;
 	StylesheetEditorPrivate *priv;
 };
 

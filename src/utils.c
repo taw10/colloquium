@@ -81,3 +81,57 @@ int parse_tuple(const char *a, float v[4])
 	return 0;
 }
 
+
+static LengthUnits get_units(const char *t)
+{
+	size_t len = strlen(t);
+
+	if ( t[len-1] == 'f' ) return UNITS_FRAC;
+	if ( t[len-1] == 'u' ) return UNITS_SLIDE;
+
+	fprintf(stderr, _("Invalid units in '%s'\n"), t);
+	return UNITS_SLIDE;
+}
+
+
+int parse_dims(const char *opt, double *wp, double *hp,
+               LengthUnits *wup, LengthUnits *hup,
+               double *xp, double *yp)
+{
+	char *w;
+	char *h;
+	char *x;
+	char *y;
+	char *check;
+
+	w = strdup(opt);
+	h = index(w, 'x');
+	h[0] = '\0';  h++;
+
+	x = index(h, '+');
+	if ( x == NULL ) goto invalid;
+	x[0] = '\0';  x++;
+
+	y = index(x, '+');
+	if ( x == NULL ) goto invalid;
+	y[0] = '\0';  y++;
+
+	*wp = strtod(w, &check);
+	if ( check == w ) goto invalid;
+	*wup = get_units(w);
+
+	*hp = strtod(h, &check);
+	if ( check == h ) goto invalid;
+	*hup = get_units(h);
+
+	*xp= strtod(x, &check);
+	if ( check == x ) goto invalid;
+	*yp = strtod(y, &check);
+	if ( check == y ) goto invalid;
+
+	return 0;
+
+invalid:
+	fprintf(stderr, _("Invalid dimensions '%s'\n"), opt);
+	return 1;
+}

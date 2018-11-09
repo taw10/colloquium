@@ -27,11 +27,19 @@
 #include <config.h>
 #endif
 
+typedef enum
+{
+	UNITS_SLIDE,
+	UNITS_FRAC
+} LengthUnits;
 
 extern void chomp(char *s);
 extern int safe_strcmp(const char *a, const char *b);
 extern int parse_double(const char *a, float v[2]);
 extern int parse_tuple(const char *a, float v[4]);
+extern int parse_dims(const char *opt, double *wp, double *hp,
+                      LengthUnits *wup, LengthUnits *hup,
+                      double *xp, double *yp);
 
 #include <libintl.h>
 #define _(x) gettext(x)

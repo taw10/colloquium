@@ -33,13 +33,6 @@
 
 typedef enum
 {
-	UNITS_SLIDE,
-	UNITS_FRAC
-} LengthUnits;
-
-
-typedef enum
-{
 	GRAD_NONE,
 	GRAD_HORIZ,
 	GRAD_VERT

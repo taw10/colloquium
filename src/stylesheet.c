@@ -133,7 +133,12 @@ static JsonObject *find_stylesheet_object(Stylesheet *ss, const char *path,
 	node = json_path_query(path, ss->root, &err);
 	array = json_node_get_array(node);
 
-	if ( json_array_get_length(array) != 1 ) {
+	if ( json_array_get_length(array) == 0 ) {
+		json_node_unref(node);
+		return NULL;
+	}
+
+	if ( json_array_get_length(array) > 1 ) {
 		json_node_unref(node);
 		fprintf(stderr, "More than one result in SS lookup (%s)!\n", path);
 		return NULL;
@@ -158,11 +163,12 @@ char *stylesheet_lookup(Stylesheet *ss, const char *path, const char *key)
 	JsonNode *node = NULL;
 
 	if ( ss == NULL ) {
-		fprintf(stderr, _("No stylesheet!\n"));
+		fprintf(stderr, "No stylesheet!\n");
 		return NULL;
 	}
 
 	obj = find_stylesheet_object(ss, path, &node);
+	if ( obj == NULL ) return NULL;
 
 	if ( json_object_has_member(obj, key) ) {
 

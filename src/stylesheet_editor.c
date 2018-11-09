@@ -44,6 +44,7 @@ G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
 struct _sspriv
 {
 	struct presentation *p;
+	const gchar *furniture;
 	char *ssdata;
 };
 
@@ -85,10 +86,44 @@ static void set_vals_from_ss(Stylesheet *ss, const char *path, const char *key,
 			fprintf(stderr, _("Failed to parse quad: %s\n"), result);
 		}
 	} else {
-		printf("Not found %s\n", path);
+		printf("Not found %s.%s\n", path, key);
 	}
 }
 
+
+static void set_geom_from_ss(Stylesheet *ss, const char *path, const char *key,
+                             GtkWidget *ww, GtkWidget *wh,
+                             GtkWidget *wx, GtkWidget *wy,
+                             GtkWidget *wwu, GtkWidget *whu)
+{
+	char *result = stylesheet_lookup(ss, path, key);
+	if ( result != NULL ) {
+		double x, y, w, h;
+		LengthUnits wu, hu;
+		if ( parse_dims(result, &w, &h, &wu, &hu, &x, &y) == 0 ) {
+			if ( wu == UNITS_FRAC ) {
+				w *= 100;
+				gtk_combo_box_set_active_id(GTK_COMBO_BOX(wwu), "percent");
+			} else {
+				gtk_combo_box_set_active_id(GTK_COMBO_BOX(wwu), "units");
+			}
+			if ( hu == UNITS_FRAC ) {
+				h *= 100;
+				gtk_combo_box_set_active_id(GTK_COMBO_BOX(whu), "percent");
+			} else {
+				gtk_combo_box_set_active_id(GTK_COMBO_BOX(whu), "units");
+			}
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(ww), w);
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(wh), h);
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(wx), x);
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(wy), y);
+		} else {
+			fprintf(stderr, _("Failed to parse dims: %s\n"), result);
+		}
+	} else {
+		printf("Not found %s.%s\n", path, key);
+	}
+}
 
 static void set_size_from_ss(Stylesheet *ss, const char *path,
                              GtkWidget *ww, GtkWidget *wh)
@@ -103,7 +138,7 @@ static void set_size_from_ss(Stylesheet *ss, const char *path,
 			fprintf(stderr, _("Failed to parse double: %s\n"), result);
 		}
 	} else {
-		printf("Not found %s\n", path);
+		printf("Not found %s.size\n", path);
 	}
 }
 
@@ -188,6 +223,39 @@ static void set_bg_from_ss(Stylesheet *ss, const char *path, GtkWidget *wcol,
 }
 
 
+static void set_furniture(StylesheetEditor *se, const char *furniture)
+{
+	set_geom_from_ss(se->priv->p->stylesheet, furniture, "geometry",
+	                 se->furniture_w,
+	                 se->furniture_h,
+	                 se->furniture_x,
+	                 se->furniture_y,
+	                 se->furniture_w_units,
+	                 se->furniture_h_units);
+
+	set_vals_from_ss(se->priv->p->stylesheet, furniture, "pad",
+	                 se->furniture_padding_l,
+	                 se->furniture_padding_r,
+	                 se->furniture_padding_t,
+	                 se->furniture_padding_b);
+
+	set_vals_from_ss(se->priv->p->stylesheet, furniture, "paraspace",
+	                 se->furniture_paraspace_l,
+	                 se->furniture_paraspace_r,
+	                 se->furniture_paraspace_t,
+	                 se->furniture_paraspace_b);
+
+	set_font_from_ss(se->priv->p->stylesheet, furniture, se->furniture_font);
+	set_col_from_ss(se->priv->p->stylesheet, furniture, se->furniture_fgcol);
+	set_alignment_from_ss(se->priv->p->stylesheet, furniture,
+	                      se->furniture_alignment);
+	set_bg_from_ss(se->priv->p->stylesheet, furniture, se->furniture_bgcol,
+	               se->furniture_bgcol2, se->furniture_bggrad);
+}
+
+
+
+
 static void set_values_from_presentation(StylesheetEditor *se)
 {
 	Stylesheet *ss = se->priv->p->stylesheet;
@@ -230,6 +298,8 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	                                                   se->frame_style_paraspace_r,
 	                                                   se->frame_style_paraspace_t,
 	                                                   se->frame_style_paraspace_b);
+
+	set_furniture(se, se->priv->furniture);
 }
 
 
@@ -309,7 +379,7 @@ static void update_spacing(struct presentation *p, const char *style_name,
 	v[3] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(wb));
 
 	if ( snprintf(tmp, 256, "%i,%i,%i,%i", v[0], v[1], v[2], v[3]) >= 256 ) {
-		fprintf(stderr, _("Spacing too long\n"));
+		fprintf(stderr, "Spacing too long\n");
 	} else {
 		stylesheet_set(p->stylesheet, style_name, key, tmp);
 	}
@@ -332,6 +402,7 @@ static void set_font(GtkFontButton *widget, StylesheetEditor *se,
 	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
 
 	stylesheet_set(se->priv->p->stylesheet, style_name, "font", font);
+	printf("setting %s . %s to %s\n", style_name, "font", font);
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
 }
@@ -495,11 +566,28 @@ static void narrative_paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 }
 
 
+static void furniture_paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
+{
+}
+
+
+static void furniture_padding_sig(GtkSpinButton *widget, StylesheetEditor *se)
+{
+}
+
+
 static void furniture_selector_change_sig(GtkComboBoxText *widget, StylesheetEditor *se)
 {
-	const gchar *id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
-	printf("furniture %s\n", id);
+	se->priv->furniture = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
+	set_furniture(se, se->priv->furniture);
 }
+
+
+static void furniture_font_sig(GtkFontButton *widget, StylesheetEditor *se)
+{
+	set_font(widget, se, se->priv->furniture);
+}
+
 
 
 static void stylesheet_editor_finalize(GObject *obj)
@@ -574,6 +662,26 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 
 	/* Furniture */
 	SE_BIND_CHILD(furniture_selector, furniture_selector_change_sig);
+	SE_BIND_CHILD(furniture_paraspace_l, furniture_paraspace_sig);
+	SE_BIND_CHILD(furniture_paraspace_r, furniture_paraspace_sig);
+	SE_BIND_CHILD(furniture_paraspace_t, furniture_paraspace_sig);
+	SE_BIND_CHILD(furniture_paraspace_b, furniture_paraspace_sig);
+	SE_BIND_CHILD(furniture_padding_l, furniture_padding_sig);
+	SE_BIND_CHILD(furniture_padding_r, furniture_padding_sig);
+	SE_BIND_CHILD(furniture_padding_t, furniture_padding_sig);
+	SE_BIND_CHILD(furniture_padding_b, furniture_padding_sig);
+	SE_BIND_CHILD(furniture_font, furniture_font_sig);
+	SE_BIND_CHILD(furniture_fgcol, NULL);
+	SE_BIND_CHILD(furniture_bgcol, NULL);
+	SE_BIND_CHILD(furniture_bgcol2, NULL);
+	SE_BIND_CHILD(furniture_bggrad, NULL);
+	SE_BIND_CHILD(furniture_alignment, NULL);
+	SE_BIND_CHILD(furniture_w, NULL);
+	SE_BIND_CHILD(furniture_h, NULL);
+	SE_BIND_CHILD(furniture_x, NULL);
+	SE_BIND_CHILD(furniture_y, NULL);
+	SE_BIND_CHILD(furniture_w_units, NULL);
+	SE_BIND_CHILD(furniture_h_units, NULL);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
 
@@ -590,6 +698,7 @@ StylesheetEditor *stylesheet_editor_new(struct presentation *p)
 	if ( se == NULL ) return NULL;
 
 	se->priv->p = p;
+	se->priv->furniture = gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->furniture_selector));
 	set_values_from_presentation(se);
 
 	se->priv->ssdata = stylesheet_data(p->stylesheet);

@@ -52,13 +52,73 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="adjustment19">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkAdjustment" id="adjustment2">
     <property name="upper">2000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="adjustment20">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment21">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment22">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment23">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment24">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment25">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment26">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment27">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment28">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment29">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkAdjustment" id="adjustment3">
     <property name="upper">2000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustment30">
+    <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -1310,13 +1370,13 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="active">0</property>
-                    <property name="active_id">slidetitle</property>
+                    <property name="active_id">$.slide.slidetitle</property>
                     <items>
-                      <item id="prestitle" translatable="yes">Presentation title</item>
-                      <item id="presauthor" translatable="yes">Presentation author</item>
-                      <item id="slidetitle" translatable="yes">Slide title</item>
-                      <item id="slidefooter" translatable="yes">Slide footer</item>
-                      <item id="slidecredit" translatable="yes">Slide credit</item>
+                      <item id="$.slide.prestitle" translatable="yes">Presentation title</item>
+                      <item id="$.slide.author" translatable="yes">Presentation author</item>
+                      <item id="$.slide.slidetitle" translatable="yes">Slide title</item>
+                      <item id="$.slide.footer" translatable="yes">Slide footer</item>
+                      <item id="$.slide.credit" translatable="yes">Slide credit</item>
                     </items>
                     <signal name="changed" handler="furniture_selector_change_sig" swapped="no"/>
                   </object>
@@ -1359,7 +1419,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="furniture_h">
+                              <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="label" translatable="yes">Height:</property>
@@ -1367,12 +1427,12 @@
                                 <property name="xalign">1</property>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
+                                <property name="left_attach">3</property>
                                 <property name="top_attach">0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="furniture_x">
+                              <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="label" translatable="yes">Corner x:</property>
@@ -1385,7 +1445,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="furniture_y">
+                              <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="label" translatable="yes">Corner y:</property>
@@ -1393,7 +1453,7 @@
                                 <property name="xalign">1</property>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
+                                <property name="left_attach">3</property>
                                 <property name="top_attach">1</property>
                               </packing>
                             </child>
@@ -1402,7 +1462,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment13</property>
+                                <property name="adjustment">adjustment19</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1410,11 +1470,11 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="furniture_padding_t1">
+                              <object class="GtkSpinButton" id="furniture_x">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment14</property>
+                                <property name="adjustment">adjustment20</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1422,28 +1482,65 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="furniture_padding_r1">
+                              <object class="GtkSpinButton" id="furniture_h">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment15</property>
+                                <property name="adjustment">adjustment21</property>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
+                                <property name="left_attach">4</property>
                                 <property name="top_attach">0</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="furniture_padding_b1">
+                              <object class="GtkSpinButton" id="furniture_y">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment16</property>
+                                <property name="adjustment">adjustment22</property>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
+                                <property name="left_attach">4</property>
                                 <property name="top_attach">1</property>
                               </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="furniture_h_units">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="margin_right">8</property>
+                                <property name="active">0</property>
+                                <items>
+                                  <item id="percent" translatable="yes">% slide</item>
+                                  <item id="units" translatable="yes">units</item>
+                                </items>
+                              </object>
+                              <packing>
+                                <property name="left_attach">5</property>
+                                <property name="top_attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="furniture_w_units">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="active">0</property>
+                                <items>
+                                  <item id="percent" translatable="yes">% slide</item>
+                                  <item id="units" translatable="yes">units</item>
+                                </items>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="top_attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                           </object>
                         </child>
@@ -1482,12 +1579,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkFontButton" id="furniture_font1">
+                      <object class="GtkFontButton" id="furniture_font">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="font">Sans 12</property>
                         <property name="preview_text">Preview text</property>
+                        <signal name="font-set" handler="furniture_font_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -1496,7 +1594,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton" id="furniture_fgcol1">
+                      <object class="GtkColorButton" id="furniture_fgcol">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -1534,7 +1632,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBoxText" id="furniture_bggrad1">
+                      <object class="GtkComboBoxText" id="furniture_bggrad">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <items>
@@ -1550,7 +1648,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton" id="furniture_bgcol1">
+                      <object class="GtkColorButton" id="furniture_bgcol">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -1563,7 +1661,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkColorButton" id="furniture_bgcol3">
+                      <object class="GtkColorButton" id="furniture_bgcol2">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -1703,7 +1801,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment13</property>
+                                <property name="adjustment">adjustment23</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1715,7 +1813,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment14</property>
+                                <property name="adjustment">adjustment24</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1727,7 +1825,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment15</property>
+                                <property name="adjustment">adjustment25</property>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -1739,7 +1837,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment16</property>
+                                <property name="adjustment">adjustment26</property>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -1837,7 +1935,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
-                            <property name="adjustment">adjustment1</property>
+                            <property name="adjustment">adjustment27</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1849,7 +1947,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
-                            <property name="adjustment">adjustment2</property>
+                            <property name="adjustment">adjustment28</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1861,7 +1959,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
-                            <property name="adjustment">adjustment3</property>
+                            <property name="adjustment">adjustment29</property>
                           </object>
                           <packing>
                             <property name="left_attach">3</property>
@@ -1873,7 +1971,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
-                            <property name="adjustment">adjustment4</property>
+                            <property name="adjustment">adjustment30</property>
                           </object>
                           <packing>
                             <property name="left_attach">3</property>

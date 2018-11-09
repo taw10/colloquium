@@ -676,44 +676,15 @@ void update_geom(struct frame *fr)
 }
 
 
-static LengthUnits get_units(const char *t)
+static int calculate_dims(const char *opt, struct frame *parent,
+                          double *wp, double *hp, double *xp, double *yp)
 {
-	size_t len = strlen(t);
-
-	if ( t[len-1] == 'f' ) return UNITS_FRAC;
-	if ( t[len-1] == 'u' ) return UNITS_SLIDE;
-
-	fprintf(stderr, _("Invalid units in '%s'\n"), t);
-	return UNITS_SLIDE;
-}
-
-
-static int parse_dims(const char *opt, struct frame *parent,
-                      double *wp, double *hp, double *xp, double *yp)
-{
-	char *w;
-	char *h;
-	char *x;
-	char *y;
-	char *check;
 	LengthUnits h_units, w_units;
 
-	/* Looks like a dimension/position thing */
-	w = strdup(opt);
-	h = index(w, 'x');
-	h[0] = '\0';  h++;
+	if ( parse_dims(opt, wp, hp, &w_units, &h_units, xp, yp) ) {
+		return 1;
+	}
 
-	x = index(h, '+');
-	if ( x == NULL ) goto invalid;
-	x[0] = '\0';  x++;
-
-	y = index(x, '+');
-	if ( x == NULL ) goto invalid;
-	y[0] = '\0';  y++;
-
-	*wp = strtod(w, &check);
-	if ( check == w ) goto invalid;
-	w_units = get_units(w);
 	if ( w_units == UNITS_FRAC ) {
 		if ( parent != NULL ) {
 			double pw = parent->w;
@@ -725,10 +696,6 @@ static int parse_dims(const char *opt, struct frame *parent,
 		}
 
 	}
-
-	*hp = strtod(h, &check);
-	if ( check == h ) goto invalid;
-	h_units = get_units(h);
 	if ( h_units == UNITS_FRAC ) {
 		if ( parent != NULL ) {
 			double ph = parent->h;
@@ -740,16 +707,7 @@ static int parse_dims(const char *opt, struct frame *parent,
 		}
 	}
 
-	*xp= strtod(x, &check);
-	if ( check == x ) goto invalid;
-	*yp = strtod(y, &check);
-	if ( check == y ) goto invalid;
-
 	return 0;
-
-invalid:
-	fprintf(stderr, _("Invalid dimensions '%s'\n"), opt);
-	return 1;
 }
 
 
@@ -758,7 +716,7 @@ static int parse_frame_option(const char *opt, struct frame *fr,
 {
 	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
 	  && (index(opt, '+') != rindex(opt, '+')) ) {
-		return parse_dims(opt, parent, &fr->w, &fr->h, &fr->x, &fr->y);
+		return calculate_dims(opt, parent, &fr->w, &fr->h, &fr->x, &fr->y);
 	}
 
 	fprintf(stderr, _("Unrecognised frame option '%s'\n"), opt);
@@ -811,7 +769,7 @@ static int parse_image_option(const char *opt, struct frame *parent,
 	if ( (index(opt, 'x') != NULL) && (index(opt, '+') != NULL)
 	  && (index(opt, '+') != rindex(opt, '+')) ) {
 		double dum;
-		return parse_dims(opt, NULL, wp, hp, &dum, &dum);
+		return calculate_dims(opt, NULL, wp, hp, &dum, &dum);
 	}
 
 	if ( strncmp(opt, "filename=\"", 10) == 0 ) {

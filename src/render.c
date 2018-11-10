@@ -63,24 +63,28 @@ static void do_background(cairo_t *cr, struct frame *fr)
 		case GRAD_VERT:
 		patt = cairo_pattern_create_linear(0.0, 0.0,
 			                           0.0, fr->h);
-		cairo_pattern_add_color_stop_rgb(patt, 0.0, fr->bgcol[0],
-			                                    fr->bgcol[1],
-			                                    fr->bgcol[2]);
-		cairo_pattern_add_color_stop_rgb(patt, 1.0, fr->bgcol2[0],
-			                                    fr->bgcol2[1],
-			                                    fr->bgcol2[2]);
+		cairo_pattern_add_color_stop_rgba(patt, 0.0, fr->bgcol[0],
+		                                             fr->bgcol[1],
+		                                             fr->bgcol[2],
+		                                             fr->bgcol[3]);
+		cairo_pattern_add_color_stop_rgba(patt, 1.0, fr->bgcol2[0],
+		                                             fr->bgcol2[1],
+		                                             fr->bgcol2[2],
+		                                             fr->bgcol2[3]);
 		cairo_set_source(cr, patt);
 		break;
 
 		case GRAD_HORIZ:
 		patt = cairo_pattern_create_linear(0.0, 0.0,
 			                           fr->w, 0.0);
-		cairo_pattern_add_color_stop_rgb(patt, 0.0, fr->bgcol[0],
-			                                    fr->bgcol[1],
-			                                    fr->bgcol[2]);
-		cairo_pattern_add_color_stop_rgb(patt, 1.0, fr->bgcol2[0],
-			                                    fr->bgcol2[1],
-			                                    fr->bgcol2[2]);
+		cairo_pattern_add_color_stop_rgba(patt, 0.0, fr->bgcol[0],
+			                                     fr->bgcol[1],
+			                                     fr->bgcol[2],
+			                                     fr->bgcol[3]);
+		cairo_pattern_add_color_stop_rgba(patt, 1.0, fr->bgcol2[0],
+			                                     fr->bgcol2[1],
+			                                     fr->bgcol2[2],
+			                                     fr->bgcol2[3]);
 		cairo_set_source(cr, patt);
 		break;
 

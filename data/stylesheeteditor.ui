@@ -53,7 +53,7 @@
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjustment19">
-    <property name="upper">100</property>
+    <property name="upper">5000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -63,17 +63,17 @@
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjustment20">
-    <property name="upper">100</property>
+    <property name="upper">5000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjustment21">
-    <property name="upper">100</property>
+    <property name="upper">5000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjustment22">
-    <property name="upper">100</property>
+    <property name="upper">5000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -1463,6 +1463,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment19</property>
+                                <signal name="value-changed" handler="furniture_dims_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1475,6 +1476,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment20</property>
+                                <signal name="value-changed" handler="furniture_dims_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1487,6 +1489,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment21</property>
+                                <signal name="value-changed" handler="furniture_dims_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">4</property>
@@ -1499,6 +1502,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment22</property>
+                                <signal name="value-changed" handler="furniture_dims_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">4</property>
@@ -1515,6 +1519,7 @@
                                   <item id="percent" translatable="yes">% slide</item>
                                   <item id="units" translatable="yes">units</item>
                                 </items>
+                                <signal name="changed" handler="furniture_dims_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">5</property>
@@ -1530,6 +1535,7 @@
                                   <item id="percent" translatable="yes">% slide</item>
                                   <item id="units" translatable="yes">units</item>
                                 </items>
+                                <signal name="changed" handler="furniture_dims_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">2</property>
@@ -1599,6 +1605,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_alpha">True</property>
+                        <signal name="color-set" handler="furniture_fgcol_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -1640,6 +1647,7 @@
                           <item id="horiz" translatable="yes">Horizontal gradient</item>
                           <item id="vert" translatable="yes">Vertical gradient</item>
                         </items>
+                        <signal name="changed" handler="furniture_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -1653,6 +1661,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_alpha">True</property>
+                        <signal name="color-set" handler="furniture_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -1666,6 +1675,7 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="use_alpha">True</property>
+                        <signal name="color-set" handler="furniture_bg_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -1709,6 +1719,7 @@
                           <item id="center" translatable="yes">Center</item>
                           <item id="right" translatable="yes">Right</item>
                         </items>
+                        <signal name="changed" handler="furniture_alignment_sig" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -1802,6 +1813,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment23</property>
+                                <signal name="value-changed" handler="furniture_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1814,6 +1826,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment24</property>
+                                <signal name="value-changed" handler="furniture_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1826,6 +1839,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment25</property>
+                                <signal name="value-changed" handler="furniture_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -1838,6 +1852,7 @@
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">adjustment26</property>
+                                <signal name="value-changed" handler="furniture_padding_sig" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">3</property>
@@ -1936,6 +1951,7 @@
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
                             <property name="adjustment">adjustment27</property>
+                            <signal name="value-changed" handler="furniture_paraspace_sig" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1948,6 +1964,7 @@
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
                             <property name="adjustment">adjustment28</property>
+                            <signal name="value-changed" handler="furniture_paraspace_sig" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1960,6 +1977,7 @@
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
                             <property name="adjustment">adjustment29</property>
+                            <signal name="value-changed" handler="furniture_paraspace_sig" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">3</property>
@@ -1972,6 +1990,7 @@
                             <property name="can_focus">True</property>
                             <property name="text" translatable="yes">0</property>
                             <property name="adjustment">adjustment30</property>
+                            <signal name="value-changed" handler="furniture_paraspace_sig" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">3</property>

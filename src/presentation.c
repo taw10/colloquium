@@ -240,7 +240,7 @@ SCBlock *first_slide(struct presentation *p)
 		bl = sc_block_next(bl);
 	}
 
-	fprintf(stderr, _("Couldn't find first slide!\n"));
+	fprintf(stderr, "Couldn't find first slide!\n");
 	return NULL;
 }
 
@@ -258,7 +258,7 @@ SCBlock *last_slide(struct presentation *p)
 	}
 
 	if ( l == NULL ) {
-		fprintf(stderr, _("Couldn't find last slide!\n"));
+		fprintf(stderr, "Couldn't find last slide!\n");
 	}
 	return l;
 }
@@ -279,7 +279,7 @@ SCBlock *next_slide(struct presentation *p, SCBlock *sl)
 		bl = sc_block_next(bl);
 	}
 
-	fprintf(stderr, _("Couldn't find next slide!\n"));
+	fprintf(stderr, "Couldn't find next slide!\n");
 	return NULL;
 }
 
@@ -300,7 +300,7 @@ SCBlock *prev_slide(struct presentation *p, SCBlock *sl)
 		bl = sc_block_next(bl);
 	}
 
-	fprintf(stderr, _("Couldn't find prev slide!\n"));
+	fprintf(stderr, "Couldn't find prev slide!\n");
 	return NULL;
 }
 

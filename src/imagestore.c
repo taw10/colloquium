@@ -213,7 +213,8 @@ static struct image_record *add_image_record(ImageStore *is,
 
 	if ( is->n_images == is->max_images ) {
 		if ( alloc_images(is, is->max_images+32) ) {
-			fprintf(stderr, _("Couldn't allocate memory.\n"));
+			fprintf(stderr, "Couldn't allocate memory for image "
+			        "records.\n");
 			return NULL;
 		}
 	}
@@ -327,11 +328,11 @@ void show_imagestore(ImageStore *is)
 {
 	int i;
 
-	printf(_("Store %p contains %i records.\n"), is, is->n_images);
+	printf("Store %p contains %i records.\n", is, is->n_images);
 
 	for ( i=0; i<is->n_images; i++ ) {
 
-		printf(_("%s :\n"), is->images[i].filename);
+		printf("%s :\n", is->images[i].filename);
 		printf("\n");
 
 	}

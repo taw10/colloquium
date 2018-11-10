@@ -141,7 +141,7 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 		} else if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(si->noss)) ) {
 			/* Do nothing */
 		} else {
-			fprintf(stderr, _("Couldn't determine how to save stylesheet!\n"));
+			fprintf(stderr, "Couldn't determine where to save stylesheet!\n");
 		}
 
 		if ( save_presentation(si->nw->p, file, ssfile) ) {
@@ -230,7 +230,7 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 	/* Get the SCBlock corresponding to the slide */
 	ns = sc_editor_get_cursor_bvp(nw->sceditor);
 	if ( ns == NULL ) {
-		fprintf(stderr, _("Not a slide!\n"));
+		fprintf(stderr, "Not a slide!\n");
 		return;
 	}
 
@@ -264,7 +264,7 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 			sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
 
 		} else {
-			fprintf(stderr, _("Failed to load\n"));
+			fprintf(stderr, _("Failed to load stylesheet\n"));
 		}
 
 		g_object_unref(file);
@@ -349,7 +349,7 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 	if ( nsblock != NULL ) {
 		sc_block_append_p(nsblock, templ);
 	} else {
-		fprintf(stderr, _("Failed to split paragraph\n"));
+		fprintf(stderr, "Failed to split paragraph\n");
 	}
 
 	sc_editor_set_scblock(nw->sceditor, nw->dummy_top);
@@ -801,7 +801,7 @@ NarrativeWindow *narrative_window_new(struct presentation *p, GApplication *papp
 	Colloquium *app = COLLOQUIUM(papp);
 
 	if ( p->narrative_window != NULL ) {
-		fprintf(stderr, _("Narrative window is already open!\n"));
+		fprintf(stderr, "Narrative window is already open!\n");
 		return NULL;
 	}
 

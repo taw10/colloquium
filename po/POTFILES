@@ -18,4 +18,3 @@ src/testcard.c
 src/utils.c
 data/menus.ui
 data/stylesheeteditor.ui
-data/savepresentation.ui

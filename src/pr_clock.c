@@ -282,7 +282,7 @@ static void set_sig(GtkEditable *w, struct pr_clock *n)
 	t = gtk_entry_get_text(GTK_ENTRY(n->entry));
 	n->time_allowed = 60.0 * strtod(t, &check);
 	if ( check == t ) {
-		fprintf(stderr, _("Invalid time '%s'\n"), t);
+		fprintf(stderr, "Invalid time '%s'\n", t);
 		n->time_allowed = 0.0;
 	}
 

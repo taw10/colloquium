@@ -145,7 +145,7 @@ static GFile **gslist_to_array(GSList *item, int *n)
 
 	while ( item != NULL ) {
 		if ( i == len ) {
-			fprintf(stderr, _("WTF? Too many files\n"));
+			fprintf(stderr, "WTF? Too many files\n");
 			break;
 		}
 		files[i++] = item->data;
@@ -169,7 +169,7 @@ static gint open_response_sig(GtkWidget *d, gint response, GApplication *papp)
 		files = gtk_file_chooser_get_files(GTK_FILE_CHOOSER(d));
 		files_array = gslist_to_array(files, &n_files);
 		if ( files_array == NULL ) {
-			fprintf(stderr, _("Failed to convert file list\n"));
+			fprintf(stderr, "Failed to convert file list\n");
 			return 0;
 		}
 		g_slist_free(files);
@@ -274,7 +274,7 @@ static int yesno(const char *a)
 	if ( strcasecmp(a, "no") == 0 ) return 0;
 	if ( strcasecmp(a, "false") == 0 ) return 0;
 
-	fprintf(stderr, _("Don't understand '%s', assuming false\n"), a);
+	fprintf(stderr, "Don't understand '%s', assuming false\n", a);
 	return 0;
 }
 
@@ -341,7 +341,6 @@ static void colloquium_startup(GApplication *papp)
 		 * desktop environment.  All the entries are already in the
 		 * normal menus, so don't let GTK create a fallback menu in the
 		 * menu bar. */
-		printf(_("Using app menu\n"));
 		GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(app->builder, "app-menu"));
 		gtk_application_set_app_menu(GTK_APPLICATION(app), mmodel);
 	}

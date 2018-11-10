@@ -86,13 +86,13 @@ static const char *str_type(enum para_type t)
 	switch ( t ) {
 
 		/* Text paragraph */
-		case PARA_TYPE_TEXT : return _("text");
+		case PARA_TYPE_TEXT : return "text";
 
 		/* Callback paragraph */
-		case PARA_TYPE_CALLBACK : return _("callback");
+		case PARA_TYPE_CALLBACK : return "callback";
 
 		/* Unknown paragraph type */
-		default : return _("unknown");
+		default : return "unknown";
 	}
 }
 
@@ -104,14 +104,14 @@ static void debug_text_para(Paragraph *para, cairo_t *cr, double *ypos,
 
 	nrun = para_debug_num_runs(para);
 	/* How many text runs */
-	snprintf(tmp, 255, _("  %i runs"), nrun);
+	snprintf(tmp, 255, "  %i runs", nrun);
 	plot_text(cr, ypos, fontdesc, tmp);
 
 	for ( i=0; i<nrun; i++ ) {
 		SCBlock *scblock;
 		if ( para_debug_run_info(para, i, &scblock) ) {
 			/* Failed to get debug info for paragraph */
-			plot_text(cr, ypos, fontdesc, _("Error"));
+			plot_text(cr, ypos, fontdesc, "Error");
 		} else {
 			snprintf(tmp, 255, "  Run %i: SCBlock %p", i, scblock);
 			plot_text(cr, ypos, fontdesc, tmp);

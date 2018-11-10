@@ -191,7 +191,7 @@ void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
 		if ( (names_new == NULL) || (box_funcs_new == NULL)
 		  || (vps_new == NULL) || (draw_funcs_new == NULL)
 		  || (click_funcs_new == NULL) ) {
-			fprintf(stderr, _("Failed to grow callback list\n"));
+			fprintf(stderr, "Failed to grow callback list\n");
 			return;
 		}
 
@@ -216,8 +216,8 @@ void sc_callback_list_add_callback(SCCallbackList *cbl, const char *name,
 void sc_interp_set_callbacks(SCInterpreter *scin, SCCallbackList *cbl)
 {
 	if ( scin->cbl != NULL ) {
-		fprintf(stderr, _("WARNING: Interpreter already has a callback "
-		                  "list.\n"));
+		fprintf(stderr, "WARNING: Interpreter already has a callback "
+		                  "list.\n");
 	}
 	scin->cbl = cbl;
 }
@@ -304,7 +304,7 @@ static void update_font(SCInterpreter *scin)
 	                                    scin->pc, st->fontdesc);
 	if ( st->font == NULL ) {
 		char *f = pango_font_description_to_string(st->fontdesc);
-		fprintf(stderr, _("Couldn't load font '%s' (font map %p, pc %p)\n"),
+		fprintf(stderr, "Couldn't load font '%s' (font map %p, pc %p)\n",
 		        f, pango_context_get_font_map(scin->pc), scin->pc);
 		g_free(f);
 		return;
@@ -325,7 +325,7 @@ static void set_font(SCInterpreter *scin, const char *font_name)
 
 	st->fontdesc = pango_font_description_from_string(font_name);
 	if ( st->fontdesc == NULL ) {
-		fprintf(stderr, _("Couldn't describe font.\n"));
+		fprintf(stderr, "Couldn't describe font.\n");
 		return;
 	}
 
@@ -508,7 +508,7 @@ void sc_interp_save(SCInterpreter *scin)
 		stack_new = realloc(scin->state, sizeof(struct sc_state)
 		                     * (scin->max_state+8));
 		if ( stack_new == NULL ) {
-			fprintf(stderr, _("Failed to add to stack.\n"));
+			fprintf(stderr, "Failed to add to stack.\n");
 			return;
 		}
 
@@ -776,7 +776,7 @@ static int parse_image_option(const char *opt, struct frame *parent,
 		char *fn;
 		fn = strdup(opt+10);
 		if ( fn[strlen(fn)-1] != '\"' ) {
-			fprintf(stderr, _("Unterminated filename?\n"));
+			fprintf(stderr, "Unterminated filename?\n");
 			free(fn);
 			return 1;
 		}

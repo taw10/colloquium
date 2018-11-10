@@ -67,7 +67,7 @@ int parse_colour_duo(const char *a, GdkRGBA *col1, GdkRGBA *col2)
 
 	cpos = find_comma(acopy);
 	if ( cpos == 0 ) {
-		fprintf(stderr, _("Invalid bg gradient spec '%s'\n"), a);
+		fprintf(stderr, _("Invalid background gradient '%s'\n"), a);
 		return 1;
 	}
 
@@ -110,7 +110,8 @@ Stylesheet *stylesheet_load(GFile *file)
 
 	r = json_parser_load_from_data(parser, everything, len, &err);
 	if ( r == FALSE ) {
-		fprintf(stderr, "Failed to load style sheet: '%s'\n", err->message);
+		fprintf(stderr, _("Failed to load stylesheet: %s\n"),
+		        err->message);
 		free(ss);
 		return NULL;
 	}
@@ -195,7 +196,7 @@ int stylesheet_set(Stylesheet *ss, const char *path, const char *key,
 	int r = 1;
 
 	if ( ss == NULL ) {
-		fprintf(stderr, _("No stylesheet!\n"));
+		fprintf(stderr, "No stylesheet!\n");
 		return 1;
 	}
 
@@ -218,7 +219,7 @@ int stylesheet_delete(Stylesheet *ss, const char *path, const char *key)
 	int r = 1;
 
 	if ( ss == NULL ) {
-		fprintf(stderr, _("No stylesheet!\n"));
+		fprintf(stderr, "No stylesheet!\n");
 		return 1;
 	}
 

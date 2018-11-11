@@ -1623,7 +1623,7 @@ static SCBlock *split_text_paragraph(struct frame *fr, int pn, size_t pos,
 			end = sc_block_append(np, NULL, NULL, strdup(""), NULL);
 
 			pnew->n_runs = 0;
-			add_run(pnew, end, fr->fontdesc, fr->col, NULL);
+			add_run(pnew, end, rr->fontdesc, rr->col, NULL);
 			pnew->scblock = end;
 
 			wrap_paragraph(pnew, pc, fr->w - fr->pad_l - fr->pad_r, 0, 0);

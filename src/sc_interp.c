@@ -847,9 +847,12 @@ static void maybe_recurse_after(SCInterpreter *scin, SCBlock *child,
 }
 
 
-static void add_newpara(struct frame *fr, SCBlock *bl)
+static void add_newpara(SCBlock *bl, SCInterpreter *scin)
 {
 	Paragraph *last_para;
+	Paragraph *para;
+	struct sc_state *st = &scin->state[scin->j];
+	struct frame *fr = sc_interp_get_frame(scin);
 
 	if ( fr->paras == NULL ) return;
 	last_para = fr->paras[fr->n_paras-1];
@@ -858,7 +861,9 @@ static void add_newpara(struct frame *fr, SCBlock *bl)
 
 	/* The block after the \newpara will always be the first one of the
 	 * next paragraph, by definition, even if it's \f or another \newpara */
-	create_paragraph(fr, sc_block_next(bl));
+	para = create_paragraph(fr, sc_block_next(bl));
+	set_para_alignment(para, st->alignment);
+	set_para_spacing(para, st->paraspace);
 }
 
 
@@ -1020,8 +1025,7 @@ static int check_outputs(SCBlock *bl, SCInterpreter *scin, Stylesheet *ss)
 		output_frame(scin, bl, ss, "$.slide.footer");
 
 	} else if ( strcmp(name, "newpara")==0 ) {
-		struct frame *fr = sc_interp_get_frame(scin);
-		add_newpara(fr, bl);
+		add_newpara(bl, scin);
 
 	} else if ( strcmp(name, "slidenumber")==0 ) {
 		char *con = get_constant(scin, SCCONST_SLIDENUMBER);

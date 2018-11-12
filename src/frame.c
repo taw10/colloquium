@@ -690,10 +690,39 @@ void sort_positions(struct edit_pos *a, struct edit_pos *b)
 }
 
 
+static PangoFontDescription *last_font_desc_and_col(struct frame *fr, int pn, double *col)
+{
+	int i;
+
+	for ( i=pn-1; i>=0; i-- ) {
+		if ( fr->paras[i]->type != PARA_TYPE_TEXT ) continue;
+		if ( fr->paras[i]->n_runs == 0 ) continue;
+		col[0] = fr->paras[i]->runs[fr->paras[i]->n_runs-1].col[0];
+		col[1] = fr->paras[i]->runs[fr->paras[i]->n_runs-1].col[1];
+		col[2] = fr->paras[i]->runs[fr->paras[i]->n_runs-1].col[2];
+		col[3] = fr->paras[i]->runs[fr->paras[i]->n_runs-1].col[3];
+		return fr->paras[i]->runs[fr->paras[i]->n_runs-1].fontdesc;
+	}
+
+	/* No previous text at all, so use the default text style
+	 * (which is valid for new text in the frame, so this is OK) */
+	col[0] = fr->col[0];
+	col[1] = fr->col[1];
+	col[2] = fr->col[2];
+	col[3] = fr->col[3];
+	return fr->fontdesc;
+}
+
+
 void ensure_run(struct frame *fr, struct edit_pos cpos)
 {
 	SCBlock *bl;
-	Paragraph *para = fr->paras[cpos.para];
+	Paragraph *para;
+	PangoFontDescription *fontdesc;
+	double col[4];
+
+	para = fr->paras[cpos.para];
+
 	if ( para->n_runs > 0 ) return;
 
 	if ( para->type != PARA_TYPE_TEXT ) return;
@@ -717,7 +746,9 @@ void ensure_run(struct frame *fr, struct edit_pos cpos)
 	}
 
 	para->scblock = bl;
-	add_run(para, bl, fr->fontdesc, fr->col, NULL);
+
+	fontdesc = last_font_desc_and_col(fr, cpos.para, col);
+	add_run(para, bl, fontdesc, col, NULL);
 	wrap_paragraph(para, NULL, fr->w - fr->pad_l - fr->pad_r, 0, 0);
 }
 

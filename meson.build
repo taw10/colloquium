@@ -27,6 +27,33 @@ gresources = gnome.compile_resources('colloquium-resources',
                                      'data/colloquium.gresource.xml',
                                      source_dir: 'data', c_name: 'colloquium')
 
+flex = find_program('flex')
+bison = find_program('bison')
+
+sc_parse_tab_ch = custom_target('sc_parse.tab.c',
+                                output : ['sc_parse.tab.c',
+                                          'sc_parse.tab.h'],
+                                input : 'src/sc_parse.y',
+                                command : [bison, '--defines=@OUTPUT1@',
+                                                  '-p', 'sc',
+                                                  '--output=@OUTPUT0@',
+                                                  '@INPUT@'])
+
+sc_parse_c = custom_target('sc_parse.c',
+                            output : ['sc_parse.c', 'sc_parse.h'],
+                            input : ['src/sc_lex.l', sc_parse_tab_ch],
+                            command : [flex, '--outfile=@OUTPUT0@',
+                                             '--header-file=@OUTPUT1@',
+                                             '-P', 'sc',
+                                             '@INPUT@'])
+
+executable('sc2_test',
+           ['src/sc2_test.c',
+	    sc_parse_c,
+	   ],
+	   gresources,
+	   dependencies : [gtkdep])
+
 # Main program
 executable('colloquium',
            ['src/colloquium.c',

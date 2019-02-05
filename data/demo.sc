@@ -1,9 +1,12 @@
-\fontsize[40]{\bold{}Hi there, welcome to \bold{Colloquium}!}
+STYLES:
+  PRESTITLE:
+PRESTITLE: Hi there, welcome to Colloquium!
 It looks like this is the first time you've used Colloquium.  Keep reading to understand a little bit about how Colloquium works and how to use it.
-Colloquium works differently to other presentation programs. Colloquium makes \italic{narrative, not slides,} the centre of attention.  Slides come when you need to illustrate something.  This window is called the \oblique{narrative editor}.  Your slides are embedded into the narrative text, like this:\slide{
-\prestitle{Welcome to Colloquium}
-
-\f[506.3ux520.3u+244.5+141.3]{\image[1fx1f+0+0,filename="colloquium.svg"]{}}\f[983.9ux75.4u+21.1+673.0]{\center{This is the presentation title slide, in case you hadn't noticed.}}}
+Colloquium works differently to other presentation programs. Colloquium makes /narrative, not slides,/ the centre of attention.  Slides come when you need to illustrate something.  This window is called the /narrative editor/.  Your slides are embedded into the narrative text, like this:
+SLIDE:
+  PRES_TITLE: Welcome to Colloquium
+  IMAGE[506.3ux520.3u+244.5+141.3]: colloquium.svg
+  FRAME[983.9ux75.4u+21.1+673.0]: {\center{This is the presentation title slide, in case you hadn't noticed.}}}
 As you can probably tell, the above slide happens to be the title page for the presentation.
 To edit a slide, simply double-click on it.  Try it on this next slide:\slide{
 \slidetitle{Here is the slide title!}

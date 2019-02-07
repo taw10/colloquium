@@ -30,18 +30,18 @@ gresources = gnome.compile_resources('colloquium-resources',
 flex = find_program('flex')
 bison = find_program('bison')
 
-sc_parse_tab_ch = custom_target('sc_parse.tab.c',
-                                output : ['sc_parse.tab.c',
-                                          'sc_parse.tab.h'],
-                                input : 'src/sc_parse.y',
+storycode_tab_ch = custom_target('storycode.tab.c',
+                                output : ['storycode.tab.c',
+                                          'storycode.tab.h'],
+                                input : 'src/storycode.y',
                                 command : [bison, '--defines=@OUTPUT1@',
                                                   '-p', 'sc',
                                                   '--output=@OUTPUT0@',
                                                   '@INPUT@'])
 
-sc_parse_c = custom_target('sc_parse.c',
-                            output : ['sc_parse.c', 'sc_parse.h'],
-                            input : ['src/sc_lex.l', sc_parse_tab_ch],
+storycode_c = custom_target('storycode.c',
+                            output : ['storycode.c', 'storycode.h'],
+                            input : ['src/storycode.l', storycode_tab_ch],
                             command : [flex, '--outfile=@OUTPUT0@',
                                              '--header-file=@OUTPUT1@',
                                              '-P', 'sc',
@@ -49,7 +49,7 @@ sc_parse_c = custom_target('sc_parse.c',
 
 executable('sc2_test',
            ['src/sc2_test.c',
-	    sc_parse_c,
+	    storycode_c,
 	   ],
 	   gresources,
 	   dependencies : [gtkdep])

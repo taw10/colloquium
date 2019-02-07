@@ -1,5 +1,5 @@
 /*
- * sc_lex.l
+ * storycode.y
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -21,18 +21,35 @@
  */
 
 %{
-  #include "sc_parse.tab.h"
-
+  extern int sclex();
+  extern int scparse();
+  void scerror(const char *s);
 %}
+
+%define api.value.type {char *}
+%token SC_STYLES
+%token SC_PRESTITLE
+%token SC_STRING
+
 %%
-StoryCode      { return STORYCODE; }
-type           { return TYPE; }
-end            { return END; }
-[ \t\n]           ;
-[0-9]+\.[0-9]+    { sclval.fval = atof(yytext); return FLOAT; }
-[0-9]+            { sclval.ival = atoi(yytext); return INT; }
-[a-zA-Z0-9]+      {
-  sclval.sval = strdup(yytext);
-  return STRING;
+
+storycode:
+    %empty
+  | scblock '\n' storycode { printf("End of storycode\n"); }
+  ;
+
+scblock:
+    stylesheet
+  | prestitle
+
+stylesheet:
+    SC_STYLES ':'
+
+prestitle:
+    SC_PRESTITLE ':' SC_STRING { printf("Presentation title: '%s'\n", $1); }
+
+%%
+
+void scerror(const char *s) {
+	printf("Error\n");
 }
-%%

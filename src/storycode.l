@@ -1,5 +1,5 @@
 /*
- * sc2_test.c
+ * storycode.l
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -20,19 +20,16 @@
  *
  */
 
+%{
+  #include "storycode.tab.h"
+%}
 
-#include <string.h>
-#include <stdlib.h>
-#include <glib.h>
-#include <glib/gstdio.h>
+%option noyywrap nounput noinput
 
-#include "storycode.h"
+%%
 
-int main(int argc, char *argv[])
-{
-	printf("Here goes...\n");
-	sc_scan_string("PRESTITLE: Hello\n");
-	scparse();
-	printf("Done.\n");
-	return 0;
-}
+STYLES            { return SC_STYLES; }
+PRESTITLE         { return SC_PRESTITLE; }
+[a-zA-Z0-9]+      { sclval = strdup(yytext); return SC_STRING; }
+
+%%

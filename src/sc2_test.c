@@ -26,13 +26,17 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 
+#include "storycode.tab.h"
 #include "storycode.h"
 
 int main(int argc, char *argv[])
 {
+	YY_BUFFER_STATE b;
+
 	printf("Here goes...\n");
-	sc_scan_string("PRESTITLE: Hello\n");
+	b = sc_scan_string("PRESTITLE: Hi there\nPRESTITLE: Second title\nSTYLES:\nPRESTITLE: three");
 	scparse();
+	sc_delete_buffer(b);
 	printf("Done.\n");
 	return 0;
 }

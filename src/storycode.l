@@ -30,6 +30,9 @@
 
 STYLES            { return SC_STYLES; }
 PRESTITLE         { return SC_PRESTITLE; }
-[a-zA-Z0-9]+      { sclval = strdup(yytext); return SC_STRING; }
+:                 { return SC_COLON; }
+:[ ]              { return SC_COLONSPACE; }
+[a-zA-Z0-9 ]+     { sclval = strdup(yytext); return SC_STRING; }
+[\n]              { return SC_NEWLINE; }
 
 %%

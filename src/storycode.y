@@ -29,24 +29,31 @@
 %define api.value.type {char *}
 %token SC_STYLES
 %token SC_PRESTITLE
+%token SC_COLON
 %token SC_STRING
+%token SC_NEWLINE
+%token SC_COLONSPACE
 
 %%
 
 storycode:
     %empty
-  | scblock '\n' storycode { printf("End of storycode\n"); }
+  | scblock
+  | scblock SC_NEWLINE storycode
   ;
 
 scblock:
     stylesheet
   | prestitle
+  ;
 
 stylesheet:
-    SC_STYLES ':'
+    SC_STYLES SC_COLON { printf("Stylesheet.\n"); }
+  ;
 
 prestitle:
-    SC_PRESTITLE ':' SC_STRING { printf("Presentation title: '%s'\n", $1); }
+    SC_PRESTITLE SC_COLONSPACE SC_STRING { printf("Presentation title: '%s'\n", $3); }
+  ;
 
 %%
 

@@ -28,31 +28,141 @@
 
 %define api.value.type {char *}
 %token SC_STYLES
+%token SC_SLIDE
+%token SC_NARRATIVE
 %token SC_PRESTITLE
-%token SC_COLON
+%token SC_SLIDETITLE
+%token SC_FOOTER
+%token SC_TEXTFRAME
+%token SC_IMAGEFRAME
+%token SC_BP
+
+%token SC_FRAMEOPTS
+
+%token SC_FONT
+%token SC_TYPE
+%token SC_PAD
+%token SC_ALIGN
+%token SC_FGCOL
+%token SC_BGCOL
+
 %token SC_STRING
 %token SC_NEWLINE
-%token SC_COLONSPACE
+%token SC_OPENBRACE
+%token SC_CLOSEBRACE
 
 %%
 
 storycode:
     %empty
-  | scblock
-  | scblock SC_NEWLINE storycode
+  | scblock storycode
   ;
 
 scblock:
-    stylesheet
-  | prestitle
+    stylesheet  { printf("That was the stylesheet\n"); }
+  | prestitle   { printf("prestitle: '%s'\n", $1); }
+  | bulletpoint { printf("* '%s'\n", $1); }
+  | slide
+  | SC_STRING   { printf("Text line '%s'\n", $1); }
   ;
 
 stylesheet:
-    SC_STYLES SC_COLON { printf("Stylesheet.\n"); }
+    SC_STYLES SC_OPENBRACE { printf("Here comes the stylesheet\n"); }
+     style_narrative       { printf("Stylesheet - narrative\n"); }
+     style_slide           { printf("Stylesheet - slide\n"); }
+    SC_CLOSEBRACE
   ;
 
+
+/* Can be in narrative or slide */
+
 prestitle:
-    SC_PRESTITLE SC_COLONSPACE SC_STRING { printf("Presentation title: '%s'\n", $3); }
+    SC_PRESTITLE SC_STRING { $$ = $2; }
+  ;
+
+bulletpoint:
+   SC_BP SC_STRING { $$ = $2; }
+  ;
+
+/* ------ Slide contents ------ */
+
+slide:
+    SC_SLIDE SC_OPENBRACE { printf("start of slide\n"); }
+     slide_parts
+    SC_CLOSEBRACE { printf("end of slide\n"); }
+  ;
+
+slide_parts:
+    %empty
+  | slide_part slide_parts
+  ;
+
+slide_part:
+    prestitle | imageframe | textframe | SC_FOOTER | slidetitle
+  ;
+
+imageframe:
+    SC_IMAGEFRAME frame_options SC_STRING
+  ;
+
+textframe:
+    SC_TEXTFRAME frame_options multi_line_string { printf("text frame '%s'\n", $1); }
+  ;
+
+multi_line_string:
+    SC_STRING
+  | SC_STRING multi_line_string
+  | bulletpoint
+  | bulletpoint multi_line_string
+  ;
+
+frame_options:
+    SC_FRAMEOPTS { printf("got some options: '%s'\n", $1); }
+  ;
+
+slidetitle:
+    SC_SLIDETITLE SC_STRING { $$ = $2; }
+  ;
+
+
+/* ------ Stylesheet ------ */
+
+style_narrative:
+    SC_NARRATIVE SC_OPENBRACE style_narrative_def SC_CLOSEBRACE { printf("narrative style\n"); }
+  ;
+
+style_narrative_def:
+    %empty
+  | style_prestitle style_narrative_def
+  | styledef style_narrative_def
+  ;
+
+style_slide:
+    SC_SLIDE SC_OPENBRACE style_slide_def SC_CLOSEBRACE { printf("slide style\n"); }
+  ;
+
+style_slide_def:
+    %empty
+  | style_prestitle style_slide_def
+  | styledef style_slide_def
+  ;
+
+style_prestitle:
+    SC_PRESTITLE SC_OPENBRACE styledefs SC_CLOSEBRACE { printf("prestitle style\n"); }
+  ;
+
+styledefs:
+    %empty
+  | styledef styledefs
+  ;
+
+styledef:
+    SC_FONT SC_STRING  { printf("font def: '%s'\n", $2); }
+  | SC_TYPE SC_STRING  { printf("type def: '%s'\n", $2); }
+  | SC_PAD SC_STRING   { printf("pad def: '%s'\n", $2); }
+  | SC_FGCOL SC_STRING { printf("fgcol def: '%s'\n", $2); }
+  | SC_BGCOL SC_STRING { printf("bgcol def: '%s'\n", $2); }
+  | SC_ALIGN SC_STRING { printf("align def: '%s'\n", $2); }
   ;
 
 %%

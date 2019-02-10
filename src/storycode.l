@@ -21,18 +21,37 @@
  */
 
 %{
+  #define YYDEBUG 1
   #include "storycode.tab.h"
 %}
 
 %option noyywrap nounput noinput
+%s string
 
 %%
 
 STYLES            { return SC_STYLES; }
 PRESTITLE         { return SC_PRESTITLE; }
-:                 { return SC_COLON; }
-:[ ]              { return SC_COLONSPACE; }
-[a-zA-Z0-9 ]+     { sclval = strdup(yytext); return SC_STRING; }
-[\n]              { return SC_NEWLINE; }
+SLIDETITLE        { return SC_SLIDETITLE; }
+NARRATIVE         { return SC_NARRATIVE; }
+SLIDE             { return SC_SLIDE; }
+BP                { return SC_BP; }
+TYPE              { return SC_TYPE; }
+TEXT              { return SC_TEXTFRAME; }
+IMAGE             { return SC_IMAGEFRAME; }
+FOOTER            { return SC_FOOTER; }
+FONT              { return SC_FONT; }
+PAD               { return SC_PAD; }
+ALIGN             { return SC_ALIGN; }
+FGCOL             { return SC_FGCOL; }
+BGCOL             { return SC_BGCOL; }
+<string>.*\n      { sclval = strdup(yytext); sclval[yyleng-1] = '\0'; BEGIN(0); return SC_STRING; }
+"[".*"]"          { sclval = strdup(yytext); return SC_FRAMEOPTS; }
+:[ ]              { BEGIN(string); }
+:\n               { sclval = strdup(""); return SC_STRING; }
+[{]               { return SC_OPENBRACE; }
+[}]               { return SC_CLOSEBRACE; }
+[.\n ]            {}
+
 
 %%

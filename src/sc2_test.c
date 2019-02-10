@@ -25,18 +25,33 @@
 #include <stdlib.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <gio/gio.h>
 
 #include "storycode.tab.h"
 #include "storycode.h"
 
+extern int scdebug;
+
 int main(int argc, char *argv[])
 {
 	YY_BUFFER_STATE b;
+	GFile *file;
+	GBytes *bytes;
+	const char *text;
+	size_t len;
 
+	file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
+	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
+	text = g_bytes_get_data(bytes, &len);
+
+	//scdebug = 1;
 	printf("Here goes...\n");
-	b = sc_scan_string("PRESTITLE: Hi there\nPRESTITLE: Second title\nSTYLES:\nPRESTITLE: three");
+	b = sc_scan_string(text);
 	scparse();
 	sc_delete_buffer(b);
 	printf("Done.\n");
+
+	g_bytes_unref(bytes);
+
 	return 0;
 }

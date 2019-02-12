@@ -27,28 +27,28 @@
 %}
 
 %define api.value.type {char *}
-%token SC_STYLES
-%token SC_SLIDE
-%token SC_NARRATIVE
-%token SC_PRESTITLE
-%token SC_SLIDETITLE
-%token SC_FOOTER
-%token SC_TEXTFRAME
-%token SC_IMAGEFRAME
-%token SC_BP
+%define api.token.prefix {SC_}
+%token STYLES
+%token SLIDE
+%token NARRATIVE
+%token PRESTITLE
+%token SLIDETITLE
+%token FOOTER
+%token TEXTFRAME
+%token IMAGEFRAME
+%token BP
 
-%token SC_FRAMEOPTS
+%token FRAMEOPTS
 
-%token SC_FONT
-%token SC_TYPE
-%token SC_PAD
-%token SC_ALIGN
-%token SC_FGCOL
-%token SC_BGCOL
+%token FONT
+%token TYPE
+%token PAD
+%token ALIGN
+%token FGCOL
+%token BGCOL
 
-%token SC_STRING
-%token SC_OPENBRACE
-%token SC_CLOSEBRACE
+%token STRING
+%token OPENBRACE CLOSEBRACE
 
 %%
 
@@ -62,33 +62,33 @@ scblock:
 | prestitle   { printf("prestitle: '%s'\n", $1); }
 | bulletpoint { printf("* '%s'\n", $1); }
 | slide
-| SC_STRING   { printf("Text line '%s'\n", $1); }
+| STRING   { printf("Text line '%s'\n", $1); }
 ;
 
 stylesheet:
-  SC_STYLES SC_OPENBRACE { printf("Here comes the stylesheet\n"); }
+  STYLES OPENBRACE { printf("Here comes the stylesheet\n"); }
    style_narrative       { printf("Stylesheet - narrative\n"); }
    style_slide           { printf("Stylesheet - slide\n"); }
-  SC_CLOSEBRACE
+  CLOSEBRACE
 ;
 
 
 /* Can be in narrative or slide */
 
 prestitle:
-  SC_PRESTITLE SC_STRING { $$ = $2; }
+  PRESTITLE STRING { $$ = $2; }
 ;
 
 bulletpoint:
- SC_BP SC_STRING { $$ = $2; }
+ BP STRING { $$ = $2; }
 ;
 
 /* ------ Slide contents ------ */
 
 slide:
-  SC_SLIDE SC_OPENBRACE { printf("start of slide\n"); }
+  SLIDE OPENBRACE { printf("start of slide\n"); }
    slide_parts
-  SC_CLOSEBRACE { printf("end of slide\n"); }
+  CLOSEBRACE { printf("end of slide\n"); }
 ;
 
 slide_parts:
@@ -100,38 +100,38 @@ slide_part:
   prestitle
 | imageframe
 | textframe
-| SC_FOOTER
+| FOOTER
 | slidetitle
 ;
 
 imageframe:
-  SC_IMAGEFRAME frame_options SC_STRING { printf("image frame '%s'\n", $SC_STRING); }
+  IMAGEFRAME frame_options STRING { printf("image frame '%s'\n", $STRING); }
 ;
 
 textframe:
-  SC_TEXTFRAME frame_options multi_line_string { printf("text frame '%s'\n", $3); }
-| SC_TEXTFRAME frame_options SC_OPENBRACE multi_line_string SC_CLOSEBRACE { printf("text frame m\n"); }
+  TEXTFRAME frame_options multi_line_string { printf("text frame '%s'\n", $3); }
+| TEXTFRAME frame_options OPENBRACE multi_line_string CLOSEBRACE { printf("text frame m\n"); }
 
 multi_line_string:
-  SC_STRING { printf("string '%s'\n", $1); }
-| multi_line_string SC_STRING { printf("more string '%s'\n", $2); }
+  STRING { printf("string '%s'\n", $1); }
+| multi_line_string STRING { printf("more string '%s'\n", $2); }
 | bulletpoint
 | multi_line_string bulletpoint
 ;
 
 frame_options:
-  SC_FRAMEOPTS { printf("got some options: '%s'\n", $1); }
+  FRAMEOPTS { printf("got some options: '%s'\n", $1); }
 ;
 
 slidetitle:
-  SC_SLIDETITLE SC_STRING { $$ = $2; }
+  SLIDETITLE STRING { $$ = $2; }
 ;
 
 
 /* ------ Stylesheet ------ */
 
 style_narrative:
-  SC_NARRATIVE SC_OPENBRACE style_narrative_def SC_CLOSEBRACE { printf("narrative style\n"); }
+  NARRATIVE OPENBRACE style_narrative_def CLOSEBRACE { printf("narrative style\n"); }
 ;
 
 style_narrative_def:
@@ -141,7 +141,7 @@ style_narrative_def:
 ;
 
 style_slide:
-  SC_SLIDE SC_OPENBRACE style_slide_def SC_CLOSEBRACE { printf("slide style\n"); }
+  SLIDE OPENBRACE style_slide_def CLOSEBRACE { printf("slide style\n"); }
 ;
 
 style_slide_def:
@@ -151,7 +151,7 @@ style_slide_def:
 ;
 
 style_prestitle:
-  SC_PRESTITLE SC_OPENBRACE styledefs SC_CLOSEBRACE { printf("prestitle style\n"); }
+  PRESTITLE OPENBRACE styledefs CLOSEBRACE { printf("prestitle style\n"); }
 ;
 
 styledefs:
@@ -160,12 +160,12 @@ styledefs:
 ;
 
 styledef:
-  SC_FONT SC_STRING  { printf("font def: '%s'\n", $2); }
-| SC_TYPE SC_STRING  { printf("type def: '%s'\n", $2); }
-| SC_PAD SC_STRING   { printf("pad def: '%s'\n", $2); }
-| SC_FGCOL SC_STRING { printf("fgcol def: '%s'\n", $2); }
-| SC_BGCOL SC_STRING { printf("bgcol def: '%s'\n", $2); }
-| SC_ALIGN SC_STRING { printf("align def: '%s'\n", $2); }
+  FONT STRING  { printf("font def: '%s'\n", $2); }
+| TYPE STRING  { printf("type def: '%s'\n", $2); }
+| PAD STRING   { printf("pad def: '%s'\n", $2); }
+| FGCOL STRING { printf("fgcol def: '%s'\n", $2); }
+| BGCOL STRING { printf("bgcol def: '%s'\n", $2); }
+| ALIGN STRING { printf("align def: '%s'\n", $2); }
 ;
 
 %%

@@ -36,6 +36,7 @@ storycode_tab_ch = custom_target('storycode.tab.c',
                                 input : 'src/storycode.y',
                                 command : [bison, '--defines=@OUTPUT1@',
                                                   '-p', 'sc',
+						  '--report=all',
                                                   '--output=@OUTPUT0@',
                                                   '@INPUT@'])
 

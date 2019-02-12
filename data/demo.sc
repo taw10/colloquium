@@ -24,8 +24,8 @@ PRESTITLE: Hi there, welcome to Colloquium!
 
 SLIDE {
   PRESTITLE: Welcome to Colloquium
-  IMAGE[506.3ux520.3u+244.5+141.3]: colloquium.svg
-  TEXT[983.9ux75.4u+21.1+673.0][center]: This is the presentation title slide, in case you hadn't noticed.
+  IMAGE[506.3ux520.3u+244.5u+141.3u]: colloquium.svg
+  TEXT[983.9ux75.4u+21.1u+673.0u][center]: This is the presentation title slide, in case you hadn't noticed.
 }
 
 : As you can probably tell, the above slide happens to be the title page for the presentation.
@@ -34,10 +34,10 @@ SLIDE {
 SLIDE {
   SLIDETITLE: Here is the slide title!
   FOOTER
-  TEXT[425.5ux85.0u+519.3+526.9]: Close this window when you've finished editing...
-  TEXT[383.5ux112.1u+62.0+139.6]: Editing slides works how you expect it to.  Add a new text frame by holding shift and dragging from an empty area.  Then simply type into the new frame.
-  TEXT[442.3ux120.3u+321.6+341.8]: Shift-click and drag frames to move them.
-                                 : Change their shape and size by shift-dragging the handles at the corners.
+  TEXT[425.5ux85.0u+519.3u+526.9u]: Close this window when you've finished editing...
+  TEXT[383.5ux112.1u+62.0u+139.6u]: Editing slides works how you expect it to.  Add a new text frame by holding shift and dragging from an empty area.  Then simply type into the new frame.
+  TEXT[442.3ux120.3u+321.6u+341.8u]: Shift-click and drag frames to move them.
+                                   : Change their shape and size by shift-dragging the handles at the corners.
 }
 
 : You can add a new slide from the "Insert" menu or using the toolbar at the top of the narrative window.  Try it now: click to place the cursor at the end of this paragraph, then add a new slide.
@@ -57,7 +57,7 @@ BP: Use it as a journal, adding slides whenever you have an illustration.  You'l
 SLIDE {
   SLIDETITLE: Alpha test software
   FOOTER
-  TEXT[391.8ux473.5u+567.8+143.7]: Colloquium is "alpha test" software.
+  TEXT[391.8ux473.5u+567.8u+143.7u]: Colloquium is "alpha test" software.
                                  :
                                  : It will probably crash and lose your work a few times.  Save and back up your work as frequently as possible.
                                  :
@@ -67,7 +67,7 @@ SLIDE {
                                  :
                                  BP: Please report all bugs here:
                                  : https://github.com/taw10/colloquium/issues
-  IMAGE[452.2ux431.0u+64.8+168.9]: alpha_warning.svg
+  IMAGE[452.2ux431.0u+64.8u+168.9u]: alpha_warning.svg
 }
 
 : That's enough to get you started.  I hope you enjoy using Colloquium!

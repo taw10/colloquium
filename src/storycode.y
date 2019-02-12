@@ -28,8 +28,7 @@
 
 %define api.value.type {char *}
 %define api.token.prefix {SC_}
-%token STYLES
-%token SLIDE
+%token STYLES SLIDE
 %token NARRATIVE
 %token PRESTITLE
 %token SLIDETITLE
@@ -38,17 +37,15 @@
 %token IMAGEFRAME
 %token BP
 
-%token FRAMEOPTS
+%token FONT TYPE PAD ALIGN FGCOL BGCOL
 
-%token FONT
-%token TYPE
-%token PAD
-%token ALIGN
-%token FGCOL
-%token BGCOL
+%token LEFT CENTER RIGHT
 
 %token STRING
 %token OPENBRACE CLOSEBRACE
+%token SQOPEN SQCLOSE
+%token PLUS TIMES
+%token UNIT VALUE
 
 %%
 
@@ -115,16 +112,42 @@ textframe:
 multi_line_string:
   STRING { printf("string '%s'\n", $1); }
 | multi_line_string STRING { printf("more string '%s'\n", $2); }
-| bulletpoint
-| multi_line_string bulletpoint
+| bulletpoint { printf("string *%s\n", $1); }
+| multi_line_string bulletpoint { printf("more string *%s\n", $1); }
 ;
 
+/* There can be any number of options */
 frame_options:
-  FRAMEOPTS { printf("got some options: '%s'\n", $1); }
+  %empty
+| frame_options frame_option
+;
+
+/* Each option is enclosed in square brackets */
+frame_option:
+  SQOPEN frameopt SQCLOSE { printf("got an option: '%s'\n", $2); }
+;
+
+frameopt:
+  geometry
+| alignment
+;
+
+geometry:
+  length TIMES length PLUS length PLUS length { $$ = "geom"; printf("Geometry\n"); }
+;
+
+alignment:
+  LEFT
+| CENTER
+| RIGHT
 ;
 
 slidetitle:
   SLIDETITLE STRING { $$ = $2; }
+;
+
+length:
+  VALUE UNIT
 ;
 
 

@@ -45,13 +45,21 @@ PAD               { return SC_PAD; }
 ALIGN             { return SC_ALIGN; }
 FGCOL             { return SC_FGCOL; }
 BGCOL             { return SC_BGCOL; }
+(?i:left)         { return SC_LEFT; }
+(?i:center)       { return SC_CENTER; }
+(?i:right)        { return SC_RIGHT; }
 <string>.*\n      { sclval = strdup(yytext); sclval[yyleng-1] = '\0'; BEGIN(0); return SC_STRING; }
-"[".*"]"          { sclval = strdup(yytext); return SC_FRAMEOPTS; }
+"["               { return SC_SQOPEN; }
+"]"               { return SC_SQCLOSE; }
 :[ ]              { BEGIN(string); }
 :\n               { sclval = strdup(""); return SC_STRING; }
 [{]               { return SC_OPENBRACE; }
 [}]               { return SC_CLOSEBRACE; }
 [.\n ]            {}
+[0-9\.]+          { /* FIXME: lval */ return SC_VALUE; }
+[uf]              { return SC_UNIT; }
+[+]               { return SC_PLUS; }
+[x]               { return SC_TIMES; }
 
 
 %%

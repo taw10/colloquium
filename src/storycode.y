@@ -47,7 +47,6 @@
 %token SC_BGCOL
 
 %token SC_STRING
-%token SC_NEWLINE
 %token SC_OPENBRACE
 %token SC_CLOSEBRACE
 

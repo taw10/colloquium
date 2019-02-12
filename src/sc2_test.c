@@ -30,7 +30,7 @@
 #include "storycode.tab.h"
 #include "storycode.h"
 
-extern int scdebug;
+//int scdebug = 1;
 
 int main(int argc, char *argv[])
 {
@@ -44,7 +44,6 @@ int main(int argc, char *argv[])
 	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
 	text = g_bytes_get_data(bytes, &len);
 
-	//scdebug = 1;
 	printf("Here goes...\n");
 	b = sc_scan_string(text);
 	scparse();

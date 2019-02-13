@@ -27,13 +27,17 @@ gresources = gnome.compile_resources('colloquium-resources',
                                      'data/colloquium.gresource.xml',
                                      source_dir: 'data', c_name: 'colloquium')
 
+
+# libstorycode
+libstorycode_includes = include_directories('libstorycode')
+
 flex = find_program('flex')
 bison = find_program('bison')
 
 storycode_tab_ch = custom_target('storycode.tab.c',
                                 output : ['storycode.tab.c',
                                           'storycode.tab.h'],
-                                input : 'src/storycode.y',
+                                input : 'libstorycode/storycode.y',
                                 command : [bison, '--defines=@OUTPUT1@',
                                                   '-p', 'sc',
 						  '--report=all',
@@ -42,18 +46,27 @@ storycode_tab_ch = custom_target('storycode.tab.c',
 
 storycode_c = custom_target('storycode.c',
                             output : ['storycode.c', 'storycode.h'],
-                            input : ['src/storycode.l', storycode_tab_ch],
+                            input : ['libstorycode/storycode.l', storycode_tab_ch],
                             command : [flex, '--outfile=@OUTPUT0@',
                                              '--header-file=@OUTPUT1@',
                                              '-P', 'sc',
                                              '@INPUT@'])
+libstorycode = library('storycode',
+                   ['libstorycode/narrative.c',
+                    storycode_c,
+                   ],
+		   include_directories : libstorycode_includes,
+		   install : true)
+
+libstorycode_dep = declare_dependency(include_directories : libstorycode_includes,
+                                      link_with : libstorycode)
+
 
 executable('sc2_test',
            ['src/sc2_test.c',
-	    storycode_c,
 	   ],
 	   gresources,
-	   dependencies : [gtkdep])
+	   dependencies : [gtkdep, libstorycode_dep])
 
 # Main program
 executable('colloquium',

@@ -49,26 +49,22 @@
 
 %%
 
-storycode:
-  %empty
-| storycode scblock
+presentation:
+  stylesheet narrative
+| narrative
 ;
 
-scblock:
-  stylesheet  { printf("That was the stylesheet\n"); }
-| prestitle   { printf("prestitle: '%s'\n", $1); }
+narrative:
+  narrative_el
+| narrative narrative_el
+;
+
+narrative_el:
+  prestitle   { printf("prestitle: '%s'\n", $1); }
 | bulletpoint { printf("* '%s'\n", $1); }
 | slide
 | STRING   { printf("Text line '%s'\n", $1); }
 ;
-
-stylesheet:
-  STYLES OPENBRACE { printf("Here comes the stylesheet\n"); }
-   style_narrative       { printf("Stylesheet - narrative\n"); }
-   style_slide           { printf("Stylesheet - slide\n"); }
-  CLOSEBRACE
-;
-
 
 /* Can be in narrative or slide */
 
@@ -79,6 +75,7 @@ prestitle:
 bulletpoint:
  BP STRING { $$ = $2; }
 ;
+
 
 /* ------ Slide contents ------ */
 
@@ -152,6 +149,13 @@ length:
 
 
 /* ------ Stylesheet ------ */
+
+stylesheet:
+  STYLES OPENBRACE { printf("Here comes the stylesheet\n"); }
+   style_narrative       { printf("Stylesheet - narrative\n"); }
+   style_slide           { printf("Stylesheet - slide\n"); }
+  CLOSEBRACE
+;
 
 style_narrative:
   NARRATIVE OPENBRACE style_narrative_def CLOSEBRACE { printf("narrative style\n"); }

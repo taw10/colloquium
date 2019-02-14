@@ -42,13 +42,13 @@ flex_gen = generator(flex,
 
 bison_gen = generator(bison,
                       output : ['@BASENAME@_parse.c', '@BASENAME@_parse.h'],
-                      arguments : ['--defines=@OUTPUT1@',
+                      arguments : ['--output=@OUTPUT0@',
+                                   '--defines=@OUTPUT1@',
                                    '--report=all',
-                                   '--output=@OUTPUT0@',
                                    '@INPUT@'])
 
-storycode_lex_c = flex_gen.process('libstorycode/storycode.l')
 storycode_parse_ch = bison_gen.process('libstorycode/storycode.y')
+storycode_lex_ch = flex_gen.process('libstorycode/storycode.l')
 
 libstorycode = library('storycode',
                    ['libstorycode/narrative.c',
@@ -56,7 +56,7 @@ libstorycode = library('storycode',
                     'libstorycode/presentation.c',
                     'libstorycode/stylesheet.c',
                     'libstorycode/storycode.c',
-                    storycode_lex_c,
+                    storycode_lex_ch,
                     storycode_parse_ch,
                    ],
                    include_directories : libstorycode_includes,

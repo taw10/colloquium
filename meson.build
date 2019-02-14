@@ -39,8 +39,7 @@ storycode_parse_ch = custom_target('storycode_parse.c',
                                           'storycode_parse.h'],
                                 input : 'libstorycode/storycode.y',
                                 command : [bison, '--defines=@OUTPUT1@',
-                                                  '-p', 'sc',
-						  '--report=all',
+                                                  '--report=all',
                                                   '--output=@OUTPUT0@',
                                                   '@INPUT@'])
 
@@ -49,7 +48,6 @@ storycode_lex_c = custom_target('storycode_lex.c',
                             input : ['libstorycode/storycode.l', storycode_parse_ch],
                             command : [flex, '--outfile=@OUTPUT0@',
                                              '--header-file=@OUTPUT1@',
-                                             '-P', 'sc',
                                              '@INPUT@'])
 
 libstorycode = library('storycode',

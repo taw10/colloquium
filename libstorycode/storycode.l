@@ -25,6 +25,7 @@
   #include "storycode_parse.h"
 %}
 
+%option prefix="sc"
 %option noyywrap nounput noinput
 %s string
 

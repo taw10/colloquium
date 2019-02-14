@@ -28,6 +28,7 @@
 
 %define api.value.type {char *}
 %define api.token.prefix {SC_}
+%define api.prefix {sc}
 %token STYLES SLIDE
 %token NARRATIVE
 %token PRESTITLE

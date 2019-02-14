@@ -58,8 +58,8 @@ libstorycode = library('storycode',
                     'libstorycode/storycode.c',
                     storycode_lex_c,
                    ],
-		   include_directories : libstorycode_includes,
-		   install : true)
+                   include_directories : libstorycode_includes,
+                   install : true)
 
 libstorycode_dep = declare_dependency(include_directories : libstorycode_includes,
                                       link_with : libstorycode)

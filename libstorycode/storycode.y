@@ -21,6 +21,7 @@
  */
 
 %{
+  #include <stdio.h>
   extern int sclex();
   extern int scparse();
   void scerror(const char *s);

@@ -1,5 +1,5 @@
 /*
- * sc2_test.c
+ * storycode.c
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -21,30 +21,24 @@
  */
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <glib.h>
-#include <glib/gstdio.h>
-#include <gio/gio.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
-#include "storycode.h"
+#include <stdlib.h>
+#include <string.h>
+
 #include "presentation.h"
 
-//int scdebug = 1;
+#include "storycode_parse.h"
+#include "storycode_lex.h"
 
-int main(int argc, char *argv[])
+Presentation *storycode_parse_presentation(const char *sc)
 {
-	GFile *file;
-	GBytes *bytes;
-	const char *text;
-	size_t len;
-	Presentation *p;
+	YY_BUFFER_STATE b;
 
-	file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
-	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
-	text = g_bytes_get_data(bytes, &len);
-	p = storycode_parse_presentation(text);
-	g_bytes_unref(bytes);
-
-	return 0;
+	b = sc_scan_string(sc);
+	scparse();
+	sc_delete_buffer(b);
+	return NULL;
 }

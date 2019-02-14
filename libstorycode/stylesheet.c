@@ -1,5 +1,5 @@
 /*
- * sc2_test.c
+ * stylesheet.c
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -21,30 +21,31 @@
  */
 
 
-#include <string.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
-#include <glib.h>
-#include <glib/gstdio.h>
-#include <gio/gio.h>
+#include <string.h>
 
-#include "storycode.h"
-#include "presentation.h"
+#include "stylesheet.h"
 
-//int scdebug = 1;
-
-int main(int argc, char *argv[])
+struct _stylesheet
 {
-	GFile *file;
-	GBytes *bytes;
-	const char *text;
-	size_t len;
-	Presentation *p;
+	int n_items;
+};
 
-	file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
-	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
-	text = g_bytes_get_data(bytes, &len);
-	p = storycode_parse_presentation(text);
-	g_bytes_unref(bytes);
 
-	return 0;
+Stylesheet *stylesheet_new()
+{
+	Stylesheet *s;
+	s = malloc(sizeof(*s));
+	if ( s == NULL ) return NULL;
+	s->n_items = 0;
+	return s;
+}
+
+void stylesheet_free(Stylesheet *s)
+{
+	free(s);
 }

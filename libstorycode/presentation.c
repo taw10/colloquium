@@ -1,5 +1,5 @@
 /*
- * sc2_test.c
+ * presentation.c
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -21,30 +21,40 @@
  */
 
 
-#include <string.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
-#include <glib.h>
-#include <glib/gstdio.h>
-#include <gio/gio.h>
+#include <string.h>
 
-#include "storycode.h"
 #include "presentation.h"
+#include "stylesheet.h"
+#include "slide.h"
+#include "narrative.h"
 
-//int scdebug = 1;
-
-int main(int argc, char *argv[])
+struct _presentation
 {
-	GFile *file;
-	GBytes *bytes;
-	const char *text;
-	size_t len;
+	Stylesheet *stylesheet;
+	Narrative *narrative;
+	int n_slides;
+	Slide **slides;
+};
+
+
+Presentation *presentation_new()
+{
 	Presentation *p;
+	p = malloc(sizeof(*p));
+	if ( p == NULL ) return NULL;
+	p->stylesheet = NULL;
+	p->narrative = NULL;
+	p->slides = NULL;
+	p->n_slides = 0;
+	return p;
+}
 
-	file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
-	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
-	text = g_bytes_get_data(bytes, &len);
-	p = storycode_parse_presentation(text);
-	g_bytes_unref(bytes);
-
-	return 0;
+void presentation_free(Presentation *p)
+{
+	free(p);
 }

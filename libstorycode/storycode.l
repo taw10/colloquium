@@ -22,7 +22,7 @@
 
 %{
   #define YYDEBUG 1
-  #include "storycode.tab.h"
+  #include "storycode_parse.h"
 %}
 
 %option noyywrap nounput noinput

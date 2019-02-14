@@ -27,5 +27,10 @@
 #include <config.h>
 #endif
 
+typedef struct _narrative Narrative;
+
+extern Narrative *narrative_new(void);
+extern void narrative_free(Narrative *n);
+
 
 #endif /* NARRATIVE_H */

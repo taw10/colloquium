@@ -1,5 +1,5 @@
 /*
- * sc2_test.c
+ * slide.c
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -21,30 +21,34 @@
  */
 
 
-#include <string.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h>
-#include <glib.h>
-#include <glib/gstdio.h>
-#include <gio/gio.h>
+#include <string.h>
 
-#include "storycode.h"
-#include "presentation.h"
+#include "slide.h"
 
-//int scdebug = 1;
-
-int main(int argc, char *argv[])
+struct _slide
 {
-	GFile *file;
-	GBytes *bytes;
-	const char *text;
-	size_t len;
-	Presentation *p;
+	int n_items;
+	struct slide_item *items;
+};
 
-	file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
-	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
-	text = g_bytes_get_data(bytes, &len);
-	p = storycode_parse_presentation(text);
-	g_bytes_unref(bytes);
 
-	return 0;
+Slide *slide_new()
+{
+	Slide *s;
+	s = malloc(sizeof(*s));
+	if ( s == NULL ) return NULL;
+	s->n_items = 0;
+	s->items = NULL;
+	return s;
+}
+
+void slide_free(Slide *s)
+{
+	free(s->items);
+	free(s);
 }

@@ -28,3 +28,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "narrative.h"
+
+struct _narrative
+{
+	int n_items;
+	struct narrative_item *items;
+};
+
+
+Narrative *narrative_new()
+{
+	Narrative *n;
+	n = malloc(sizeof(*n));
+	if ( n == NULL ) return NULL;
+	n->n_items = 0;
+	n->items = NULL;
+	return n;
+}
+
+void narrative_free(Narrative *n)
+{
+	free(n->items);
+	free(n);
+}

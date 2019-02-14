@@ -34,9 +34,9 @@ libstorycode_includes = include_directories('libstorycode')
 flex = find_program('flex')
 bison = find_program('bison')
 
-storycode_tab_ch = custom_target('storycode.tab.c',
-                                output : ['storycode.tab.c',
-                                          'storycode.tab.h'],
+storycode_parse_ch = custom_target('storycode_parse.c',
+                                output : ['storycode_parse.c',
+                                          'storycode_parse.h'],
                                 input : 'libstorycode/storycode.y',
                                 command : [bison, '--defines=@OUTPUT1@',
                                                   '-p', 'sc',
@@ -44,16 +44,21 @@ storycode_tab_ch = custom_target('storycode.tab.c',
                                                   '--output=@OUTPUT0@',
                                                   '@INPUT@'])
 
-storycode_c = custom_target('storycode.c',
-                            output : ['storycode.c', 'storycode.h'],
-                            input : ['libstorycode/storycode.l', storycode_tab_ch],
+storycode_lex_c = custom_target('storycode_lex.c',
+                            output : ['storycode_lex.c', 'storycode_lex.h'],
+                            input : ['libstorycode/storycode.l', storycode_parse_ch],
                             command : [flex, '--outfile=@OUTPUT0@',
                                              '--header-file=@OUTPUT1@',
                                              '-P', 'sc',
                                              '@INPUT@'])
+
 libstorycode = library('storycode',
                    ['libstorycode/narrative.c',
-                    storycode_c,
+                    'libstorycode/slide.c',
+                    'libstorycode/presentation.c',
+                    'libstorycode/stylesheet.c',
+                    'libstorycode/storycode.c',
+                    storycode_lex_c,
                    ],
 		   include_directories : libstorycode_includes,
 		   install : true)
@@ -64,9 +69,9 @@ libstorycode_dep = declare_dependency(include_directories : libstorycode_include
 
 executable('sc2_test',
            ['src/sc2_test.c',
-	   ],
-	   gresources,
-	   dependencies : [gtkdep, libstorycode_dep])
+           ],
+           gresources,
+           dependencies : [gtkdep, libstorycode_dep])
 
 # Main program
 executable('colloquium',

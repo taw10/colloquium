@@ -27,9 +27,18 @@
   void scerror(const char *s);
 %}
 
-%define api.value.type {char *}
 %define api.token.prefix {SC_}
 %define api.prefix {sc}
+
+%union {
+  Presentation *p;
+  Stylesheet *ss;
+  Narrative *n;
+  Slide *s;
+  SlideItem *si;
+  char *str;
+}
+
 %token STYLES SLIDE
 %token NARRATIVE
 %token PRESTITLE
@@ -49,6 +58,15 @@
 %token PLUS TIMES
 %token UNIT VALUE
 
+%type <p> presentation
+%type <n> narrative
+%type <s> slide
+%type <ss> stylesheet
+%type <str> prestitle
+%type <str> STRING
+%type <str> bulletpoint
+%type <si> textframe
+
 %%
 
 presentation:
@@ -62,10 +80,10 @@ narrative:
 ;
 
 narrative_el:
-  prestitle   { printf("prestitle: '%s'\n", $1); }
-| bulletpoint { printf("* '%s'\n", $1); }
-| slide
-| STRING   { printf("Text line '%s'\n", $1); }
+  prestitle   { narrative_add_prestitle(n, $1); }
+| bulletpoint { narrative_add_bp(n, $1); }
+| slide       { narrative_add_slide(n, $1); }
+| STRING      { narrative_add_text(n, $1); }
 ;
 
 /* Can be in narrative or slide */

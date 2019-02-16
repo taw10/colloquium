@@ -28,6 +28,7 @@
 #endif
 
 typedef struct _slide Slide;
+typedef struct _slideitem SlideItem;
 
 extern Slide *slide_new(void);
 extern void slide_free(Slide *n);

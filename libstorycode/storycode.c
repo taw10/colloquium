@@ -29,16 +29,23 @@
 #include <string.h>
 
 #include "presentation.h"
+#include "narrative.h"
+#include "slide.h"
+#include "stylesheet.h"
 
 #include "storycode_parse.h"
 #include "storycode_lex.h"
+#include "scparse_priv.h"
+
 
 Presentation *storycode_parse_presentation(const char *sc)
 {
 	YY_BUFFER_STATE b;
+	struct scpctx parse_ctx;
 
 	b = sc_scan_string(sc);
-	scparse();
+	scparse(&parse_ctx);
 	sc_delete_buffer(b);
-	return NULL;
+
+	return parse_ctx.p;
 }

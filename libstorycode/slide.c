@@ -30,6 +30,22 @@
 
 #include "slide.h"
 
+enum slide_item_type
+{
+	SLIDE_ITEM_TEXT,
+};
+
+
+struct slide_item
+{
+	enum slide_item_type type;
+
+	/* For SLIDE_ITEM_TEXT */
+	char **paragraphs;
+	int n_paras;
+};
+
+
 struct _slide
 {
 	int n_items;

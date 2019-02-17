@@ -20,15 +20,19 @@
  *
  */
 
-%{
-  #include <stdio.h>
-  extern int sclex();
-  extern int scparse();
-  void scerror(const char *s);
-%}
-
 %define api.token.prefix {SC_}
 %define api.prefix {sc}
+%locations
+
+%code requires {
+
+  #include "presentation.h"
+  #include "narrative.h"
+  #include "slide.h"
+  #include "stylesheet.h"
+
+  #include "scparse_priv.h"
+}
 
 %union {
   Presentation *p;
@@ -38,6 +42,14 @@
   SlideItem *si;
   char *str;
 }
+
+%{
+  #include <stdio.h>
+
+  extern int sclex();
+  extern int scparse();
+  void scerror(struct scpctx *ctx, const char *s);
+%}
 
 %token STYLES SLIDE
 %token NARRATIVE
@@ -66,24 +78,42 @@
 %type <str> STRING
 %type <str> bulletpoint
 %type <si> textframe
+%type <si> imageframe
+%type <str> multi_line_string
+%type <str> frameopt
+%type <str> geometry                   /* FIXME: Should have its own type */
+%type <str> slidetitle
+
+%parse-param { struct scpctx *ctx };
+%initial-action
+{
+	ctx->p = presentation_new();
+
+	/* These are the objects currently being created.  They will be
+	 * added to the presentation when they're complete */
+	ctx->n = narrative_new();
+	ctx->ss = stylesheet_new();
+	ctx->s = slide_new();
+}
 
 %%
 
 presentation:
-  stylesheet narrative
-| narrative
+  stylesheet narrative  { presentation_add_stylesheet(ctx->p, ctx->ss);
+                          presentation_add_narrative(ctx->p, ctx->n);  }
+| narrative             { presentation_add_narrative(ctx->p, ctx->n);  }
 ;
 
 narrative:
-  narrative_el
-| narrative narrative_el
+  narrative_el            { }
+| narrative narrative_el  { }
 ;
 
 narrative_el:
-  prestitle   { narrative_add_prestitle(n, $1); }
-| bulletpoint { narrative_add_bp(n, $1); }
-| slide       { narrative_add_slide(n, $1); }
-| STRING      { narrative_add_text(n, $1); }
+  prestitle   { narrative_add_prestitle(ctx->n, $1); }
+| bulletpoint { narrative_add_bp(ctx->n, $1); }
+| slide       { narrative_add_slide(ctx->n, $1); }
+| STRING      { narrative_add_text(ctx->n, $1); }
 ;
 
 /* Can be in narrative or slide */
@@ -100,9 +130,11 @@ bulletpoint:
 /* ------ Slide contents ------ */
 
 slide:
-  SLIDE OPENBRACE { printf("start of slide\n"); }
+  SLIDE OPENBRACE
    slide_parts
-  CLOSEBRACE { printf("end of slide\n"); }
+  CLOSEBRACE       { presentation_add_slide(ctx->p, ctx->s);
+                     narrative_add_slide(ctx->n, ctx->s);
+                     ctx->s = slide_new(); /* New work in progress object */ }
 ;
 
 slide_parts:
@@ -111,15 +143,15 @@ slide_parts:
 ;
 
 slide_part:
-  prestitle
-| imageframe
-| textframe
-| FOOTER
-| slidetitle
+  prestitle   { slide_add_prestitle(ctx->s, $1); }
+| imageframe  { slide_add_image(ctx->s, $1, ctx->geom); frameopts_reset(ctx); }
+| textframe   { slide_add_text(ctx->s, $1, ctx->geom); frameopts_reset(ctx); }
+| FOOTER      { slide_add_footer(ctx->s); }
+| slidetitle  { slide_add_slidetitle(ctx->s, $1); }
 ;
 
 imageframe:
-  IMAGEFRAME frame_options STRING { printf("image frame '%s'\n", $STRING); }
+  IMAGEFRAME frame_options STRING { $$ = $STRING; }
 ;
 
 textframe:
@@ -145,8 +177,8 @@ frame_option:
 ;
 
 frameopt:
-  geometry
-| alignment
+  geometry   {}
+| alignment  {}
 ;
 
 geometry:
@@ -171,10 +203,10 @@ length:
 /* ------ Stylesheet ------ */
 
 stylesheet:
-  STYLES OPENBRACE { printf("Here comes the stylesheet\n"); }
-   style_narrative       { printf("Stylesheet - narrative\n"); }
-   style_slide           { printf("Stylesheet - slide\n"); }
-  CLOSEBRACE
+  STYLES OPENBRACE
+   style_narrative
+   style_slide
+  CLOSEBRACE  { printf("stylesheet\n"); }
 ;
 
 style_narrative:
@@ -217,6 +249,6 @@ styledef:
 
 %%
 
-void scerror(const char *s) {
-	printf("Error\n");
+void scerror(struct scpctx *ctx, const char *s) {
+	printf("Storycode parse error at %i-%i\n", yylloc.first_line, yylloc.first_column);
 }

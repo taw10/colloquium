@@ -27,6 +27,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
 #include "presentation.h"
 #include "stylesheet.h"
@@ -39,6 +41,7 @@ struct _presentation
 	Narrative *narrative;
 	int n_slides;
 	Slide **slides;
+	int max_slides;
 };
 
 
@@ -51,10 +54,44 @@ Presentation *presentation_new()
 	p->narrative = NULL;
 	p->slides = NULL;
 	p->n_slides = 0;
+	p->max_slides = 0;
 	return p;
 }
+
 
 void presentation_free(Presentation *p)
 {
 	free(p);
+}
+
+
+void presentation_add_stylesheet(Presentation *p, Stylesheet *ss)
+{
+	assert(p->stylesheet == NULL);
+	p->stylesheet = ss;
+}
+
+
+void presentation_add_narrative(Presentation *p, Narrative *n)
+{
+	assert(p->narrative == NULL);
+	p->narrative = n;
+}
+
+
+void presentation_add_slide(Presentation *p, Slide *s)
+{
+	assert(p->n_slides <= p->max_slides);
+	if ( p->n_slides == p->max_slides ) {
+		Slide **nslides = realloc(p->slides,
+		                          (p->max_slides+8)*sizeof(Slide *));
+		if ( nslides == NULL ) {
+			fprintf(stderr, "Failed to allocate memory for slide\n");
+			return;
+		}
+		p->slides = nslides;
+		p->max_slides += 8;
+	}
+
+	p->slides[p->n_slides++] = s;
 }

@@ -22,6 +22,12 @@
 
 %{
   #define YYDEBUG 1
+
+  #include "presentation.h"
+  #include "narrative.h"
+  #include "slide.h"
+  #include "stylesheet.h"
+
   #include "storycode_parse.h"
 %}
 
@@ -49,11 +55,11 @@ BGCOL             { return SC_BGCOL; }
 (?i:left)         { return SC_LEFT; }
 (?i:center)       { return SC_CENTER; }
 (?i:right)        { return SC_RIGHT; }
-<string>.*\n      { sclval = strdup(yytext); sclval[yyleng-1] = '\0'; BEGIN(0); return SC_STRING; }
+<string>.*\n      { sclval.str = strdup(yytext); sclval.str[yyleng-1] = '\0'; BEGIN(0); return SC_STRING; }
 "["               { return SC_SQOPEN; }
 "]"               { return SC_SQCLOSE; }
 :[ ]              { BEGIN(string); }
-:\n               { sclval = strdup(""); return SC_STRING; }
+:\n               { sclval.str = strdup(""); return SC_STRING; }
 [{]               { return SC_OPENBRACE; }
 [}]               { return SC_CLOSEBRACE; }
 [.\n ]            {}

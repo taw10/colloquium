@@ -1,5 +1,5 @@
 /*
- * narrative.c
+ * scparse_priv.h
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -20,55 +20,31 @@
  *
  */
 
+#ifndef SCPARSE_PRIV_H
+#define SCPARSE_PRIV_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-
+#include "presentation.h"
 #include "narrative.h"
 
-struct _narrative
+struct frame_geom
 {
-	int n_items;
-	struct narrative_item *items;
+	double x;
+	double y;
+	double w;
+	double h;
+	/* FIXME: units */
 };
 
 
-Narrative *narrative_new()
+struct scpctx
 {
+	Presentation *p;
 	Narrative *n;
-	n = malloc(sizeof(*n));
-	if ( n == NULL ) return NULL;
-	n->n_items = 0;
-	n->items = NULL;
-	return n;
-}
+	Stylesheet *ss;
+	Slide *s;
 
-void narrative_free(Narrative *n)
-{
-	free(n->items);
-	free(n);
-}
+	/* Frame options */
+	struct frame_geom geom;
+};
 
-
-void narrative_add_prestitle(Narrative *n, const char *text)
-{
-}
-
-
-void narrative_add_bp(Narrative *n, const char *text)
-{
-}
-
-
-void narrative_add_text(Narrative *n, const char *text)
-{
-}
-
-
-void narrative_add_slide(Narrative *n, Slide *slide)
-{
-}
+#endif /* SCPARSE_PRIV_H */

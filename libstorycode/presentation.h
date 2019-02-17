@@ -29,8 +29,14 @@
 
 typedef struct _presentation Presentation;
 
+#include "stylesheet.h"
+#include "narrative.h"
+
 extern Presentation *presentation_new(void);
 extern void presentation_free(Presentation *p);
 
+extern void presentation_add_stylesheet(Presentation *p, Stylesheet *ss);
+extern void presentation_add_narrative(Presentation *p, Narrative *n);
+extern void presentation_add_slide(Presentation *p, Slide *s);
 
 #endif /* PRESENTATION_H */

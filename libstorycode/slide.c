@@ -68,3 +68,33 @@ void slide_free(Slide *s)
 	free(s->items);
 	free(s);
 }
+
+
+int slide_add_prestitle(Slide *s, char *prestitle)
+{
+	return 0;
+}
+
+
+int slide_add_image(Slide *s, char *filename, struct frame_geom geom)
+{
+	return 0;
+}
+
+
+int slide_add_text(Slide *s, char *text, struct frame_geom geom)
+{
+	return 0;
+}
+
+
+int slide_add_footer(Slide *s)
+{
+	return 0;
+}
+
+
+int slide_add_slidetitle(Slide *s, char *slidetitle)
+{
+	return 0;
+}

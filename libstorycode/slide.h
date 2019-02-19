@@ -30,8 +30,24 @@
 typedef struct _slide Slide;
 typedef struct _slideitem SlideItem;
 
+struct frame_geom
+{
+	double x;
+	double y;
+	double w;
+	double h;
+	/* FIXME: units */
+};
+
+
 extern Slide *slide_new(void);
-extern void slide_free(Slide *n);
+extern void slide_free(Slide *s);
+
+extern int slide_add_prestitle(Slide *s, char *prestitle);
+extern int slide_add_image(Slide *s, char *filename, struct frame_geom geom);
+extern int slide_add_text(Slide *s, char *text, struct frame_geom geom);
+extern int slide_add_footer(Slide *s);
+extern int slide_add_slidetitle(Slide *s, char *slidetitle);
 
 
 #endif /* SLIDE_H */

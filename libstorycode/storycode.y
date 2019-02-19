@@ -39,7 +39,6 @@
   Stylesheet *ss;
   Narrative *n;
   Slide *s;
-  SlideItem *si;
   char *str;
 }
 
@@ -76,9 +75,9 @@
 %type <ss> stylesheet
 %type <str> prestitle
 %type <str> STRING
+%type <str> textframe
+%type <str> imageframe
 %type <str> bulletpoint
-%type <si> textframe
-%type <si> imageframe
 %type <str> multi_line_string
 %type <str> frameopt
 %type <str> geometry                   /* FIXME: Should have its own type */
@@ -95,6 +94,12 @@
 	ctx->ss = stylesheet_new();
 	ctx->s = slide_new();
 }
+
+%{
+	void frameopts_reset(struct scpctx *ctx)
+	{
+	}
+%}
 
 %%
 

@@ -25,16 +25,7 @@
 
 #include "presentation.h"
 #include "narrative.h"
-
-struct frame_geom
-{
-	double x;
-	double y;
-	double w;
-	double h;
-	/* FIXME: units */
-};
-
+#include "slide.h"
 
 struct scpctx
 {

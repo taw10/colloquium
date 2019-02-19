@@ -1,5 +1,5 @@
 /*
- * sc2_test.c
+ * pdfstorycode.c
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -30,8 +30,6 @@
 #include "storycode.h"
 #include "presentation.h"
 
-//int scdebug = 1;
-
 int main(int argc, char *argv[])
 {
 	GFile *file;
@@ -39,12 +37,19 @@ int main(int argc, char *argv[])
 	const char *text;
 	size_t len;
 	Presentation *p;
+	int i;
 
-	file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
+	file = g_file_new_for_commandline_arg(argv[1]);
 	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
 	text = g_bytes_get_data(bytes, &len);
 	p = storycode_parse_presentation(text);
 	g_bytes_unref(bytes);
+
+	/* Render each slide to PDF */
+//	for ( i=0; i<presentation_num_slides(p); i++ ) {
+//		Slide *slide = presentation_slide(p, i);
+//
+//	}
 
 	return 0;
 }

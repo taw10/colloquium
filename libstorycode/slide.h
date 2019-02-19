@@ -45,7 +45,7 @@ extern void slide_free(Slide *s);
 
 extern int slide_add_prestitle(Slide *s, char *prestitle);
 extern int slide_add_image(Slide *s, char *filename, struct frame_geom geom);
-extern int slide_add_text(Slide *s, char *text, struct frame_geom geom);
+extern int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom);
 extern int slide_add_footer(Slide *s);
 extern int slide_add_slidetitle(Slide *s, char *slidetitle);
 

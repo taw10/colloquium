@@ -27,12 +27,17 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "slide.h"
 
 enum slide_item_type
 {
 	SLIDE_ITEM_TEXT,
+	SLIDE_ITEM_IMAGE,
+	SLIDE_ITEM_FOOTER,
+	SLIDE_ITEM_SLIDETITLE,
+	SLIDE_ITEM_PRESTITLE,
 };
 
 
@@ -82,8 +87,13 @@ int slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 }
 
 
-int slide_add_text(Slide *s, char *text, struct frame_geom geom)
+int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom)
 {
+	int i;
+	printf("got text:\n");
+	for ( i=0; i<n_text; i++ ) {
+		printf("%3i: '%s'\n", i, text[i]);
+	}
 	return 0;
 }
 

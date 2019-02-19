@@ -44,6 +44,7 @@
 
 %{
   #include <stdio.h>
+  #include <stdlib.h>
 
   extern int sclex();
   extern int scparse();
@@ -75,10 +76,8 @@
 %type <ss> stylesheet
 %type <str> prestitle
 %type <str> STRING
-%type <str> textframe
 %type <str> imageframe
 %type <str> bulletpoint
-%type <str> multi_line_string
 %type <str> frameopt
 %type <str> geometry                   /* FIXME: Should have its own type */
 %type <str> slidetitle
@@ -93,11 +92,32 @@
 	ctx->n = narrative_new();
 	ctx->ss = stylesheet_new();
 	ctx->s = slide_new();
+
+	ctx->n_str = 0;
+	ctx->max_str = 32;
+	ctx->str = malloc(ctx->max_str*sizeof(char *));
+	if ( ctx->str == NULL ) ctx->max_str = 0;
 }
 
 %{
 	void frameopts_reset(struct scpctx *ctx)
 	{
+	}
+
+	void str_reset(struct scpctx *ctx)
+	{
+		ctx->n_str = 0;
+	}
+
+	void add_str(struct scpctx *ctx, char *str)
+	{
+		if ( ctx->n_str == ctx->max_str ) {
+			char **nstr = realloc(ctx->str, (ctx->max_str+32)*sizeof(char *));
+			if ( nstr == NULL ) return;
+			ctx->max_str += 32;
+		}
+
+		ctx->str[ctx->n_str++] = str;
 	}
 %}
 
@@ -148,11 +168,15 @@ slide_parts:
 ;
 
 slide_part:
-  prestitle   { slide_add_prestitle(ctx->s, $1); }
-| imageframe  { slide_add_image(ctx->s, $1, ctx->geom); frameopts_reset(ctx); }
-| textframe   { slide_add_text(ctx->s, $1, ctx->geom); frameopts_reset(ctx); }
+  prestitle   { slide_add_prestitle(ctx->s, $1); str_reset(ctx); }
+| imageframe  { slide_add_image(ctx->s, $1, ctx->geom);
+                frameopts_reset(ctx);
+                str_reset(ctx); }
+| textframe   { slide_add_text(ctx->s, ctx->str, ctx->n_str, ctx->geom);
+                frameopts_reset(ctx);
+                str_reset(ctx); }
 | FOOTER      { slide_add_footer(ctx->s); }
-| slidetitle  { slide_add_slidetitle(ctx->s, $1); }
+| slidetitle  { slide_add_slidetitle(ctx->s, $1); str_reset(ctx); }
 ;
 
 imageframe:
@@ -160,14 +184,15 @@ imageframe:
 ;
 
 textframe:
-  TEXTFRAME frame_options multi_line_string { printf("text frame '%s'\n", $3); }
-| TEXTFRAME frame_options OPENBRACE multi_line_string CLOSEBRACE { printf("text frame m\n"); }
+  TEXTFRAME frame_options multi_line_string                      { }
+| TEXTFRAME frame_options OPENBRACE multi_line_string CLOSEBRACE { }
+;
 
 multi_line_string:
-  STRING { printf("string '%s'\n", $1); }
-| multi_line_string STRING { printf("more string '%s'\n", $2); }
-| bulletpoint { printf("string *%s\n", $1); }
-| multi_line_string bulletpoint { printf("more string *%s\n", $1); }
+  STRING                        { add_str(ctx, $1); }
+| multi_line_string STRING      { add_str(ctx, $2); }
+| bulletpoint                   { add_str(ctx, $1); }
+| multi_line_string bulletpoint { add_str(ctx, $2); }
 ;
 
 /* There can be any number of options */
@@ -178,7 +203,7 @@ frame_options:
 
 /* Each option is enclosed in square brackets */
 frame_option:
-  SQOPEN frameopt SQCLOSE { printf("got an option: '%s'\n", $2); }
+  SQOPEN frameopt SQCLOSE { }
 ;
 
 frameopt:

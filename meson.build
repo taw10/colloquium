@@ -19,7 +19,8 @@ subdir('po')
 
 # Dependencies
 gtkdep = dependency('gtk+-3.0')
-jsondep = dependency('json-glib-1.0')
+glib_dep = dependency('glib-2.0')
+gio_dep = dependency('gio-2.0')
 cc = meson.get_compiler('c')
 mdep = cc.find_library('m', required : false)
 
@@ -66,36 +67,36 @@ libstorycode_dep = declare_dependency(include_directories : libstorycode_include
                                       link_with : libstorycode)
 
 
-executable('sc2_test',
-           ['src/sc2_test.c',
+executable('pdfstorycode',
+           ['src/pdfstorycode.c',
            ],
            gresources,
-           dependencies : [gtkdep, libstorycode_dep])
+           dependencies : [glib_dep, gio_dep, libstorycode_dep])
 
 # Main program
-executable('colloquium',
-           ['src/colloquium.c',
-            'src/narrative_window.c',
-            'src/render.c',
-            'src/slideshow.c',
-            'src/debugger.c',
-            'src/pr_clock.c',
-            'src/sc_editor.c',
-            'src/slide_window.c',
-            'src/frame.c',
-            'src/presentation.c',
-            'src/sc_interp.c',
-            'src/testcard.c',
-            'src/imagestore.c',
-            'src/print.c',
-            'src/sc_parse.c',
-            'src/utils.c',
-            'src/stylesheet.c',
-            'src/stylesheet_editor.c',
-           ],
-           gresources,
-           dependencies : [gtkdep, mdep, jsondep],
-           install : true)
+#executable('colloquium',
+#           ['src/colloquium.c',
+#            'src/narrative_window.c',
+#            'src/render.c',
+#            'src/slideshow.c',
+#            'src/debugger.c',
+#            'src/pr_clock.c',
+#            'src/sc_editor.c',
+#            'src/slide_window.c',
+#            'src/frame.c',
+#            'src/presentation.c',
+#            'src/sc_interp.c',
+#            'src/testcard.c',
+#            'src/imagestore.c',
+#            'src/print.c',
+#            'src/sc_parse.c',
+#            'src/utils.c',
+#            'src/stylesheet.c',
+#            'src/stylesheet_editor.c',
+#           ],
+#           gresources,
+#           dependencies : [gtkdep, mdep, jsondep],
+#           install : true)
 
 # Desktop file
 install_data(['data/colloquium.desktop'],

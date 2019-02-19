@@ -34,6 +34,10 @@ struct scpctx
 	Stylesheet *ss;
 	Slide *s;
 
+	int n_str;
+	int max_str;
+	char **str;
+
 	/* Frame options */
 	struct frame_geom geom;
 };

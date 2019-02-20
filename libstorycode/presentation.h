@@ -39,4 +39,7 @@ extern void presentation_add_stylesheet(Presentation *p, Stylesheet *ss);
 extern void presentation_add_narrative(Presentation *p, Narrative *n);
 extern void presentation_add_slide(Presentation *p, Slide *s);
 
+extern int presentation_num_slides(Presentation *p);
+extern Slide *presentation_slide(Presentation *p, int i);
+
 #endif /* PRESENTATION_H */

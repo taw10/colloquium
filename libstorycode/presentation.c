@@ -95,3 +95,17 @@ void presentation_add_slide(Presentation *p, Slide *s)
 
 	p->slides[p->n_slides++] = s;
 }
+
+
+int presentation_num_slides(Presentation *p)
+{
+	return p->n_slides;
+}
+
+
+Slide *presentation_slide(Presentation *p, int i)
+{
+	if ( i >= p->n_slides ) return NULL;
+	if ( i < 0 ) return NULL;
+	return p->slides[i];
+}

@@ -46,10 +46,11 @@ int main(int argc, char *argv[])
 	g_bytes_unref(bytes);
 
 	/* Render each slide to PDF */
-//	for ( i=0; i<presentation_num_slides(p); i++ ) {
-//		Slide *slide = presentation_slide(p, i);
-//
-//	}
+	for ( i=0; i<presentation_num_slides(p); i++ ) {
+		Slide *slide = presentation_slide(p, i);
+		printf("slide %i:\n", i);
+		describe_slide(slide);
+	}
 
 	return 0;
 }

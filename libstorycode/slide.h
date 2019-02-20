@@ -30,13 +30,26 @@
 typedef struct _slide Slide;
 typedef struct _slideitem SlideItem;
 
+enum length_unit
+{
+	LENGTH_FRAC,
+	LENGTH_UNIT
+};
+
+
+struct length
+{
+	double len;
+	enum length_unit unit;
+};
+
+
 struct frame_geom
 {
-	double x;
-	double y;
-	double w;
-	double h;
-	/* FIXME: units */
+	struct length x;
+	struct length y;
+	struct length w;
+	struct length h;
 };
 
 
@@ -49,5 +62,7 @@ extern int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom g
 extern int slide_add_footer(Slide *s);
 extern int slide_add_slidetitle(Slide *s, char *slidetitle);
 
+/* For debugging, not really part of API */
+extern void describe_slide(Slide *s);
 
 #endif /* SLIDE_H */

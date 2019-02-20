@@ -40,6 +40,10 @@
   Narrative *n;
   Slide *s;
   char *str;
+  struct length len;
+  struct frame_geom geom;
+  char character;
+  double val;
 }
 
 %{
@@ -79,46 +83,60 @@
 %type <str> imageframe
 %type <str> bulletpoint
 %type <str> frameopt
-%type <str> geometry                   /* FIXME: Should have its own type */
+%type <geom> geometry
+%type <len> length
 %type <str> slidetitle
+%type <character> UNIT
+%type <val> VALUE
 
 %parse-param { struct scpctx *ctx };
 %initial-action
 {
-	ctx->p = presentation_new();
+    ctx->p = presentation_new();
 
-	/* These are the objects currently being created.  They will be
-	 * added to the presentation when they're complete */
-	ctx->n = narrative_new();
-	ctx->ss = stylesheet_new();
-	ctx->s = slide_new();
+    /* These are the objects currently being created.  They will be
+     * added to the presentation when they're complete */
+    ctx->n = narrative_new();
+    ctx->ss = stylesheet_new();
+    ctx->s = slide_new();
 
-	ctx->n_str = 0;
-	ctx->max_str = 32;
-	ctx->str = malloc(ctx->max_str*sizeof(char *));
-	if ( ctx->str == NULL ) ctx->max_str = 0;
+    ctx->n_str = 0;
+    ctx->max_str = 32;
+    ctx->str = malloc(ctx->max_str*sizeof(char *));
+    if ( ctx->str == NULL ) ctx->max_str = 0;
+
+    frameopts_reset(ctx);
 }
 
 %{
-	void frameopts_reset(struct scpctx *ctx)
-	{
-	}
+void frameopts_reset(struct scpctx *ctx)
+{
+    ctx->geom_set = 0;
+    ctx->geom.x.len = 0.0;
+    ctx->geom.y.len = 0.0;
+    ctx->geom.w.len = 1.0;
+    ctx->geom.h.len = 1.0;
+    ctx->geom.x.unit = LENGTH_FRAC;
+    ctx->geom.y.unit = LENGTH_FRAC;
+    ctx->geom.w.unit = LENGTH_FRAC;
+    ctx->geom.h.unit = LENGTH_FRAC;
+}
 
-	void str_reset(struct scpctx *ctx)
-	{
-		ctx->n_str = 0;
-	}
+void str_reset(struct scpctx *ctx)
+{
+    ctx->n_str = 0;
+}
 
-	void add_str(struct scpctx *ctx, char *str)
-	{
-		if ( ctx->n_str == ctx->max_str ) {
-			char **nstr = realloc(ctx->str, (ctx->max_str+32)*sizeof(char *));
-			if ( nstr == NULL ) return;
-			ctx->max_str += 32;
-		}
+void add_str(struct scpctx *ctx, char *str)
+{
+    if ( ctx->n_str == ctx->max_str ) {
+        char **nstr = realloc(ctx->str, (ctx->max_str+32)*sizeof(char *));
+        if ( nstr == NULL ) return;
+        ctx->max_str += 32;
+    }
 
-		ctx->str[ctx->n_str++] = str;
-	}
+    ctx->str[ctx->n_str++] = str;
+}
 %}
 
 %%
@@ -212,7 +230,8 @@ frameopt:
 ;
 
 geometry:
-  length TIMES length PLUS length PLUS length { $$ = "geom"; printf("Geometry\n"); }
+  length TIMES length PLUS length PLUS length { $$.x = $1;  $$.y = $3;  $$.w = $5;  $$.h = $7;
+                                                ctx->geom = $$;   ctx->geom_set = 1; }
 ;
 
 alignment:
@@ -226,7 +245,9 @@ slidetitle:
 ;
 
 length:
-  VALUE UNIT
+  VALUE UNIT  { $$.len = $VALUE;
+                if ( $UNIT == 'f' ) $$.unit = LENGTH_UNIT;
+                if ( $UNIT == 'u' ) $$.unit = LENGTH_FRAC;  }
 ;
 
 

@@ -26,9 +26,62 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <gio/gio.h>
+#include <cairo.h>
 
 #include "storycode.h"
 #include "presentation.h"
+
+
+static int render_slides_to_pdf(Presentation *p, const char *filename)
+{
+	double w = 2048.0;
+	double scale;
+	cairo_surface_t *surf;
+	cairo_t *cr;
+	int i;
+	PangoContext *pc;
+
+	surf = cairo_pdf_surface_create(filename, w, w);
+	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
+		fprintf(stderr, _("Couldn't create Cairo surface\n"));
+		return 1;
+	}
+
+	cr = cairo_create(surf);
+	pc = pango_cairo_create_context(cr);
+
+	for ( i=0; i<presentation_num_slides(p); i++ )
+	{
+		Slide *s;
+
+		s = presentation_slide(p, i);
+
+		cairo_pdf_surface_set_size(surf, w, h);
+
+		cairo_save(cr);
+
+		cairo_scale(cr, scale, scale);
+
+		cairo_rectangle(cr, 0.0, 0.0, p->slide_width, p->slide_height);
+		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+		cairo_fill(cr);
+
+		slide_render(s, cr, p->slide_width,
+		                       p->slide_height, p->stylesheet, NULL,
+		                       p->is, i, p->lang, pc);
+
+		cairo_restore(cr);
+
+		cairo_show_page(cr);
+	}
+
+	g_object_unref(pc);
+	cairo_surface_finish(surf);
+	cairo_destroy(cr);
+
+	return 0;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -46,11 +99,7 @@ int main(int argc, char *argv[])
 	g_bytes_unref(bytes);
 
 	/* Render each slide to PDF */
-	for ( i=0; i<presentation_num_slides(p); i++ ) {
-		Slide *slide = presentation_slide(p, i);
-		printf("slide %i:\n", i);
-		describe_slide(slide);
-	}
+	render_slides_to_pdf(p, "slides.pdf");
 
 	return 0;
 }

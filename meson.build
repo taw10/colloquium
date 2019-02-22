@@ -108,7 +108,7 @@ executable('pdfstorycode',
            ['src/pdfstorycode.c',
            ],
            gresources,
-           dependencies : [glib_dep, gio_dep, cairo_dep,
+           dependencies : [glib_dep, gio_dep, cairo_dep, pango_dep,
                            libstorycode_dep, libstorycode_cairo_dep])
 
 

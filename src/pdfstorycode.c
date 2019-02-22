@@ -21,15 +21,25 @@
  */
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <gio/gio.h>
 #include <cairo.h>
+#include <cairo-pdf.h>
+#include <pango/pangocairo.h>
 
 #include "storycode.h"
 #include "presentation.h"
+#include "slide.h"
+
+#include <libintl.h>
+#define _(x) gettext(x)
 
 
 static int render_slides_to_pdf(Presentation *p, const char *filename)

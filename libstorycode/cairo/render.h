@@ -32,31 +32,8 @@
 #include "sc_interp.h"
 #include "frame.h"
 
-/* Convienience function to run the entire pipeline */
-extern cairo_surface_t *render_sc(SCBlock *scblocks, int w, int h,
-                                  double log_w, double log_h,
-                                  Stylesheet *stylesheet, SCCallbackList *cbl,
-                                  ImageStore *is,
-                                  int slide_number, struct frame **ptop,
-                                  PangoLanguage *lang);
-
-/* Interpret StoryCode and measure boxes.
- * Needs to be followed by: wrap_contents() (recursively)
- *                          recursive_draw()
- */
-extern struct frame *interp_and_shape(SCBlock *scblocks, Stylesheet *stylesheet,
-                                      SCCallbackList *cbl,
-                                      ImageStore *is,
-                                      int slide_number, PangoContext *pc,
-                                      double w, double h, PangoLanguage *lang);
-
-extern void wrap_frame(struct frame *fr, PangoContext *pc);
-extern int recursive_wrap(struct frame *fr, PangoContext *pc);
-
-extern int export_pdf(struct presentation *p, const char *filename);
-
-extern int recursive_draw(struct frame *fr, cairo_t *cr,
-                          ImageStore *is,
-                          double min_y, double max_y);
+extern int render_cairo_slide(Slide *s, cairo_t *cr, double log_w, double log_h,
+                              Stylesheet *stylesheet, int slide_number,
+                              PangoLanguage *lang, PangoContext *pc);
 
 #endif	/* RENDER_H */

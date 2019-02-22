@@ -62,6 +62,8 @@ struct slide_item
 
 struct _slide
 {
+	double logical_w;
+	double logical_h;
 	int n_items;
 	struct slide_item *items;
 };
@@ -74,6 +76,8 @@ Slide *slide_new()
 	if ( s == NULL ) return NULL;
 	s->n_items = 0;
 	s->items = NULL;
+	s->logical_w = 1024.0;
+	s->logical_h = 768.0;
 	return s;
 }
 
@@ -183,4 +187,22 @@ void describe_slide(Slide *s)
 	for ( i=0; i<s->n_items; i++ ) {
 		printf("item %i: %i\n", i, s->items[i].type);
 	}
+}
+
+
+int slide_set_logical_size(Slide *s, double w, double h)
+{
+	if ( s == NULL ) return 1;
+	s->logical_w = w;
+	s->logical_h = h;
+	return 0;
+}
+
+
+int slide_get_logical_size(Slide *s, double *w, double *h)
+{
+	if ( s == NULL ) return 1;
+	*w = s->logical_w;
+	*h = s->logical_h;
+	return 0;
 }

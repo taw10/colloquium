@@ -24,6 +24,7 @@ glib_dep = dependency('glib-2.0', required : true)
 gio_dep = dependency('gio-2.0', required : true)
 cairo_dep = dependency('cairo', required : true)
 pango_dep = dependency('pango', required : true)
+pangocairo_dep = dependency('pangocairo', required : true)
 gdkpixbuf_dep = dependency('gdk-pixbuf-2.0', required : true)
 cc = meson.get_compiler('c')
 
@@ -80,6 +81,7 @@ libstorycode_cairo = library('storycode-cairo',
                    ],
                    include_directories : libstorycode_cairo_includes,
                    dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
+                                   pangocairo_dep,
                                    libstorycode_dep],
                    install : true)
 
@@ -109,6 +111,7 @@ executable('pdfstorycode',
            ],
            gresources,
            dependencies : [glib_dep, gio_dep, cairo_dep, pango_dep,
+                           pangocairo_dep,
                            libstorycode_dep, libstorycode_cairo_dep])
 
 

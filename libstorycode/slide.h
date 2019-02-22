@@ -61,6 +61,9 @@ extern int slide_add_image(Slide *s, char *filename, struct frame_geom geom);
 extern int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom);
 extern int slide_add_footer(Slide *s);
 extern int slide_add_slidetitle(Slide *s, char *slidetitle);
+extern int slide_set_logical_size(Slide *s, double w, double h);
+
+extern int slide_get_logical_size(Slide *s, double *w, double *h);
 
 /* For debugging, not really part of API */
 extern void describe_slide(Slide *s);

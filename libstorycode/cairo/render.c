@@ -1,7 +1,7 @@
 /*
  * render.c
  *
- * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -38,13 +38,16 @@
 #include "stylesheet.h"
 
 
-int slide_render(Slide *s, cairo_t *cr, double log_w, double log_h,
-                 Stylesheet *stylesheet, int slide_number, PangoLanguage *lang,
-                 PangoContext *pc)
+int cairo_render_slide(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
+                       int slide_number, PangoLanguage *lang, PangoContext *pc)
 {
-	cairo_scale(cr, 1.0/log_w, 1.0/log_h);
+	double w, h;
+	int i;
 
-	cairo_rectangle(cr, 0.0, 0.0, log_w, log_h);
+	slide_get_logical_size(s, &w, &h);
+
+	/* Overall default background */
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
 

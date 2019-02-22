@@ -5,6 +5,7 @@ STYLES {
      }
   }
   SLIDE {
+    SIZE 1820u x 720u
     PRESTITLE {
       TYPE: TEXT[1fx90u+0+0]
       FONT: Cantarell Regular 64

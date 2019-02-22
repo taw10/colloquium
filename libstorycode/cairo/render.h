@@ -1,7 +1,7 @@
 /*
  * render.h
  *
- * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -28,12 +28,9 @@
 #endif
 
 #include "presentation.h"
-#include "imagestore.h"
-#include "sc_interp.h"
-#include "frame.h"
 
-extern int render_cairo_slide(Slide *s, cairo_t *cr, double log_w, double log_h,
-                              Stylesheet *stylesheet, int slide_number,
-                              PangoLanguage *lang, PangoContext *pc);
+extern int cairo_render_slide(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
+                              int slide_number, PangoLanguage *lang,
+                              PangoContext *pc);
 
 #endif	/* RENDER_H */

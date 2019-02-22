@@ -37,6 +37,7 @@
 #include "storycode.h"
 #include "presentation.h"
 #include "slide.h"
+#include "cairo/render.h"
 
 #include <libintl.h>
 #define _(x) gettext(x)
@@ -45,7 +46,6 @@
 static int render_slides_to_pdf(Presentation *p, const char *filename)
 {
 	double w = 2048.0;
-	double scale;
 	cairo_surface_t *surf;
 	cairo_t *cr;
 	int i;
@@ -63,26 +63,19 @@ static int render_slides_to_pdf(Presentation *p, const char *filename)
 	for ( i=0; i<presentation_num_slides(p); i++ )
 	{
 		Slide *s;
+		double log_w, log_h;
 
 		s = presentation_slide(p, i);
+		slide_get_logical_size(s, &log_w, &log_h);
 
-		cairo_pdf_surface_set_size(surf, w, h);
+		cairo_pdf_surface_set_size(surf, w, w*(log_h/log_w));
 
 		cairo_save(cr);
-
-		cairo_scale(cr, scale, scale);
-
-		cairo_rectangle(cr, 0.0, 0.0, p->slide_width, p->slide_height);
-		cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-		cairo_fill(cr);
-
-		slide_render(s, cr, p->slide_width,
-		                       p->slide_height, p->stylesheet, NULL,
-		                       p->is, i, p->lang, pc);
-
-		cairo_restore(cr);
-
+		cairo_scale(cr, w/log_w, w/log_w);
+		cairo_render_slide(s, cr, presentation_get_stylesheet(p),
+		                   i, pango_language_get_default(), pc);
 		cairo_show_page(cr);
+		cairo_restore(cr);
 	}
 
 	g_object_unref(pc);
@@ -100,7 +93,6 @@ int main(int argc, char *argv[])
 	const char *text;
 	size_t len;
 	Presentation *p;
-	int i;
 
 	file = g_file_new_for_commandline_arg(argv[1]);
 	bytes = g_file_load_bytes(file, NULL, NULL, NULL);

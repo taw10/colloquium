@@ -41,5 +41,6 @@ extern void presentation_add_slide(Presentation *p, Slide *s);
 
 extern int presentation_num_slides(Presentation *p);
 extern Slide *presentation_slide(Presentation *p, int i);
+extern Stylesheet *presentation_get_stylesheet(Presentation *p);
 
 #endif /* PRESENTATION_H */

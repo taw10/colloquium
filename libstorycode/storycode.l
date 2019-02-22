@@ -52,6 +52,7 @@ PAD               { return SC_PAD; }
 ALIGN             { return SC_ALIGN; }
 FGCOL             { return SC_FGCOL; }
 BGCOL             { return SC_BGCOL; }
+SIZE              { return SC_SIZE; }
 (?i:left)         { return SC_LEFT; }
 (?i:center)       { return SC_CENTER; }
 (?i:right)        { return SC_RIGHT; }

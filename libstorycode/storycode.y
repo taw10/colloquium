@@ -72,7 +72,7 @@
 %token OPENBRACE CLOSEBRACE
 %token SQOPEN SQCLOSE
 %token PLUS TIMES
-%token UNIT VALUE
+%token UNIT VALUE SIZE
 
 %type <p> presentation
 %type <n> narrative
@@ -84,6 +84,7 @@
 %type <str> bulletpoint
 %type <str> frameopt
 %type <geom> geometry
+%type <geom> style_slidesize
 %type <len> length
 %type <str> slidetitle
 %type <character> UNIT
@@ -276,7 +277,12 @@ style_slide:
 style_slide_def:
   %empty
 | style_slide_def style_prestitle
+| style_slide_def style_slidesize
 | style_slide_def styledef
+;
+
+style_slidesize:
+  SIZE length TIMES length { $$.w = $2;  $$.h = $4;  $$.x.len = 0.0;  $$.y.len = 0.0; }
 ;
 
 style_prestitle:

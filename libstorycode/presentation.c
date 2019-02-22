@@ -109,3 +109,10 @@ Slide *presentation_slide(Presentation *p, int i)
 	if ( i < 0 ) return NULL;
 	return p->slides[i];
 }
+
+
+Stylesheet *presentation_get_stylesheet(Presentation *p)
+{
+	if ( p == NULL ) return NULL;
+	return p->stylesheet;
+}

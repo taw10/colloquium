@@ -66,6 +66,7 @@ static int render_slides_to_pdf(Presentation *p, const char *filename)
 		double log_w, log_h;
 
 		s = presentation_slide(p, i);
+		describe_slide(s);
 		slide_get_logical_size(s, &log_w, &log_h);
 
 		cairo_pdf_surface_set_size(surf, w, w*(log_h/log_w));

@@ -64,8 +64,8 @@ SIZE              { return SC_SIZE; }
 [{]               { return SC_OPENBRACE; }
 [}]               { return SC_CLOSEBRACE; }
 [.\n ]            {}
-[0-9\.]+          { /* FIXME: lval */ return SC_VALUE; }
-[uf]              { return SC_UNIT; }
+[0-9\.]+          { sclval.val = atof(yytext); return SC_VALUE; }
+[uf]              { sclval.character = yytext[0]; return SC_UNIT; }
 [+]               { return SC_PLUS; }
 [x]               { return SC_TIMES; }
 

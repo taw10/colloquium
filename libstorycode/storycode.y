@@ -230,7 +230,7 @@ frameopt:
 ;
 
 geometry:
-  length TIMES length PLUS length PLUS length { $$.x = $1;  $$.y = $3;  $$.w = $5;  $$.h = $7;
+  length TIMES length PLUS length PLUS length { $$.w = $1;  $$.h = $3;  $$.x = $5;  $$.y = $7;
                                                 ctx->geom = $$;   ctx->geom_set = 1; }
 ;
 
@@ -246,8 +246,8 @@ slidetitle:
 
 length:
   VALUE UNIT  { $$.len = $VALUE;
-                if ( $UNIT == 'f' ) $$.unit = LENGTH_UNIT;
-                if ( $UNIT == 'u' ) $$.unit = LENGTH_FRAC;  }
+                if ( $UNIT == 'u' ) $$.unit = LENGTH_UNIT;
+                if ( $UNIT == 'f' ) $$.unit = LENGTH_FRAC; }
 ;
 
 

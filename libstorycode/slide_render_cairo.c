@@ -40,18 +40,71 @@
 #include "slide_priv.h"
 
 
+static double lcalc(struct length l, double pd)
+{
+	if ( l.unit == LENGTH_UNIT ) {
+		return l.len;
+	} else {
+		return l.len * pd;
+	}
+}
+
+
+static void render_text(struct slide_item *item, cairo_t *cr,
+                        double parent_w, double parent_h)
+{
+	cairo_rectangle(cr, lcalc(item->geom.x, parent_w),
+	                    lcalc(item->geom.y, parent_h),
+	                    lcalc(item->geom.w, parent_w),
+	                    lcalc(item->geom.h, parent_h));
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+}
+
+
+static void render_image(struct slide_item *item, cairo_t *cr,
+                         double parent_w, double parent_h)
+{
+	cairo_rectangle(cr, lcalc(item->geom.x, parent_w),
+	                    lcalc(item->geom.y, parent_h),
+	                    lcalc(item->geom.w, parent_w),
+	                    lcalc(item->geom.h, parent_h));
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke_preserve(cr);
+	cairo_set_source_rgba(cr, 0.0, 0.5, 0.0, 0.5);
+	cairo_fill(cr);
+}
+
+
 int slide_render_cairo(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
                        int slide_number, PangoLanguage *lang, PangoContext *pc)
 {
-	double w, h;
 	int i;
 
-	slide_get_logical_size(s, &w, &h);
-
 	/* Overall default background */
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
+	cairo_rectangle(cr, 0.0, 0.0, s->logical_w, s->logical_h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
+
+	for ( i=0; i<s->n_items; i++ ) {
+
+		switch ( s->items[i].type ) {
+
+			case SLIDE_ITEM_TEXT :
+			render_text(&s->items[i], cr, s->logical_w, s->logical_h);
+			break;
+
+			case SLIDE_ITEM_IMAGE :
+			render_image(&s->items[i], cr, s->logical_w, s->logical_h);
+			break;
+
+			default :
+			break;
+
+		}
+	}
 
 	return 0;
 }

@@ -143,6 +143,14 @@ int slide_add_slidetitle(Slide *s, char *slidetitle)
 }
 
 
+static char units(enum length_unit u)
+{
+	if ( u == LENGTH_UNIT ) return 'u';
+	if ( u == LENGTH_FRAC ) return 'f';
+	return '?';
+}
+
+
 void describe_slide(Slide *s)
 {
 	int i;
@@ -150,6 +158,11 @@ void describe_slide(Slide *s)
 	printf("  %i items\n", s->n_items);
 	for ( i=0; i<s->n_items; i++ ) {
 		printf("item %i: %i\n", i, s->items[i].type);
+		printf("geom %f %c x %f %c + %f %c + %f %c\n",
+	               s->items[i].geom.x.len, units(s->items[i].geom.x.unit),
+	               s->items[i].geom.y.len, units(s->items[i].geom.y.unit),
+	               s->items[i].geom.w.len, units(s->items[i].geom.w.unit),
+	               s->items[i].geom.h.len, units(s->items[i].geom.h.unit));
 	}
 }
 

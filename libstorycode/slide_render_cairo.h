@@ -29,7 +29,7 @@
 
 #include "presentation.h"
 
-extern int cairo_render_slide(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
+extern int slide_render_cairo(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
                               int slide_number, PangoLanguage *lang,
                               PangoContext *pc);
 

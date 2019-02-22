@@ -37,7 +37,7 @@
 #include "storycode.h"
 #include "presentation.h"
 #include "slide.h"
-#include "cairo/render.h"
+#include "slide_render_cairo.h"
 
 #include <libintl.h>
 #define _(x) gettext(x)
@@ -72,7 +72,7 @@ static int render_slides_to_pdf(Presentation *p, const char *filename)
 
 		cairo_save(cr);
 		cairo_scale(cr, w/log_w, w/log_w);
-		cairo_render_slide(s, cr, presentation_get_stylesheet(p),
+		slide_render_cairo(s, cr, presentation_get_stylesheet(p),
 		                   i, pango_language_get_default(), pc);
 		cairo_show_page(cr);
 		cairo_restore(cr);

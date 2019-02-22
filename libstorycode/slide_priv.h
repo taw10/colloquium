@@ -1,7 +1,7 @@
 /*
- * render.c
+ * slide_priv.h
  *
- * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,36 +20,44 @@
  *
  */
 
+#ifndef SLIDE_PRIV_H
+#define SLIDE_PRIV_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <cairo.h>
-#include <cairo-pdf.h>
-#include <pango/pangocairo.h>
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include "presentation.h"
-#include "slide.h"
-#include "narrative.h"
-#include "stylesheet.h"
-
-
-int cairo_render_slide(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
-                       int slide_number, PangoLanguage *lang, PangoContext *pc)
+enum slide_item_type
 {
-	double w, h;
-	int i;
+	SLIDE_ITEM_TEXT,
+	SLIDE_ITEM_IMAGE,
+	SLIDE_ITEM_FOOTER,
+	SLIDE_ITEM_SLIDETITLE,
+	SLIDE_ITEM_PRESTITLE,
+};
 
-	slide_get_logical_size(s, &w, &h);
 
-	/* Overall default background */
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-	cairo_fill(cr);
+struct slide_item
+{
+	enum slide_item_type type;
 
-	return 0;
-}
+	/* For TEXT */
+	char **paragraphs;
+	int n_paras;
+
+	/* For IMAGE */
+	char *filename;
+
+	/* For SLIDETITLE */
+	char *text;
+
+	/* For TEXT and IMAGE */
+	struct frame_geom geom;
+};
+
+
+struct _slide
+{
+	double logical_w;
+	double logical_h;
+	int n_items;
+	struct slide_item *items;
+};
+
+#endif /* SLIDE_PRIV_H */

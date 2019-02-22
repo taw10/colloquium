@@ -30,43 +30,7 @@
 #include <stdio.h>
 
 #include "slide.h"
-
-enum slide_item_type
-{
-	SLIDE_ITEM_TEXT,
-	SLIDE_ITEM_IMAGE,
-	SLIDE_ITEM_FOOTER,
-	SLIDE_ITEM_SLIDETITLE,
-	SLIDE_ITEM_PRESTITLE,
-};
-
-
-struct slide_item
-{
-	enum slide_item_type type;
-
-	/* For TEXT */
-	char **paragraphs;
-	int n_paras;
-
-	/* For IMAGE */
-	char *filename;
-
-	/* For SLIDETITLE */
-	char *text;
-
-	/* For TEXT and IMAGE */
-	struct frame_geom geom;
-};
-
-
-struct _slide
-{
-	double logical_w;
-	double logical_h;
-	int n_items;
-	struct slide_item *items;
-};
+#include "slide_priv.h"
 
 
 Slide *slide_new()

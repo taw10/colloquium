@@ -63,30 +63,17 @@ libstorycode = library('storycode',
                     'libstorycode/presentation.c',
                     'libstorycode/stylesheet.c',
                     'libstorycode/storycode.c',
+                    'libstorycode/slide_render_cairo.c',
                     storycode_lex_ch,
                     storycode_parse_ch,
                    ],
                    include_directories : libstorycode_includes,
+                   dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
+                                   pangocairo_dep],
                    install : true)
 
 libstorycode_dep = declare_dependency(include_directories : libstorycode_includes,
                                       link_with : libstorycode)
-
-
-# libstorycode-cairo
-libstorycode_cairo_includes = include_directories('libstorycode/cairo')
-
-libstorycode_cairo = library('storycode-cairo',
-                   ['libstorycode/cairo/render.c',
-                   ],
-                   include_directories : libstorycode_cairo_includes,
-                   dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
-                                   pangocairo_dep,
-                                   libstorycode_dep],
-                   install : true)
-
-libstorycode_cairo_dep = declare_dependency(include_directories : libstorycode_cairo_includes,
-                                            link_with : libstorycode_cairo)
 
 
 # libstorycode-gtk
@@ -111,8 +98,7 @@ executable('pdfstorycode',
            ],
            gresources,
            dependencies : [glib_dep, gio_dep, cairo_dep, pango_dep,
-                           pangocairo_dep,
-                           libstorycode_dep, libstorycode_cairo_dep])
+                           pangocairo_dep, libstorycode_dep])
 
 
 # Main program

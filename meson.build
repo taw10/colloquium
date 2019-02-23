@@ -19,6 +19,7 @@ subdir('po')
 
 # Dependencies
 gnome = import('gnome')
+gdk_dep = dependency('gdk-3.0', required : true)
 gtk_dep = dependency('gtk+-3.0', required : true)
 glib_dep = dependency('glib-2.0', required : true)
 gio_dep = dependency('gio-2.0', required : true)
@@ -27,6 +28,7 @@ pango_dep = dependency('pango', required : true)
 pangocairo_dep = dependency('pangocairo', required : true)
 gdkpixbuf_dep = dependency('gdk-pixbuf-2.0', required : true)
 cc = meson.get_compiler('c')
+mdep = cc.find_library('m', required : false)
 
 if pangocairo_dep.found()
   add_project_arguments('-DHAVE_PANGO', language : 'c')
@@ -67,12 +69,13 @@ libstorycode = library('storycode',
                     'libstorycode/stylesheet.c',
                     'libstorycode/storycode.c',
                     'libstorycode/slide_render_cairo.c',
+                    'libstorycode/imagestore.c',
                     storycode_lex_ch,
                     storycode_parse_ch,
                    ],
                    include_directories : libstorycode_includes,
                    dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
-                                   pangocairo_dep],
+                                   pangocairo_dep, mdep, gdk_dep, gio_dep],
                    install : true)
 
 libstorycode_dep = declare_dependency(include_directories : libstorycode_includes,

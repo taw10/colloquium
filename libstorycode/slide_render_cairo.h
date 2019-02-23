@@ -28,8 +28,9 @@
 #endif
 
 #include "presentation.h"
+#include "imagestore.h"
 
-extern int slide_render_cairo(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
+extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
                               int slide_number, PangoLanguage *lang,
                               PangoContext *pc);
 

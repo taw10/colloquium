@@ -31,11 +31,13 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "presentation.h"
 #include "slide.h"
 #include "narrative.h"
 #include "stylesheet.h"
+#include "imagestore.h"
 
 #include "slide_priv.h"
 
@@ -117,21 +119,41 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 
 
 static void render_image(struct slide_item *item, cairo_t *cr,
-                         double parent_w, double parent_h)
+                         ImageStore *is, double parent_w, double parent_h)
 {
-	cairo_rectangle(cr, lcalc(item->geom.x, parent_w),
-	                    lcalc(item->geom.y, parent_h),
-	                    lcalc(item->geom.w, parent_w),
-	                    lcalc(item->geom.h, parent_h));
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	cairo_set_line_width(cr, 1.0);
-	cairo_stroke_preserve(cr);
-	cairo_set_source_rgba(cr, 0.0, 0.5, 0.0, 0.5);
+	double x, y, w, h;
+	double wd, hd;
+	cairo_surface_t *surf;
+
+	x = lcalc(item->geom.x, parent_w);
+	y = lcalc(item->geom.y, parent_h);
+	w = lcalc(item->geom.w, parent_w);
+	h = lcalc(item->geom.h, parent_h);
+
+	wd = w;  hd = h;
+	cairo_user_to_device_distance(cr, &wd, &hd);
+	surf = lookup_image(is, item->filename, wd);
+	if ( surf == NULL ) return;
+
+	cairo_user_to_device(cr, &x, &y);
+	x = rint(x);  y = rint(y);
+	cairo_device_to_user(cr, &x, &y);
+
+	cairo_save(cr);
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x, y, w, h);
+	cairo_translate(cr, x, y);
+	cairo_scale(cr, w/wd, h/hd);
+	cairo_set_source_surface(cr, surf, 0.0, 0.0);
+	cairo_pattern_t *patt = cairo_get_source(cr);
+	cairo_pattern_set_extend(patt, CAIRO_EXTEND_NONE);
+	cairo_pattern_set_filter(patt, CAIRO_FILTER_BEST);
 	cairo_fill(cr);
+	cairo_restore(cr);
 }
 
 
-int slide_render_cairo(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
+int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
                        int slide_number, PangoLanguage *lang, PangoContext *pc)
 {
 	int i;
@@ -151,7 +173,8 @@ int slide_render_cairo(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
 			break;
 
 			case SLIDE_ITEM_IMAGE :
-			render_image(&s->items[i], cr, s->logical_w, s->logical_h);
+			render_image(&s->items[i], cr, is,
+			             s->logical_w, s->logical_h);
 			break;
 
 			default :

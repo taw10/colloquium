@@ -36,7 +36,6 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "imagestore.h"
-#include "utils.h"
 
 #define MAX_SIZES (32)
 

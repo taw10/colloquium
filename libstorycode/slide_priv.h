@@ -23,6 +23,12 @@
 #ifndef SLIDE_PRIV_H
 #define SLIDE_PRIV_H
 
+#ifdef HAVE_PANGO
+#include <pango/pangocairo.h>
+#endif
+
+#include "storycode.h"
+
 enum slide_item_type
 {
 	SLIDE_ITEM_TEXT,
@@ -40,6 +46,10 @@ struct slide_item
 	/* For TEXT */
 	char **paragraphs;
 	int n_paras;
+	enum alignment align;
+#ifdef HAVE_PANGO
+	PangoLayout **layouts;
+#endif
 
 	/* For IMAGE */
 	char *filename;

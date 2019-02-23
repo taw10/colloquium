@@ -28,6 +28,9 @@ pangocairo_dep = dependency('pangocairo', required : true)
 gdkpixbuf_dep = dependency('gdk-pixbuf-2.0', required : true)
 cc = meson.get_compiler('c')
 
+if pangocairo_dep.found()
+  add_project_arguments('-DHAVE_PANGO', language : 'c')
+endif
 
 # Compiled-in resources
 gresources = gnome.compile_resources('colloquium-resources',

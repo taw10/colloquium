@@ -50,16 +50,69 @@ static double lcalc(struct length l, double pd)
 }
 
 
-static void render_text(struct slide_item *item, cairo_t *cr,
+static PangoAlignment to_pangoalignment(enum alignment align)
+{
+	switch ( align ) {
+		case ALIGN_LEFT : return PANGO_ALIGN_LEFT;
+		case ALIGN_RIGHT : return PANGO_ALIGN_RIGHT;
+		case ALIGN_CENTER : return PANGO_ALIGN_CENTER;
+		default: return PANGO_ALIGN_LEFT;
+	}
+}
+
+
+static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
                         double parent_w, double parent_h)
 {
-	cairo_rectangle(cr, lcalc(item->geom.x, parent_w),
-	                    lcalc(item->geom.y, parent_h),
-	                    lcalc(item->geom.w, parent_w),
-	                    lcalc(item->geom.h, parent_h));
+	int i;
+	double x, y, w, h;
+	PangoRectangle rect;
+
+	x = lcalc(item->geom.x, parent_w);
+	y = lcalc(item->geom.y, parent_h);
+	w = lcalc(item->geom.w, parent_w);
+	h = lcalc(item->geom.h, parent_h);
+
+	cairo_rectangle(cr, x, y, w, h);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
+
+	if ( item->layouts == NULL ) {
+		item->layouts = malloc(item->n_paras*sizeof(PangoLayout *));
+		if ( item->layouts == NULL ) return;
+		for ( i=0; i<item->n_paras; i++ ) {
+			item->layouts[i] = NULL;
+		}
+	}
+
+	for ( i=0; i<item->n_paras; i++ ) {
+
+		if ( item->layouts[i] == NULL ) {
+			item->layouts[i] = pango_layout_new(pc);
+		}
+		pango_layout_set_width(item->layouts[i],
+		                       pango_units_from_double(w));
+		pango_layout_set_text(item->layouts[i], item->paragraphs[i], -1);
+
+		pango_layout_set_alignment(item->layouts[i],
+		                           to_pangoalignment(item->align));
+
+		/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
+		//pango_layout_set_attributes(item->layouts[i], attrs);
+		//pango_attr_list_unref(attrs);
+
+		cairo_save(cr);
+		cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+		cairo_translate(cr, x, y);
+		pango_cairo_update_layout(cr, item->layouts[i]);
+		pango_cairo_show_layout(cr, item->layouts[i]);
+		pango_layout_get_extents(item->layouts[i], NULL, &rect);
+		y += pango_units_to_double(rect.height);
+		cairo_fill(cr);
+		cairo_restore(cr);
+
+	}
 }
 
 
@@ -93,7 +146,8 @@ int slide_render_cairo(Slide *s, cairo_t *cr, Stylesheet *stylesheet,
 		switch ( s->items[i].type ) {
 
 			case SLIDE_ITEM_TEXT :
-			render_text(&s->items[i], cr, s->logical_w, s->logical_h);
+			render_text(&s->items[i], cr, pc,
+			            s->logical_w, s->logical_h);
 			break;
 
 			case SLIDE_ITEM_IMAGE :

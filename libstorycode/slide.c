@@ -111,6 +111,7 @@ int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom)
 	item->n_paras = n_text;
 
 	item->geom = geom;
+	item->align = ALIGN_LEFT;
 
 	return 0;
 }

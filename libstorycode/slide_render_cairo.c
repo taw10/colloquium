@@ -64,21 +64,19 @@ static PangoAlignment to_pangoalignment(enum alignment align)
 
 
 static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
-                        double parent_w, double parent_h)
+                        Stylesheet *ss, double parent_w, double parent_h)
 {
 	int i;
 	double x, y, w, h;
 	PangoRectangle rect;
+	PangoFontDescription *fontdesc;
 
 	x = lcalc(item->geom.x, parent_w);
 	y = lcalc(item->geom.y, parent_h);
 	w = lcalc(item->geom.w, parent_w);
 	h = lcalc(item->geom.h, parent_h);
 
-	cairo_rectangle(cr, x, y, w, h);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	cairo_set_line_width(cr, 1.0);
-	cairo_stroke(cr);
+	fontdesc = pango_font_description_from_string(stylesheet_get_slide_text_font(ss));
 
 	if ( item->layouts == NULL ) {
 		item->layouts = malloc(item->n_paras*sizeof(PangoLayout *));
@@ -100,6 +98,8 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 		pango_layout_set_alignment(item->layouts[i],
 		                           to_pangoalignment(item->align));
 
+		pango_layout_set_font_description(item->layouts[i], fontdesc);
+
 		/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
 		//pango_layout_set_attributes(item->layouts[i], attrs);
 		//pango_attr_list_unref(attrs);
@@ -119,7 +119,8 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 
 
 static void render_image(struct slide_item *item, cairo_t *cr,
-                         ImageStore *is, double parent_w, double parent_h)
+                         Stylesheet *ss, ImageStore *is,
+                         double parent_w, double parent_h)
 {
 	double x, y, w, h;
 	double wd, hd;
@@ -168,12 +169,12 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 		switch ( s->items[i].type ) {
 
 			case SLIDE_ITEM_TEXT :
-			render_text(&s->items[i], cr, pc,
+			render_text(&s->items[i], cr, pc, stylesheet,
 			            s->logical_w, s->logical_h);
 			break;
 
 			case SLIDE_ITEM_IMAGE :
-			render_image(&s->items[i], cr, is,
+			render_image(&s->items[i], cr, stylesheet, is,
 			             s->logical_w, s->logical_h);
 			break;
 

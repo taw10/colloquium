@@ -30,28 +30,7 @@
 typedef struct _slide Slide;
 typedef struct _slideitem SlideItem;
 
-enum length_unit
-{
-	LENGTH_FRAC,
-	LENGTH_UNIT
-};
-
-
-struct length
-{
-	double len;
-	enum length_unit unit;
-};
-
-
-struct frame_geom
-{
-	struct length x;
-	struct length y;
-	struct length w;
-	struct length h;
-};
-
+#include "stylesheet.h"
 
 extern Slide *slide_new(void);
 extern void slide_free(Slide *s);

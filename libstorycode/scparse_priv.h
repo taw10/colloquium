@@ -41,6 +41,7 @@ struct scpctx
 	/* Frame options */
 	struct frame_geom geom;
 	int geom_set;
+	char *font;
 };
 
 #endif /* SCPARSE_PRIV_H */

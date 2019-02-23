@@ -85,7 +85,6 @@
 %type <str> bulletpoint
 %type <str> frameopt
 %type <geom> geometry
-%type <geom> style_slidesize
 %type <len> length
 %type <str> slidetitle
 %type <character> UNIT
@@ -107,10 +106,12 @@
     ctx->str = malloc(ctx->max_str*sizeof(char *));
     if ( ctx->str == NULL ) ctx->max_str = 0;
 
+    style_reset(ctx);
     frameopts_reset(ctx);
 }
 
 %{
+
 void frameopts_reset(struct scpctx *ctx)
 {
     ctx->geom_set = 0;
@@ -122,6 +123,11 @@ void frameopts_reset(struct scpctx *ctx)
     ctx->geom.y.unit = LENGTH_FRAC;
     ctx->geom.w.unit = LENGTH_FRAC;
     ctx->geom.h.unit = LENGTH_FRAC;
+}
+
+void style_reset(struct scpctx *ctx)
+{
+    ctx->font = NULL;
 }
 
 void str_reset(struct scpctx *ctx)
@@ -139,6 +145,13 @@ void add_str(struct scpctx *ctx, char *str)
 
     ctx->str[ctx->n_str++] = str;
 }
+
+void set_text_style(struct scpctx *ctx)
+{
+    stylesheet_set_slide_text_font(ctx->ss, ctx->font);
+    style_reset(ctx);
+}
+
 %}
 
 %%
@@ -281,14 +294,21 @@ style_slide:
 
 style_slide_def:
   %empty
-| style_slide_def style_slide_prestitle { printf("slide prestitle\n"); }
-| style_slide_def style_slide_text { printf("slide text\n"); }
-| style_slide_def style_slide_title { printf("slide title\n"); }
-| style_slide_def style_slidesize { printf("slide size\n"); }
+| style_slide_def style_slide_prestitle { }
+| style_slide_def style_slide_text      { }
+| style_slide_def style_slide_title     { }
+| style_slide_def style_slidesize       { }
 ;
 
 style_slidesize:
-  SIZE length TIMES length { $$.w = $2;  $$.h = $4;  $$.x.len = 0.0;  $$.y.len = 0.0; printf("size\n");}
+  SIZE length TIMES length { if ( ($2.unit != LENGTH_UNIT)
+                               || ($4.unit != LENGTH_UNIT) )
+                             {
+                                fprintf(stderr, "Wrong slide size units\n");
+                             } else {
+                                stylesheet_set_default_slide_size(ctx->ss, $2.len, $4.len);
+                             }
+                           }
 ;
 
 style_slide_prestitle:
@@ -300,7 +320,7 @@ style_slide_title:
 ;
 
 style_slide_text:
-  TEXTFRAME OPENBRACE styledefs CLOSEBRACE { printf("slide text style\n"); }
+  TEXTFRAME OPENBRACE styledefs CLOSEBRACE { set_text_style(ctx); }
 ;
 
 styledefs:
@@ -309,7 +329,7 @@ styledefs:
 ;
 
 styledef:
-  FONT STRING      { printf("font def: '%s'\n", $2); }
+  FONT STRING      { ctx->font = $2; }
 | GEOMETRY STRING  { printf("type def: '%s'\n", $2); }
 | PAD STRING       { printf("pad def: '%s'\n", $2); }
 | PARASPACE STRING { printf("align def: '%s'\n", $2); }

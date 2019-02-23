@@ -29,8 +29,37 @@
 
 typedef struct _stylesheet Stylesheet;
 
+
+enum length_unit
+{
+	LENGTH_FRAC,
+	LENGTH_UNIT
+};
+
+
+struct length
+{
+	double len;
+	enum length_unit unit;
+};
+
+
+struct frame_geom
+{
+	struct length x;
+	struct length y;
+	struct length w;
+	struct length h;
+};
+
+
 extern Stylesheet *stylesheet_new(void);
 extern void stylesheet_free(Stylesheet *s);
+
+extern int stylesheet_set_default_slide_size(Stylesheet *s, double w, double h);
+extern int stylesheet_set_slide_text_font(Stylesheet *s, char *font);
+
+extern const char *stylesheet_get_slide_text_font(Stylesheet *s);
 
 
 #endif /* STYLESHEET_H */

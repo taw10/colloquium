@@ -29,6 +29,8 @@
   #include "stylesheet.h"
 
   #include "storycode_parse.h"
+
+  int lineno = 0;
 %}
 
 %option prefix="sc"
@@ -56,14 +58,20 @@ SIZE              { return SC_SIZE; }
 (?i:left)         { return SC_LEFT; }
 (?i:center)       { return SC_CENTER; }
 (?i:right)        { return SC_RIGHT; }
-<string>.*\n      { sclval.str = strdup(yytext); sclval.str[yyleng-1] = '\0'; BEGIN(0); return SC_STRING; }
+<string>.*\n      { sclval.str = strdup(yytext);
+                    sclval.str[yyleng-1] = '\0';
+		    BEGIN(0);
+		    lineno++;
+		    return SC_STRING; }
 "["               { return SC_SQOPEN; }
 "]"               { return SC_SQCLOSE; }
+":"               { return SC_COLON; }
 :[ ]              { BEGIN(string); }
-:\n               { sclval.str = strdup(""); return SC_STRING; }
+:\n               { sclval.str = strdup(""); lineno++; ;return SC_STRING; }
 [{]               { return SC_OPENBRACE; }
 [}]               { return SC_CLOSEBRACE; }
-[.\n ]            {}
+[. ]              {}
+\n                { lineno++; }
 [0-9\.]+          { sclval.val = atof(yytext); return SC_VALUE; }
 [uf]              { sclval.character = yytext[0]; return SC_UNIT; }
 [+]               { return SC_PLUS; }

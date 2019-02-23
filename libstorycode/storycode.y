@@ -53,6 +53,7 @@
   extern int sclex();
   extern int scparse();
   void scerror(struct scpctx *ctx, const char *s);
+  extern int lineno;
 %}
 
 %token STYLES SLIDE
@@ -306,5 +307,5 @@ styledef:
 %%
 
 void scerror(struct scpctx *ctx, const char *s) {
-	printf("Storycode parse error at %i-%i\n", yylloc.first_line, yylloc.first_column);
+	printf("Storycode parse error at line %i\n", lineno);
 }

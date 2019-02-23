@@ -45,12 +45,13 @@ SLIDETITLE        { return SC_SLIDETITLE; }
 NARRATIVE         { return SC_NARRATIVE; }
 SLIDE             { return SC_SLIDE; }
 BP                { return SC_BP; }
-TYPE              { return SC_TYPE; }
+GEOMETRY          { return SC_GEOMETRY; }
 TEXT              { return SC_TEXTFRAME; }
 IMAGE             { return SC_IMAGEFRAME; }
 FOOTER            { return SC_FOOTER; }
 FONT              { return SC_FONT; }
 PAD               { return SC_PAD; }
+PARASPACE         { return SC_PARASPACE; }
 ALIGN             { return SC_ALIGN; }
 FGCOL             { return SC_FGCOL; }
 BGCOL             { return SC_BGCOL; }

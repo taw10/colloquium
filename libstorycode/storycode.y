@@ -65,14 +65,14 @@
 %token IMAGEFRAME
 %token BP
 
-%token FONT TYPE PAD ALIGN FGCOL BGCOL
+%token FONT GEOMETRY PAD ALIGN FGCOL BGCOL PARASPACE
 
 %token LEFT CENTER RIGHT
 
 %token STRING
 %token OPENBRACE CLOSEBRACE
 %token SQOPEN SQCLOSE
-%token PLUS TIMES
+%token PLUS TIMES COLON
 %token UNIT VALUE SIZE
 
 %type <p> presentation
@@ -267,8 +267,12 @@ style_narrative:
 
 style_narrative_def:
   %empty
-| style_narrative_def style_prestitle
+| style_narrative_def style_narrative_prestitle
 | style_narrative_def styledef
+;
+
+style_narrative_prestitle:
+  PRESTITLE OPENBRACE styledefs CLOSEBRACE { printf("narrative prestitle style\n"); }
 ;
 
 style_slide:
@@ -277,17 +281,26 @@ style_slide:
 
 style_slide_def:
   %empty
-| style_slide_def style_prestitle
-| style_slide_def style_slidesize
-| style_slide_def styledef
+| style_slide_def style_slide_prestitle { printf("slide prestitle\n"); }
+| style_slide_def style_slide_text { printf("slide text\n"); }
+| style_slide_def style_slide_title { printf("slide title\n"); }
+| style_slide_def style_slidesize { printf("slide size\n"); }
 ;
 
 style_slidesize:
-  SIZE length TIMES length { $$.w = $2;  $$.h = $4;  $$.x.len = 0.0;  $$.y.len = 0.0; }
+  SIZE length TIMES length { $$.w = $2;  $$.h = $4;  $$.x.len = 0.0;  $$.y.len = 0.0; printf("size\n");}
 ;
 
-style_prestitle:
-  PRESTITLE OPENBRACE styledefs CLOSEBRACE { printf("prestitle style\n"); }
+style_slide_prestitle:
+  PRESTITLE OPENBRACE styledefs CLOSEBRACE { printf("slide prestitle style\n"); }
+;
+
+style_slide_title:
+  SLIDETITLE OPENBRACE styledefs CLOSEBRACE { printf("slide title style\n"); }
+;
+
+style_slide_text:
+  TEXTFRAME OPENBRACE styledefs CLOSEBRACE { printf("slide text style\n"); }
 ;
 
 styledefs:
@@ -296,12 +309,13 @@ styledefs:
 ;
 
 styledef:
-  FONT STRING  { printf("font def: '%s'\n", $2); }
-| TYPE STRING  { printf("type def: '%s'\n", $2); }
-| PAD STRING   { printf("pad def: '%s'\n", $2); }
-| FGCOL STRING { printf("fgcol def: '%s'\n", $2); }
-| BGCOL STRING { printf("bgcol def: '%s'\n", $2); }
-| ALIGN STRING { printf("align def: '%s'\n", $2); }
+  FONT STRING      { printf("font def: '%s'\n", $2); }
+| GEOMETRY STRING  { printf("type def: '%s'\n", $2); }
+| PAD STRING       { printf("pad def: '%s'\n", $2); }
+| PARASPACE STRING { printf("align def: '%s'\n", $2); }
+| FGCOL STRING     { printf("fgcol def: '%s'\n", $2); }
+| BGCOL STRING     { printf("bgcol def: '%s'\n", $2); }
+| ALIGN STRING     { printf("align def: '%s'\n", $2); }
 ;
 
 %%

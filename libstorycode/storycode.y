@@ -41,14 +41,18 @@
   Slide *s;
   char *str;
   struct length len;
+  struct length lenquad[4];
   struct frame_geom geom;
   char character;
   double val;
+  double rgba[4];
+  enum alignment align;
 }
 
 %{
   #include <stdio.h>
   #include <stdlib.h>
+  #include <string.h>
 
   extern int sclex();
   extern int scparse();
@@ -56,7 +60,8 @@
   extern int lineno;
 %}
 
-%token STYLES SLIDE
+%token STYLES
+%token SLIDE
 %token NARRATIVE
 %token PRESTITLE
 %token SLIDETITLE
@@ -64,16 +69,11 @@
 %token TEXTFRAME
 %token IMAGEFRAME
 %token BP
-
 %token FONT GEOMETRY PAD ALIGN FGCOL BGCOL PARASPACE
-
 %token LEFT CENTER RIGHT
-
 %token STRING
-%token OPENBRACE CLOSEBRACE
 %token SQOPEN SQCLOSE
-%token PLUS TIMES COLON
-%token UNIT VALUE SIZE
+%token UNIT VALUE SIZE HEXCOL
 
 %type <p> presentation
 %type <n> narrative
@@ -85,7 +85,11 @@
 %type <str> bulletpoint
 %type <str> frameopt
 %type <geom> geometry
+%type <lenquad> lenquad
+%type <rgba> colour
+%type <str> HEXCOL
 %type <len> length
+%type <align> alignment
 %type <str> slidetitle
 %type <character> UNIT
 %type <val> VALUE
@@ -106,28 +110,30 @@
     ctx->str = malloc(ctx->max_str*sizeof(char *));
     if ( ctx->str == NULL ) ctx->max_str = 0;
 
-    style_reset(ctx);
-    frameopts_reset(ctx);
+    ctx->mask = 0;
 }
 
 %{
 
-void frameopts_reset(struct scpctx *ctx)
+static int hex_to_double(const char *v, double *r)
 {
-    ctx->geom_set = 0;
-    ctx->geom.x.len = 0.0;
-    ctx->geom.y.len = 0.0;
-    ctx->geom.w.len = 1.0;
-    ctx->geom.h.len = 1.0;
-    ctx->geom.x.unit = LENGTH_FRAC;
-    ctx->geom.y.unit = LENGTH_FRAC;
-    ctx->geom.w.unit = LENGTH_FRAC;
-    ctx->geom.h.unit = LENGTH_FRAC;
-}
+    char c[5];
 
-void style_reset(struct scpctx *ctx)
-{
-    ctx->font = NULL;
+    if ( strlen(v) != 7 ) return 0;
+    if ( v[0] != '#' ) return 0;  /* should've already been blocked by lexxer */
+
+    c[0] = '0';  c[1] = 'x';  c[4] = '\0';
+
+    c[2] = v[1]; c[3] = v[2];
+    r[0] = strtod(c, NULL) / 255.0;
+
+    c[2] = v[3]; c[3] = v[4];
+    r[1] = strtod(c, NULL) / 255.0;
+
+    c[2] = v[5]; c[3] = v[6];
+    r[2] = strtod(c, NULL) / 255.0;
+
+    return 1;
 }
 
 void str_reset(struct scpctx *ctx)
@@ -146,10 +152,25 @@ void add_str(struct scpctx *ctx, char *str)
     ctx->str[ctx->n_str++] = str;
 }
 
-void set_text_style(struct scpctx *ctx)
+void set_slide_text_style(struct scpctx *ctx)
 {
-    stylesheet_set_slide_text_font(ctx->ss, ctx->font);
-    style_reset(ctx);
+    if ( ctx->mask & STYMASK_FONT )      stylesheet_set_slide_text_font(ctx->ss, ctx->font);
+    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_slide_text_align(ctx->ss, ctx->alignment);
+    ctx->mask = 0;
+}
+
+void set_slide_slidetitle_style(struct scpctx *ctx)
+{
+    if ( ctx->mask & STYMASK_FONT )      stylesheet_set_slide_slidetitle_font(ctx->ss, ctx->font);
+    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_slide_slidetitle_align(ctx->ss, ctx->alignment);
+    ctx->mask = 0;
+}
+
+void set_slide_prestitle_style(struct scpctx *ctx)
+{
+    if ( ctx->mask & STYMASK_FONT )      stylesheet_set_slide_prestitle_font(ctx->ss, ctx->font);
+    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_slide_prestitle_align(ctx->ss, ctx->alignment);
+    ctx->mask = 0;
 }
 
 %}
@@ -188,7 +209,7 @@ bulletpoint:
 /* ------ Slide contents ------ */
 
 slide:
-  SLIDE OPENBRACE slide_parts CLOSEBRACE  { presentation_add_slide(ctx->p, ctx->s);
+  SLIDE '{' slide_parts '}'  { presentation_add_slide(ctx->p, ctx->s);
                                             narrative_add_slide(ctx->n, ctx->s);
                                             /* New work in progress object */
                                             ctx->s = slide_new(); }
@@ -202,10 +223,8 @@ slide_parts:
 slide_part:
   prestitle   { slide_add_prestitle(ctx->s, $1); str_reset(ctx); }
 | imageframe  { slide_add_image(ctx->s, $1, ctx->geom);
-                frameopts_reset(ctx);
                 str_reset(ctx); }
 | textframe   { slide_add_text(ctx->s, ctx->str, ctx->n_str, ctx->geom);
-                frameopts_reset(ctx);
                 str_reset(ctx); }
 | FOOTER      { slide_add_footer(ctx->s); }
 | slidetitle  { slide_add_slidetitle(ctx->s, $1); str_reset(ctx); }
@@ -217,7 +236,7 @@ imageframe:
 
 textframe:
   TEXTFRAME frame_options multi_line_string                      { }
-| TEXTFRAME frame_options OPENBRACE multi_line_string CLOSEBRACE { }
+| TEXTFRAME frame_options '{' multi_line_string '}' { }
 ;
 
 multi_line_string:
@@ -235,23 +254,38 @@ frame_options:
 
 /* Each option is enclosed in square brackets */
 frame_option:
-  SQOPEN frameopt SQCLOSE { }
+  SQOPEN frameopt SQCLOSE
 ;
 
 frameopt:
-  geometry   {}
-| alignment  {}
+  geometry   { ctx->geom = $1; }
+| alignment  { ctx->alignment = $1; }
 ;
 
 geometry:
-  length TIMES length PLUS length PLUS length { $$.w = $1;  $$.h = $3;  $$.x = $5;  $$.y = $7;
-                                                ctx->geom = $$;   ctx->geom_set = 1; }
+  length 'x' length '+' length '+' length { $$.w = $1;  $$.h = $3;
+                                            $$.x = $5;  $$.y = $7; }
+;
+
+lenquad:
+  length ',' length ',' length ',' length { $$[0] = $1;  $$[1] = $3;
+                                            $$[2] = $5;  $$[3] = $7; }
+;
+
+colour:
+  VALUE ',' VALUE ',' VALUE ',' VALUE { $$[0] = $1;  $$[1] = $3;
+                                        $$[2] = $5;  $$[3] = $7; }
+| HEXCOL { double col[3];
+           if ( hex_to_double($1, col) ) {
+               $$[0] = col[0]; $$[1] = col[1]; $$[2] = col[2]; $$[3] = 1.0;
+           }
+         }
 ;
 
 alignment:
-  LEFT
-| CENTER
-| RIGHT
+  LEFT     { $$ = ALIGN_LEFT; }
+| CENTER   { $$ = ALIGN_CENTER; }
+| RIGHT    { $$ = ALIGN_RIGHT; }
 ;
 
 slidetitle:
@@ -268,14 +302,14 @@ length:
 /* ------ Stylesheet ------ */
 
 stylesheet:
-  STYLES OPENBRACE
+  STYLES '{'
    style_narrative
    style_slide
-  CLOSEBRACE  { printf("stylesheet\n"); }
+  '}'  { }
 ;
 
 style_narrative:
-  NARRATIVE OPENBRACE style_narrative_def CLOSEBRACE { printf("narrative style\n"); }
+  NARRATIVE '{' style_narrative_def '}' { }
 ;
 
 style_narrative_def:
@@ -285,11 +319,11 @@ style_narrative_def:
 ;
 
 style_narrative_prestitle:
-  PRESTITLE OPENBRACE styledefs CLOSEBRACE { printf("narrative prestitle style\n"); }
+  PRESTITLE '{' styledefs '}' { }
 ;
 
 style_slide:
-  SLIDE OPENBRACE style_slide_def CLOSEBRACE { printf("slide style\n"); }
+  SLIDE '{' style_slide_def '}' { }
 ;
 
 style_slide_def:
@@ -301,26 +335,26 @@ style_slide_def:
 ;
 
 style_slidesize:
-  SIZE length TIMES length { if ( ($2.unit != LENGTH_UNIT)
+  SIZE length 'x' length { if ( ($2.unit != LENGTH_UNIT)
                                || ($4.unit != LENGTH_UNIT) )
                              {
                                 fprintf(stderr, "Wrong slide size units\n");
                              } else {
-                                stylesheet_set_default_slide_size(ctx->ss, $2.len, $4.len);
+                                stylesheet_set_slide_default_size(ctx->ss, $2.len, $4.len);
                              }
                            }
 ;
 
 style_slide_prestitle:
-  PRESTITLE OPENBRACE styledefs CLOSEBRACE { printf("slide prestitle style\n"); }
+  PRESTITLE '{' styledefs '}' { set_slide_prestitle_style(ctx); }
 ;
 
 style_slide_title:
-  SLIDETITLE OPENBRACE styledefs CLOSEBRACE { printf("slide title style\n"); }
+  SLIDETITLE '{' styledefs '}' { set_slide_slidetitle_style(ctx); }
 ;
 
 style_slide_text:
-  TEXTFRAME OPENBRACE styledefs CLOSEBRACE { set_text_style(ctx); }
+  TEXTFRAME '{' styledefs '}' { set_slide_text_style(ctx); }
 ;
 
 styledefs:
@@ -329,13 +363,20 @@ styledefs:
 ;
 
 styledef:
-  FONT STRING      { ctx->font = $2; }
-| GEOMETRY STRING  { printf("type def: '%s'\n", $2); }
-| PAD STRING       { printf("pad def: '%s'\n", $2); }
-| PARASPACE STRING { printf("align def: '%s'\n", $2); }
-| FGCOL STRING     { printf("fgcol def: '%s'\n", $2); }
-| BGCOL STRING     { printf("bgcol def: '%s'\n", $2); }
-| ALIGN STRING     { printf("align def: '%s'\n", $2); }
+  FONT STRING        { ctx->font = $2;
+                       ctx->mask |= STYMASK_FONT; }
+| GEOMETRY geometry  { ctx->geom = $2;
+                       ctx->mask |= STYMASK_GEOM; }
+| PAD lenquad        { for ( int i=0; i<4; i++ ) ctx->padding[i] = $2[i];
+                       ctx->mask |= STYMASK_PADDING; }
+| PARASPACE lenquad  { for ( int i=0; i<4; i++ ) ctx->paraspace[i] = $2[i];
+                       ctx->mask |= STYMASK_PARASPACE; }
+| FGCOL colour       { for ( int i=0; i<4; i++ ) ctx->fgcol[i] = $2[i];
+                       ctx->mask |= STYMASK_FGCOL; }
+| BGCOL colour       { for ( int i=0; i<4; i++ ) ctx->bgcol[i] = $2[i];
+                       ctx->mask |= STYMASK_BGCOL; }
+| ALIGN alignment    { ctx->alignment = $2;
+                       ctx->mask |= STYMASK_ALIGNMENT; }
 ;
 
 %%

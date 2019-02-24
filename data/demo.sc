@@ -1,37 +1,37 @@
 STYLES {
   NARRATIVE {
-    FONT: Cantarell Regular 16
-    FGCOL: #222222
-    BGCOL: #ffffff
-    PARASPACE: 0u,0u,10u,10u
-    PAD: 10u,10u,10u,10u
+    FONT Cantarell Regular 16
+    FGCOL #222222
+    BGCOL #ffffff
+    PARASPACE 0u,0u,10u,10u
+    PAD 10u,10u,10u,10u
     PRESTITLE {
-      FONT: Cantarell Bold 20
+      FONT Cantarell Bold 20
     }
   }
   SLIDE {
     SIZE 1024u x 768u
     TEXT {
-      FONT: Cantarell Regular 14
-      PAD: 0u,0u,0u,0u
-      PARASPACE: 5u,5u,5u,5u
-      FGCOL: #c5c5c5
-      BGCOL: rgba(0,0,0,0)
+      FONT Cantarell Regular 14
+      PAD 0u,0u,0u,0u
+      PARASPACE 5u,5u,5u,5u
+      FGCOL #c5c5c5
+      BGCOL 0,0,0,0
     }
     PRESTITLE {
-      GEOMETRY: 1f x 140u +0 +0
-      FONT: Cantarell Regular 64
-      PAD: 20u,20u,20u,20u
-      FGCOL: #eeeeee
-      BGCOL: rgba(0,0,0,0)
-      ALIGN: center
+      GEOMETRY 1f x 140u +0u +0u
+      FONT Cantarell Regular 64
+      PAD 20u,20u,20u,20u
+      FGCOL #eeeeee
+      BGCOL 0,0,0,0
+      ALIGN center
     }
     SLIDETITLE {
-      GEOMETRY: 1f x 90u +0 +0
-      FONT: Cantarell Regular 36
-      PAD: 20u,20u,20u,20u
-      FGCOL: #eeeeee
-      BGCOL: rgba(0,0,0,0)
+      GEOMETRY 1f x 90u +0u +0u
+      FONT Cantarell Regular 36
+      PAD 20u,20u,20u,20u
+      FGCOL #eeeeee
+      BGCOL 0,0,0,0
     }
   }
 }

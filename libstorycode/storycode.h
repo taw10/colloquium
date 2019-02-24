@@ -29,14 +29,6 @@
 
 #include "presentation.h"
 
-enum alignment
-{
-	ALIGN_LEFT,
-	ALIGN_RIGHT,
-	ALIGN_CENTER
-};
-
-
 extern Presentation *storycode_parse_presentation(const char *sc);
 
 

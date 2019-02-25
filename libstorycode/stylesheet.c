@@ -262,3 +262,14 @@ int stylesheet_get_background(Stylesheet *s, enum style_element el,
 	*grad = sty->bggrad;
 	return 0;
 }
+
+
+int stylesheet_get_padding(Stylesheet *s, enum style_element el,
+                           struct length padding[4])
+{
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	for ( i=0; i<4; i++ ) padding[i] = sty->padding[i];
+	return 0;
+}

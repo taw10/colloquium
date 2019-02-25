@@ -69,6 +69,8 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 {
 	int i;
 	double x, y, w, h;
+	double pad_l, pad_r, pad_t, pad_b;
+	struct length pad[4];
 	const char *font;
 	enum alignment align;
 	double fgcol[4];
@@ -80,6 +82,12 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 	y = lcalc(item->geom.y, parent_h);
 	w = lcalc(item->geom.w, parent_w);
 	h = lcalc(item->geom.h, parent_h);
+
+	if ( stylesheet_get_padding(ss, el, pad) ) return;
+	pad_l = lcalc(pad[0], parent_w);
+	pad_r = lcalc(pad[1], parent_w);
+	pad_t = lcalc(pad[2], parent_h);
+	pad_b = lcalc(pad[3], parent_h);
 
 	font = stylesheet_get_font(ss, el, fgcol, &align);
 	if ( font == NULL ) return;
@@ -102,13 +110,19 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 		palignment = to_pangoalignment(item->align);
 	}
 
+	/* FIXME: Apply background */
+
+	cairo_save(cr);
+	cairo_translate(cr, x, y);
+	cairo_translate(cr, pad_l, pad_t);
+
 	for ( i=0; i<item->n_paras; i++ ) {
 
 		if ( item->layouts[i] == NULL ) {
 			item->layouts[i] = pango_layout_new(pc);
 		}
 		pango_layout_set_width(item->layouts[i],
-		                       pango_units_from_double(w));
+		                       pango_units_from_double(w-pad_l-pad_r));
 		pango_layout_set_text(item->layouts[i], item->paragraphs[i], -1);
 
 		pango_layout_set_alignment(item->layouts[i], palignment);
@@ -121,17 +135,16 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 
 		/* FIXME: Clip to w,h */
 
-		cairo_save(cr);
 		cairo_set_source_rgba(cr, fgcol[0], fgcol[1], fgcol[2], fgcol[3]);
-		cairo_translate(cr, x, y);
+		cairo_move_to(cr, 0.0, 0.0);
 		pango_cairo_update_layout(cr, item->layouts[i]);
 		pango_cairo_show_layout(cr, item->layouts[i]);
 		pango_layout_get_extents(item->layouts[i], NULL, &rect);
-		y += pango_units_to_double(rect.height);
+		cairo_translate(cr, 0.0, pango_units_to_double(rect.height));
 		cairo_fill(cr);
-		cairo_restore(cr);
 
 	}
+	cairo_restore(cr);
 }
 
 

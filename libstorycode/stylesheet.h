@@ -97,6 +97,8 @@ extern const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
                                        double fgcol[4], enum alignment *alignment);
 extern int stylesheet_get_background(Stylesheet *s, enum style_element el,
                                      enum gradient *grad, double *bgcol, double *bgcol2);
+extern int stylesheet_get_padding(Stylesheet *s, enum style_element el,
+                                  struct length padding[4]);
 
 
 #endif /* STYLESHEET_H */

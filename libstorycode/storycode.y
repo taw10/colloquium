@@ -144,6 +144,8 @@ static int hex_to_double(const char *v, double *r)
 void str_reset(struct scpctx *ctx)
 {
     ctx->n_str = 0;
+    ctx->mask = 0;
+    ctx->alignment = ALIGN_INHERIT;
 }
 
 void add_str(struct scpctx *ctx, char *str)
@@ -168,6 +170,7 @@ void set_style(struct scpctx *ctx, enum style_element element)
     if ( ctx->mask & STYMASK_BGCOL ) stylesheet_set_background(ctx->ss, element, ctx->bggrad,
                                                                ctx->bgcol, ctx->bgcol2);
     ctx->mask = 0;
+    ctx->alignment = ALIGN_INHERIT;
 }
 
 %}
@@ -223,7 +226,8 @@ slide_part:
   slide_prestitle { slide_add_prestitle(ctx->s, $1); str_reset(ctx); }
 | imageframe      { slide_add_image(ctx->s, $1, ctx->geom);
                     str_reset(ctx); }
-| textframe       { slide_add_text(ctx->s, ctx->str, ctx->n_str, ctx->geom);
+| textframe       { slide_add_text(ctx->s, ctx->str, ctx->n_str,
+                                   ctx->geom, ctx->alignment);
                     str_reset(ctx); }
 | FOOTER          { slide_add_footer(ctx->s); }
 | slidetitle      { slide_add_slidetitle(ctx->s, $1); str_reset(ctx); }

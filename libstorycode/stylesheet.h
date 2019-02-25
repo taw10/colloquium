@@ -31,6 +31,7 @@ typedef struct _stylesheet Stylesheet;
 
 enum alignment
 {
+	ALIGN_INHERIT,  /* use whatever the stylesheet says */
 	ALIGN_LEFT,
 	ALIGN_RIGHT,
 	ALIGN_CENTER

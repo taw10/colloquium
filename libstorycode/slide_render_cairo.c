@@ -73,6 +73,7 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 	double fgcol[4];
 	PangoRectangle rect;
 	PangoFontDescription *fontdesc;
+	PangoAlignment palignment;
 
 	x = lcalc(item->geom.x, parent_w);
 	y = lcalc(item->geom.y, parent_h);
@@ -92,6 +93,14 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 		}
 	}
 
+	if ( item->align == ALIGN_INHERIT ) {
+		/* Use value from stylesheet */
+		palignment = to_pangoalignment(align);
+	} else {
+		/* Use item-specific value */
+		palignment = to_pangoalignment(item->align);
+	}
+
 	for ( i=0; i<item->n_paras; i++ ) {
 
 		if ( item->layouts[i] == NULL ) {
@@ -101,8 +110,7 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 		                       pango_units_from_double(w));
 		pango_layout_set_text(item->layouts[i], item->paragraphs[i], -1);
 
-		pango_layout_set_alignment(item->layouts[i],
-		                           to_pangoalignment(item->align));
+		pango_layout_set_alignment(item->layouts[i], palignment);
 
 		pango_layout_set_font_description(item->layouts[i], fontdesc);
 

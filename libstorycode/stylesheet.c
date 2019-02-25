@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "stylesheet.h"
 
@@ -69,6 +70,7 @@ static void default_style(struct style *s)
 	s->geom.h.unit = LENGTH_FRAC;
 
 	s->font = strdup("Sans 12");
+	s->alignment = ALIGN_LEFT;
 
 	s->fgcol[0] = 0.0;
 	s->fgcol[1] = 0.0;
@@ -227,6 +229,7 @@ int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignmen
 {
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return 1;
+	assert(align != ALIGN_INHERIT);
 	sty->alignment = align;
 	return 0;
 }

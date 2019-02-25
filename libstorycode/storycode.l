@@ -62,6 +62,10 @@ PARASPACE         { BEGIN(paraspace); return SC_PARASPACE; }
 ALIGN             { BEGIN(align); return SC_ALIGN; }
 FGCOL             { BEGIN(col); return SC_FGCOL; }
 BGCOL             { BEGIN(col); return SC_BGCOL; }
+<col>VERT         { return SC_VERT; }
+<col>VERTICAL     { return SC_VERT; }
+<col>HORIZ        { return SC_HORIZ; }
+<col>HORIZONTAL   { return SC_HORIZ; }
 SIZE              { return SC_SIZE; }
 <align,sqb>(?i:left)   { return SC_LEFT; }
 <align,sqb>(?i:center) { return SC_CENTER; }

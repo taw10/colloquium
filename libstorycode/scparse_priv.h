@@ -59,7 +59,9 @@ struct scpctx
 	struct length padding[4];
 	struct length paraspace[4];
 	double fgcol[4];
+	enum gradient bggrad;
 	double bgcol[4];
+	double bgcol2[4];
 };
 
 #endif /* SCPARSE_PRIV_H */

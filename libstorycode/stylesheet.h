@@ -60,9 +60,18 @@ struct frame_geom
 };
 
 
+enum gradient
+{
+	GRAD_NONE,
+	GRAD_HORIZ,
+	GRAD_VERT
+};
+
+
 enum style_element
 {
 	STYEL_NARRATIVE,
+	STYEL_SLIDE,
 	STYEL_SLIDE_TEXT,
 	STYEL_SLIDE_PRESTITLE,
 	STYEL_SLIDE_SLIDETITLE,

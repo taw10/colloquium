@@ -47,6 +47,7 @@
   double val;
   double rgba[4];
   enum alignment align;
+  enum gradient grad;
 }
 
 %{
@@ -70,6 +71,7 @@
 %token IMAGEFRAME
 %token BP
 %token FONT GEOMETRY PAD ALIGN FGCOL BGCOL PARASPACE
+%token VERT HORIZ
 %token LEFT CENTER RIGHT
 %token STRING
 %token SQOPEN SQCLOSE
@@ -95,6 +97,7 @@
 %type <str> slidetitle
 %type <character> UNIT
 %type <val> VALUE
+%type <grad> gradtype
 
 %parse-param { struct scpctx *ctx };
 %initial-action
@@ -302,6 +305,11 @@ length:
                 if ( $UNIT == 'f' ) $$.unit = LENGTH_FRAC; }
 ;
 
+gradtype:
+  VERT { $$ = GRAD_VERT; }
+| HORIZ { $$ = GRAD_HORIZ; }
+;
+
 
 /* ------ Stylesheet ------ */
 
@@ -332,10 +340,14 @@ style_slide:
 
 style_slide_def:
   %empty
+  /* Doesn't need set_style() */
+| style_slide_def style_slidesize       { }
+  /* Call set_style() immediately */
+| style_slide_def background            { set_style(ctx, STYEL_SLIDE); }
+  /* The ones below will call set_style() themselves */
 | style_slide_def style_slide_prestitle { }
 | style_slide_def style_slide_text      { }
 | style_slide_def style_slide_title     { }
-| style_slide_def style_slidesize       { }
 ;
 
 style_slidesize:
@@ -347,6 +359,16 @@ style_slidesize:
                                 stylesheet_set_slide_default_size(ctx->ss, $2.len, $4.len);
                              }
                            }
+;
+
+background:
+  BGCOL colour       { for ( int i=0; i<4; i++ ) ctx->bgcol[i] = $2[i];
+                       ctx->bggrad = GRAD_NONE;
+                       ctx->mask |= STYMASK_BGCOL; }
+| BGCOL gradtype colour colour  { for ( int i=0; i<4; i++ ) ctx->bgcol[i] = $3[i];
+                                  for ( int i=0; i<4; i++ ) ctx->bgcol2[i] = $4[i];
+                                  ctx->bggrad = $2;
+                                  ctx->mask |= STYMASK_BGCOL; }
 ;
 
 style_slide_prestitle:
@@ -377,8 +399,7 @@ styledef:
                        ctx->mask |= STYMASK_PARASPACE; }
 | FGCOL colour       { for ( int i=0; i<4; i++ ) ctx->fgcol[i] = $2[i];
                        ctx->mask |= STYMASK_FGCOL; }
-| BGCOL colour       { for ( int i=0; i<4; i++ ) ctx->bgcol[i] = $2[i];
-                       ctx->mask |= STYMASK_BGCOL; }
+| background         { /* Handled in rule 'background' */ }
 | ALIGN alignment    { ctx->alignment = $2;
                        ctx->mask |= STYMASK_ALIGNMENT; }
 ;

@@ -104,6 +104,8 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 		//pango_layout_set_attributes(item->layouts[i], attrs);
 		//pango_attr_list_unref(attrs);
 
+		/* FIXME: Clip to w,h */
+
 		cairo_save(cr);
 		cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
 		cairo_translate(cr, x, y);

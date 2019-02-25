@@ -152,24 +152,15 @@ void add_str(struct scpctx *ctx, char *str)
     ctx->str[ctx->n_str++] = str;
 }
 
-void set_slide_text_style(struct scpctx *ctx)
+void set_style(struct scpctx *ctx, enum style_element element)
 {
-    if ( ctx->mask & STYMASK_FONT )      stylesheet_set_slide_text_font(ctx->ss, ctx->font);
-    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_slide_text_align(ctx->ss, ctx->alignment);
-    ctx->mask = 0;
-}
-
-void set_slide_slidetitle_style(struct scpctx *ctx)
-{
-    if ( ctx->mask & STYMASK_FONT )      stylesheet_set_slide_slidetitle_font(ctx->ss, ctx->font);
-    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_slide_slidetitle_align(ctx->ss, ctx->alignment);
-    ctx->mask = 0;
-}
-
-void set_slide_prestitle_style(struct scpctx *ctx)
-{
-    if ( ctx->mask & STYMASK_FONT )      stylesheet_set_slide_prestitle_font(ctx->ss, ctx->font);
-    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_slide_prestitle_align(ctx->ss, ctx->alignment);
+    if ( ctx->mask & STYMASK_GEOM ) stylesheet_set_geometry(ctx->ss, element, ctx->geom);
+    if ( ctx->mask & STYMASK_FONT ) stylesheet_set_font(ctx->ss, element, ctx->font);
+    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_alignment(ctx->ss, element, ctx->alignment);
+    if ( ctx->mask & STYMASK_PADDING ) stylesheet_set_padding(ctx->ss, element, ctx->padding);
+    if ( ctx->mask & STYMASK_PARASPACE ) stylesheet_set_paraspace(ctx->ss, element, ctx->paraspace);
+    if ( ctx->mask & STYMASK_FGCOL ) stylesheet_set_fgcol(ctx->ss, element, ctx->fgcol);
+    if ( ctx->mask & STYMASK_BGCOL ) stylesheet_set_bgcol(ctx->ss, element, ctx->bgcol);
     ctx->mask = 0;
 }
 
@@ -346,15 +337,15 @@ style_slidesize:
 ;
 
 style_slide_prestitle:
-  PRESTITLE '{' styledefs '}' { set_slide_prestitle_style(ctx); }
+  PRESTITLE '{' styledefs '}' { set_style(ctx, STYEL_SLIDE_PRESTITLE); }
 ;
 
 style_slide_title:
-  SLIDETITLE '{' styledefs '}' { set_slide_slidetitle_style(ctx); }
+  SLIDETITLE '{' styledefs '}' { set_style(ctx, STYEL_SLIDE_SLIDETITLE); }
 ;
 
 style_slide_text:
-  TEXTFRAME '{' styledefs '}' { set_slide_text_style(ctx); }
+  TEXTFRAME '{' styledefs '}' { set_style(ctx, STYEL_SLIDE_TEXT); }
 ;
 
 styledefs:

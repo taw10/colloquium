@@ -124,7 +124,13 @@ int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h)
 }
 
 
-int stylesheet_set_slide_text_font(Stylesheet *s, char *font)
+int stylesheet_set_geometry(Stylesheet *s, enum style_element el, struct frame_geom geom)
+{
+	return 0;
+}
+
+
+int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font)
 {
 	if ( s == NULL ) return 1;
 	if ( s->slide_text.font != NULL ) {
@@ -135,161 +141,38 @@ int stylesheet_set_slide_text_font(Stylesheet *s, char *font)
 }
 
 
+int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length padding[4])
+{
+	return 0;
+}
+
+
+int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length paraspace[4])
+{
+	return 0;
+}
+
+
+int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgba[4])
+{
+	return 0;
+}
+
+
+int stylesheet_set_bgcol(Stylesheet *s, enum style_element el, double rgba[4])
+{
+	return 0;
+}
+
+
+int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignment align)
+{
+	return 0;
+}
+
+
 const char *stylesheet_get_slide_text_font(Stylesheet *s)
 {
 	if ( s == NULL ) return NULL;
 	return s->slide_text.font;
-}
-
-
-int stylesheet_set_slide_text_pad(Stylesheet *s, double padding[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_text_paraspace(Stylesheet *s, double paraspace[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_text_fgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_text_bgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_text_align(Stylesheet *s, enum alignment align)
-{
-	return 0;
-}
-
-
-
-int stylesheet_set_slide_prestitle_geom(Stylesheet *s, struct frame_geom geom)
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_prestitle_font(Stylesheet *s, char *font)
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_prestitle_pad(Stylesheet *s, double padding[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_prestitle_paraspace(Stylesheet *s, double paraspace[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_prestitle_fgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_prestitle_bgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_prestitle_align(Stylesheet *s, enum alignment align)
-{
-	return 0;
-}
-
-
-
-int stylesheet_set_slide_slidetitle_geom(Stylesheet *s, struct frame_geom geom)
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_slidetitle_font(Stylesheet *s, char *font)
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_slidetitle_pad(Stylesheet *s, double padding[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_slidetitle_paraspace(Stylesheet *s, double paraspace[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_slidetitle_fgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_slidetitle_bgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_slide_slidetitle_align(Stylesheet *s, enum alignment align)
-{
-	return 0;
-}
-
-
-
-int stylesheet_set_narrative_font(Stylesheet *s, char *font)
-{
-	return 0;
-}
-
-
-int stylesheet_set_narrative_pad(Stylesheet *s, double padding[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_narrative_paraspace(Stylesheet *s, double paraspace[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_narrative_fgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_narrative_bgcol(Stylesheet *s, double rgba[4])
-{
-	return 0;
-}
-
-
-int stylesheet_set_narrative_align(Stylesheet *s, enum alignment align)
-{
-	return 0;
 }

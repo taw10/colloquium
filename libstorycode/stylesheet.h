@@ -60,40 +60,27 @@ struct frame_geom
 };
 
 
+enum style_element
+{
+	STYEL_NARRATIVE,
+	STYEL_SLIDE_TEXT,
+	STYEL_SLIDE_PRESTITLE,
+	STYEL_SLIDE_SLIDETITLE,
+};
+
+
 extern Stylesheet *stylesheet_new(void);
 extern void stylesheet_free(Stylesheet *s);
 
 extern int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h);
 
-extern int stylesheet_set_slide_text_font(Stylesheet *s, char *font);
-extern int stylesheet_set_slide_text_pad(Stylesheet *s, double padding[4]);
-extern int stylesheet_set_slide_text_paraspace(Stylesheet *s, double paraspace[4]);
-extern int stylesheet_set_slide_text_fgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_slide_text_bgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_slide_text_align(Stylesheet *s, enum alignment align);
-
-extern int stylesheet_set_slide_prestitle_geom(Stylesheet *s, struct frame_geom geom);
-extern int stylesheet_set_slide_prestitle_font(Stylesheet *s, char *font);
-extern int stylesheet_set_slide_prestitle_pad(Stylesheet *s, double padding[4]);
-extern int stylesheet_set_slide_prestitle_paraspace(Stylesheet *s, double paraspace[4]);
-extern int stylesheet_set_slide_prestitle_fgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_slide_prestitle_bgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_slide_prestitle_align(Stylesheet *s, enum alignment align);
-
-extern int stylesheet_set_slide_slidetitle_geom(Stylesheet *s, struct frame_geom geom);
-extern int stylesheet_set_slide_slidetitle_font(Stylesheet *s, char *font);
-extern int stylesheet_set_slide_slidetitle_pad(Stylesheet *s, double padding[4]);
-extern int stylesheet_set_slide_slidetitle_paraspace(Stylesheet *s, double paraspace[4]);
-extern int stylesheet_set_slide_slidetitle_fgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_slide_slidetitle_bgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_slide_slidetitle_align(Stylesheet *s, enum alignment align);
-
-extern int stylesheet_set_narrative_font(Stylesheet *s, char *font);
-extern int stylesheet_set_narrative_pad(Stylesheet *s, double padding[4]);
-extern int stylesheet_set_narrative_paraspace(Stylesheet *s, double paraspace[4]);
-extern int stylesheet_set_narrative_fgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_narrative_bgcol(Stylesheet *s, double rgba[4]);
-extern int stylesheet_set_narrative_align(Stylesheet *s, enum alignment align);
+extern int stylesheet_set_geometry(Stylesheet *s, enum style_element el, struct frame_geom geom);
+extern int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font);
+extern int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignment align);
+extern int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length padding[4]);
+extern int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length paraspace[4]);
+extern int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgba[4]);
+extern int stylesheet_set_bgcol(Stylesheet *s, enum style_element el, double rgba[4]);
 
 extern const char *stylesheet_get_slide_text_font(Stylesheet *s);
 

@@ -242,7 +242,7 @@ imageframe:
 ;
 
 textframe:
-  TEXTFRAME frame_options multi_line_string                      { }
+  TEXTFRAME frame_options multi_line_string         { }
 | TEXTFRAME frame_options '{' multi_line_string '}' { }
 ;
 

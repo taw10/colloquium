@@ -79,10 +79,12 @@
 %type <n> narrative
 %type <s> slide
 %type <ss> stylesheet
-%type <str> prestitle
+%type <str> narrative_prestitle
+%type <str> slide_prestitle
 %type <str> STRING
 %type <str> imageframe
-%type <str> bulletpoint
+%type <str> slide_bulletpoint
+%type <str> narrative_bulletpoint
 %type <str> frameopt
 %type <geom> geometry
 %type <lenquad> lenquad
@@ -168,11 +170,15 @@ void set_style(struct scpctx *ctx, enum style_element element)
 
 %%
 
+/* The only thing a "presentation" really needs is narrative */
 presentation:
   stylesheet narrative  { presentation_add_stylesheet(ctx->p, ctx->ss);
                           presentation_add_narrative(ctx->p, ctx->n);  }
 | narrative             { presentation_add_narrative(ctx->p, ctx->n);  }
 ;
+
+
+/* ------ Narrative ------ */
 
 narrative:
   narrative_el            { }
@@ -180,24 +186,22 @@ narrative:
 ;
 
 narrative_el:
-  prestitle   { narrative_add_prestitle(ctx->n, $1); }
-| bulletpoint { narrative_add_bp(ctx->n, $1); }
-| slide       { narrative_add_slide(ctx->n, $1); }
-| STRING      { narrative_add_text(ctx->n, $1); }
+  narrative_prestitle   { narrative_add_prestitle(ctx->n, $1); }
+| narrative_bulletpoint { narrative_add_bp(ctx->n, $1); }
+| slide                 { narrative_add_slide(ctx->n, $1); }
+| STRING                { narrative_add_text(ctx->n, $1); }
 ;
 
-/* Can be in narrative or slide */
-
-prestitle:
+narrative_prestitle:
   PRESTITLE STRING { $$ = $2; }
 ;
 
-bulletpoint:
+narrative_bulletpoint:
   BP STRING { $$ = $2; }
 ;
 
 
-/* ------ Slide contents ------ */
+/* -------- Slide -------- */
 
 slide:
   SLIDE '{' slide_parts '}'  { presentation_add_slide(ctx->p, ctx->s);
@@ -212,13 +216,17 @@ slide_parts:
 ;
 
 slide_part:
-  prestitle   { slide_add_prestitle(ctx->s, $1); str_reset(ctx); }
-| imageframe  { slide_add_image(ctx->s, $1, ctx->geom);
-                str_reset(ctx); }
-| textframe   { slide_add_text(ctx->s, ctx->str, ctx->n_str, ctx->geom);
-                str_reset(ctx); }
-| FOOTER      { slide_add_footer(ctx->s); }
-| slidetitle  { slide_add_slidetitle(ctx->s, $1); str_reset(ctx); }
+  slide_prestitle { slide_add_prestitle(ctx->s, $1); str_reset(ctx); }
+| imageframe      { slide_add_image(ctx->s, $1, ctx->geom);
+                    str_reset(ctx); }
+| textframe       { slide_add_text(ctx->s, ctx->str, ctx->n_str, ctx->geom);
+                    str_reset(ctx); }
+| FOOTER          { slide_add_footer(ctx->s); }
+| slidetitle      { slide_add_slidetitle(ctx->s, $1); str_reset(ctx); }
+;
+
+slide_prestitle:
+  PRESTITLE STRING { $$ = $2; }
 ;
 
 imageframe:
@@ -231,10 +239,18 @@ textframe:
 ;
 
 multi_line_string:
-  STRING                        { add_str(ctx, $1); }
-| multi_line_string STRING      { add_str(ctx, $2); }
-| bulletpoint                   { add_str(ctx, $1); }
-| multi_line_string bulletpoint { add_str(ctx, $2); }
+  STRING                              { add_str(ctx, $1); }
+| multi_line_string STRING            { add_str(ctx, $2); }
+| slide_bulletpoint                   { add_str(ctx, $1); }
+| multi_line_string slide_bulletpoint { add_str(ctx, $2); }
+;
+
+slide_bulletpoint:
+  BP STRING { $$ = $2; }
+;
+
+slidetitle:
+  SLIDETITLE STRING { $$ = $2; }
 ;
 
 /* There can be any number of options */
@@ -253,6 +269,7 @@ frameopt:
 | alignment  { ctx->alignment = $1; }
 ;
 
+/* Primitives for describing styles (used in frame options and stylesheets) */
 geometry:
   length 'x' length '+' length '+' length { $$.w = $1;  $$.h = $3;
                                             $$.x = $5;  $$.y = $7; }
@@ -277,10 +294,6 @@ alignment:
   LEFT     { $$ = ALIGN_LEFT; }
 | CENTER   { $$ = ALIGN_CENTER; }
 | RIGHT    { $$ = ALIGN_RIGHT; }
-;
-
-slidetitle:
-  SLIDETITLE STRING { $$ = $2; }
 ;
 
 length:

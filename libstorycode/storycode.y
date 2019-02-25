@@ -165,7 +165,8 @@ void set_style(struct scpctx *ctx, enum style_element element)
     if ( ctx->mask & STYMASK_PADDING ) stylesheet_set_padding(ctx->ss, element, ctx->padding);
     if ( ctx->mask & STYMASK_PARASPACE ) stylesheet_set_paraspace(ctx->ss, element, ctx->paraspace);
     if ( ctx->mask & STYMASK_FGCOL ) stylesheet_set_fgcol(ctx->ss, element, ctx->fgcol);
-    if ( ctx->mask & STYMASK_BGCOL ) stylesheet_set_bgcol(ctx->ss, element, ctx->bgcol);
+    if ( ctx->mask & STYMASK_BGCOL ) stylesheet_set_background(ctx->ss, element, ctx->bggrad,
+                                                               ctx->bgcol, ctx->bgcol2);
     ctx->mask = 0;
 }
 

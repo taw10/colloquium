@@ -159,11 +159,38 @@ static void render_image(struct slide_item *item, cairo_t *cr,
 int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
                        int slide_number, PangoLanguage *lang, PangoContext *pc)
 {
-	int i;
+	int i, r;
+	enum gradient bg;
+	double bgcol[4];
+	double bgcol2[4];
+	cairo_pattern_t *patt = NULL;
 
-	/* Overall default background */
+	r = stylesheet_get_background(stylesheet, STYEL_SLIDE, &bg, bgcol, bgcol2);
+	if ( r ) return 1;
+
+	/* Overall background */
 	cairo_rectangle(cr, 0.0, 0.0, s->logical_w, s->logical_h);
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	switch ( bg ) {
+
+		case GRAD_NONE:
+		cairo_set_source_rgb(cr, bgcol[0], bgcol[1], bgcol[2]);
+		break;
+
+		case GRAD_VERT:
+		patt = cairo_pattern_create_linear(0.0, 0.0, 0.0, s->logical_h);
+		cairo_pattern_add_color_stop_rgb(patt, 0.0, bgcol[0], bgcol[1], bgcol[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 1.0, bgcol2[0], bgcol2[1], bgcol2[2]);
+		cairo_set_source(cr, patt);
+		break;
+
+		case GRAD_HORIZ:
+		patt = cairo_pattern_create_linear(0.0, 0.0, s->logical_w, 0.0);
+		cairo_pattern_add_color_stop_rgb(patt, 0.0, bgcol[0], bgcol[1], bgcol[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 1.0, bgcol2[0], bgcol2[1], bgcol2[2]);
+		cairo_set_source(cr, patt);
+		break;
+
+	}
 	cairo_fill(cr);
 
 	for ( i=0; i<s->n_items; i++ ) {

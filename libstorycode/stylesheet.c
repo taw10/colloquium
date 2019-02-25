@@ -35,6 +35,7 @@ struct style
 	struct frame_geom geom;
 	char *font;
 	double fgcol[4];      /* r g b a */
+	enum gradient bggrad;
 	double bgcol[4];      /* r g b a */
 	double bgcol2[4];     /* r g b a, if gradient */
 	struct length paraspace[4];  /* l r t b */
@@ -49,6 +50,7 @@ struct _stylesheet
 
 	double default_slide_w;
 	double default_slide_h;
+	struct style slide;
 	struct style slide_text;
 	struct style slide_prestitle;
 	struct style slide_slidetitle;
@@ -72,6 +74,8 @@ static void default_style(struct style *s)
 	s->fgcol[1] = 0.0;
 	s->fgcol[2] = 0.0;
 	s->fgcol[3] = 1.0;
+
+	s->bggrad = GRAD_NONE;
 
 	s->bgcol[0] = 1.0;
 	s->bgcol[1] = 1.0;
@@ -129,6 +133,7 @@ static struct style *get_style(Stylesheet *s, enum style_element el)
 	if ( s == NULL ) return NULL;
 	switch ( el ) {
 		case STYEL_NARRATIVE : return &s->narrative;
+		case STYEL_SLIDE : return &s->slide;
 		case STYEL_SLIDE_TEXT : return &s->slide_text;
 		case STYEL_SLIDE_PRESTITLE : return &s->slide_prestitle;
 		case STYEL_SLIDE_SLIDETITLE : return &s->slide_slidetitle;
@@ -203,13 +208,16 @@ int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgba[4])
 }
 
 
-int stylesheet_set_bgcol(Stylesheet *s, enum style_element el, double rgba[4])
+int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradient grad,
+                              double bgcol[4], double bgcol2[4])
 {
 	int i;
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return 1;
+	sty->bggrad = grad;
 	for ( i=0; i<4; i++ ) {
-		sty->bgcol[i] = rgba[i];
+		sty->bgcol[i] = bgcol[i];
+		sty->bgcol2[i] = bgcol2[i];
 	}
 	return 0;
 }
@@ -228,4 +236,20 @@ const char *stylesheet_get_slide_text_font(Stylesheet *s)
 {
 	if ( s == NULL ) return NULL;
 	return s->slide_text.font;
+}
+
+
+int stylesheet_get_background(Stylesheet *s, enum style_element el,
+                              enum gradient *grad, double *bgcol, double *bgcol2)
+{
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+
+	for ( i=0; i<4; i++ ) {
+		bgcol[i] = sty->bgcol[i];
+		bgcol2[i] = sty->bgcol2[i];
+	}
+	*grad = sty->bggrad;
+	return 0;
 }

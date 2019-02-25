@@ -43,7 +43,7 @@ struct slide_item
 {
 	enum slide_item_type type;
 
-	/* For TEXT */
+	/* For TEXT, SLIDETITLE, PRESTITLE */
 	char **paragraphs;
 	int n_paras;
 	enum alignment align;
@@ -53,9 +53,6 @@ struct slide_item
 
 	/* For IMAGE */
 	char *filename;
-
-	/* For SLIDETITLE */
-	char *text;
 
 	/* For TEXT and IMAGE */
 	struct frame_geom geom;

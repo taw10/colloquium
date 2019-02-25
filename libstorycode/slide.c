@@ -62,18 +62,6 @@ static struct slide_item *add_item(Slide *s)
 }
 
 
-int slide_add_prestitle(Slide *s, char *prestitle)
-{
-	struct slide_item *item;
-
-	item = add_item(s);
-	if ( item == NULL ) return 1;
-
-	item->type = SLIDE_ITEM_PRESTITLE;
-	return 0;
-}
-
-
 int slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 {
 	struct slide_item *item;
@@ -89,8 +77,8 @@ int slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 }
 
 
-int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom,
-                   enum alignment alignment)
+int add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
+                  enum alignment alignment, enum slide_item_type slide_item)
 {
 	int i;
 	struct slide_item *item;
@@ -98,7 +86,7 @@ int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom,
 	item = add_item(s);
 	if ( item == NULL ) return 1;
 
-	item->type = SLIDE_ITEM_TEXT;
+	item->type = slide_item;
 	item->paragraphs = malloc(n_text*sizeof(char *));
 	if ( item->paragraphs == NULL ) {
 		s->n_items--;
@@ -131,17 +119,49 @@ int slide_add_footer(Slide *s)
 }
 
 
-int slide_add_slidetitle(Slide *s, char *slidetitle)
+int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom,
+                   enum alignment alignment)
 {
-	struct slide_item *item;
+	return add_text_item(s, text, n_text, geom, alignment,
+	                     SLIDE_ITEM_TEXT);
+}
 
-	item = add_item(s);
-	if ( item == NULL ) return 1;
 
-	item->type = SLIDE_ITEM_SLIDETITLE;
-	item->text = slidetitle;
+int slide_add_slidetitle(Slide *s, char **text, int n_text)
+{
+	struct frame_geom geom;
 
-	return 0;
+	/* This geometry should never get used by the renderer */
+	geom.x.len = 0.0;
+	geom.x.unit = LENGTH_FRAC;
+	geom.y.len = 0.0;
+	geom.y.unit = LENGTH_FRAC;
+	geom.w.len = 1.0;
+	geom.w.unit = LENGTH_FRAC;
+	geom.h.len = 1.0;
+	geom.h.unit = LENGTH_FRAC;
+
+	return add_text_item(s, text, n_text, geom, ALIGN_INHERIT,
+	                     SLIDE_ITEM_SLIDETITLE);
+}
+
+
+int slide_add_prestitle(Slide *s, char **text, int n_text)
+{
+	struct frame_geom geom;
+
+	/* This geometry should never get used by the renderer */
+	geom.x.len = 0.0;
+	geom.x.unit = LENGTH_FRAC;
+	geom.y.len = 0.0;
+	geom.y.unit = LENGTH_FRAC;
+	geom.w.len = 1.0;
+	geom.w.unit = LENGTH_FRAC;
+	geom.h.len = 1.0;
+	geom.h.unit = LENGTH_FRAC;
+
+	return add_text_item(s, text, n_text, geom, ALIGN_INHERIT,
+	                     SLIDE_ITEM_PRESTITLE);
 }
 
 

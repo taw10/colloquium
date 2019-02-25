@@ -244,7 +244,7 @@ const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
 
 	*alignment = sty->alignment;
 	for ( i=0; i<4; i++ ) fgcol[i] = sty->fgcol[i];
-	return s->slide_text.font;
+	return sty->font;
 }
 
 

@@ -223,18 +223,26 @@ slide_parts:
 ;
 
 slide_part:
-  slide_prestitle { slide_add_prestitle(ctx->s, $1); str_reset(ctx); }
+  slide_prestitle { slide_add_prestitle(ctx->s, ctx->str, ctx->n_str);
+                    str_reset(ctx); }
 | imageframe      { slide_add_image(ctx->s, $1, ctx->geom);
                     str_reset(ctx); }
 | textframe       { slide_add_text(ctx->s, ctx->str, ctx->n_str,
                                    ctx->geom, ctx->alignment);
                     str_reset(ctx); }
 | FOOTER          { slide_add_footer(ctx->s); }
-| slidetitle      { slide_add_slidetitle(ctx->s, $1); str_reset(ctx); }
+| slidetitle      { slide_add_slidetitle(ctx->s, ctx->str, ctx->n_str);
+                    str_reset(ctx); }
 ;
 
 slide_prestitle:
-  PRESTITLE STRING { $$ = $2; }
+  PRESTITLE frame_options multi_line_string         { }
+| PRESTITLE frame_options '{' multi_line_string '}' { }
+;
+
+slidetitle:
+  SLIDETITLE frame_options multi_line_string         { }
+| SLIDETITLE frame_options '{' multi_line_string '}' { }
 ;
 
 imageframe:
@@ -255,10 +263,6 @@ multi_line_string:
 
 slide_bulletpoint:
   BP STRING { $$ = $2; }
-;
-
-slidetitle:
-  SLIDETITLE STRING { $$ = $2; }
 ;
 
 /* There can be any number of options */

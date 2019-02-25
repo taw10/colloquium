@@ -64,7 +64,8 @@ static PangoAlignment to_pangoalignment(enum alignment align)
 
 
 static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
-                        Stylesheet *ss, double parent_w, double parent_h)
+                        Stylesheet *ss, enum style_element el,
+                        double parent_w, double parent_h)
 {
 	int i;
 	double x, y, w, h;
@@ -80,7 +81,7 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 	w = lcalc(item->geom.w, parent_w);
 	h = lcalc(item->geom.h, parent_h);
 
-	font = stylesheet_get_font(ss, STYEL_SLIDE_TEXT, fgcol, &align);
+	font = stylesheet_get_font(ss, el, fgcol, &align);
 	if ( font == NULL ) return;
 
 	fontdesc = pango_font_description_from_string(font);
@@ -212,13 +213,23 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 		switch ( s->items[i].type ) {
 
 			case SLIDE_ITEM_TEXT :
-			render_text(&s->items[i], cr, pc, stylesheet,
+			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_TEXT,
 			            s->logical_w, s->logical_h);
 			break;
 
 			case SLIDE_ITEM_IMAGE :
 			render_image(&s->items[i], cr, stylesheet, is,
 			             s->logical_w, s->logical_h);
+			break;
+
+			case SLIDE_ITEM_SLIDETITLE :
+			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_SLIDETITLE,
+			            s->logical_w, s->logical_h);
+			break;
+
+			case SLIDE_ITEM_PRESTITLE :
+			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_PRESTITLE,
+			            s->logical_w, s->logical_h);
 			break;
 
 			default :

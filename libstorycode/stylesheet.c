@@ -37,8 +37,9 @@ struct style
 	double fgcol[4];      /* r g b a */
 	double bgcol[4];      /* r g b a */
 	double bgcol2[4];     /* r g b a, if gradient */
-	double paraspace[4];  /* l r t b */
-	double padding[4];    /* l r t b */
+	struct length paraspace[4];  /* l r t b */
+	struct length padding[4];    /* l r t b */
+	enum alignment alignment;
 };
 
 
@@ -82,15 +83,23 @@ static void default_style(struct style *s)
 	s->bgcol2[2] = 1.0;
 	s->bgcol2[3] = 1.0;
 
-	s->paraspace[0] = 0.0;
-	s->paraspace[1] = 0.0;
-	s->paraspace[2] = 0.0;
-	s->paraspace[3] = 0.0;
+	s->paraspace[0].len = 0.0;
+	s->paraspace[1].len = 0.0;
+	s->paraspace[2].len = 0.0;
+	s->paraspace[3].len = 0.0;
+	s->paraspace[0].unit = LENGTH_UNIT;
+	s->paraspace[1].unit = LENGTH_UNIT;
+	s->paraspace[2].unit = LENGTH_UNIT;
+	s->paraspace[3].unit = LENGTH_UNIT;
 
-	s->padding[0] = 0.0;
-	s->padding[1] = 0.0;
-	s->padding[2] = 0.0;
-	s->padding[3] = 0.0;
+	s->padding[0].len = 0.0;
+	s->padding[1].len = 0.0;
+	s->padding[2].len = 0.0;
+	s->padding[3].len = 0.0;
+	s->padding[0].unit = LENGTH_UNIT;
+	s->padding[1].unit = LENGTH_UNIT;
+	s->padding[2].unit = LENGTH_UNIT;
+	s->padding[3].unit = LENGTH_UNIT;
 }
 
 
@@ -115,6 +124,19 @@ void stylesheet_free(Stylesheet *s)
 }
 
 
+static struct style *get_style(Stylesheet *s, enum style_element el)
+{
+	if ( s == NULL ) return NULL;
+	switch ( el ) {
+		case STYEL_NARRATIVE : return &s->narrative;
+		case STYEL_SLIDE_TEXT : return &s->slide_text;
+		case STYEL_SLIDE_PRESTITLE : return &s->slide_prestitle;
+		case STYEL_SLIDE_SLIDETITLE : return &s->slide_slidetitle;
+		default : return NULL;
+	}
+}
+
+
 int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h)
 {
 	if ( s == NULL ) return 1;
@@ -126,47 +148,78 @@ int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h)
 
 int stylesheet_set_geometry(Stylesheet *s, enum style_element el, struct frame_geom geom)
 {
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	sty->geom = geom;
 	return 0;
 }
 
 
 int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font)
 {
-	if ( s == NULL ) return 1;
-	if ( s->slide_text.font != NULL ) {
-		free(s->slide_text.font);
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	if ( sty->font != NULL ) {
+		free(sty->font);
 	}
-	s->slide_text.font = font;
+	sty->font = font;
 	return 0;
 }
 
 
 int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length padding[4])
 {
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	for ( i=0; i<4; i++ ) {
+		sty->padding[i] = padding[i];
+	}
 	return 0;
 }
 
 
 int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length paraspace[4])
 {
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	for ( i=0; i<4; i++ ) {
+		sty->paraspace[i] = paraspace[i];
+	}
 	return 0;
 }
 
 
 int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgba[4])
 {
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	for ( i=0; i<4; i++ ) {
+		sty->fgcol[i] = rgba[i];
+	}
 	return 0;
 }
 
 
 int stylesheet_set_bgcol(Stylesheet *s, enum style_element el, double rgba[4])
 {
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	for ( i=0; i<4; i++ ) {
+		sty->bgcol[i] = rgba[i];
+	}
 	return 0;
 }
 
 
 int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignment align)
 {
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	sty->alignment = align;
 	return 0;
 }
 

@@ -232,9 +232,15 @@ int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignmen
 }
 
 
-const char *stylesheet_get_slide_text_font(Stylesheet *s)
+const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
+                                double fgcol[4], enum alignment *alignment)
 {
-	if ( s == NULL ) return NULL;
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return NULL;
+
+	*alignment = sty->alignment;
+	for ( i=0; i<4; i++ ) fgcol[i] = sty->fgcol[i];
 	return s->slide_text.font;
 }
 

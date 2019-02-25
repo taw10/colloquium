@@ -68,6 +68,9 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 {
 	int i;
 	double x, y, w, h;
+	const char *font;
+	enum alignment align;
+	double fgcol[4];
 	PangoRectangle rect;
 	PangoFontDescription *fontdesc;
 
@@ -76,7 +79,10 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 	w = lcalc(item->geom.w, parent_w);
 	h = lcalc(item->geom.h, parent_h);
 
-	fontdesc = pango_font_description_from_string(stylesheet_get_slide_text_font(ss));
+	font = stylesheet_get_font(ss, STYEL_SLIDE_TEXT, fgcol, &align);
+	if ( font == NULL ) return;
+
+	fontdesc = pango_font_description_from_string(font);
 
 	if ( item->layouts == NULL ) {
 		item->layouts = malloc(item->n_paras*sizeof(PangoLayout *));
@@ -107,7 +113,7 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 		/* FIXME: Clip to w,h */
 
 		cairo_save(cr);
-		cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+		cairo_set_source_rgba(cr, fgcol[0], fgcol[1], fgcol[2], fgcol[3]);
 		cairo_translate(cr, x, y);
 		pango_cairo_update_layout(cr, item->layouts[i]);
 		pango_cairo_show_layout(cr, item->layouts[i]);

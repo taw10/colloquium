@@ -117,6 +117,7 @@ Stylesheet *stylesheet_new()
 
 	/* Ultimate defaults */
 	default_style(&s->narrative);
+	default_style(&s->slide);
 	default_style(&s->slide_text);
 	default_style(&s->slide_prestitle);
 	default_style(&s->slide_slidetitle);

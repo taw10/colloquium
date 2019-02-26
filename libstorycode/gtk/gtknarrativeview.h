@@ -97,8 +97,6 @@ struct _gtknarrativeview
 
 	int                  w;   /* Surface size in pixels */
 	int                  h;
-	double               log_w;  /* Size of surface in "SC units" */
-	double               log_h;
 	int                  para_highlight;
 
 	/* Redraw/scroll stuff */
@@ -110,44 +108,16 @@ struct _gtknarrativeview
 	double               h_scroll_pos;
 	int                  visible_height;
 	int                  visible_width;
-	int                  flow;
-	int                  scale;       /* Whether the GtkNarrativeView should scale to fit */
-	double               view_scale;  /* The scale factor, if scale=1 */
 
 	/* Location of the cursor */
 	struct edit_pos      cpos;
 
-	/* Border surrounding actual slide within drawingarea */
-	double               border_offs_x;
-	double               border_offs_y;
-	double               min_border;
-	double               bgcol[3];
-	GdkPixbuf           *bg_pixbuf;
-
 	/* Rubber band boxes and related stuff */
-	double               start_corner_x;
-	double               start_corner_y;
-	double               drag_corner_x;
-	double               drag_corner_y;
-	double               diagonal_length;
-	double               box_x;
-	double               box_y;
-	double               box_width;
-	double               box_height;
 	enum drag_reason     drag_reason;
 	enum drag_status     drag_status;
-	enum corner          drag_corner;
 	int                  sel_active;
 	struct edit_pos      sel_start; /* Where the user dragged from */
 	struct edit_pos      sel_end;
-
-	/* Stuff to do with drag and drop import of "content" */
-	int                  drag_preview_pending;
-	int                  have_drag_data;
-	int                  drag_highlight;
-	double               import_width;
-	double               import_height;
-	int                  import_acceptable;
 };
 
 struct _gtknarrativeviewclass

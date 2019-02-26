@@ -32,15 +32,13 @@
 #include <sys/stat.h>
 #include <glib.h>
 #include <glib/gstdio.h>
-
-#include <presentation.h>
-//#include <gtk/gtknarrativeview.h>
-
-#include "colloquium.h"
-
 #include <libintl.h>
 #define _(x) gettext(x)
 
+#include <presentation.h>
+
+#include "colloquium.h"
+#include "narrative_window.h"
 
 struct _colloquium
 {

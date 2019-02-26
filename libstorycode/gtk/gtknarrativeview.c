@@ -123,22 +123,14 @@ static void set_vertical_params(GtkNarrativeView *e)
 
 static void update_size(GtkNarrativeView *e)
 {
-//	if ( e->flow ) {
-//
 //		double total = total_height(e->top);
 //
 //		e->w = e->top->w;
 //		e->h = total + e->top->pad_t + e->top->pad_b;
 //
-//		e->log_w = e->w;
-//		e->log_h = e->h;
 //		e->top->h = e->h;
-//	} else {
-//		e->top->w = e->log_w;
-//		e->top->h = e->log_h;
-//	}
 //
-//	if ( e->flow && (e->top->h < e->visible_height) ) {
+//	if ( e->top->h < e->visible_height ) {
 //		e->top->h = e->visible_height;
 //	}
 //
@@ -157,24 +149,14 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	e->visible_height = event->height;
 	e->visible_width = event->width;
 
-//	/* Interpret and shape, if not already done */
-//	if ( e->top == NULL ) {
-//		double w, h;
-//		if ( e->flow ) {
-//			w = event->width;
-//			h = 0.0;
-//		} else {
-//			w = e->log_w;
-//			h = e->log_h;
-//		}
-//		e->top = interp_and_shape(e->scblocks, e->stylesheet, e->cbl,
-//		                          e->is, e->slidenum, pc,
-//		                          w, h, e->lang);
+	/* Wrap everything with the current width, to get the total height */
+	//e->top = interp_and_shape(e->scblocks, e->stylesheet, e->cbl,
+	//                          e->is, e->slidenum, pc,
+	//                          w, h, e->lang);
 //		e->top->scblocks = e->scblocks;
 //		recursive_wrap(e->top, pc);
 //	}
 //
-//	if ( e->flow ) {
 //		/* Wrap using current width */
 //		e->top->w = event->width;
 //		e->top->h = 0.0;  /* To be updated in a moment */
@@ -182,7 +164,6 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 //		e->top->y = 0.0;
 //		/* Only the top level needs to be wrapped */
 //		wrap_frame(e->top, pc);
-//	}
 
 	update_size(e);
 
@@ -195,12 +176,6 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 static void emit_change_sig(GtkNarrativeView *e)
 {
 	g_signal_emit_by_name(e, "changed");
-}
-
-
-void sc_editor_set_flow(GtkNarrativeView *e, int flow)
-{
-	e->flow = flow;
 }
 
 
@@ -284,27 +259,15 @@ static GtkSizeRequestMode get_request_mode(GtkWidget *widget)
 
 static void get_preferred_width(GtkWidget *widget, gint *min, gint *natural)
 {
-	GtkNarrativeView *e = GTK_NARRATIVE_VIEW(widget);
-	if ( e->flow ) {
-		*min = 100;
-		*natural = 640;
-	} else {
-		*min = e->w;
-		*natural = e->w;
-	}
+	*min = 100;
+	*natural = 640;
 }
 
 
 static void get_preferred_height(GtkWidget *widget, gint *min, gint *natural)
 {
-	GtkNarrativeView *e = GTK_NARRATIVE_VIEW(widget);
-	if ( e->flow ) {
-		*min = 1000;
-		*natural = 1000;
-	} else {
-		*min = e->h;
-		*natural = e->h;
-	}
+	*min = 1000;
+	*natural = 1000;
 }
 
 
@@ -581,23 +544,14 @@ static void draw_overlay(cairo_t *cr, GtkNarrativeView *e)
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 {
 	/* Ultimate background */
-	if ( e->bg_pixbuf != NULL ) {
-		gdk_cairo_set_source_pixbuf(cr, e->bg_pixbuf, 0.0, 0.0);
-		cairo_pattern_t *patt = cairo_get_source(cr);
-		cairo_pattern_set_extend(patt, CAIRO_EXTEND_REPEAT);
-		cairo_paint(cr);
-	} else {
-		cairo_set_source_rgba(cr, 0.8, 0.8, 1.0, 1.0);
-		cairo_paint(cr);
-	}
+	cairo_set_source_rgba(cr, 0.8, 0.8, 1.0, 1.0);
+	cairo_paint(cr);
 
-	cairo_translate(cr, e->border_offs_x, e->border_offs_y);
 	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);
-	cairo_scale(cr, e->view_scale, e->view_scale);
 
 	/* Rendering background */
 	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
-	cairo_rectangle(cr, 0.0, 0.0, e->log_w, e->log_h);
+	cairo_rectangle(cr, 0.0, 0.0, e->w, e->h);
 	cairo_fill(cr);
 
 	/* Contents */
@@ -692,7 +646,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 //
 //	if ( strcmp(t, "\n") == 0 ) {
 //		split_paragraph_at_cursor(e);
-//		if ( e->flow ) update_size(e);
+//		update_size(e);
 //		cursor_moveh(e->cursor_frame, &e->cpos, +1);
 //		check_cursor_visible(e);
 //		emit_change_sig(e);
@@ -719,7 +673,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 //		wrap_paragraph(para, NULL,
 //		               e->cursor_frame->w - e->cursor_frame->pad_l
 //		                            - e->cursor_frame->pad_r, 0, 0);
-//		if ( e->flow ) update_size(e);
+//		update_size(e);
 //
 //		cursor_moveh(e->cursor_frame, &e->cpos, +1);
 //
@@ -796,10 +750,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 //	struct frame *clicked;
 //	int shift;
 //
-//	x = event->x - e->border_offs_x;
-//	y = event->y - e->border_offs_y + e->scroll_pos;
-//	x /= e->view_scale;
-//	y /= e->view_scale;
+//	x = event->x;
+//	y = event->y + e->scroll_pos;
 //	shift = event->state & GDK_SHIFT_MASK;
 //
 //	/* Clicked within the currently selected frame
@@ -905,13 +857,6 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
                            GtkNarrativeView *e)
 {
-	gdouble x, y;
-
-	x = event->x - e->border_offs_x;
-	y = event->y - e->border_offs_y + e->scroll_pos;
-	x /= e->view_scale;
-	y /= e->view_scale;
-
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
 
 		/* We just got a motion signal, and the status was "could drag",
@@ -1027,35 +972,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
                            gint x, gint y, guint time, GtkNarrativeView *e)
 {
-	GdkAtom target;
-
-	/* If we haven't already requested the data, do so now */
-	if ( !e->drag_preview_pending && !e->have_drag_data ) {
-
-		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
-
-		if ( target != GDK_NONE ) {
-			gtk_drag_get_data(widget, drag_context, target, time);
-			e->drag_preview_pending = 1;
-		} else {
-			e->import_acceptable = 0;
-			gdk_drag_status(drag_context, 0, time);
-		}
-
-	}
-
-	if ( e->have_drag_data && e->import_acceptable ) {
-
-		gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
-		e->start_corner_x = x - e->import_width/2.0;
-		e->start_corner_y = y - e->import_height/2.0;
-		e->drag_corner_x = x + e->import_width/2.0;
-		e->drag_corner_y = y + e->import_height/2.0;
-
-		redraw(e);
-
-	}
-
 	return TRUE;
 }
 
@@ -1077,33 +993,6 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
 }
 
 
-/* Scale the image down if it's a silly size */
-static void check_import_size(GtkNarrativeView *e)
-{
-	if ( e->import_width > e->w ) {
-
-		int new_import_width;
-
-		new_import_width = e->w/2;
-		e->import_height = (new_import_width * e->import_height) /
-		                     e->import_width;
-		e->import_width = new_import_width;
-
-	}
-
-	if ( e->import_height > e->h ) {
-
-		int new_import_height;
-
-		new_import_height = e->w/2;
-		e->import_width = (new_import_height*e->import_width) /
-		                    e->import_height;
-		e->import_height = new_import_height;
-
-	}
-}
-
-
 static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
                         gint x, gint y, GtkSelectionData *seldata,
                         guint info, guint time, GtkNarrativeView *e)
@@ -1114,11 +1003,6 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
                       guint time, GtkNarrativeView *nview)
 {
-	if ( nview->drag_highlight ) {
-		gtk_drag_unhighlight(widget);
-	}
-	nview->have_drag_data = 0;
-	nview->drag_highlight = 0;
 	nview->drag_status = DRAG_STATUS_NONE;
 	nview->drag_reason = DRAG_REASON_NONE;
 }
@@ -1145,7 +1029,7 @@ static gint realise_sig(GtkWidget *da, GtkNarrativeView *e)
 
 static void update_size_request(GtkNarrativeView *e)
 {
-	gtk_widget_set_size_request(GTK_WIDGET(e), 0, e->h + 2.0*e->min_border);
+	gtk_widget_set_size_request(GTK_WIDGET(e), 0, e->h);
 }
 
 
@@ -1159,15 +1043,7 @@ GtkNarrativeView *gtk_narrative_view_new(Presentation *p, PangoLanguage *lang,
 
 	nview->w = 100;
 	nview->h = 100;
-	nview->log_w = 100;
-	nview->log_h = 100;
-	nview->border_offs_x = 0;
-	nview->border_offs_y = 0;
-	nview->min_border = 0.0;
 	nview->scroll_pos = 0;
-	nview->flow = 0;
-	nview->scale = 0;
-	nview->view_scale = 1.0;
 	nview->lang = lang;
 
 	nview->para_highlight = 0;

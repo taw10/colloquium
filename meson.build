@@ -85,7 +85,7 @@ libstorycode_dep = declare_dependency(include_directories : libstorycode_include
 # libstorycode-gtk
 libgtkstorycode_includes = include_directories('libstorycode/gtk')
 
-libgtkstorycode = library('storycode-gtk',
+libgtkstorycode = library('gtkstorycode',
                    ['libstorycode/gtk/gtknarrativeview.c'],
                    include_directories : libgtkstorycode_includes,
                    dependencies : [gtk_dep, libstorycode_dep],

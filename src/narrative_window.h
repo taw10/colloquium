@@ -1,7 +1,7 @@
 /*
  * narrative_window.h
  *
- * Copyright © 2014-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -27,16 +27,9 @@
 #include <config.h>
 #endif
 
-
 typedef struct _narrative_window NarrativeWindow;
 
-#include "slide_window.h"
-
-extern NarrativeWindow *narrative_window_new(struct presentation *p,
+extern NarrativeWindow *narrative_window_new(Presentation *p,
                                              GApplication *app);
-
-extern void update_titlebar(NarrativeWindow *nw);
-
-extern void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw);
 
 #endif	/* NARRATIVE_WINDOW_H */

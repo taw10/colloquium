@@ -27,12 +27,16 @@
 #include <config.h>
 #endif
 
+#include <gio/gio.h>
+
 typedef struct _presentation Presentation;
 
 #include "stylesheet.h"
 #include "narrative.h"
 
 extern Presentation *presentation_new(void);
+extern Presentation *presentation_load(GFile *file);
+extern int presentation_save(Presentation *p, GFile *file);
 extern void presentation_free(Presentation *p);
 
 extern void presentation_add_stylesheet(Presentation *p, Stylesheet *ss);

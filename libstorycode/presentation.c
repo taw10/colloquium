@@ -29,11 +29,14 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <gio/gio.h>
 
 #include "presentation.h"
 #include "stylesheet.h"
 #include "slide.h"
 #include "narrative.h"
+#include "imagestore.h"
+#include "storycode.h"
 
 struct _presentation
 {
@@ -56,6 +59,35 @@ Presentation *presentation_new()
 	p->n_slides = 0;
 	p->max_slides = 0;
 	return p;
+}
+
+
+Presentation *presentation_load(GFile *file)
+{
+	GBytes *bytes;
+	const char *text;
+	size_t len;
+	Presentation *p;
+	ImageStore *is;
+
+	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
+	if ( bytes == NULL ) return NULL;
+
+	text = g_bytes_get_data(bytes, &len);
+	p = storycode_parse_presentation(text);
+	g_bytes_unref(bytes);
+	if ( p == NULL ) return NULL;
+
+	is = imagestore_new(".");
+	imagestore_set_parent(is, g_file_get_parent(file));
+	return p;
+}
+
+
+int presentation_save(Presentation *p, GFile *file)
+{
+	/* FIXME: Implementation */
+	return 1;
 }
 
 

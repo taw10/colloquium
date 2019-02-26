@@ -108,29 +108,18 @@ executable('pdfstorycode',
 
 
 # Main program
-#executable('colloquium',
-#           ['src/colloquium.c',
-#            'src/narrative_window.c',
-#            'src/render.c',
+executable('colloquium',
+           ['src/colloquium.c',
+            'src/narrative_window.c',
 #            'src/slideshow.c',
-#            'src/debugger.c',
 #            'src/pr_clock.c',
-#            'src/sc_editor.c',
 #            'src/slide_window.c',
-#            'src/frame.c',
-#            'src/presentation.c',
-#            'src/sc_interp.c',
 #            'src/testcard.c',
-#            'src/imagestore.c',
-#            'src/print.c',
-#            'src/sc_parse.c',
-#            'src/utils.c',
-#            'src/stylesheet.c',
 #            'src/stylesheet_editor.c',
-#           ],
-#           gresources,
-#           dependencies : [gtkdep, mdep, jsondep],
-#           install : true)
+           ],
+           gresources,
+           dependencies : [gtk_dep, mdep, libstorycode_dep],
+           install : true)
 
 
 # Desktop file

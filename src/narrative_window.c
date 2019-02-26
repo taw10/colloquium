@@ -34,6 +34,7 @@
 #define _(x) gettext(x)
 
 #include <presentation.h>
+#include <gtk/gtknarrativeview.h>
 
 #include "colloquium.h"
 #include "narrative_window.h"
@@ -41,7 +42,6 @@
 //#include "pr_clock.h"
 //#include "print.h"
 //#include "stylesheet_editor.h"
-typedef struct _nw GtkNarrativeView; /* FIXME placeholder */
 typedef struct _ss SCSlideshow;  /* FIXME placeholder */
 typedef struct _sw SlideWindow; /* FIXME placeholder */
 typedef struct _pc PRClock; /* FIXME placeholder */
@@ -681,11 +681,6 @@ NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
 	GtkWidget *image;
 	Colloquium *app = COLLOQUIUM(papp);
 
-//	if ( p->narrative_window != NULL ) {
-//		fprintf(stderr, "Narrative window is already open!\n");
-//		return NULL;
-//	}
-
 	nw = calloc(1, sizeof(NarrativeWindow));
 	if ( nw == NULL ) return NULL;
 
@@ -694,7 +689,6 @@ NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
 	nw->n_slidewindows = 0;
 
 	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
-//	p->narrative_window = nw;
 	update_titlebar(nw);
 
 	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
@@ -703,7 +697,9 @@ NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	nw->nv = NULL; //sc_editor_new(nw->dummy_top, p->stylesheet, p->lang, colloquium_get_imagestore(app));
+	/* FIXME: Language should be a property of the presentation */
+	nw->nv = gtk_narrative_view_new(p, pango_language_get_default(),
+	                                colloquium_get_imagestore(app));
 
 	toolbar = gtk_toolbar_new();
 	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);

@@ -83,19 +83,16 @@ libstorycode_dep = declare_dependency(include_directories : libstorycode_include
 
 
 # libstorycode-gtk
-#libstorycode_gtk_includes = include_directories('libstorycode/gtk')
-#
-#libstorycode_gtk = library('storycode-gtk',
-#                   ['libstorycode/gtk/gtknarrativeview.c',
-#                    'libstorycode/gtk/gtkslideview.c',
-#                   ],
-#                   include_directories : libstorycode_gtk_includes,
-#                   dependencies : [gtk_dep, libstorycode_dep,
-#                                   libstorycode_cairo_dep],
-#                   install : true)
-#
-#libstorycode_gtk_dep = declare_dependency(include_directories : libstorycode_gtk_includes,
-#                                            link_with : libstorycode_gtk)
+libgtkstorycode_includes = include_directories('libstorycode/gtk')
+
+libgtkstorycode = library('storycode-gtk',
+                   ['libstorycode/gtk/gtknarrativeview.c'],
+                   include_directories : libgtkstorycode_includes,
+                   dependencies : [gtk_dep, libstorycode_dep],
+                   install : true)
+
+libgtkstorycode_dep = declare_dependency(include_directories : libgtkstorycode_includes,
+                                         link_with : libgtkstorycode)
 
 
 # pdfstorycode
@@ -118,7 +115,7 @@ executable('colloquium',
 #            'src/stylesheet_editor.c',
            ],
            gresources,
-           dependencies : [gtk_dep, mdep, libstorycode_dep],
+           dependencies : [gtk_dep, mdep, libstorycode_dep, libgtkstorycode_dep],
            install : true)
 
 

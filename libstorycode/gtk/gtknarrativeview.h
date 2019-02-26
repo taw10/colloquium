@@ -1,7 +1,7 @@
 /*
- * sc_editor.h
+ * gtknarrativeview.h
  *
- * Copyright © 2014-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef SC_EDITOR_H
-#define SC_EDITOR_H
+#ifndef GTK_NARRATIVE_VIEW_H
+#define GTK_NARRATIVE_VIEW_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -30,37 +30,31 @@
 #include <gtk/gtk.h>
 #include <glib-object.h>
 
-#include "frame.h"
-#include "sc_interp.h"
-#include "stylesheet.h"
+#include <stylesheet.h>
+#include <narrative.h>
+#include <presentation.h>
 
-struct presentation;
+#define GTK_TYPE_NARRATIVE_VIEW (gtk_narrative_view_get_type())
 
+#define GTK_NARRATIVE_VIEW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                 GTK_TYPE_NARRATIVE_VIEW, GtkNarrativeView))
 
-#define SC_TYPE_EDITOR            (sc_editor_get_type())
+#define GTK_IS_NARRATIVE_VIEW(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
+                                    GTK_TYPE_NARRATIVE_VIEW))
 
-#define SC_EDITOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), \
-                                   SC_TYPE_EDITOR, SCEditor))
+#define GTK_NARRATIVE_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((obj), \
+                                         GTK_TYPE_NARRATIVE_VIEW, GtkNarrativeViewClass))
 
-#define SC_IS_EDITOR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
-                                   SC_TYPE_EDITOR))
+#define GTK_IS_NARRATIVE_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
+                                            GTK_TYPE_NARRATIVE_VIEW))
 
-#define SC_EDITOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((obj), \
-                                   SC_TYPE_EDITOR, SCEditorClass))
-
-#define SC_IS_EDITOR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
-                                   SC_TYPE_EDITOR))
-
-#define SC_EDITOR_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), \
-                                   SC_TYPE_EDITOR, SCEditorClass))
+#define GTK_NARRATIVE_VIEW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
+                                           GTK_TYPE_NARRATIVE_VIEW, GtkNarrativeViewClass))
 
 enum drag_reason
 {
 	DRAG_REASON_NONE,
-	DRAG_REASON_CREATE,
 	DRAG_REASON_IMPORT,
-	DRAG_REASON_RESIZE,
-	DRAG_REASON_MOVE,
 	DRAG_REASON_TEXTSEL
 };
 
@@ -83,22 +77,28 @@ enum drag_status
 };
 
 
-struct _sceditor
+struct edit_pos
+{
+	int para;    /* Paragraph number */
+	size_t pos;  /* Byte position within paragraph
+	              * Yes, really.  See pango_layout_xy_to_index */
+	int trail;
+};
+
+
+struct _gtknarrativeview
 {
 	GtkDrawingArea       parent_instance;
-	PangoLanguage        *lang;
 
 	/*< private >*/
 	GtkIMContext        *im_context;
+	PangoContext        *pc;
+	PangoLanguage        *lang;
+
 	int                  w;   /* Surface size in pixels */
 	int                  h;
 	double               log_w;  /* Size of surface in "SC units" */
 	double               log_h;
-	SCBlock             *scblocks;
-	Stylesheet          *stylesheet;
-	ImageStore          *is;
-	SCCallbackList      *cbl;
-	struct frame        *top;
 	int                  para_highlight;
 
 	/* Redraw/scroll stuff */
@@ -111,17 +111,10 @@ struct _sceditor
 	int                  visible_height;
 	int                  visible_width;
 	int                  flow;
-	int                  scale;       /* Whether the SCEditor should scale to fit */
+	int                  scale;       /* Whether the GtkNarrativeView should scale to fit */
 	double               view_scale;  /* The scale factor, if scale=1 */
 
-	/* Pointers to the frame currently being edited */
-	struct frame        *selection;
-	int                 top_editable;
-
-	PangoContext        *pc;
-
 	/* Location of the cursor */
-	struct frame        *cursor_frame;
 	struct edit_pos      cpos;
 
 	/* Border surrounding actual slide within drawingarea */
@@ -155,45 +148,26 @@ struct _sceditor
 	double               import_width;
 	double               import_height;
 	int                  import_acceptable;
-
-	/* Stuff that doesn't really belong here */
-	int                  slidenum;
 };
 
-struct _sceditorclass
+struct _gtknarrativeviewclass
 {
 	GtkDrawingAreaClass parent_class;
 };
 
-typedef struct _sceditor SCEditor;
-typedef struct _sceditorclass SCEditorClass;
+typedef struct _gtknarrativeview GtkNarrativeView;
+typedef struct _gtknarrativeviewclass GtkNarrativeViewClass;
 
-extern void sc_editor_set_scblock(SCEditor *e, SCBlock *scblocks);
-extern void sc_editor_set_stylesheet(SCEditor *e, Stylesheet *stylesheet);
-extern SCEditor *sc_editor_new(SCBlock *scblocks, Stylesheet *stylesheet,
-                               PangoLanguage *lang, const char *storename);
-extern void sc_editor_set_logical_size(SCEditor *e, double w, double h);
-extern void sc_editor_set_flow(SCEditor *e, int flow);
-extern void sc_editor_set_scale(SCEditor *e, int scale);
-extern void sc_editor_redraw(SCEditor *e);
-extern void sc_editor_set_background(SCEditor *e, double r, double g, double b);
-extern void sc_editor_set_slidenum(SCEditor *e, int slidenum);
-extern void sc_editor_set_min_border(SCEditor *e, double min_border);
-extern void sc_editor_set_top_frame_editable(SCEditor *e,
-                                             int top_frame_editable);
-extern void sc_editor_set_callbacks(SCEditor *e, SCCallbackList *cbl);
-extern void sc_editor_paste(SCEditor *e);
-extern void sc_editor_add_storycode(SCEditor *e, const char *sc);
-extern void sc_editor_copy_selected_frame(SCEditor *e);
-extern void sc_editor_delete_selected_frame(SCEditor *e);
-extern void sc_editor_ensure_cursor(SCEditor *e);
-extern SCBlock *split_paragraph_at_cursor(SCEditor *e);
+extern GtkNarrativeView *gtk_narrative_view_new(Presentation *p,
+                                                PangoLanguage *lang,
+                                                const char *storename);
 
-extern void sc_editor_set_imagestore(SCEditor *e, ImageStore *is);
-extern void sc_editor_set_para_highlight(SCEditor *e, int para_highlight);
-extern int sc_editor_get_cursor_para(SCEditor *e);
-extern void *sc_editor_get_cursor_bvp(SCEditor *e);
-extern void sc_editor_set_cursor_para(SCEditor *e, signed int pos);
-extern int sc_editor_get_num_paras(SCEditor *e);
+extern void gtk_narrative_view_set_logical_size(GtkNarrativeView *e, double w, double h);
 
-#endif	/* SC_EDITOR_H */
+extern void gtk_narrative_view_paste(GtkNarrativeView *e);
+
+extern void gtk_narrative_view_set_para_highlight(GtkNarrativeView *e, int para_highlight);
+extern int gtk_narrative_view_get_cursor_para(GtkNarrativeView *e);
+extern void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos);
+
+#endif	/* GTK_NARRATIVE_VIEW_H */

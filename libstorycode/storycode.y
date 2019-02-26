@@ -212,9 +212,9 @@ narrative_bulletpoint:
 
 slide:
   SLIDE '{' slide_parts '}'  { presentation_add_slide(ctx->p, ctx->s);
-                                            narrative_add_slide(ctx->n, ctx->s);
-                                            /* New work in progress object */
-                                            ctx->s = slide_new(); }
+                               narrative_add_slide(ctx->n, ctx->s);
+                               /* New work in progress object */
+                               ctx->s = slide_new(); }
 ;
 
 slide_parts:

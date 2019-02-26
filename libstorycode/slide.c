@@ -40,8 +40,8 @@ Slide *slide_new()
 	if ( s == NULL ) return NULL;
 	s->n_items = 0;
 	s->items = NULL;
-	s->logical_w = 1024.0;
-	s->logical_h = 768.0;
+	s->logical_w = -1.0;
+	s->logical_h = -1.0;
 	return s;
 }
 
@@ -198,9 +198,16 @@ int slide_set_logical_size(Slide *s, double w, double h)
 }
 
 
-int slide_get_logical_size(Slide *s, double *w, double *h)
+int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h)
 {
 	if ( s == NULL ) return 1;
+
+	if ( s->logical_w < 0.0 ) {
+		/* Slide-specific value not set, use stylesheet */
+		stylesheet_get_slide_default_size(ss, w, h);
+		return 0;
+	}
+
 	*w = s->logical_w;
 	*h = s->logical_h;
 	return 0;

@@ -43,7 +43,7 @@ extern int slide_add_slidetitle(Slide *s, char **text, int n_text);
 extern int slide_add_prestitle(Slide *s, char **text, int n_text);
 extern int slide_set_logical_size(Slide *s, double w, double h);
 
-extern int slide_get_logical_size(Slide *s, double *w, double *h);
+extern int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h);
 
 /* For debugging, not really part of API */
 extern void describe_slide(Slide *s);

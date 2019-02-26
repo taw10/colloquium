@@ -192,9 +192,12 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 	double bgcol[4];
 	double bgcol2[4];
 	cairo_pattern_t *patt = NULL;
+	double w, h;
 
 	r = stylesheet_get_background(stylesheet, STYEL_SLIDE, &bg, bgcol, bgcol2);
 	if ( r ) return 1;
+
+	slide_get_logical_size(s, stylesheet, &w, &h);
 
 	/* Overall background */
 	cairo_rectangle(cr, 0.0, 0.0, s->logical_w, s->logical_h);

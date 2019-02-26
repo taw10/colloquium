@@ -144,6 +144,15 @@ static struct style *get_style(Stylesheet *s, enum style_element el)
 }
 
 
+int stylesheet_get_slide_default_size(Stylesheet *s, double *w, double *h)
+{
+	if ( s == NULL ) return 1;
+	*w = s->default_slide_w;
+	*h = s->default_slide_h;
+	return 0;
+}
+
+
 int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h)
 {
 	if ( s == NULL ) return 1;

@@ -67,7 +67,8 @@ static int render_slides_to_pdf(Presentation *p, ImageStore *is, const char *fil
 		double log_w, log_h;
 
 		s = presentation_slide(p, i);
-		slide_get_logical_size(s, &log_w, &log_h);
+		slide_get_logical_size(s, presentation_get_stylesheet(p),
+		                       &log_w, &log_h);
 
 		cairo_pdf_surface_set_size(surf, w, w*(log_h/log_w));
 

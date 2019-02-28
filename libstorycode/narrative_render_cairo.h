@@ -1,7 +1,7 @@
 /*
- * narrative.c
+ * narrative_render_cairo.h
  *
- * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,49 +20,24 @@
  *
  */
 
+#ifndef NARRATIVE_RENDER_CAIRO_H
+#define NARRATIVE_RENDER_CAIRO_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include <stdlib.h>
-#include <string.h>
-
-#include "narrative.h"
-#include "narrative_priv.h"
-
-Narrative *narrative_new()
-{
-	Narrative *n;
-	n = malloc(sizeof(*n));
-	if ( n == NULL ) return NULL;
-	n->n_items = 0;
-	n->items = NULL;
-	return n;
-}
-
-void narrative_free(Narrative *n)
-{
-	free(n->items);
-	free(n);
-}
+#include "presentation.h"
+#include "imagestore.h"
 
 
-void narrative_add_prestitle(Narrative *n, const char *text)
-{
-}
+extern int narrative_wrap(Narrative *n, Stylesheet *stylesheet,
+                          PangoLanguage *lang, PangoContext *pc, double w);
 
+extern double narrative_get_height(Narrative *n);
 
-void narrative_add_bp(Narrative *n, const char *text)
-{
-}
+extern int narrative_render_cairo(Narrative *n, cairo_t *cr,
+                                  Stylesheet *stylesheet, PangoLanguage *lang,
+                                  PangoContext *pc);
 
-
-void narrative_add_text(Narrative *n, const char *text)
-{
-}
-
-
-void narrative_add_slide(Narrative *n, Slide *slide)
-{
-}
+#endif	/* NARRATIVE_RENDER_CAIRO_H */

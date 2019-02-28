@@ -91,6 +91,7 @@ struct _gtknarrativeview
 	GtkDrawingArea       parent_instance;
 
 	/*< private >*/
+	Presentation        *p;
 	GtkIMContext        *im_context;
 	PangoContext        *pc;
 	PangoLanguage        *lang;

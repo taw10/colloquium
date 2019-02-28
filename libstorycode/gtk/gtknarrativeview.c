@@ -34,6 +34,7 @@
 #include <math.h>
 
 #include <presentation.h>
+#include <narrative_render_cairo.h>
 
 //#include "slide_window.h"
 #include "gtknarrativeview.h"
@@ -121,24 +122,6 @@ static void set_vertical_params(GtkNarrativeView *e)
 }
 
 
-static void update_size(GtkNarrativeView *e)
-{
-//		double total = total_height(e->top);
-//
-//		e->w = e->top->w;
-//		e->h = total + e->top->pad_t + e->top->pad_b;
-//
-//		e->top->h = e->h;
-//
-//	if ( e->top->h < e->visible_height ) {
-//		e->top->h = e->visible_height;
-//	}
-//
-//	set_vertical_params(e);
-//	set_horizontal_params(e);
-}
-
-
 static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            GtkNarrativeView *e)
 {
@@ -149,23 +132,13 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	e->visible_height = event->height;
 	e->visible_width = event->width;
 
-	/* Wrap everything with the current width, to get the total height */
-	//e->top = interp_and_shape(e->scblocks, e->stylesheet, e->cbl,
-	//                          e->is, e->slidenum, pc,
-	//                          w, h, e->lang);
-//		e->top->scblocks = e->scblocks;
-//		recursive_wrap(e->top, pc);
-//	}
-//
-//		/* Wrap using current width */
-//		e->top->w = event->width;
-//		e->top->h = 0.0;  /* To be updated in a moment */
-//		e->top->x = 0.0;
-//		e->top->y = 0.0;
-//		/* Only the top level needs to be wrapped */
-//		wrap_frame(e->top, pc);
+	e->w = e->visible_width;
+	e->h = narrative_get_height(presentation_get_narrative(e->p));
 
-	update_size(e);
+	/* Wrap everything with the current width, to get the total height */
+	narrative_wrap(presentation_get_narrative(e->p),
+	               presentation_get_stylesheet(e->p),
+	               pango_language_get_default(), pc, e->w);
 
 	g_object_unref(pc);
 
@@ -1045,6 +1018,7 @@ GtkNarrativeView *gtk_narrative_view_new(Presentation *p, PangoLanguage *lang,
 	nview->h = 100;
 	nview->scroll_pos = 0;
 	nview->lang = lang;
+	nview->p = p;
 
 	nview->para_highlight = 0;
 

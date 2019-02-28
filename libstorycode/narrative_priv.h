@@ -1,5 +1,5 @@
 /*
- * narrative.c
+ * narrative_priv.h
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -20,49 +20,51 @@
  *
  */
 
+#ifndef NARRATIVE_PRIV_H
+#define NARRATIVE_PRIV_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef HAVE_PANGO
+#include <pango/pangocairo.h>
 #endif
 
-#include <stdlib.h>
-#include <string.h>
+#include "storycode.h"
 
-#include "narrative.h"
-#include "narrative_priv.h"
 
-Narrative *narrative_new()
+enum narrative_item_type
 {
-	Narrative *n;
-	n = malloc(sizeof(*n));
-	if ( n == NULL ) return NULL;
-	n->n_items = 0;
-	n->items = NULL;
-	return n;
-}
+	NARRATIVE_ITEM_TEXT,
+	NARRATIVE_ITEM_SLIDE,
+	NARRATIVE_ITEM_BP,
+};
 
-void narrative_free(Narrative *n)
+
+struct narrative_item
 {
-	free(n->items);
-	free(n);
-}
+	enum narrative_item_type type;
+
+	/* For TEXT, SLIDETITLE, PRESTITLE */
+	char **paragraphs;
+	int n_paras;
+	enum alignment align;
+#ifdef HAVE_PANGO
+	PangoLayout **layouts;
+#endif
+
+	/* For IMAGE */
+	char *filename;
+
+	/* For TEXT and IMAGE */
+	struct frame_geom geom;
+};
 
 
-void narrative_add_prestitle(Narrative *n, const char *text)
+struct _narrative
 {
-}
+	int n_items;
+	struct narrative_item *items;
+	double w;
+	double total_h;
+};
 
 
-void narrative_add_bp(Narrative *n, const char *text)
-{
-}
-
-
-void narrative_add_text(Narrative *n, const char *text)
-{
-}
-
-
-void narrative_add_slide(Narrative *n, Slide *slide)
-{
-}
+#endif /* NARRATIVE_PRIV_H */

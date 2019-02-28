@@ -148,3 +148,10 @@ Stylesheet *presentation_get_stylesheet(Presentation *p)
 	if ( p == NULL ) return NULL;
 	return p->stylesheet;
 }
+
+
+Narrative *presentation_get_narrative(Presentation *p)
+{
+	if ( p == NULL ) return NULL;
+	return p->narrative;
+}

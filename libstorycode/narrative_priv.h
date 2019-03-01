@@ -43,18 +43,13 @@ struct narrative_item
 	enum narrative_item_type type;
 
 	/* For TEXT, SLIDETITLE, PRESTITLE */
-	char **paragraphs;
-	int n_paras;
+	char *text;
 	enum alignment align;
 #ifdef HAVE_PANGO
-	PangoLayout **layouts;
+	PangoLayout *layout;
+#else
+	void *layout;
 #endif
-
-	/* For IMAGE */
-	char *filename;
-
-	/* For TEXT and IMAGE */
-	struct frame_geom geom;
 };
 
 

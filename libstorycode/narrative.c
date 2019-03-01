@@ -48,6 +48,16 @@ void narrative_free(Narrative *n)
 }
 
 
+static struct narrative_item *add_item(Narrative *n)
+{
+	struct narrative_item *new_items;
+	new_items = realloc(n->items, (n->n_items+1)*sizeof(struct narrative_item));
+	if ( new_items == NULL ) return NULL;
+	n->items = new_items;
+	return &n->items[n->n_items++];
+}
+
+
 void narrative_add_prestitle(Narrative *n, const char *text)
 {
 }
@@ -58,8 +68,17 @@ void narrative_add_bp(Narrative *n, const char *text)
 }
 
 
-void narrative_add_text(Narrative *n, const char *text)
+void narrative_add_text(Narrative *n, char *text)
 {
+	struct narrative_item *item;
+
+	item = add_item(n);
+	if ( item == NULL ) return;
+
+	item->type = NARRATIVE_ITEM_TEXT;
+	item->text = text;
+	item->align = ALIGN_LEFT;
+	item->layout = NULL;
 }
 
 

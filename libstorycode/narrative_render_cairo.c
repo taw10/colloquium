@@ -65,17 +65,8 @@ static double wrap_text(struct narrative_item *item, PangoContext *pc,
                         Stylesheet *ss, enum style_element el, double wrap_w,
                         PangoFontDescription *fontdesc, enum alignment align)
 {
-	int i;
 	PangoAlignment palignment;
-	double total_h = 0.0;
-
-	if ( item->layouts == NULL ) {
-		item->layouts = malloc(item->n_paras*sizeof(PangoLayout *));
-		if ( item->layouts == NULL ) return 0.0;
-		for ( i=0; i<item->n_paras; i++ ) {
-			item->layouts[i] = NULL;
-		}
-	}
+	PangoRectangle rect;
 
 	if ( item->align == ALIGN_INHERIT ) {
 		/* Use value from stylesheet */
@@ -85,62 +76,36 @@ static double wrap_text(struct narrative_item *item, PangoContext *pc,
 		palignment = to_pangoalignment(item->align);
 	}
 
-	for ( i=0; i<item->n_paras; i++ ) {
-
-		PangoRectangle rect;
-
-		if ( item->layouts[i] == NULL ) {
-			item->layouts[i] = pango_layout_new(pc);
-		}
-		pango_layout_set_width(item->layouts[i], pango_units_from_double(wrap_w));
-		pango_layout_set_text(item->layouts[i], item->paragraphs[i], -1);
-		pango_layout_set_alignment(item->layouts[i], palignment);
-		pango_layout_set_font_description(item->layouts[i], fontdesc);
-
-		/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
-		//pango_layout_set_attributes(item->layouts[i], attrs);
-		//pango_attr_list_unref(attrs);
-
-		pango_layout_get_extents(item->layouts[i], NULL, &rect);
-		total_h += pango_units_to_double(rect.height);
-
+	if ( item->layout == NULL ) {
+		item->layout = pango_layout_new(pc);
 	}
+	pango_layout_set_width(item->layout, pango_units_from_double(wrap_w));
+	pango_layout_set_text(item->layout, item->text, -1);
+	pango_layout_set_alignment(item->layout, palignment);
+	pango_layout_set_font_description(item->layout, fontdesc);
 
-	return total_h;
+	/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
+	//pango_layout_set_attributes(item->layout, attrs);
+	//pango_attr_list_unref(attrs);
+
+	pango_layout_get_extents(item->layout, NULL, &rect);
+	return pango_units_to_double(rect.height);
 }
 
 
-static void draw_text(struct narrative_item *item, cairo_t *cr)
+static double draw_text(struct narrative_item *item, cairo_t *cr)
 {
-	int i;
-	double hpos = 0.0;
+	PangoRectangle rect;
 
-	cairo_save(cr);
+	//if ( (hpos + cur_h > min_y) && (hpos < max_y) ) {
+		cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+		pango_cairo_update_layout(cr, item->layout);
+		pango_cairo_show_layout(cr, item->layout);
+		cairo_fill(cr);
+	//} /* else paragraph is not visible */
 
-	for ( i=0; i<item->n_paras; i++ ) {
-
-		PangoRectangle rect;
-		double cur_h;
-
-		pango_layout_get_extents(item->layouts[i], NULL, &rect);
-		cur_h = rect.height;
-
-		cairo_save(cr);
-		cairo_translate(cr, 0.0, hpos);
-
-		//if ( (hpos + cur_h > min_y) && (hpos < max_y) ) {
-			cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
-			pango_cairo_update_layout(cr, item->layouts[i]);
-			pango_cairo_show_layout(cr, item->layouts[i]);
-			cairo_fill(cr);
-		//} /* else paragraph is not visible */
-
-		hpos += cur_h;
-		cairo_restore(cr);
-
-	}
-
-	cairo_restore(cr);
+	pango_layout_get_extents(item->layout, NULL, &rect);
+	return pango_units_to_double(rect.height);
 }
 
 
@@ -204,16 +169,16 @@ double narrative_get_height(Narrative *n)
 }
 
 
-int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
-                           PangoLanguage *lang, PangoContext *pc, double w)
+int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
 {
 	int i, r;
 	enum gradient bg;
 	double bgcol[4];
 	double bgcol2[4];
 	cairo_pattern_t *patt = NULL;
+	double vpos = 0.0;
 
-	r = stylesheet_get_background(stylesheet, STYEL_SLIDE, &bg, bgcol, bgcol2);
+	r = stylesheet_get_background(stylesheet, STYEL_NARRATIVE, &bg, bgcol, bgcol2);
 	if ( r ) return 1;
 
 	/* Overall background */
@@ -243,14 +208,17 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
 
 	for ( i=0; i<n->n_items; i++ ) {
 
+		cairo_save(cr);
+		cairo_translate(cr, 0.0, vpos);
+
 		switch ( n->items[i].type ) {
 
 			case NARRATIVE_ITEM_TEXT :
-			draw_text(&n->items[i], cr);
+			vpos += draw_text(&n->items[i], cr);
 			break;
 
 			case NARRATIVE_ITEM_BP :
-			draw_text(&n->items[i], cr);
+			vpos += draw_text(&n->items[i], cr);
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
@@ -260,6 +228,8 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
 			break;
 
 		}
+
+		cairo_restore(cr);
 	}
 
 	return 0;

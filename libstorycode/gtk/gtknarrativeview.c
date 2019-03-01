@@ -132,13 +132,13 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	e->visible_height = event->height;
 	e->visible_width = event->width;
 
-	e->w = e->visible_width;
-	e->h = narrative_get_height(presentation_get_narrative(e->p));
-
 	/* Wrap everything with the current width, to get the total height */
 	narrative_wrap(presentation_get_narrative(e->p),
 	               presentation_get_stylesheet(e->p),
 	               pango_language_get_default(), pc, e->w);
+
+	e->w = e->visible_width;
+	e->h = narrative_get_height(presentation_get_narrative(e->p));
 
 	g_object_unref(pc);
 
@@ -528,6 +528,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 	cairo_fill(cr);
 
 	/* Contents */
+	narrative_render_cairo(presentation_get_narrative(e->p), cr,
+	                       presentation_get_stylesheet(e->p));
 
 	/* Editing overlay */
 	draw_overlay(cr, e);

@@ -37,7 +37,6 @@ extern int narrative_wrap(Narrative *n, Stylesheet *stylesheet,
 extern double narrative_get_height(Narrative *n);
 
 extern int narrative_render_cairo(Narrative *n, cairo_t *cr,
-                                  Stylesheet *stylesheet, PangoLanguage *lang,
-                                  PangoContext *pc);
+                                  Stylesheet *stylesheet);
 
 #endif	/* NARRATIVE_RENDER_CAIRO_H */

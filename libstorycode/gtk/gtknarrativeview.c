@@ -143,6 +143,9 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 
 	g_object_unref(pc);
 
+	set_vertical_params(e);
+	set_horizontal_params(e);
+
 	return FALSE;
 }
 

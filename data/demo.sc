@@ -8,6 +8,10 @@ STYLES {
     PRESTITLE {
       FONT Cantarell Bold 20
     }
+    BP {
+      FONT Cantarell Regular 14
+      PARASPACE 20u,0u,10u,10u
+    }
   }
   SLIDE {
     SIZE 1024u x 768u

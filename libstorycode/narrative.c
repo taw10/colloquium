@@ -58,13 +58,31 @@ static struct narrative_item *add_item(Narrative *n)
 }
 
 
-void narrative_add_prestitle(Narrative *n, const char *text)
+void narrative_add_prestitle(Narrative *n, char *text)
 {
+	struct narrative_item *item;
+
+	item = add_item(n);
+	if ( item == NULL ) return;
+
+	item->type = NARRATIVE_ITEM_PRESTITLE;
+	item->text = text;
+	item->align = ALIGN_LEFT;
+	item->layout = NULL;
 }
 
 
-void narrative_add_bp(Narrative *n, const char *text)
+void narrative_add_bp(Narrative *n, char *text)
 {
+	struct narrative_item *item;
+
+	item = add_item(n);
+	if ( item == NULL ) return;
+
+	item->type = NARRATIVE_ITEM_BP;
+	item->text = text;
+	item->align = ALIGN_LEFT;
+	item->layout = NULL;
 }
 
 

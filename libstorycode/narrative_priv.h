@@ -33,6 +33,7 @@
 enum narrative_item_type
 {
 	NARRATIVE_ITEM_TEXT,
+	NARRATIVE_ITEM_PRESTITLE,
 	NARRATIVE_ITEM_SLIDE,
 	NARRATIVE_ITEM_BP,
 };
@@ -41,6 +42,11 @@ enum narrative_item_type
 struct narrative_item
 {
 	enum narrative_item_type type;
+	double h;
+	double space_l;
+	double space_r;
+	double space_t;  /* Already included in "h" */
+	double space_b;  /* Already included in "h" */
 
 	/* For TEXT, SLIDETITLE, PRESTITLE */
 	char *text;
@@ -58,7 +64,10 @@ struct _narrative
 	int n_items;
 	struct narrative_item *items;
 	double w;
-	double total_h;
+	double space_l;
+	double space_r;
+	double space_t;
+	double space_b;
 };
 
 

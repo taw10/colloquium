@@ -34,11 +34,10 @@ typedef struct _narrative Narrative;
 extern Narrative *narrative_new(void);
 extern void narrative_free(Narrative *n);
 
-extern void narrative_add_prestitle(Narrative *n, const char *text);
-extern void narrative_add_bp(Narrative *n, const char *text);
+extern void narrative_add_prestitle(Narrative *n, char *text);
+extern void narrative_add_bp(Narrative *n, char *text);
 extern void narrative_add_text(Narrative *n, char *text);
 extern void narrative_add_slide(Narrative *n, Slide *slide);
-
 
 
 #endif /* NARRATIVE_H */

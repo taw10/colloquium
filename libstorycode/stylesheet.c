@@ -48,6 +48,8 @@ struct style
 struct _stylesheet
 {
 	struct style narrative;
+	struct style narrative_bp;
+	struct style narrative_pt;
 
 	double default_slide_w;
 	double default_slide_h;
@@ -117,6 +119,8 @@ Stylesheet *stylesheet_new()
 
 	/* Ultimate defaults */
 	default_style(&s->narrative);
+	default_style(&s->narrative_bp);
+	default_style(&s->narrative_pt);
 	default_style(&s->slide);
 	default_style(&s->slide_text);
 	default_style(&s->slide_prestitle);
@@ -136,6 +140,8 @@ static struct style *get_style(Stylesheet *s, enum style_element el)
 	if ( s == NULL ) return NULL;
 	switch ( el ) {
 		case STYEL_NARRATIVE : return &s->narrative;
+		case STYEL_NARRATIVE_BP : return &s->narrative_bp;
+		case STYEL_NARRATIVE_PRESTITLE : return &s->narrative_pt;
 		case STYEL_SLIDE : return &s->slide;
 		case STYEL_SLIDE_TEXT : return &s->slide_text;
 		case STYEL_SLIDE_PRESTITLE : return &s->slide_prestitle;
@@ -285,5 +291,16 @@ int stylesheet_get_padding(Stylesheet *s, enum style_element el,
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) padding[i] = sty->padding[i];
+	return 0;
+}
+
+
+int stylesheet_get_paraspace(Stylesheet *s, enum style_element el,
+                           struct length paraspace[4])
+{
+	int i;
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	for ( i=0; i<4; i++ ) paraspace[i] = sty->paraspace[i];
 	return 0;
 }

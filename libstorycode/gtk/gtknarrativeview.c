@@ -131,6 +131,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 
 	e->visible_height = event->height;
 	e->visible_width = event->width;
+	e->w = e->visible_width;
 
 	/* Wrap everything with the current width, to get the total height */
 	narrative_wrap(presentation_get_narrative(e->p),

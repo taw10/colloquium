@@ -336,11 +336,16 @@ style_narrative:
 style_narrative_def:
   %empty
 | style_narrative_def style_narrative_prestitle
-| style_narrative_def styledef
+| style_narrative_def style_narrative_bp
+| style_narrative_def styledef { set_style(ctx, STYEL_NARRATIVE); }
 ;
 
 style_narrative_prestitle:
-  PRESTITLE '{' styledefs '}' { }
+  PRESTITLE '{' styledefs '}' { set_style(ctx, STYEL_NARRATIVE_PRESTITLE); }
+;
+
+style_narrative_bp:
+  BP '{' styledefs '}' { set_style(ctx, STYEL_NARRATIVE_BP); }
 ;
 
 style_slide:

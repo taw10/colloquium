@@ -72,6 +72,8 @@ enum gradient
 enum style_element
 {
 	STYEL_NARRATIVE,
+	STYEL_NARRATIVE_PRESTITLE,
+	STYEL_NARRATIVE_BP,
 	STYEL_SLIDE,
 	STYEL_SLIDE_TEXT,
 	STYEL_SLIDE_PRESTITLE,
@@ -100,6 +102,8 @@ extern int stylesheet_get_background(Stylesheet *s, enum style_element el,
                                      enum gradient *grad, double *bgcol, double *bgcol2);
 extern int stylesheet_get_padding(Stylesheet *s, enum style_element el,
                                   struct length padding[4]);
+extern int stylesheet_get_paraspace(Stylesheet *s, enum style_element el,
+                                    struct length paraspace[4]);
 
 
 #endif /* STYLESHEET_H */

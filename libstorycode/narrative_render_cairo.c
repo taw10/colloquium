@@ -148,6 +148,11 @@ int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
+			n->items[i].space_l = 0.0;
+			n->items[i].space_r = 0.0;
+			n->items[i].space_t = 0.0;
+			n->items[i].space_b = 0.0;
+			n->items[i].h = 256.0;
 			break;
 
 			default :
@@ -168,6 +173,27 @@ double narrative_get_height(Narrative *n)
 		total += n->items[i].h;
 	}
 	return total + n->space_t + n->space_b;
+}
+
+
+static void draw_slide(struct narrative_item *item, cairo_t *cr)
+{
+	double x, y;
+
+	cairo_save(cr);
+	cairo_translate(cr, item->space_l, item->space_t);
+
+	x = 0.0;  y = 0.0;
+	cairo_user_to_device(cr, &x, &y);
+	x = rint(x);  y = rint(y);
+	cairo_device_to_user(cr, &x, &y);
+	cairo_rectangle(cr, x+0.5, y+0.5, 320.0, 256.0);
+
+	cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+
+	cairo_restore(cr);
 }
 
 
@@ -241,6 +267,7 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
+			draw_slide(&n->items[i], cr);
 			break;
 
 			default :

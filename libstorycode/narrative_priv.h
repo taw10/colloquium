@@ -28,6 +28,7 @@
 #endif
 
 #include "storycode.h"
+#include "slide.h"
 
 
 enum narrative_item_type
@@ -48,7 +49,7 @@ struct narrative_item
 	double space_t;  /* Already included in "h" */
 	double space_b;  /* Already included in "h" */
 
-	/* For TEXT, SLIDETITLE, PRESTITLE */
+	/* For TEXT, BP, PRESTITLE */
 	char *text;
 	enum alignment align;
 #ifdef HAVE_PANGO
@@ -56,6 +57,9 @@ struct narrative_item
 #else
 	void *layout;
 #endif
+
+	/* For SLIDE */
+	Slide *slide;
 };
 
 

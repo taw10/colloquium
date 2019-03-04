@@ -195,7 +195,7 @@ narrative:
 narrative_el:
   narrative_prestitle   { narrative_add_prestitle(ctx->n, $1); }
 | narrative_bulletpoint { narrative_add_bp(ctx->n, $1); }
-| slide                 { narrative_add_slide(ctx->n, $1); }
+| slide                 { }
 | STRING                { narrative_add_text(ctx->n, $1); }
 ;
 

@@ -102,4 +102,11 @@ void narrative_add_text(Narrative *n, char *text)
 
 void narrative_add_slide(Narrative *n, Slide *slide)
 {
+	struct narrative_item *item;
+
+	item = add_item(n);
+	if ( item == NULL ) return;
+
+	item->type = NARRATIVE_ITEM_SLIDE;
+	item->slide = slide;
 }

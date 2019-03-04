@@ -32,7 +32,8 @@
 
 
 extern int narrative_wrap(Narrative *n, Stylesheet *stylesheet,
-                          PangoLanguage *lang, PangoContext *pc, double w);
+                          PangoLanguage *lang, PangoContext *pc, double w,
+                          ImageStore *is);
 
 extern double narrative_get_height(Narrative *n);
 

@@ -126,6 +126,8 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            GtkNarrativeView *e)
 {
 	PangoContext *pc;
+	PangoLanguage *lang;
+	const char *langname;
 
 	pc = gdk_pango_context_get();
 
@@ -133,10 +135,14 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	e->visible_width = event->width;
 	e->w = e->visible_width;
 
+	langname = presentation_get_language(e->p);
+	lang = pango_language_from_string(langname);
+
 	/* Wrap everything with the current width, to get the total height */
 	narrative_wrap(presentation_get_narrative(e->p),
 	               presentation_get_stylesheet(e->p),
-	               pango_language_get_default(), pc, e->w);
+	               lang, gtk_widget_get_pango_context(widget), e->w,
+	               presentation_get_imagestore(e->p));
 
 	e->w = e->visible_width;
 	e->h = narrative_get_height(presentation_get_narrative(e->p));
@@ -1012,8 +1018,7 @@ static void update_size_request(GtkNarrativeView *e)
 }
 
 
-GtkNarrativeView *gtk_narrative_view_new(Presentation *p, PangoLanguage *lang,
-                                         const char *storename)
+GtkNarrativeView *gtk_narrative_view_new(Presentation *p)
 {
 	GtkNarrativeView *nview;
 	GtkTargetEntry targets[1];
@@ -1023,7 +1028,6 @@ GtkNarrativeView *gtk_narrative_view_new(Presentation *p, PangoLanguage *lang,
 	nview->w = 100;
 	nview->h = 100;
 	nview->scroll_pos = 0;
-	nview->lang = lang;
 	nview->p = p;
 
 	nview->para_highlight = 0;

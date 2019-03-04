@@ -33,6 +33,7 @@
 #include <stylesheet.h>
 #include <narrative.h>
 #include <presentation.h>
+#include <imagestore.h>
 
 #define GTK_TYPE_NARRATIVE_VIEW (gtk_narrative_view_get_type())
 
@@ -94,7 +95,6 @@ struct _gtknarrativeview
 	Presentation        *p;
 	GtkIMContext        *im_context;
 	PangoContext        *pc;
-	PangoLanguage        *lang;
 
 	int                  w;   /* Surface size in pixels */
 	int                  h;
@@ -129,9 +129,7 @@ struct _gtknarrativeviewclass
 typedef struct _gtknarrativeview GtkNarrativeView;
 typedef struct _gtknarrativeviewclass GtkNarrativeViewClass;
 
-extern GtkNarrativeView *gtk_narrative_view_new(Presentation *p,
-                                                PangoLanguage *lang,
-                                                const char *storename);
+extern GtkNarrativeView *gtk_narrative_view_new(Presentation *p);
 
 extern void gtk_narrative_view_set_logical_size(GtkNarrativeView *e, double w, double h);
 

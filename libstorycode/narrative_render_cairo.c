@@ -36,6 +36,8 @@
 #include "slide.h"
 #include "narrative.h"
 #include "stylesheet.h"
+#include "imagestore.h"
+#include "slide_render_cairo.h"
 
 #include "narrative_priv.h"
 
@@ -107,13 +109,51 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	//pango_layout_set_attributes(item->layout, attrs);
 	//pango_attr_list_unref(attrs);
 
-
 	pango_layout_get_extents(item->layout, NULL, &rect);
 	item->h = pango_units_to_double(rect.height)+item->space_t+item->space_b;
 }
 
 
-static void wrap_slide(struct narrative_item *item, Stylesheet *ss)
+/* Render a thumbnail of the slide */
+static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *is,
+                                         int w, int h)
+{
+	cairo_surface_t *surf;
+	cairo_surface_t *full_surf;
+	cairo_t *cr;
+	double logical_w, logical_h;
+	PangoContext *pc;
+	const int rh = 1024; /* "reasonably big" height for slide */
+	int rw;
+
+	slide_get_logical_size(s, ss, &logical_w, &logical_h);
+	rw = rh*(logical_w/logical_h);
+
+	/* Render at a reasonably big size.  Rendering to a small surface makes
+	 * rounding of text positions (due to font hinting) cause significant
+	 * differences between the thumbnail and "normal" rendering. */
+	full_surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, rw, rh);
+	cr = cairo_create(full_surf);
+	cairo_scale(cr, (double)rw/logical_w, (double)rh/logical_h);
+	pc = pango_cairo_create_context(cr);
+	slide_render_cairo(s, cr, is, ss, 0, pango_language_get_default(), pc);
+	g_object_unref(pc);
+	cairo_destroy(cr);
+
+	/* Scale down to the actual size of the thumbnail */
+	surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+	cr = cairo_create(surf);
+	cairo_scale(cr, (double)w/rw, (double)h/rh);
+	cairo_set_source_surface(cr, full_surf, 0.0, 0.0);
+	cairo_paint(cr);
+	cairo_destroy(cr);
+
+	cairo_surface_destroy(full_surf);
+	return surf;
+}
+
+
+static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *is)
 {
 	double w, h;
 
@@ -123,16 +163,21 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss)
 	item->space_b = 10.0;
 
 	slide_get_logical_size(item->slide, ss, &w, &h);
-	item->slide_h = 320.0;
-	item->slide_w = item->slide_h*w/h;
+	item->slide_h = 320.0;  /* Actual height of thumbnail */
+	item->slide_w = rint(item->slide_h*w/h);
 
 	item->h = item->slide_h + item->space_t + item->space_b;
 
+	if ( item->slide_thumbnail != NULL ) {
+		cairo_surface_destroy(item->slide_thumbnail);
+	}
+	item->slide_thumbnail = render_thumbnail(item->slide, ss, is,
+	                                         item->slide_w, item->slide_h);
 }
 
 
 int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
-                   PangoContext *pc, double w)
+                   PangoContext *pc, double w, ImageStore *is)
 {
 	int i;
 	struct length pad[4];
@@ -166,7 +211,7 @@ int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
-			wrap_slide(&n->items[i], stylesheet);
+			wrap_slide(&n->items[i], stylesheet, is);
 			break;
 
 			default :
@@ -201,9 +246,13 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 	cairo_user_to_device(cr, &x, &y);
 	x = rint(x);  y = rint(y);
 	cairo_device_to_user(cr, &x, &y);
-	cairo_rectangle(cr, x+0.5, y+0.5, item->slide_w, item->slide_h);
 
-	cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+	cairo_rectangle(cr, x, y, item->slide_w, item->slide_h);
+	cairo_set_source_surface(cr, item->slide_thumbnail, 0.0, 0.0);
+	cairo_fill(cr);
+
+	cairo_rectangle(cr, x+0.5, y+0.5, item->slide_w, item->slide_h);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 

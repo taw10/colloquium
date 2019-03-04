@@ -68,8 +68,8 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
                         double parent_w, double parent_h)
 {
 	int i;
-	double x, y, w, h;
-	double pad_l, pad_r, pad_t, pad_b;
+	double x, y, w;
+	double pad_l, pad_r, pad_t;
 	struct length pad[4];
 	const char *font;
 	enum alignment align;
@@ -81,13 +81,11 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 	x = lcalc(item->geom.x, parent_w);
 	y = lcalc(item->geom.y, parent_h);
 	w = lcalc(item->geom.w, parent_w);
-	h = lcalc(item->geom.h, parent_h);
 
 	if ( stylesheet_get_padding(ss, el, pad) ) return;
 	pad_l = lcalc(pad[0], parent_w);
 	pad_r = lcalc(pad[1], parent_w);
 	pad_t = lcalc(pad[2], parent_h);
-	pad_b = lcalc(pad[3], parent_h);
 
 	font = stylesheet_get_font(ss, el, fgcol, &align);
 	if ( font == NULL ) return;
@@ -200,7 +198,7 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 	slide_get_logical_size(s, stylesheet, &w, &h);
 
 	/* Overall background */
-	cairo_rectangle(cr, 0.0, 0.0, s->logical_w, s->logical_h);
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	switch ( bg ) {
 
 		case GRAD_NONE:
@@ -208,17 +206,21 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 		break;
 
 		case GRAD_VERT:
-		patt = cairo_pattern_create_linear(0.0, 0.0, 0.0, s->logical_h);
+		patt = cairo_pattern_create_linear(0.0, 0.0, 0.0, h);
 		cairo_pattern_add_color_stop_rgb(patt, 0.0, bgcol[0], bgcol[1], bgcol[2]);
 		cairo_pattern_add_color_stop_rgb(patt, 1.0, bgcol2[0], bgcol2[1], bgcol2[2]);
 		cairo_set_source(cr, patt);
 		break;
 
 		case GRAD_HORIZ:
-		patt = cairo_pattern_create_linear(0.0, 0.0, s->logical_w, 0.0);
+		patt = cairo_pattern_create_linear(0.0, 0.0, w, 0.0);
 		cairo_pattern_add_color_stop_rgb(patt, 0.0, bgcol[0], bgcol[1], bgcol[2]);
 		cairo_pattern_add_color_stop_rgb(patt, 1.0, bgcol2[0], bgcol2[1], bgcol2[2]);
 		cairo_set_source(cr, patt);
+		break;
+
+		default:
+		fprintf(stderr, "Unrecognised slide background type %i\n", bg);
 		break;
 
 	}
@@ -230,22 +232,22 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 
 			case SLIDE_ITEM_TEXT :
 			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_TEXT,
-			            s->logical_w, s->logical_h);
+			            w, h);
 			break;
 
 			case SLIDE_ITEM_IMAGE :
 			render_image(&s->items[i], cr, stylesheet, is,
-			             s->logical_w, s->logical_h);
+			             w, h);
 			break;
 
 			case SLIDE_ITEM_SLIDETITLE :
 			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_SLIDETITLE,
-			            s->logical_w, s->logical_h);
+			            w, h);
 			break;
 
 			case SLIDE_ITEM_PRESTITLE :
 			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_PRESTITLE,
-			            s->logical_w, s->logical_h);
+			            w, h);
 			break;
 
 			default :

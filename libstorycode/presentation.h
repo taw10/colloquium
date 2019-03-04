@@ -33,6 +33,7 @@ typedef struct _presentation Presentation;
 
 #include "stylesheet.h"
 #include "narrative.h"
+#include "imagestore.h"
 
 extern Presentation *presentation_new(void);
 extern Presentation *presentation_load(GFile *file);
@@ -47,5 +48,7 @@ extern int presentation_num_slides(Presentation *p);
 extern Slide *presentation_slide(Presentation *p, int i);
 extern Stylesheet *presentation_get_stylesheet(Presentation *p);
 extern Narrative *presentation_get_narrative(Presentation *p);
+extern const char *presentation_get_language(Presentation *p);
+extern ImageStore *presentation_get_imagestore(Presentation *p);
 
 #endif /* PRESENTATION_H */

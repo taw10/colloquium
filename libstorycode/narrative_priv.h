@@ -62,6 +62,11 @@ struct narrative_item
 	Slide *slide;
 	double slide_w;
 	double slide_h;
+#ifdef HAVE_CAIRO
+	cairo_surface_t *slide_thumbnail;
+#else
+	void *slide_thumbnail;
+#endif
 };
 
 

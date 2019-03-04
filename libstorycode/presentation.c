@@ -31,6 +31,10 @@
 #include <stdio.h>
 #include <gio/gio.h>
 
+#ifdef HAVE_PANGO
+#include <pango/pango.h>
+#endif
+
 #include "presentation.h"
 #include "stylesheet.h"
 #include "slide.h"
@@ -42,9 +46,11 @@ struct _presentation
 {
 	Stylesheet *stylesheet;
 	Narrative *narrative;
+	ImageStore *imagestore;
 	int n_slides;
 	Slide **slides;
 	int max_slides;
+	const char *language;
 };
 
 
@@ -58,6 +64,12 @@ Presentation *presentation_new()
 	p->slides = NULL;
 	p->n_slides = 0;
 	p->max_slides = 0;
+	p->imagestore = NULL;
+#ifdef HAVE_PANGO
+	p->language = pango_language_to_string(pango_language_get_default());
+#else
+	p->language = NULL;
+#endif
 	return p;
 }
 
@@ -68,7 +80,6 @@ Presentation *presentation_load(GFile *file)
 	const char *text;
 	size_t len;
 	Presentation *p;
-	ImageStore *is;
 
 	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
 	if ( bytes == NULL ) return NULL;
@@ -78,8 +89,8 @@ Presentation *presentation_load(GFile *file)
 	g_bytes_unref(bytes);
 	if ( p == NULL ) return NULL;
 
-	is = imagestore_new(".");
-	imagestore_set_parent(is, g_file_get_parent(file));
+	p->imagestore = imagestore_new("."); /* FIXME: From app config */
+	imagestore_set_parent(p->imagestore, g_file_get_parent(file));
 	return p;
 }
 
@@ -93,6 +104,7 @@ int presentation_save(Presentation *p, GFile *file)
 
 void presentation_free(Presentation *p)
 {
+	/* FIXME: Free narrative, slides, imagestore */
 	free(p);
 }
 
@@ -154,4 +166,18 @@ Narrative *presentation_get_narrative(Presentation *p)
 {
 	if ( p == NULL ) return NULL;
 	return p->narrative;
+}
+
+
+const char *presentation_get_language(Presentation *p)
+{
+	if ( p == NULL ) return NULL;
+	return p->language;
+}
+
+
+ImageStore *presentation_get_imagestore(Presentation *p)
+{
+	if ( p == NULL ) return NULL;
+	return p->imagestore;
 }

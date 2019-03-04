@@ -109,4 +109,5 @@ void narrative_add_slide(Narrative *n, Slide *slide)
 
 	item->type = NARRATIVE_ITEM_SLIDE;
 	item->slide = slide;
+	item->slide_thumbnail = NULL;
 }

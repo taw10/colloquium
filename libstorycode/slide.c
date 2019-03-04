@@ -87,6 +87,7 @@ int add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
 	if ( item == NULL ) return 1;
 
 	item->type = slide_item;
+	item->layouts = NULL;
 	item->paragraphs = malloc(n_text*sizeof(char *));
 	if ( item->paragraphs == NULL ) {
 		s->n_items--;

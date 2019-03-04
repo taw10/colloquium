@@ -697,9 +697,7 @@ NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	/* FIXME: Language should be a property of the presentation */
-	nw->nv = gtk_narrative_view_new(p, pango_language_get_default(),
-	                                colloquium_get_imagestore(app));
+	nw->nv = gtk_narrative_view_new(p);
 
 	toolbar = gtk_toolbar_new();
 	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);

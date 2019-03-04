@@ -60,6 +60,8 @@ struct narrative_item
 
 	/* For SLIDE */
 	Slide *slide;
+	double slide_w;
+	double slide_h;
 };
 
 

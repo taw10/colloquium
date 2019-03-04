@@ -113,6 +113,24 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 }
 
 
+static void wrap_slide(struct narrative_item *item, Stylesheet *ss)
+{
+	double w, h;
+
+	item->space_l = 0.0;
+	item->space_r = 0.0;
+	item->space_t = 10.0;
+	item->space_b = 10.0;
+
+	slide_get_logical_size(item->slide, ss, &w, &h);
+	item->slide_h = 320.0;
+	item->slide_w = item->slide_h*w/h;
+
+	item->h = item->slide_h + item->space_t + item->space_b;
+
+}
+
+
 int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
                    PangoContext *pc, double w)
 {
@@ -148,11 +166,7 @@ int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
-			n->items[i].space_l = 0.0;
-			n->items[i].space_r = 0.0;
-			n->items[i].space_t = 0.0;
-			n->items[i].space_b = 0.0;
-			n->items[i].h = 256.0;
+			wrap_slide(&n->items[i], stylesheet);
 			break;
 
 			default :
@@ -187,7 +201,7 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 	cairo_user_to_device(cr, &x, &y);
 	x = rint(x);  y = rint(y);
 	cairo_device_to_user(cr, &x, &y);
-	cairo_rectangle(cr, x+0.5, y+0.5, 320.0, 256.0);
+	cairo_rectangle(cr, x+0.5, y+0.5, item->slide_w, item->slide_h);
 
 	cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
 	cairo_set_line_width(cr, 1.0);

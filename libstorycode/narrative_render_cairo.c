@@ -189,8 +189,9 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *
 }
 
 
-int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
-                   PangoContext *pc, double w, ImageStore *is)
+int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
+                         PangoContext *pc, double w, ImageStore *is,
+                         int min, int max)
 {
 	int i;
 	struct length pad[4];
@@ -204,7 +205,7 @@ int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
 	n->w = w;
 	w -= n->space_l + n->space_r;
 
-	for ( i=0; i<n->n_items; i++ ) {
+	for ( i=min; i<=max; i++ ) {
 
 		switch ( n->items[i].type ) {
 
@@ -234,6 +235,14 @@ int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
 	}
 
 	return 0;
+}
+
+
+int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
+                   PangoContext *pc, double w, ImageStore *is)
+{
+	return narrative_wrap_range(n, stylesheet, lang, pc, w, is,
+	                            0, n->n_items-1);
 }
 
 

@@ -31,6 +31,10 @@
 #include "imagestore.h"
 
 
+extern int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet,
+                                PangoLanguage *lang, PangoContext *pc, double w,
+                                ImageStore *is, int min, int max);
+
 extern int narrative_wrap(Narrative *n, Stylesheet *stylesheet,
                           PangoLanguage *lang, PangoContext *pc, double w,
                           ImageStore *is);

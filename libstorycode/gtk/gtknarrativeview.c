@@ -123,32 +123,41 @@ static void set_vertical_params(GtkNarrativeView *e)
 }
 
 
-static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
-                           GtkNarrativeView *e)
+static void rewrap_range(GtkNarrativeView *e, int min, int max)
 {
 	PangoContext *pc;
 	PangoLanguage *lang;
 	const char *langname;
 
-	pc = gdk_pango_context_get();
-
-	e->visible_height = event->height;
-	e->visible_width = event->width;
-	e->w = e->visible_width;
+	pc = gtk_widget_get_pango_context(GTK_WIDGET(e));
 
 	langname = presentation_get_language(e->p);
 	lang = pango_language_from_string(langname);
 
 	/* Wrap everything with the current width, to get the total height */
-	narrative_wrap(presentation_get_narrative(e->p),
-	               presentation_get_stylesheet(e->p),
-	               lang, gtk_widget_get_pango_context(widget), e->w,
-	               presentation_get_imagestore(e->p));
+	narrative_wrap_range(presentation_get_narrative(e->p),
+	                     presentation_get_stylesheet(e->p),
+	                     lang, pc, e->w,
+	                     presentation_get_imagestore(e->p),
+	                     min, max);
+}
+
+
+static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
+                           GtkNarrativeView *e)
+{
+	Narrative *n;
+
+	n = presentation_get_narrative(e->p);
+
+	e->visible_height = event->height;
+	e->visible_width = event->width;
+	e->w = e->visible_width;
+
+	rewrap_range(e, 0, n->n_items-1);
 
 	e->w = e->visible_width;
 	e->h = narrative_get_height(presentation_get_narrative(e->p));
-
-	g_object_unref(pc);
 
 	set_vertical_params(e);
 	set_horizontal_params(e);
@@ -494,13 +503,34 @@ static size_t pos_trail_to_offset(struct narrative_item *item, int offs, int tra
 }
 
 
+static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
+                           double *x, double *y, double *h)
+{
+	size_t offs;
+	PangoRectangle rect;
+	struct narrative_item *item;
+
+	item = &n->items[cpos.para];
+	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+		*x = n->space_l + item->space_l;
+		*y = n->space_t + para_top(n, cpos.para);
+		*h = item->slide_h;
+		return;
+	}
+
+	offs = pos_trail_to_offset(item, cpos.pos, cpos.trail);
+	pango_layout_get_cursor_pos(item->layout, offs, &rect, NULL);
+	*x = pango_units_to_double(rect.x) + n->space_l + item->space_l;
+	*y = pango_units_to_double(rect.y) + n->space_t + para_top(n, cpos.para);
+	*h = pango_units_to_double(rect.height);
+}
+
+
 static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos,
                        int hgh)
 {
-	double cx, clow, chigh;
+	double cx, clow, chigh, h;
 	const double t = 1.8;
-	size_t offs;
-	PangoRectangle rect;
 
 	if ( hgh ) {
 		draw_para_highlight(cr, n, cpos.para);
@@ -514,14 +544,9 @@ static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos,
 		return;
 	}
 
-	offs = pos_trail_to_offset(&n->items[cpos.para], cpos.pos, cpos.trail);
+	get_cursor_pos(n, cpos, &cx, &clow, &h);
 
-	pango_layout_get_cursor_pos(n->items[cpos.para].layout, offs, &rect, NULL);
-
-	cx = pango_units_to_double(rect.x) + n->space_l + n->items[cpos.para].space_l;
-	clow = pango_units_to_double(rect.y) + n->space_t + para_top(n, cpos.para);
-
-	chigh = clow + pango_units_to_double(rect.height);
+	chigh = clow+h;
 
 	cairo_move_to(cr, cx, clow);
 	cairo_line_to(cr, cx, chigh);
@@ -575,26 +600,22 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 
 static void check_cursor_visible(GtkNarrativeView *e)
 {
-//	double x, y, h;
-//	size_t offs;
-//	Paragraph *para;
-//
-//	if ( e->cursor_frame == NULL ) return;
-//
-//	para = e->cursor_frame->paras[e->cpos.para];
-//	offs = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
-//	get_cursor_pos(e->cursor_frame, e->cpos.para, offs, &x, &y, &h);
-//
-//	/* Off the bottom? */
-//	if ( y - e->scroll_pos + h > e->visible_height ) {
-//		e->scroll_pos = y + h - e->visible_height;
-//		e->scroll_pos += e->cursor_frame->pad_b;
-//	}
-//
-//	/* Off the top? */
-//	if ( y < e->scroll_pos ) {
-//		e->scroll_pos = y - e->cursor_frame->pad_t;
-//	}
+	Narrative *n;
+	double x, y, h;
+
+	n = presentation_get_narrative(e->p);
+	get_cursor_pos(n, e->cpos, &x, &y, &h);
+
+	/* Off the bottom? */
+	if ( y - e->scroll_pos + h > e->visible_height ) {
+		e->scroll_pos = y + h - e->visible_height;
+		e->scroll_pos += n->space_b;
+	}
+
+	/* Off the top? */
+	if ( y < e->scroll_pos ) {
+		e->scroll_pos = y - n->space_t;
+	}
 }
 
 
@@ -644,84 +665,123 @@ static void do_backspace(GtkNarrativeView *e)
 }
 
 
+static size_t end_offset_of_para(Narrative *n, int pnum)
+{
+	assert(pnum >= 0);
+	if ( n->items[pnum].type == NARRATIVE_ITEM_SLIDE ) return 0;
+	return strlen(n->items[pnum].text);
+
+}
+
+
+static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
+{
+	struct narrative_item *item = &n->items[cp->para];
+	int np = cp->pos;
+
+	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+		if ( dir > 0 ) {
+			np = G_MAXINT;
+			cp->trail = 0;
+		} else {
+			np = -1;
+			cp->trail = 0;
+		}
+	} else {
+		pango_layout_move_cursor_visually(item->layout, 1, cp->pos,
+		                                  cp->trail, dir,
+		                                  &np, &cp->trail);
+	}
+
+	if ( np == -1 ) {
+		if ( cp->para > 0 ) {
+			size_t end_offs;
+			cp->para--;
+			end_offs = end_offset_of_para(n, cp->para);
+			if ( end_offs > 0 ) {
+				cp->pos = end_offs - 1;
+				cp->trail = 1;
+			} else {
+				/* Jumping into an empty paragraph */
+				cp->pos = 0;
+				cp->trail = 0;
+			}
+			return;
+		} else {
+			/* Can't move any further */
+			return;
+		}
+	}
+
+	if ( np == G_MAXINT ) {
+		if ( cp->para < n->n_items-1 ) {
+			cp->para++;
+			cp->pos = 0;
+			cp->trail = 0;
+			return;
+		} else {
+			/* Can't move any further */
+			cp->trail = 1;
+			return;
+		}
+	}
+
+	cp->pos = np;
+}
+
+
+static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
+                                     char *t)
+{
+	char *n = malloc(strlen(t) + strlen(item->text) + 1);
+	if ( n == NULL ) return;
+	strncpy(n, item->text, offs);
+	n[offs] = '\0';
+	strcat(n, t);
+	strcat(n, item->text+offs);
+	free(item->text);
+	item->text = n;
+}
+
+
 static void insert_text(char *t, GtkNarrativeView *e)
 {
-//	Paragraph *para;
-//
-//	if ( e->cursor_frame == NULL ) return;
-//
-//	if ( e->sel_active ) {
-//		do_backspace(e->cursor_frame, e);
-//	}
-//
-//	if ( strcmp(t, "\n") == 0 ) {
-//		split_paragraph_at_cursor(e);
-//		update_size(e);
-//		cursor_moveh(e->cursor_frame, &e->cpos, +1);
-//		check_cursor_visible(e);
-//		emit_change_sig(e);
-//		redraw(e);
-//		return;
-//	}
-//
-//	para = e->cursor_frame->paras[e->cpos.para];
-//
-//	/* Is this paragraph even a text one? */
-//	if ( para_type(para) == PARA_TYPE_TEXT ) {
-//
-//		size_t off;
-//
-//		/* Yes. The "easy" case */
-//
-//		if ( !position_editable(e->cursor_frame, e->cpos) ) {
-//			fprintf(stderr, "Position not editable\n");
-//			return;
-//		}
-//
-//		off = pos_trail_to_offset(para, e->cpos.pos, e->cpos.trail);
-//		insert_text_in_paragraph(para, off, t);
-//		wrap_paragraph(para, NULL,
-//		               e->cursor_frame->w - e->cursor_frame->pad_l
-//		                            - e->cursor_frame->pad_r, 0, 0);
-//		update_size(e);
-//
-//		cursor_moveh(e->cursor_frame, &e->cpos, +1);
-//
-//	} else {
-//
-//		SCBlock *bd;
-//		SCBlock *ad;
-//		Paragraph *pnew;
-//
-//		bd = para_scblock(para);
-//		if ( bd == NULL ) {
-//			fprintf(stderr, "No SCBlock for para\n");
-//			return;
-//		}
-//
-//		/* No. Create a new text paragraph straight afterwards */
-//		ad = sc_block_insert_after(bd, NULL, NULL, strdup(t));
-//		if ( ad == NULL ) {
-//			fprintf(stderr, "Failed to add SCBlock\n");
-//			return;
-//		}
-//
-//		pnew = insert_paragraph(e->cursor_frame, e->cpos.para);
-//		if ( pnew == NULL ) {
-//			fprintf(stderr, "Failed to insert paragraph\n");
-//			return;
-//		}
-//		add_run(pnew, ad, e->cursor_frame->fontdesc,
-//		        e->cursor_frame->col, NULL);
-//
-//		wrap_frame(e->cursor_frame, e->pc);
-//
-//		e->cpos.para += 1;
-//		e->cpos.pos = 0;
-//		e->cpos.trail = 1;
-//
-//	}
-//
+	Narrative *n;
+	struct narrative_item *item;
+
+	if ( e->sel_active ) {
+		do_backspace(e);
+	}
+
+	n = presentation_get_narrative(e->p);
+	item = &n->items[e->cpos.para];
+
+	if ( strcmp(t, "\n") == 0 ) {
+		//split_paragraph_at_cursor(e); FIXME
+		//update_size(e);
+		cursor_moveh(n, &e->cpos, +1);
+		check_cursor_visible(e);
+		emit_change_sig(e);
+		redraw(e);
+		return;
+	}
+
+	if ( item->type != NARRATIVE_ITEM_SLIDE ) {
+
+		size_t off;
+
+		off = pos_trail_to_offset(item, e->cpos.pos, e->cpos.trail);
+		insert_text_in_paragraph(item, off, t);
+		rewrap_range(e, e->cpos.para, e->cpos.para);
+		//update_size(e);
+		cursor_moveh(n, &e->cpos, +1);
+
+	} else {
+
+		/* FIXME: Add text after slide */
+
+	}
+
 	emit_change_sig(e);
 	check_cursor_visible(e);
 	redraw(e);
@@ -754,28 +814,27 @@ static void unset_selection(GtkNarrativeView *e)
 
 static int find_cursor(Narrative *n, double x, double y, struct edit_pos *pos)
 {
-	int i;
-	double pad;
+	double cur_y;
+	struct narrative_item *item;
+	int i = 0;
 
-	pad = n->space_t;
+	cur_y = n->space_t;
 
-	for ( i=0; i<n->n_items; i++ ) {
-		struct narrative_item *item = &n->items[i];
-		double npos = pad + item->h;
-		if ( npos > y ) {
-			pos->para = i;
-			if ( item->type == NARRATIVE_ITEM_SLIDE ) {
-				pos->pos = 0;
-			} else {
-				pango_layout_xy_to_index(item->layout,
-				                         pango_units_from_double(x - item->space_l),
-				                         pango_units_from_double(y - pad - item->space_t),
-				                         &pos->pos, &pos->trail);
-			}
-			return 0;
-		}
-		pad = npos;
+	do {
+		cur_y += n->items[i++].h;
+	} while ( (cur_y < y) && (i<n->n_items) );
+
+	pos->para = i-1;
+	item = &n->items[pos->para];
+	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+		pos->pos = 0;
+		return 0;
 	}
+
+	pango_layout_xy_to_index(item->layout,
+	                         pango_units_from_double(x - n->space_l - item->space_l),
+	                         pango_units_from_double(y - n->space_t - para_top(n, pos->para)),
+	                         &pos->pos, &pos->trail);
 
 	return 0;
 }
@@ -828,12 +887,15 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               GtkNarrativeView *e)
 {
 	gboolean r;
+	Narrative *n;
 	int claim = 0;
 
 	/* Throw the event to the IM context and let it sort things out */
 	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(e->im_context),
 		                           event);
 	if ( r ) return FALSE;  /* IM ate it */
+
+	n = presentation_get_narrative(e->p);
 
 	switch ( event->keyval ) {
 
@@ -846,25 +908,25 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_Left :
-		//cursor_moveh(e->cursor_frame, &e->cpos, -1);
+		cursor_moveh(n, &e->cpos, -1);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Right :
-		//cursor_moveh(e->cursor_frame, &e->cpos, +1);
+		cursor_moveh(n, &e->cpos, +1);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Up :
-		//cursor_moveh(e->cursor_frame, &e->cpos, -1);
+		cursor_moveh(n, &e->cpos, -1);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Down :
-		//cursor_moveh(e->cursor_frame, &e->cpos, +1);
+		cursor_moveh(n, &e->cpos, +1);
 		redraw(e);
 		claim = 1;
 		break;

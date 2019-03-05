@@ -94,7 +94,6 @@ struct _gtknarrativeview
 	/*< private >*/
 	Presentation        *p;
 	GtkIMContext        *im_context;
-	PangoContext        *pc;
 
 	int                  w;   /* Surface size in pixels */
 	int                  h;

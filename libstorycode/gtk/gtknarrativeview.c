@@ -1005,9 +1005,6 @@ static gint realise_sig(GtkWidget *da, GtkNarrativeView *e)
 	g_signal_connect(G_OBJECT(e->im_context), "commit", G_CALLBACK(im_commit_sig), e);
 	g_signal_connect(G_OBJECT(e), "key-press-event", G_CALLBACK(key_press_sig), e);
 
-	/* FIXME: Can do this "properly" by setting up a separate font map */
-	e->pc = gtk_widget_get_pango_context(GTK_WIDGET(e));
-
 	return FALSE;
 }
 

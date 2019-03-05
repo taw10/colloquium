@@ -38,6 +38,7 @@
 
 //#include "slide_window.h"
 #include "gtknarrativeview.h"
+#include "narrative_priv.h"
 //#include "slideshow.h"
 
 
@@ -455,72 +456,96 @@ static gint destroy_sig(GtkWidget *window, GtkNarrativeView *e)
 }
 
 
-//static void draw_para_highlight(cairo_t *cr, struct frame *fr, int cursor_para)
-//{
-//	double cx, cy, w, h;
-//
-//	if ( get_para_highlight(fr, cursor_para, &cx, &cy, &w, &h) != 0 ) {
-//		return;
-//	}
-//
-//	cairo_new_path(cr);
-//	cairo_rectangle(cr, cx+fr->x, cy+fr->y, w, h);
-//	cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
-//	cairo_set_line_width(cr, 5.0);
-//	cairo_stroke(cr);
-//}
+static double para_top(Narrative *n, int pnum)
+{
+	int i;
+	double py = 0.0;
+	for ( i=0; i<pnum; i++ ) py += n->items[i].h;
+	return py + n->items[pnum].space_t;
+}
 
 
-//static void draw_caret(cairo_t *cr, struct frame *fr, struct edit_pos cpos,
-//                       int hgh)
-//{
-//	double cx, clow, chigh, h;
-//	const double t = 1.8;
-//	size_t offs;
-//	Paragraph *para;
-//
-//	if ( hgh ) {
-//		draw_para_highlight(cr, fr, cpos.para);
-//		return;
-//	}
-//
-//	assert(fr != NULL);
-//
-//	para = fr->paras[cpos.para];
-//	if ( para_type(para) != PARA_TYPE_TEXT ) {
-//		draw_para_highlight(cr, fr, cpos.para);
-//		return;
-//	}
-//
-//	offs = pos_trail_to_offset(para, cpos.pos, cpos.trail);
-//	get_cursor_pos(fr, cpos.para, offs, &cx, &clow, &h);
-//
-//	cx += fr->x;
-//	clow += fr->y;
-//	chigh = clow + h;
-//
-//	cairo_move_to(cr, cx, clow);
-//	cairo_line_to(cr, cx, chigh);
-//
-//	cairo_move_to(cr, cx-t, clow-t);
-//	cairo_line_to(cr, cx, clow);
-//	cairo_move_to(cr, cx+t, clow-t);
-//	cairo_line_to(cr, cx, clow);
-//
-//	cairo_move_to(cr, cx-t, chigh+t);
-//	cairo_line_to(cr, cx, chigh);
-//	cairo_move_to(cr, cx+t, chigh+t);
-//	cairo_line_to(cr, cx, chigh);
-//
-//	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
-//	cairo_set_line_width(cr, 1.0);
-//	cairo_stroke(cr);
-//}
+static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para)
+{
+	double cx, cy, cw, ch;
+
+	cx = n->space_l;
+	cy = n->space_t + para_top(n, cursor_para);
+	cw = n->items[cursor_para].slide_w;
+	ch = n->items[cursor_para].slide_h;
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, cx, cy, cw, ch);
+	cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
+	cairo_set_line_width(cr, 5.0);
+	cairo_stroke(cr);
+}
+
+
+static size_t pos_trail_to_offset(struct narrative_item *item, int offs, int trail)
+{
+	glong char_offs;
+	char *ptr;
+
+	char_offs = g_utf8_pointer_to_offset(item->text, item->text+offs);
+	char_offs += trail;
+	ptr = g_utf8_offset_to_pointer(item->text, char_offs);
+	return ptr - item->text;
+}
+
+
+static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos,
+                       int hgh)
+{
+	double cx, clow, chigh;
+	const double t = 1.8;
+	size_t offs;
+	PangoRectangle rect;
+
+	if ( hgh ) {
+		draw_para_highlight(cr, n, cpos.para);
+		return;
+	}
+
+	assert(n != NULL);
+
+	if ( n->items[cpos.para].type == NARRATIVE_ITEM_SLIDE ) {
+		draw_para_highlight(cr, n, cpos.para);
+		return;
+	}
+
+	offs = pos_trail_to_offset(&n->items[cpos.para], cpos.pos, cpos.trail);
+
+	pango_layout_get_cursor_pos(n->items[cpos.para].layout, offs, &rect, NULL);
+
+	cx = pango_units_to_double(rect.x) + n->space_l + n->items[cpos.para].space_l;
+	clow = pango_units_to_double(rect.y) + n->space_t + para_top(n, cpos.para);
+
+	chigh = clow + pango_units_to_double(rect.height);
+
+	cairo_move_to(cr, cx, clow);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_move_to(cr, cx-t, clow-t);
+	cairo_line_to(cr, cx, clow);
+	cairo_move_to(cr, cx+t, clow-t);
+	cairo_line_to(cr, cx, clow);
+
+	cairo_move_to(cr, cx-t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+	cairo_move_to(cr, cx+t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+}
 
 
 static void draw_overlay(cairo_t *cr, GtkNarrativeView *e)
 {
-	//draw_caret(cr, e->cursor_frame, e->cpos, e->para_highlight);
+	draw_caret(cr, presentation_get_narrative(e->p),
+	           e->cpos, e->para_highlight);
 }
 
 
@@ -727,111 +752,49 @@ static void unset_selection(GtkNarrativeView *e)
 }
 
 
+static int find_cursor(Narrative *n, double x, double y, struct edit_pos *pos)
+{
+	int i;
+	double pad;
+
+	pad = n->space_t;
+
+	for ( i=0; i<n->n_items; i++ ) {
+		struct narrative_item *item = &n->items[i];
+		double npos = pad + item->h;
+		if ( npos > y ) {
+			pos->para = i;
+			if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+				pos->pos = 0;
+			} else {
+				pango_layout_xy_to_index(item->layout,
+				                         pango_units_from_double(x - item->space_l),
+				                         pango_units_from_double(y - pad - item->space_t),
+				                         &pos->pos, &pos->trail);
+			}
+			return 0;
+		}
+		pad = npos;
+	}
+
+	return 0;
+}
+
+
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  GtkNarrativeView *e)
 {
-//	enum corner c;
-//	gdouble x, y;
-//	struct frame *clicked;
-//	int shift;
-//
-//	x = event->x;
-//	y = event->y + e->scroll_pos;
-//	shift = event->state & GDK_SHIFT_MASK;
-//
-//	/* Clicked within the currently selected frame
-//	 *   -> resize, move or select text */
-//	if ( (e->selection != NULL) && (clicked == e->selection) ) {
-//
-//		struct frame *fr;
-//
-//		fr = e->selection;
-//
-//		/* Within the resizing region? */
-//		c = which_corner(x, y, fr);
-//		if ( (c != CORNER_NONE) && fr->resizable && shift ) {
-//
-//			e->drag_reason = DRAG_REASON_RESIZE;
-//			e->drag_corner = c;
-//
-//			e->start_corner_x = x;
-//			e->start_corner_y = y;
-//			e->diagonal_length = pow(fr->w, 2.0);
-//			e->diagonal_length += pow(fr->h, 2.0);
-//			e->diagonal_length = sqrt(e->diagonal_length);
-//
-//			calculate_box_size(fr, e, x, y);
-//
-//			e->drag_status = DRAG_STATUS_COULD_DRAG;
-//			e->drag_reason = DRAG_REASON_RESIZE;
-//
-//		} else {
-//
-//			/* Position cursor and prepare for possible drag */
-//			e->cursor_frame = clicked;
-//			check_paragraph(e->cursor_frame, e->pc, sc_block_child(fr->scblocks));
-//			find_cursor(clicked, x-fr->x, y-fr->y, &e->cpos);
-//			ensure_run(e->cursor_frame, e->cpos);
-//
-//			e->start_corner_x = x;
-//			e->start_corner_y = y;
-//
-//			if ( event->type == GDK_2BUTTON_PRESS ) {
-//				check_callback_click(e->cursor_frame, e->cpos.para);
-//			}
-//
-//			if ( fr->resizable && shift ) {
-//				e->drag_status = DRAG_STATUS_COULD_DRAG;
-//				e->drag_reason = DRAG_REASON_MOVE;
-//			} else if ( !e->para_highlight ) {
-//				e->drag_status = DRAG_STATUS_COULD_DRAG;
-//				e->drag_reason = DRAG_REASON_TEXTSEL;
-//				unset_selection(e);
-//				find_cursor(clicked, x-fr->x, y-fr->y, &e->sel_start);
-//			}
-//
-//		}
-//
-//	} else if ( (clicked == NULL)
-//	         || ( !e->top_editable && (clicked == e->top) ) )
-//	{
-//		/* Clicked no object. Deselect old object.
-//		 * If shift held, set up for creating a new one. */
-//		e->selection = NULL;
-//		unset_selection(e);
-//
-//		if ( shift ) {
-//			e->start_corner_x = x;
-//			e->start_corner_y = y;
-//			e->drag_status = DRAG_STATUS_COULD_DRAG;
-//			e->drag_reason = DRAG_REASON_CREATE;
-//		} else {
-//			e->drag_status = DRAG_STATUS_NONE;
-//			e->drag_reason = DRAG_REASON_NONE;
-//		}
-//
-//	} else {
-//
-//		/* Clicked an existing frame, no immediate dragging */
-//		e->drag_status = DRAG_STATUS_COULD_DRAG;
-//		e->drag_reason = DRAG_REASON_TEXTSEL;
-//		unset_selection(e);
-//		find_cursor(clicked, x-clicked->x, y-clicked->y,
-//		            &e->sel_start);
-//		find_cursor(clicked, x-clicked->x, y-clicked->y,
-//		            &e->sel_end);
-//		e->selection = clicked;
-//		e->cursor_frame = clicked;
-//		if ( clicked == e->top ) {
-//			check_paragraph(e->cursor_frame, e->pc, clicked->scblocks);
-//		} else {
-//			check_paragraph(e->cursor_frame, e->pc,
-//			                sc_block_child(clicked->scblocks));
-//		}
-//		find_cursor(clicked, x-clicked->x, y-clicked->y, &e->cpos);
-//		ensure_run(e->cursor_frame, e->cpos);
-//
-//	}
+	gdouble x, y;
+
+	x = event->x;
+	y = event->y + e->scroll_pos;
+
+	/* Clicked an existing frame, no immediate dragging */
+	e->drag_status = DRAG_STATUS_COULD_DRAG;
+	unset_selection(e);
+	find_cursor(presentation_get_narrative(e->p), x, y, &e->sel_start);
+	find_cursor(presentation_get_narrative(e->p), x, y, &e->sel_end);
+	find_cursor(presentation_get_narrative(e->p), x, y, &e->cpos);
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 	redraw(e);
@@ -843,33 +806,18 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
                            GtkNarrativeView *e)
 {
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
-
 		/* We just got a motion signal, and the status was "could drag",
 		 * therefore the drag has started. */
 		e->drag_status = DRAG_STATUS_DRAGGING;
-
 	}
 
-	switch ( e->drag_reason ) {
-
-		case DRAG_REASON_NONE :
-		break;
-
-		case DRAG_REASON_IMPORT :
-		/* Do nothing, handled by dnd_motion() */
-		break;
-
-		case DRAG_REASON_TEXTSEL :
-		//unset_selection(e);
-		//find_cursor(fr, x-fr->x, y-fr->y, &e->sel_end);
-		//rewrap_paragraph_range(fr, e->sel_start.para, e->sel_end.para,
-		//                       e->sel_start, e->sel_end, 1);
-		//find_cursor(fr, x-fr->x, y-fr->y, &e->cpos);
-		//e->sel_active = !positions_equal(e->sel_start, e->sel_end);
-		redraw(e);
-		break;
-
-	}
+	//unset_selection(e);
+	//find_cursor(fr, x-fr->x, y-fr->y, &e->sel_end);
+	//rewrap_paragraph_range(fr, e->sel_start.para, e->sel_end.para,
+	//                       e->sel_start, e->sel_end, 1);
+	//find_cursor(fr, x-fr->x, y-fr->y, &e->cpos);
+	//e->sel_active = !positions_equal(e->sel_start, e->sel_end);
+	redraw(e);
 
 	gdk_event_request_motions(event);
 	return FALSE;
@@ -989,7 +937,6 @@ static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
                       guint time, GtkNarrativeView *nview)
 {
 	nview->drag_status = DRAG_STATUS_NONE;
-	nview->drag_reason = DRAG_REASON_NONE;
 }
 
 

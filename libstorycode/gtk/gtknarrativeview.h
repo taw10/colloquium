@@ -52,14 +52,6 @@
 #define GTK_NARRATIVE_VIEW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
                                            GTK_TYPE_NARRATIVE_VIEW, GtkNarrativeViewClass))
 
-enum drag_reason
-{
-	DRAG_REASON_NONE,
-	DRAG_REASON_IMPORT,
-	DRAG_REASON_TEXTSEL
-};
-
-
 enum corner
 {
 	CORNER_NONE,
@@ -80,8 +72,8 @@ enum drag_status
 
 struct edit_pos
 {
-	int para;    /* Paragraph number */
-	size_t pos;  /* Byte position within paragraph
+	int para;    /* Paragraph number (corresponding to narrative items) */
+	int pos;     /* Byte position within paragraph
 	              * Yes, really.  See pango_layout_xy_to_index */
 	int trail;
 };
@@ -113,7 +105,6 @@ struct _gtknarrativeview
 	struct edit_pos      cpos;
 
 	/* Rubber band boxes and related stuff */
-	enum drag_reason     drag_reason;
 	enum drag_status     drag_status;
 	int                  sel_active;
 	struct edit_pos      sel_start; /* Where the user dragged from */

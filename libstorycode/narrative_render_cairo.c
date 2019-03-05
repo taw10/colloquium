@@ -75,8 +75,12 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	enum alignment align;
 	struct length paraspace[4];
 	double wrap_w;
+	PangoAttrList *attrs;
+	PangoAttribute *attr;
+	double fgcol[4];
+	guint16 r, g, b;
 
-	font = stylesheet_get_font(ss, el, NULL, &align);
+	font = stylesheet_get_font(ss, el, fgcol, &align);
 	if ( font == NULL ) return;
 	fontdesc = pango_font_description_from_string(font);
 
@@ -97,6 +101,14 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	/* Calculate width of actual text */
 	wrap_w = w - item->space_l - item->space_r;
 
+	/* Set foreground colour */
+	attrs = pango_attr_list_new();
+	r = fgcol[0] * 65535;
+	g = fgcol[1] * 65535;
+	b = fgcol[2] * 65535;
+	attr = pango_attr_foreground_new(r, g, b);
+	pango_attr_list_insert(attrs, attr);
+
 	if ( item->layout == NULL ) {
 		item->layout = pango_layout_new(pc);
 	}
@@ -104,6 +116,7 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	pango_layout_set_text(item->layout, item->text, -1);
 	pango_layout_set_alignment(item->layout, palignment);
 	pango_layout_set_font_description(item->layout, fontdesc);
+	pango_layout_set_attributes(item->layout, attrs);
 
 	/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
 	//pango_layout_set_attributes(item->layout, attrs);

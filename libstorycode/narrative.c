@@ -191,7 +191,8 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 		merge = 0;
 	} else {
 		memmove(&n->items[i2].text[0],
-		        &n->items[i2].text[o2], o2);
+		        &n->items[i2].text[o2],
+		        strlen(&n->items[i2].text[o2])+1);
 	}
 
 	/* If the start and end points are in different paragraphs, and both

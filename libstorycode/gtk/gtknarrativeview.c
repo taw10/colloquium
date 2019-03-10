@@ -143,6 +143,16 @@ static void rewrap_range(GtkNarrativeView *e, int min, int max)
 }
 
 
+static void update_size(GtkNarrativeView *e)
+{
+	e->w = e->visible_width;
+	e->h = narrative_get_height(presentation_get_narrative(e->p));
+
+	set_vertical_params(e);
+	set_horizontal_params(e);
+}
+
+
 static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            GtkNarrativeView *e)
 {
@@ -156,11 +166,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 
 	rewrap_range(e, 0, n->n_items-1);
 
-	e->w = e->visible_width;
-	e->h = narrative_get_height(presentation_get_narrative(e->p));
-
-	set_vertical_params(e);
-	set_horizontal_params(e);
+	update_size(e);
 
 	return FALSE;
 }
@@ -496,6 +502,10 @@ static size_t pos_trail_to_offset(struct narrative_item *item, int offs, int tra
 	glong char_offs;
 	char *ptr;
 
+	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+		return offs;
+	}
+
 	char_offs = g_utf8_pointer_to_offset(item->text, item->text+offs);
 	char_offs += trail;
 	ptr = g_utf8_offset_to_pointer(item->text, char_offs);
@@ -619,49 +629,12 @@ static void check_cursor_visible(GtkNarrativeView *e)
 }
 
 
-static void do_backspace(GtkNarrativeView *e)
+static struct narrative_item *get_current_item(GtkNarrativeView *e,
+                                               Narrative **pn)
 {
-//	double wrapw = e->cursor_frame->w - e->cursor_frame->pad_l - e->cursor_frame->pad_r;
-//
-//	if ( e->sel_active ) {
-//
-//		/* Delete the selected block */
-//		delete_text_from_frame(e->cursor_frame, e->sel_start, e->sel_end, wrapw);
-//
-//		/* Cursor goes at start of deletion */
-//		sort_positions(&e->sel_start, &e->sel_end);
-//		e->cpos = e->sel_start;
-//		e->sel_active = 0;
-//
-//	} else {
-//
-//		if ( para_type(e->cursor_frame->paras[e->cpos.para]) == PARA_TYPE_TEXT ) {
-//
-//			/* Delete one character */
-//			struct edit_pos p1, p2;
-//
-//			p1 = e->cpos;
-//
-//			p2 = p1;
-//
-//			cursor_moveh(e->cursor_frame, &p2, -1);
-//			show_edit_pos(p1);
-//			show_edit_pos(p2);
-//
-//			delete_text_from_frame(e->cursor_frame, p1, p2, wrapw);
-//			e->cpos = p2;
-//
-//		} else {
-//
-//			/* FIXME: Implement this */
-//			fprintf(stderr, "Deleting non-text paragraph\n");
-//
-//		}
-//
-//	}
-
-	emit_change_sig(e);
-	redraw(e);
+	Narrative *n = presentation_get_narrative(e->p);
+	if ( pn != NULL ) *pn = n;
+	return &n->items[e->cpos.para];
 }
 
 
@@ -670,7 +643,26 @@ static size_t end_offset_of_para(Narrative *n, int pnum)
 	assert(pnum >= 0);
 	if ( n->items[pnum].type == NARRATIVE_ITEM_SLIDE ) return 0;
 	return strlen(n->items[pnum].text);
+}
 
+
+static void sort_positions(struct edit_pos *a, struct edit_pos *b)
+{
+	if ( a->para > b->para ) {
+		size_t tpos;
+		int tpara, ttrail;
+		tpara = b->para;   tpos = b->pos;  ttrail = b->trail;
+		b->para = a->para;  b->pos = a->pos;  b->trail = a->trail;
+		a->para = tpara;    a->pos = tpos;    a->trail = ttrail;
+	}
+
+	if ( (a->para == b->para) && (a->pos > b->pos) )
+	{
+		size_t tpos = b->pos;
+		int ttrail = b->trail;
+		b->pos = a->pos;  b->trail = a->trail;
+		a->pos = tpos;    a->trail = ttrail;
+	}
 }
 
 
@@ -730,6 +722,53 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 }
 
 
+static void do_backspace(GtkNarrativeView *e)
+{
+	Narrative *n;
+	size_t o1, o2;
+
+	n = presentation_get_narrative(e->p);
+
+	if ( e->sel_active ) {
+
+		/* Delete the selected block */
+		sort_positions(&e->sel_start, &e->sel_end);
+		o1 = pos_trail_to_offset(&n->items[e->sel_start.para],
+		                         e->sel_start.pos, e->sel_start.trail);
+		o2 = pos_trail_to_offset(&n->items[e->sel_end.para],
+		                         e->sel_end.pos, e->sel_end.trail);
+		narrative_delete_block(n, e->sel_start.para, o1,
+		                          e->sel_end.para, o2);
+
+		/* Cursor goes at start of deletion */
+		e->cpos = e->sel_start;
+		e->sel_active = 0;
+
+	} else {
+
+		struct edit_pos p1, p2;
+
+		/* Delete one character, as represented visually */
+		p2 = e->cpos;
+		p1 = p2;
+		cursor_moveh(n, &p1, -1);
+		o1 = pos_trail_to_offset(&n->items[p1.para], p1.pos, p1.trail);
+		o2 = pos_trail_to_offset(&n->items[p2.para], p2.pos, p2.trail);
+		narrative_delete_block(n, p1.para, o1, p2.para, o2);
+		e->cpos = p1;
+
+	}
+
+	/* The only paragraphs which still exist and might have been
+	 * affected by the deletion are sel_start.para and the one
+	 * immediately afterwards. */
+	rewrap_range(e, e->sel_start.para, e->sel_start.para+1);
+	update_size(e);
+	emit_change_sig(e);
+	redraw(e);
+}
+
+
 static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
                                      char *t)
 {
@@ -753,12 +792,11 @@ static void insert_text(char *t, GtkNarrativeView *e)
 		do_backspace(e);
 	}
 
-	n = presentation_get_narrative(e->p);
-	item = &n->items[e->cpos.para];
+	item = get_current_item(e, &n);
 
 	if ( strcmp(t, "\n") == 0 ) {
 		//split_paragraph_at_cursor(e); FIXME
-		//update_size(e);
+		update_size(e);
 		cursor_moveh(n, &e->cpos, +1);
 		check_cursor_visible(e);
 		emit_change_sig(e);
@@ -773,7 +811,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 		off = pos_trail_to_offset(item, e->cpos.pos, e->cpos.trail);
 		insert_text_in_paragraph(item, off, t);
 		rewrap_range(e, e->cpos.para, e->cpos.para);
-		//update_size(e);
+		update_size(e);
 		cursor_moveh(n, &e->cpos, +1);
 
 	} else {
@@ -899,14 +937,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	switch ( event->keyval ) {
 
-		case GDK_KEY_Escape :
-		if ( !e->para_highlight ) {
-			//sc_editor_remove_cursor(e);
-			redraw(e);
-			claim = 1;
-		}
-		break;
-
 		case GDK_KEY_Left :
 		cursor_moveh(n, &e->cpos, -1);
 		redraw(e);
@@ -931,14 +961,13 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		claim = 1;
 		break;
 
-
 		case GDK_KEY_Return :
 		im_commit_sig(NULL, "\n", e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_BackSpace :
-		//do_backspace(e->selection, e);
+		do_backspace(e);
 		claim = 1;
 		break;
 

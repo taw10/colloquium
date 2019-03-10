@@ -73,9 +73,8 @@ enum drag_status
 struct edit_pos
 {
 	int para;    /* Paragraph number (corresponding to narrative items) */
-	int pos;     /* Byte position within paragraph
-	              * Yes, really.  See pango_layout_xy_to_index */
-	int trail;
+	int pos;     /* Byte position within paragraph (yes, really)  */
+	int trail;   /* 1 = end of character, 0 = before */
 };
 
 

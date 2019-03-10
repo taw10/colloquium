@@ -264,6 +264,8 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	w -= n->space_l + n->space_r;
 
 	sort_positions(&sel_start, &sel_end);
+	if ( min < 0 ) min = 0;
+	if ( max >= n->n_items ) max = n->n_items-1;
 
 	if ( !positions_equal(sel_start, sel_end) ) {
 		struct narrative_item *item;

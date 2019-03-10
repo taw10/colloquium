@@ -156,6 +156,7 @@ static void delete_item(Narrative *n, int del)
 void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 {
 	int i;
+	int n_del = 0;
 	int merge = 1;
 
 	/* Starting item */
@@ -177,9 +178,12 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 
 	/* Middle items */
 	for ( i=i1+1; i<i2; i++ ) {
-		delete_item(n, i);
-		i2--;
+		/* Deleting the item moves all the subsequent items up, so the
+		 * index to be deleted doesn't change. */
+		delete_item(n, i1+1);
+		n_del++;
 	}
+	i2 -= n_del;
 
 	/* Last item */
 	if ( n->items[i2].type == NARRATIVE_ITEM_SLIDE ) {

@@ -778,13 +778,13 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 	o2 = pos_trail_to_offset(&n->items[p2.para], p2.pos, p2.trail);
 	narrative_delete_block(n, p1.para, o1, p2.para, o2);
 	e->cpos = p1;
+	unset_selection(e);
 
 	/* The only paragraphs which still exist and might have been
 	 * affected by the deletion are sel_start.para and the one
 	 * immediately afterwards. */
 	rewrap_range(e, p1.para, p1.para+1);
 	update_size(e);
-	unset_selection(e);
 	emit_change_sig(e);
 	redraw(e);
 }

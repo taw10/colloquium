@@ -139,7 +139,7 @@ static void rewrap_range(GtkNarrativeView *e, int min, int max)
 	                     presentation_get_stylesheet(e->p),
 	                     lang, pc, e->w,
 	                     presentation_get_imagestore(e->p),
-	                     min, max);
+	                     min, max, e->sel_start, e->sel_end);
 }
 
 
@@ -722,6 +722,35 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 }
 
 
+static void unset_selection(GtkNarrativeView *e)
+{
+	int a, b;
+
+	a = e->sel_start.para;
+	b = e->sel_end.para;
+	if ( a > b ) {
+		a = e->sel_end.para;
+		b = e->sel_start.para;
+	}
+	e->sel_start.para = 0;
+	e->sel_start.pos = 0;
+	e->sel_start.trail = 0;
+	e->sel_end.para = 0;
+	e->sel_end.pos = 0;
+	e->sel_end.trail = 0;
+	rewrap_range(e, a, b);
+}
+
+
+static int positions_equal(struct edit_pos a, struct edit_pos b)
+{
+	if ( a.para != b.para ) return 0;
+	if ( a.pos != b.pos ) return 0;
+	if ( a.trail != b.trail ) return 0;
+	return 1;
+}
+
+
 static void do_backspace(GtkNarrativeView *e, signed int dir)
 {
 	Narrative *n;
@@ -730,7 +759,7 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 
 	n = presentation_get_narrative(e->p);
 
-	if ( e->sel_active ) {
+	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 
 		/* Block delete */
 		p1 = e->sel_start;
@@ -749,13 +778,13 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 	o2 = pos_trail_to_offset(&n->items[p2.para], p2.pos, p2.trail);
 	narrative_delete_block(n, p1.para, o1, p2.para, o2);
 	e->cpos = p1;
-	e->sel_active = 0;
 
 	/* The only paragraphs which still exist and might have been
 	 * affected by the deletion are sel_start.para and the one
 	 * immediately afterwards. */
 	rewrap_range(e, p1.para, p1.para+1);
 	update_size(e);
+	unset_selection(e);
 	emit_change_sig(e);
 	redraw(e);
 }
@@ -780,7 +809,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 	Narrative *n;
 	struct narrative_item *item;
 
-	if ( e->sel_active ) {
+	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 		do_backspace(e, 0);
 	}
 
@@ -823,22 +852,6 @@ static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
 {
 	insert_text(str, e);
 	return FALSE;
-}
-
-
-static void unset_selection(GtkNarrativeView *e)
-{
-	int a, b;
-
-	if ( !e->sel_active ) return;
-
-	a = e->sel_start.para;
-	b = e->sel_end.para;
-	if ( a > b ) {
-		a = e->sel_end.para;
-		b = e->sel_start.para;
-	}
-	e->sel_active = 0;
 }
 
 
@@ -891,21 +904,47 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
+static void sorti(int *a, int *b)
+{
+	if ( *a > *b ) {
+		int tmp = *a;
+		*a = *b;
+		*b = tmp;
+	}
+}
+
+
 static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
                            GtkNarrativeView *e)
 {
+	Narrative *n;
+	gdouble x, y;
+	struct edit_pos old_sel_end;
+	int minp, maxp;
+
+	x = event->x;
+	y = event->y + e->scroll_pos;
+
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
 		/* We just got a motion signal, and the status was "could drag",
 		 * therefore the drag has started. */
 		e->drag_status = DRAG_STATUS_DRAGGING;
 	}
 
-	//unset_selection(e);
-	//find_cursor(fr, x-fr->x, y-fr->y, &e->sel_end);
-	//rewrap_paragraph_range(fr, e->sel_start.para, e->sel_end.para,
-	//                       e->sel_start, e->sel_end, 1);
-	//find_cursor(fr, x-fr->x, y-fr->y, &e->cpos);
-	//e->sel_active = !positions_equal(e->sel_start, e->sel_end);
+	old_sel_end = e->sel_end;
+	n = presentation_get_narrative(e->p);
+	find_cursor(n, x, y, &e->sel_end);
+
+	minp = e->sel_start.para;
+	maxp = e->sel_end.para;
+	sorti(&minp, &maxp);
+	if ( !positions_equal(e->sel_start, old_sel_end) ) {
+		if ( old_sel_end.para > maxp ) maxp = old_sel_end.para;
+		if ( old_sel_end.para < minp ) minp = old_sel_end.para;
+	}
+
+	rewrap_range(e, minp, maxp);
+	find_cursor(n, x, y, &e->cpos);
 	redraw(e);
 
 	gdk_event_request_motions(event);
@@ -1041,12 +1080,6 @@ static gint realise_sig(GtkWidget *da, GtkNarrativeView *e)
 	g_signal_connect(G_OBJECT(e), "key-press-event", G_CALLBACK(key_press_sig), e);
 
 	return FALSE;
-}
-
-
-static void update_size_request(GtkNarrativeView *e)
-{
-	gtk_widget_set_size_request(GTK_WIDGET(e), 0, e->h);
 }
 
 

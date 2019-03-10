@@ -38,6 +38,7 @@
 #include "stylesheet.h"
 #include "imagestore.h"
 #include "slide_render_cairo.h"
+#include "narrative_render_cairo.h"
 
 #include "narrative_priv.h"
 
@@ -66,7 +67,8 @@ static PangoAlignment to_pangoalignment(enum alignment align)
 
 
 static void wrap_text(struct narrative_item *item, PangoContext *pc,
-                      Stylesheet *ss, enum style_element el, double w)
+                      Stylesheet *ss, enum style_element el, double w,
+                      size_t sel_start, size_t sel_end)
 {
 	PangoAlignment palignment;
 	PangoRectangle rect;
@@ -108,6 +110,15 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	b = fgcol[2] * 65535;
 	attr = pango_attr_foreground_new(r, g, b);
 	pango_attr_list_insert(attrs, attr);
+
+	/* Add attributes for selected text */
+	if ( sel_start > 0 || sel_end > 0 ) {
+		PangoAttribute *attr;
+		attr = pango_attr_background_new(42919, 58853, 65535);
+		attr->start_index = sel_start;
+		attr->end_index = sel_end;
+		pango_attr_list_insert(attrs, attr);
+	}
 
 	if ( item->layout == NULL ) {
 		item->layout = pango_layout_new(pc);
@@ -189,12 +200,59 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *
 }
 
 
+static size_t pos_trail_to_offset(struct narrative_item *item, int offs, int trail)
+{
+	glong char_offs;
+	char *ptr;
+
+	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+		return offs;
+	}
+
+	char_offs = g_utf8_pointer_to_offset(item->text, item->text+offs);
+	char_offs += trail;
+	ptr = g_utf8_offset_to_pointer(item->text, char_offs);
+	return ptr - item->text;
+}
+
+
+static int positions_equal(struct edit_pos a, struct edit_pos b)
+{
+	if ( a.para != b.para ) return 0;
+	if ( a.pos != b.pos ) return 0;
+	if ( a.trail != b.trail ) return 0;
+	return 1;
+}
+
+
+static void sort_positions(struct edit_pos *a, struct edit_pos *b)
+{
+	if ( a->para > b->para ) {
+		size_t tpos;
+		int tpara, ttrail;
+		tpara = b->para;   tpos = b->pos;  ttrail = b->trail;
+		b->para = a->para;  b->pos = a->pos;  b->trail = a->trail;
+		a->para = tpara;    a->pos = tpos;    a->trail = ttrail;
+	}
+
+	if ( (a->para == b->para) && (a->pos > b->pos) )
+	{
+		size_t tpos = b->pos;
+		int ttrail = b->trail;
+		b->pos = a->pos;  b->trail = a->trail;
+		a->pos = tpos;    a->trail = ttrail;
+	}
+}
+
+
 int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
                          PangoContext *pc, double w, ImageStore *is,
-                         int min, int max)
+                         int min, int max,
+                         struct edit_pos sel_start, struct edit_pos sel_end)
 {
 	int i;
 	struct length pad[4];
+	int sel_s, sel_e;
 
 	if ( stylesheet_get_padding(stylesheet, STYEL_NARRATIVE, pad) ) return 1;
 	n->space_l = lcalc(pad[0], w);
@@ -205,23 +263,56 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	n->w = w;
 	w -= n->space_l + n->space_r;
 
+	sort_positions(&sel_start, &sel_end);
+
+	if ( !positions_equal(sel_start, sel_end) ) {
+		struct narrative_item *item;
+		item = &n->items[sel_start.para];
+		sel_s = pos_trail_to_offset(item, sel_start.pos, sel_start.trail);
+		item = &n->items[sel_end.para];
+		sel_e = pos_trail_to_offset(item, sel_end.pos, sel_end.trail);
+	} else {
+		sel_s = 0;
+		sel_e = 0;
+	}
+
 	for ( i=min; i<=max; i++ ) {
+
+		size_t srt, end;
+		if ( i >= sel_start.para && i <= sel_end.para ) {
+			if ( i == sel_start.para ) {
+				srt = sel_s;
+			} else {
+				srt = 0;
+			}
+			if ( i == sel_end.para ) {
+				end = sel_e;
+			} else {
+				end = G_MAXUINT;
+			}
+			if ( i > sel_start.para && i < sel_end.para ) {
+				end = G_MAXUINT;
+			}
+		} else {
+			srt = 0;
+			end = 0;
+		}
 
 		switch ( n->items[i].type ) {
 
 			case NARRATIVE_ITEM_TEXT :
 			wrap_text(&n->items[i], pc, stylesheet,
-			          STYEL_NARRATIVE, w);
+			          STYEL_NARRATIVE, w, srt, end);
 			break;
 
 			case NARRATIVE_ITEM_BP :
 			wrap_text(&n->items[i], pc, stylesheet,
-			          STYEL_NARRATIVE_BP, w);
+			          STYEL_NARRATIVE_BP, w, srt, end);
 			break;
 
 			case NARRATIVE_ITEM_PRESTITLE :
 			wrap_text(&n->items[i], pc, stylesheet,
-			          STYEL_NARRATIVE_PRESTITLE, w);
+			          STYEL_NARRATIVE_PRESTITLE, w, srt, end);
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
@@ -235,14 +326,6 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	}
 
 	return 0;
-}
-
-
-int narrative_wrap(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
-                   PangoContext *pc, double w, ImageStore *is)
-{
-	return narrative_wrap_range(n, stylesheet, lang, pc, w, is,
-	                            0, n->n_items-1);
 }
 
 

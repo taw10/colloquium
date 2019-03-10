@@ -34,6 +34,7 @@
 #include <narrative.h>
 #include <presentation.h>
 #include <imagestore.h>
+#include <narrative_render_cairo.h>
 
 #define GTK_TYPE_NARRATIVE_VIEW (gtk_narrative_view_get_type())
 
@@ -70,14 +71,6 @@ enum drag_status
 };
 
 
-struct edit_pos
-{
-	int para;    /* Paragraph number (corresponding to narrative items) */
-	int pos;     /* Byte position within paragraph (yes, really)  */
-	int trail;   /* 1 = end of character, 0 = before */
-};
-
-
 struct _gtknarrativeview
 {
 	GtkDrawingArea       parent_instance;
@@ -105,7 +98,6 @@ struct _gtknarrativeview
 
 	/* Rubber band boxes and related stuff */
 	enum drag_status     drag_status;
-	int                  sel_active;
 	struct edit_pos      sel_start; /* Where the user dragged from */
 	struct edit_pos      sel_end;
 };

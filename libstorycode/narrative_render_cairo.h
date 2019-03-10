@@ -30,14 +30,17 @@
 #include "presentation.h"
 #include "imagestore.h"
 
+struct edit_pos
+{
+	int para;    /* Paragraph number (corresponding to narrative items) */
+	int pos;     /* Byte position within paragraph (yes, really)  */
+	int trail;   /* 1 = end of character, 0 = before */
+};
 
 extern int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet,
                                 PangoLanguage *lang, PangoContext *pc, double w,
-                                ImageStore *is, int min, int max);
-
-extern int narrative_wrap(Narrative *n, Stylesheet *stylesheet,
-                          PangoLanguage *lang, PangoContext *pc, double w,
-                          ImageStore *is);
+                                ImageStore *is, int min, int max,
+                                struct edit_pos sel_start, struct edit_pos sel_end);
 
 extern double narrative_get_height(Narrative *n);
 

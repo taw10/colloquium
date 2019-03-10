@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "narrative.h"
 #include "narrative_priv.h"
@@ -155,12 +156,14 @@ static void delete_item(Narrative *n, int del)
 void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 {
 	int i;
+	int merge = 1;
 
 	/* Starting item */
 	if ( n->items[i1].type == NARRATIVE_ITEM_SLIDE ) {
 		delete_item(n, i1);
 		i1--;
 		i2--;
+		merge = 0;
 	} else {
 		if ( i1 == i2 ) {
 			memmove(&n->items[i1].text[o1],
@@ -181,8 +184,27 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	/* Last item */
 	if ( n->items[i2].type == NARRATIVE_ITEM_SLIDE ) {
 		delete_item(n, i2);
+		merge = 0;
 	} else {
 		memmove(&n->items[i2].text[0],
 		        &n->items[i2].text[o2], o2);
+	}
+
+	/* If the start and end points are in different paragraphs, and both
+	 * of them are text (any kind), merge them.  Note that at this point,
+	 * we know that i1 and i2 are different because otherwise we would've
+	 * returned earlier ("easy case"). */
+	assert(i1 != i2);
+	if ( merge ) {
+		char *new_text;
+		size_t len = strlen(n->items[i1].text);
+		len += strlen(n->items[i2].text);
+		new_text = malloc(len+1);
+		if ( new_text == NULL ) return;
+		strcpy(new_text, n->items[i1].text);
+		strcat(new_text, n->items[i2].text);
+		free(n->items[i1].text);
+		n->items[i1].text = new_text;
+		delete_item(n, i2);
 	}
 }

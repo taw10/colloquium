@@ -722,47 +722,39 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 }
 
 
-static void do_backspace(GtkNarrativeView *e)
+static void do_backspace(GtkNarrativeView *e, signed int dir)
 {
 	Narrative *n;
+	struct edit_pos p1, p2;
 	size_t o1, o2;
 
 	n = presentation_get_narrative(e->p);
 
 	if ( e->sel_active ) {
 
-		/* Delete the selected block */
-		sort_positions(&e->sel_start, &e->sel_end);
-		o1 = pos_trail_to_offset(&n->items[e->sel_start.para],
-		                         e->sel_start.pos, e->sel_start.trail);
-		o2 = pos_trail_to_offset(&n->items[e->sel_end.para],
-		                         e->sel_end.pos, e->sel_end.trail);
-		narrative_delete_block(n, e->sel_start.para, o1,
-		                          e->sel_end.para, o2);
-
-		/* Cursor goes at start of deletion */
-		e->cpos = e->sel_start;
-		e->sel_active = 0;
+		/* Block delete */
+		p1 = e->sel_start;
+		p2 = e->sel_end;
 
 	} else {
-
-		struct edit_pos p1, p2;
 
 		/* Delete one character, as represented visually */
 		p2 = e->cpos;
 		p1 = p2;
-		cursor_moveh(n, &p1, -1);
-		o1 = pos_trail_to_offset(&n->items[p1.para], p1.pos, p1.trail);
-		o2 = pos_trail_to_offset(&n->items[p2.para], p2.pos, p2.trail);
-		narrative_delete_block(n, p1.para, o1, p2.para, o2);
-		e->cpos = p1;
-
+		cursor_moveh(n, &p1, dir);
 	}
+
+	sort_positions(&p1, &p2);
+	o1 = pos_trail_to_offset(&n->items[p1.para], p1.pos, p1.trail);
+	o2 = pos_trail_to_offset(&n->items[p2.para], p2.pos, p2.trail);
+	narrative_delete_block(n, p1.para, o1, p2.para, o2);
+	e->cpos = p1;
+	e->sel_active = 0;
 
 	/* The only paragraphs which still exist and might have been
 	 * affected by the deletion are sel_start.para and the one
 	 * immediately afterwards. */
-	rewrap_range(e, e->sel_start.para, e->sel_start.para+1);
+	rewrap_range(e, p1.para, p1.para+1);
 	update_size(e);
 	emit_change_sig(e);
 	redraw(e);
@@ -789,7 +781,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 	struct narrative_item *item;
 
 	if ( e->sel_active ) {
-		do_backspace(e);
+		do_backspace(e, 0);
 	}
 
 	item = get_current_item(e, &n);
@@ -967,7 +959,12 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_BackSpace :
-		do_backspace(e);
+		do_backspace(e, -1);
+		claim = 1;
+		break;
+
+		case GDK_KEY_Delete :
+		do_backspace(e, +1);
 		claim = 1;
 		break;
 

@@ -40,6 +40,7 @@ extern void narrative_add_text(Narrative *n, char *text);
 extern void narrative_add_slide(Narrative *n, Slide *slide);
 extern void narrative_delete_block(Narrative *n, int i1, size_t o1,
                                                  int i2, size_t o2);
+extern void narrative_split_item(Narrative *n, int i1, size_t o1);
 
 
 #endif /* NARRATIVE_H */

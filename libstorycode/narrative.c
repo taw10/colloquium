@@ -70,6 +70,15 @@ void narrative_free(Narrative *n)
 }
 
 
+static void init_item(struct narrative_item *item)
+{
+	item->layout = NULL;
+	item->text = NULL;
+	item->slide = NULL;
+	item->slide_thumbnail = NULL;
+}
+
+
 static struct narrative_item *add_item(Narrative *n)
 {
 	struct narrative_item *new_items;
@@ -78,11 +87,18 @@ static struct narrative_item *add_item(Narrative *n)
 	if ( new_items == NULL ) return NULL;
 	n->items = new_items;
 	item = &n->items[n->n_items++];
-	item->layout = NULL;
-	item->text = NULL;
-	item->slide = NULL;
-	item->slide_thumbnail = NULL;
+	init_item(item);
 	return item;
+}
+
+
+static struct narrative_item *insert_item(Narrative *n, int pos)
+{
+	add_item(n);
+	memmove(&n->items[pos+1], &n->items[pos],
+	        (n->n_items-pos-1)*sizeof(struct narrative_item));
+	init_item(&n->items[pos+1]);
+	return &n->items[pos+1];
 }
 
 
@@ -212,4 +228,23 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 		n->items[i1].text = new_text;
 		delete_item(n, i2);
 	}
+}
+
+
+void narrative_split_item(Narrative *n, int i1, size_t o1)
+{
+	struct narrative_item *item1;
+	struct narrative_item *item2;
+
+	item1 = &n->items[i1];
+	item2 = insert_item(n, i1);
+
+	if ( item1->type != NARRATIVE_ITEM_SLIDE ) {
+		item2->text = strdup(&item1->text[o1]);
+		item1->text[o1] = '\0';
+	} else {
+		item2->text = strdup("");
+	}
+
+	item2->type = NARRATIVE_ITEM_TEXT;
 }

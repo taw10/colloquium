@@ -528,6 +528,11 @@ static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
 		return;
 	}
 
+	if ( item->layout == NULL ) {
+		fprintf(stderr, "get_cursor_pos: No layout\n");
+		return;
+	}
+
 	offs = pos_trail_to_offset(item, cpos.pos, cpos.trail);
 	pango_layout_get_cursor_pos(item->layout, offs, &rect, NULL);
 	*x = pango_units_to_double(rect.x) + n->space_l + item->space_l;
@@ -680,6 +685,7 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 			cp->trail = 0;
 		}
 	} else {
+		if ( item->layout == NULL ) return;
 		pango_layout_move_cursor_visually(item->layout, 1, cp->pos,
 		                                  cp->trail, dir,
 		                                  &np, &cp->trail);
@@ -804,6 +810,21 @@ static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
 }
 
 
+static void split_paragraph_at_cursor(Narrative *n, struct edit_pos pos)
+{
+	size_t off;
+
+	if ( n->items[pos.para].type != NARRATIVE_ITEM_SLIDE ) {
+		off = pos_trail_to_offset(&n->items[pos.para],
+		                          pos.pos, pos.trail);
+	} else {
+		off = 0;
+	}
+
+	narrative_split_item(n, pos.para, off);
+}
+
+
 static void insert_text(char *t, GtkNarrativeView *e)
 {
 	Narrative *n;
@@ -816,7 +837,8 @@ static void insert_text(char *t, GtkNarrativeView *e)
 	item = get_current_item(e, &n);
 
 	if ( strcmp(t, "\n") == 0 ) {
-		//split_paragraph_at_cursor(e); FIXME
+		split_paragraph_at_cursor(n, e->cpos);
+		rewrap_range(e, e->cpos.para, e->cpos.para+1);
 		update_size(e);
 		cursor_moveh(n, &e->cpos, +1);
 		check_cursor_visible(e);
@@ -835,11 +857,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 		update_size(e);
 		cursor_moveh(n, &e->cpos, +1);
 
-	} else {
-
-		/* FIXME: Add text after slide */
-
-	}
+	} /* else do nothing: pressing enter is OK, though */
 
 	emit_change_sig(e);
 	check_cursor_visible(e);

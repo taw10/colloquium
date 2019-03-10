@@ -369,6 +369,8 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 
 static void draw_text(struct narrative_item *item, cairo_t *cr)
 {
+	if ( item->layout == NULL ) return;
+
 	cairo_save(cr);
 	cairo_translate(cr, item->space_l, item->space_t);
 

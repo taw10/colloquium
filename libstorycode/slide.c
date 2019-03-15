@@ -205,8 +205,7 @@ int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h)
 
 	if ( s->logical_w < 0.0 ) {
 		/* Slide-specific value not set, use stylesheet */
-		stylesheet_get_slide_default_size(ss, w, h);
-		return 0;
+		return stylesheet_get_slide_default_size(ss, w, h);
 	}
 
 	*w = s->logical_w;

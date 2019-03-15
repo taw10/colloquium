@@ -44,11 +44,13 @@ extern void presentation_add_stylesheet(Presentation *p, Stylesheet *ss);
 extern void presentation_add_narrative(Presentation *p, Narrative *n);
 extern void presentation_add_slide(Presentation *p, Slide *s);
 
-extern int presentation_num_slides(Presentation *p);
-extern Slide *presentation_slide(Presentation *p, int i);
+extern int presentation_get_num_slides(Presentation *p);
+extern Slide *presentation_get_slide_by_number(Presentation *p, int i);
+extern signed int presentation_get_slide_number(Presentation *p, Slide *s);
 extern Stylesheet *presentation_get_stylesheet(Presentation *p);
 extern Narrative *presentation_get_narrative(Presentation *p);
 extern const char *presentation_get_language(Presentation *p);
 extern ImageStore *presentation_get_imagestore(Presentation *p);
+
 
 #endif /* PRESENTATION_H */

@@ -110,7 +110,7 @@ struct _gtknarrativeviewclass
 typedef struct _gtknarrativeview GtkNarrativeView;
 typedef struct _gtknarrativeviewclass GtkNarrativeViewClass;
 
-extern GtkNarrativeView *gtk_narrative_view_new(Presentation *p);
+extern GtkWidget *gtk_narrative_view_new(Presentation *p);
 
 extern void gtk_narrative_view_set_logical_size(GtkNarrativeView *e, double w, double h);
 

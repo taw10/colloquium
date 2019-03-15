@@ -61,12 +61,12 @@ static int render_slides_to_pdf(Presentation *p, ImageStore *is, const char *fil
 	cr = cairo_create(surf);
 	pc = pango_cairo_create_context(cr);
 
-	for ( i=0; i<presentation_num_slides(p); i++ )
+	for ( i=0; i<presentation_get_num_slides(p); i++ )
 	{
 		Slide *s;
 		double log_w, log_h;
 
-		s = presentation_slide(p, i);
+		s = presentation_get_slide_by_number(p, i);
 		slide_get_logical_size(s, presentation_get_stylesheet(p),
 		                       &log_w, &log_h);
 

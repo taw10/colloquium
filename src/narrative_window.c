@@ -38,22 +38,22 @@
 
 #include "colloquium.h"
 #include "narrative_window.h"
+#include "slide_window.h"
 //#include "testcard.h"
 //#include "pr_clock.h"
 //#include "print.h"
 //#include "stylesheet_editor.h"
 typedef struct _ss SCSlideshow;  /* FIXME placeholder */
-typedef struct _sw SlideWindow; /* FIXME placeholder */
 typedef struct _pc PRClock; /* FIXME placeholder */
 
 struct _narrative_window
 {
-	GtkWidget *window;
+	GtkWidget           *window;
 	GtkToolItem         *bfirst;
 	GtkToolItem         *bprev;
 	GtkToolItem         *bnext;
 	GtkToolItem         *blast;
-	GtkNarrativeView    *nv;
+	GtkWidget           *nv;
 	GApplication        *app;
 	Presentation        *p;
 	GFile               *file;
@@ -465,6 +465,15 @@ static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 }
 
 
+static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
+                                    NarrativeWindow *nw)
+{
+	Slide *slide = (Slide *)pslide;
+	slide_window_open(nw->p, slide, nw->app);
+	return FALSE;
+}
+
+
 static gboolean nw_key_press_sig(GtkWidget *da, GdkEventKey *event,
                                  NarrativeWindow *nw)
 {
@@ -768,6 +777,8 @@ NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
 			 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->window), "destroy",
 			 G_CALLBACK(nw_destroy_sig), nw);
+	g_signal_connect(G_OBJECT(nw->nv), "slide-double-clicked",
+			 G_CALLBACK(nw_double_click_sig), nw);
 
 	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);

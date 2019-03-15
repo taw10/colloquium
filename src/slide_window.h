@@ -1,5 +1,5 @@
 /*
- * render.h
+ * slide_window.h
  *
  * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -20,25 +20,16 @@
  *
  */
 
-#ifndef RENDER_H
-#define RENDER_H
+#ifndef SLIDEWINDOW_H
+#define SLIDEWINDOW_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include "presentation.h"
-#include "imagestore.h"
+typedef struct _slidewindow SlideWindow;
 
-struct slide_pos
-{
-	int para;    /* Paragraph number (corresponding to narrative items) */
-	int pos;     /* Byte position within paragraph (yes, really)  */
-	int trail;   /* 1 = end of character, 0 = before */
-};
+extern SlideWindow *slide_window_open(Presentation *p, Slide *slide,
+                                      GApplication *papp);
 
-extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
-                              int slide_number, PangoLanguage *lang,
-                              PangoContext *pc);
-
-#endif	/* RENDER_H */
+#endif	/* SLIDEWINDOW_H */

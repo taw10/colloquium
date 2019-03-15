@@ -141,17 +141,28 @@ void presentation_add_slide(Presentation *p, Slide *s)
 }
 
 
-int presentation_num_slides(Presentation *p)
+int presentation_get_num_slides(Presentation *p)
 {
 	return p->n_slides;
 }
 
 
-Slide *presentation_slide(Presentation *p, int i)
+Slide *presentation_get_slide_by_number(Presentation *p, int i)
 {
 	if ( i >= p->n_slides ) return NULL;
 	if ( i < 0 ) return NULL;
 	return p->slides[i];
+}
+
+
+signed int presentation_get_slide_number(Presentation *p, Slide *s)
+{
+	int i;
+	if ( p == NULL ) return -1;
+	for ( i=0; i<p->n_slides; i++ ) {
+		if ( s == p->slides[i] ) return i;
+	}
+	return -1;
 }
 
 

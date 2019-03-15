@@ -285,8 +285,12 @@ static void gtk_narrative_view_class_init(GtkNarrativeViewClass *klass)
 	GTK_WIDGET_CLASS(klass)->get_preferred_height = get_preferred_height;
 	GTK_WIDGET_CLASS(klass)->get_preferred_height_for_width = NULL;
 
-	g_signal_new("changed", GTK_TYPE_NARRATIVE_VIEW, G_SIGNAL_RUN_LAST, 0,
+	g_signal_new("changed", GTK_TYPE_NARRATIVE_VIEW,
+	             G_SIGNAL_RUN_LAST, 0,
 	             NULL, NULL, NULL, G_TYPE_NONE, 0);
+	g_signal_new("slide-double-clicked", GTK_TYPE_NARRATIVE_VIEW,
+	             G_SIGNAL_RUN_LAST, 0,
+	             NULL, NULL, NULL, G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 
 
@@ -905,16 +909,26 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  GtkNarrativeView *e)
 {
 	gdouble x, y;
+	Narrative *n;
 
+	n = presentation_get_narrative(e->p);
 	x = event->x;
 	y = event->y + e->scroll_pos;
 
 	/* Clicked an existing frame, no immediate dragging */
 	e->drag_status = DRAG_STATUS_COULD_DRAG;
 	unset_selection(e);
-	find_cursor(presentation_get_narrative(e->p), x, y, &e->sel_start);
-	find_cursor(presentation_get_narrative(e->p), x, y, &e->sel_end);
-	find_cursor(presentation_get_narrative(e->p), x, y, &e->cpos);
+	find_cursor(n, x, y, &e->sel_start);
+	e->sel_end = e->sel_start;
+	e->cpos = e->sel_start;
+
+	if ( event->type == GDK_2BUTTON_PRESS ) {
+		struct narrative_item *item = &n->items[e->cpos.para];
+		if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+			g_signal_emit_by_name(e, "slide-double-clicked",
+			                      item->slide);
+		}
+	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 	redraw(e);
@@ -1101,7 +1115,7 @@ static gint realise_sig(GtkWidget *da, GtkNarrativeView *e)
 }
 
 
-GtkNarrativeView *gtk_narrative_view_new(Presentation *p)
+GtkWidget *gtk_narrative_view_new(Presentation *p)
 {
 	GtkNarrativeView *nview;
 	GtkTargetEntry targets[1];
@@ -1159,5 +1173,5 @@ GtkNarrativeView *gtk_narrative_view_new(Presentation *p)
 
 	gtk_widget_show(GTK_WIDGET(nview));
 
-	return nview;
+	return GTK_WIDGET(nview);
 }

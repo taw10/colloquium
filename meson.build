@@ -87,7 +87,8 @@ libstorycode_dep = declare_dependency(include_directories : libstorycode_include
 libgtkstorycode_includes = include_directories('libstorycode/gtk')
 
 libgtkstorycode = library('gtkstorycode',
-                   ['libstorycode/gtk/gtknarrativeview.c'],
+                   ['libstorycode/gtk/gtknarrativeview.c',
+                    'libstorycode/gtk/gtkslideview.c'],
                    include_directories : libgtkstorycode_includes,
                    dependencies : [gtk_dep, libstorycode_dep],
                    install : true)
@@ -111,7 +112,7 @@ executable('colloquium',
             'src/narrative_window.c',
 #            'src/slideshow.c',
 #            'src/pr_clock.c',
-#            'src/slide_window.c',
+            'src/slide_window.c',
 #            'src/testcard.c',
 #            'src/stylesheet_editor.c',
            ],

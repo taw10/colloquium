@@ -56,6 +56,7 @@ struct slide_item
 
 	/* For TEXT and IMAGE */
 	struct frame_geom geom;
+	int resizable;
 };
 
 
@@ -66,5 +67,9 @@ struct _slide
 	int n_items;
 	struct slide_item *items;
 };
+
+extern void slide_item_get_geom(struct slide_item *item, Stylesheet *ss,
+                                double *x, double *y, double *w, double *h,
+                                double slide_w, double slide_h);
 
 #endif /* SLIDE_PRIV_H */

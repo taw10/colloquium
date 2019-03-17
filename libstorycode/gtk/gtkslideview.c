@@ -37,6 +37,7 @@
 
 #include <presentation.h>
 #include <slide_render_cairo.h>
+#include <stylesheet.h>
 
 //#include "slide_window.h"
 #include "gtkslideview.h"
@@ -117,6 +118,178 @@ static gint destroy_sig(GtkWidget *window, GtkSlideView *e)
 }
 
 
+static void draw_editing_box(cairo_t *cr, struct slide_item *item,
+                             double xmin, double ymin, double width, double height)
+{
+	const double dash[] = {2.0, 2.0};
+	double ptot_w, ptot_h;
+	double pad_l, pad_r, pad_t, pad_b;
+
+	pad_l = 0.0;  pad_r = 0.0;  pad_t = 0.0;  pad_b = 0.0;  /* FIXME */
+
+	cairo_new_path(cr);
+	cairo_rectangle(cr, xmin, ymin, width, height);
+	cairo_set_source_rgb(cr, 0.0, 0.69, 1.0);
+	cairo_set_line_width(cr, 0.5);
+	cairo_stroke(cr);
+
+	cairo_new_path(cr);
+	ptot_w = pad_l + pad_r;
+	ptot_h = pad_t + pad_b;
+	cairo_rectangle(cr, xmin+pad_l, ymin+pad_t, width-ptot_w, height-ptot_h);
+	cairo_set_dash(cr, dash, 2, 0.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 0.1);
+	cairo_stroke(cr);
+
+	cairo_set_dash(cr, NULL, 0, 0.0);
+}
+
+
+static void draw_resize_handle(cairo_t *cr, double x, double y)
+{
+	cairo_new_path(cr);
+	cairo_rectangle(cr, x, y, 20.0, 20.0);
+	cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 0.5);
+	cairo_fill(cr);
+}
+
+
+static size_t pos_trail_to_offset(struct slide_item *item, int para,
+                                  size_t offs, int trail)
+{
+	glong char_offs;
+	char *ptr;
+
+	char_offs = g_utf8_pointer_to_offset(item->paragraphs[para],
+	                                     item->paragraphs[para]+offs);
+	char_offs += trail;
+	ptr = g_utf8_offset_to_pointer(item->paragraphs[para], char_offs);
+	return ptr - item->paragraphs[para];
+}
+
+
+static double para_top(struct slide_item *item, int pnum)
+{
+	int i;
+	double py = 0.0;
+	for ( i=0; i<pnum; i++ ) {
+		PangoRectangle rect;
+		pango_layout_get_extents(item->layouts[i], NULL, &rect);
+		py += pango_units_to_double(rect.height);
+	}
+	return py;
+}
+
+
+static int get_cursor_pos(struct slide_item *item, struct slide_pos cpos,
+                          double *x, double *y, double *h)
+{
+	size_t offs;
+	PangoRectangle rect;
+
+	if ( item->layouts[cpos.para] == NULL ) {
+		fprintf(stderr, "get_cursor_pos: No layout\n");
+		return 1;
+	}
+
+	offs = pos_trail_to_offset(item, cpos.para, cpos.pos, cpos.trail);
+	pango_layout_get_cursor_pos(item->layouts[cpos.para], offs, &rect, NULL);
+	*x = pango_units_to_double(rect.x);
+	*y = pango_units_to_double(rect.y) + para_top(item, cpos.para);
+	*h = pango_units_to_double(rect.height);
+	return 0;
+}
+
+
+static void draw_caret(cairo_t *cr, struct slide_item *item, struct slide_pos cpos,
+                       double frx, double fry)
+{
+	double cx, clow, chigh, h;
+	const double t = 1.8;
+
+	if ( get_cursor_pos(item, cpos, &cx, &clow, &h) ) return;
+
+	cx += frx;
+	clow += fry;
+	chigh = clow + h;
+
+	cairo_move_to(cr, cx, clow);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_move_to(cr, cx-t, clow-t);
+	cairo_line_to(cr, cx, clow);
+	cairo_move_to(cr, cx+t, clow-t);
+	cairo_line_to(cr, cx, clow);
+
+	cairo_move_to(cr, cx-t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+	cairo_move_to(cr, cx+t, chigh+t);
+	cairo_line_to(cr, cx, chigh);
+
+	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+}
+
+
+static void draw_overlay(cairo_t *cr, GtkSlideView *e)
+{
+	if ( e->cursor_frame != NULL ) {
+
+		double x, y, w, h;
+		double slide_w, slide_h;
+		Stylesheet *stylesheet;
+
+		stylesheet = presentation_get_stylesheet(e->p);
+		slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
+		slide_item_get_geom(e->cursor_frame, stylesheet, &x, &y, &w, &h,
+		                    slide_w, slide_h);
+		draw_editing_box(cr, e->cursor_frame, x, y, w, h);
+
+		if ( e->cursor_frame->resizable ) {
+			/* Draw resize handles */
+			draw_resize_handle(cr, x, y+h-20.0);
+			draw_resize_handle(cr, x+w-20.0, y);
+			draw_resize_handle(cr, x, y);
+			draw_resize_handle(cr, x+w-20.0, y+h-20.0);
+		}
+
+		if ( e->cursor_frame->type != SLIDE_ITEM_IMAGE ) {
+			draw_caret(cr, e->cursor_frame, e->cpos, x, y);
+		}
+
+	}
+
+	if ( e->drag_status == DRAG_STATUS_DRAGGING ) {
+
+		if ( (e->drag_reason == DRAG_REASON_CREATE)
+		  || (e->drag_reason == DRAG_REASON_IMPORT) )
+		{
+			cairo_new_path(cr);
+			cairo_rectangle(cr, e->start_corner_x, e->start_corner_y,
+			                    e->drag_corner_x - e->start_corner_x,
+			                    e->drag_corner_y - e->start_corner_y);
+			cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+			cairo_set_line_width(cr, 0.5);
+			cairo_stroke(cr);
+		}
+
+		if ( (e->drag_reason == DRAG_REASON_RESIZE)
+		  || (e->drag_reason == DRAG_REASON_MOVE) )
+		{
+			cairo_new_path(cr);
+			cairo_rectangle(cr, e->box_x, e->box_y,
+			                    e->box_width, e->box_height);
+			cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+			cairo_set_line_width(cr, 0.5);
+			cairo_stroke(cr);
+		}
+
+	}
+}
+
+
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkSlideView *e)
 {
 	PangoContext *pc;
@@ -145,8 +318,340 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkSlideView *e)
 	g_object_unref(pc);
 
 	/* Editing overlay */
-	//draw_overlay(cr, e);
+	draw_overlay(cr, e);
 
+	return FALSE;
+}
+
+
+static int within_frame(struct slide_item *item, Stylesheet *ss,
+                        double slide_w, double slide_h,
+                        double xp, double yp)
+{
+	double x, y, w, h;
+
+	slide_item_get_geom(item, ss, &x, &y, &w, &h, slide_w, slide_h);
+
+	if ( xp < x ) return 0;
+	if ( yp < y ) return 0;
+	if ( xp > x + w ) return 0;
+	if ( yp > y + h ) return 0;
+	return 1;
+}
+
+
+static struct slide_item *find_frame_at_position(Slide *s, Stylesheet *ss,
+                                                 double slide_w, double slide_h,
+                                                 double x, double y)
+{
+	int i;
+	for ( i=0; i<s->n_items; i++ ) {
+		if ( within_frame(&s->items[i], ss, slide_w, slide_h, x, y) ) {
+			return &s->items[i];
+		}
+	}
+	return NULL;
+}
+
+
+static enum drag_corner which_corner(double xp, double yp,
+                                     double frx, double fry, double frw, double frh)
+{
+	double x, y;  /* Relative to object position */
+
+	x = xp - frx;
+	y = yp - fry;
+
+	if ( x < 0.0 ) return CORNER_NONE;
+	if ( y < 0.0 ) return CORNER_NONE;
+	if ( x > frw ) return CORNER_NONE;
+	if ( y > frh ) return CORNER_NONE;
+
+	/* Top left? */
+	if ( (x<20.0) && (y<20.0) ) return CORNER_TL;
+	if ( (x>frw-20.0) && (y<20.0) ) return CORNER_TR;
+	if ( (x<20.0) && (y>frh-20.0) ) return CORNER_BL;
+	if ( (x>frw-20.0) && (y>frh-20.0) ) return CORNER_BR;
+
+	return CORNER_NONE;
+}
+
+
+static void calculate_box_size(double frx, double fry, double frw, double frh,
+                               GtkSlideView *e, int preserve_aspect,
+                               double x, double y)
+{
+	double ddx, ddy, dlen, mult;
+	double vx, vy, dbx, dby;
+
+	ddx = x - e->start_corner_x;
+	ddy = y - e->start_corner_y;
+
+	if ( !preserve_aspect ) {
+
+		switch ( e->drag_corner ) {
+
+			case CORNER_BR :
+			e->box_x = frx;
+			e->box_y = fry;
+			e->box_width = frw + ddx;
+			e->box_height = frh + ddy;
+			break;
+
+			case CORNER_BL :
+			e->box_x = frx + ddx;
+			e->box_y = fry;
+			e->box_width = frw - ddx;
+			e->box_height = frh + ddy;
+			break;
+
+			case CORNER_TL :
+			e->box_x = frx + ddx;
+			e->box_y = fry + ddy;
+			e->box_width = frw - ddx;
+			e->box_height = frh - ddy;
+			break;
+
+			case CORNER_TR :
+			e->box_x = frx;
+			e->box_y = fry + ddy;
+			e->box_width = frw + ddx;
+			e->box_height = frh - ddy;
+			break;
+
+			case CORNER_NONE :
+			break;
+
+		}
+		return;
+
+
+	}
+
+	switch ( e->drag_corner ) {
+
+		case CORNER_BR :
+		vx = frw;
+		vy = frh;
+		break;
+
+		case CORNER_BL :
+		vx = -frw;
+		vy = frh;
+		break;
+
+		case CORNER_TL :
+		vx = -frw;
+		vy = -frh;
+		break;
+
+		case CORNER_TR :
+		vx = frw;
+		vy = -frh;
+		break;
+
+		case CORNER_NONE :
+		default:
+		vx = 0.0;
+		vy = 0.0;
+		break;
+
+	}
+
+	dlen = (ddx*vx + ddy*vy) / e->diagonal_length;
+	mult = (dlen+e->diagonal_length) / e->diagonal_length;
+
+	e->box_width = frw * mult;
+	e->box_height = frh * mult;
+	dbx = e->box_width - frw;
+	dby = e->box_height - frh;
+
+	if ( e->box_width < 40.0 ) {
+		mult = 40.0 / frw;
+	}
+	if ( e->box_height < 40.0 ) {
+		mult = 40.0 / frh;
+	}
+	e->box_width = frw * mult;
+	e->box_height = frh * mult;
+	dbx = e->box_width - frw;
+	dby = e->box_height - frh;
+
+	switch ( e->drag_corner ) {
+
+		case CORNER_BR :
+		e->box_x = frx;
+		e->box_y = fry;
+		break;
+
+		case CORNER_BL :
+		e->box_x = frx - dbx;
+		e->box_y = fry;
+		break;
+
+		case CORNER_TL :
+		e->box_x = frx - dbx;
+		e->box_y = fry - dby;
+		break;
+
+		case CORNER_TR :
+		e->box_x = frx;
+		e->box_y = fry - dby;
+		break;
+
+		case CORNER_NONE :
+		break;
+
+	}
+}
+
+
+static int find_cursor(struct slide_item *item, double x, double y, struct slide_pos *pos)
+{
+#if 0
+	double cur_y;
+	int i = 0;
+
+	cur_y = item->space_t;
+
+	do {
+		cur_y += n->items[i++].h;
+	} while ( (cur_y < y) && (i<n->n_items) );
+
+	pos->para = i-1;
+	item = &n->items[pos->para];
+	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+		pos->pos = 0;
+		return 0;
+	}
+
+	pango_layout_xy_to_index(item->layout,
+	                         pango_units_from_double(x - n->space_l - item->space_l),
+	                         pango_units_from_double(y - n->space_t - para_top(n, pos->para)),
+	                         &pos->pos, &pos->trail);
+#endif
+	return 0;
+}
+
+
+static void unset_selection(GtkSlideView *e)
+{
+	int a, b;
+
+	a = e->sel_start.para;
+	b = e->sel_end.para;
+	if ( a > b ) {
+		a = e->sel_end.para;
+		b = e->sel_start.para;
+	}
+	//rewrap_paragraph_range(e->cursor_frame, a, b, e->sel_start, e->sel_end, 0);
+}
+
+static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
+                                 GtkSlideView *e)
+{
+	enum drag_corner c;
+	gdouble x, y;
+	Stylesheet *stylesheet;
+	struct slide_item *clicked;
+	int shift;
+	double slide_w, slide_h;
+	double frx, fry, frw, frh;
+
+	stylesheet = presentation_get_stylesheet(e->p);
+	slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
+
+	x = event->x - e->border_offs_x + e->h_scroll_pos;
+	y = event->y - e->border_offs_y + e->v_scroll_pos;
+	x /= e->view_scale;
+	y /= e->view_scale;
+	shift = event->state & GDK_SHIFT_MASK;
+
+	clicked = find_frame_at_position(e->slide, stylesheet,
+	                                 slide_w, slide_h, x, y);
+
+	if ( clicked != NULL ) {
+		slide_item_get_geom(clicked, stylesheet, &frx, &fry, &frw, &frh,
+		                    slide_w, slide_h);
+	}
+
+	/* Clicked within the currently selected frame
+	 *   -> resize, move or select text */
+	if ( (e->cursor_frame != NULL) && (clicked == e->cursor_frame) ) {
+
+		/* Within the resizing region? */
+		c = which_corner(x, y, frx, fry, frw, frh);
+		if ( (c != CORNER_NONE) && e->cursor_frame->resizable && shift ) {
+
+			e->drag_reason = DRAG_REASON_RESIZE;
+			e->drag_corner = c;
+
+			e->start_corner_x = x;
+			e->start_corner_y = y;
+			e->diagonal_length = pow(frw, 2.0);
+			e->diagonal_length += pow(frh, 2.0);
+			e->diagonal_length = sqrt(e->diagonal_length);
+
+			calculate_box_size(frx, fry, frw, frh, e,
+			                   e->cursor_frame->type == SLIDE_ITEM_IMAGE ? 1 : 0,
+			                   x, y);
+
+			e->drag_status = DRAG_STATUS_COULD_DRAG;
+			e->drag_reason = DRAG_REASON_RESIZE;
+
+		} else {
+
+			/* Position cursor and prepare for possible drag */
+			e->cursor_frame = clicked;
+			find_cursor(clicked, x-frx, y-fry, &e->cpos);
+
+			e->start_corner_x = x;
+			e->start_corner_y = y;
+
+			if ( clicked->resizable && shift ) {
+				e->drag_status = DRAG_STATUS_COULD_DRAG;
+				e->drag_reason = DRAG_REASON_MOVE;
+			} else {
+				e->drag_status = DRAG_STATUS_COULD_DRAG;
+				e->drag_reason = DRAG_REASON_TEXTSEL;
+				unset_selection(e);
+				find_cursor(clicked, x-frx, y-fry, &e->sel_start);
+			}
+
+		}
+
+	} else if ( clicked == NULL ) {
+
+		/* Clicked no object. Deselect old object.
+		 * If shift held, set up for creating a new one. */
+		e->cursor_frame = NULL;
+		unset_selection(e);
+
+		if ( shift ) {
+			e->start_corner_x = x;
+			e->start_corner_y = y;
+			e->drag_status = DRAG_STATUS_COULD_DRAG;
+			e->drag_reason = DRAG_REASON_CREATE;
+		} else {
+			e->drag_status = DRAG_STATUS_NONE;
+			e->drag_reason = DRAG_REASON_NONE;
+		}
+
+	} else {
+
+		/* Clicked an existing frame, no immediate dragging */
+		e->drag_status = DRAG_STATUS_COULD_DRAG;
+		e->drag_reason = DRAG_REASON_TEXTSEL;
+		unset_selection(e);
+		find_cursor(clicked, x-frx, y-fry, &e->sel_start);
+		find_cursor(clicked, x-frx, y-fry, &e->sel_end);
+		e->cursor_frame = clicked;
+		find_cursor(clicked, x-frx, y-fry, &e->cpos);
+
+	}
+
+	gtk_widget_grab_focus(GTK_WIDGET(da));
+	redraw(e);
 	return FALSE;
 }
 
@@ -220,8 +725,8 @@ GtkWidget *gtk_slide_view_new(Presentation *p, Slide *slide)
 	                 G_CALLBACK(destroy_sig), sv);
 	g_signal_connect(G_OBJECT(sv), "realize",
 	                 G_CALLBACK(realise_sig), sv);
-	//g_signal_connect(G_OBJECT(sv), "button-press-event",
-	//                 G_CALLBACK(button_press_sig), sv);
+	g_signal_connect(G_OBJECT(sv), "button-press-event",
+	                 G_CALLBACK(button_press_sig), sv);
 	//g_signal_connect(G_OBJECT(sv), "button-release-event",
 	//                 G_CALLBACK(button_release_sig), sv);
 	//g_signal_connect(G_OBJECT(sv), "motion-notify-event",

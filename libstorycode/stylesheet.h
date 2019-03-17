@@ -76,8 +76,10 @@ enum style_element
 	STYEL_NARRATIVE_BP,
 	STYEL_SLIDE,
 	STYEL_SLIDE_TEXT,
+	STYEL_SLIDE_IMAGE,
 	STYEL_SLIDE_PRESTITLE,
 	STYEL_SLIDE_SLIDETITLE,
+	STYEL_SLIDE_FOOTER,
 };
 
 
@@ -96,6 +98,8 @@ extern int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgb
 extern int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradient grad,
                                      double bgcol[4], double bgcol2[4]);
 
+extern int stylesheet_get_geometry(Stylesheet *s, enum style_element el,
+                                   struct frame_geom *geom);
 extern const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
                                        double *fgcol, enum alignment *alignment);
 extern int stylesheet_get_background(Stylesheet *s, enum style_element el,

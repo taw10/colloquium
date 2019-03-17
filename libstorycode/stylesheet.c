@@ -251,6 +251,15 @@ int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignmen
 }
 
 
+int stylesheet_get_geometry(Stylesheet *s, enum style_element el, struct frame_geom *geom)
+{
+	struct style *sty = get_style(s, el);
+	if ( sty == NULL ) return 1;
+	*geom = sty->geom;
+	return 0;
+}
+
+
 const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
                                 double *fgcol, enum alignment *alignment)
 {

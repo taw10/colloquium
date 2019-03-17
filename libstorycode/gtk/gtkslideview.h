@@ -67,7 +67,7 @@ enum drag_reason
 };
 
 
-enum corner
+enum drag_corner
 {
 	CORNER_NONE,
 	CORNER_TL,
@@ -127,7 +127,7 @@ struct _gtkslideview
 	double               box_height;
 	enum drag_reason     drag_reason;
 	enum drag_status     drag_status;
-	enum corner          drag_corner;
+	enum drag_corner     drag_corner;
 	struct slide_pos     sel_start; /* Where the user dragged from */
 	struct slide_pos     sel_end;
 

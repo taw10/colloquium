@@ -53,16 +53,6 @@
 #define GTK_NARRATIVE_VIEW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
                                            GTK_TYPE_NARRATIVE_VIEW, GtkNarrativeViewClass))
 
-enum corner
-{
-	CORNER_NONE,
-	CORNER_TL,
-	CORNER_TR,
-	CORNER_BL,
-	CORNER_BR
-};
-
-
 enum drag_status
 {
 	DRAG_STATUS_NONE,

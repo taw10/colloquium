@@ -219,6 +219,7 @@ extern SlideWindow *slide_window_open(Presentation *p, Slide *slide,
 	gtk_window_set_role(GTK_WINDOW(window), "slide");
 	sw->window = window;
 	sw->p = p;
+	sw->slide = slide;
 
 	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);

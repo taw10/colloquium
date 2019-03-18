@@ -119,13 +119,15 @@ static gint destroy_sig(GtkWidget *window, GtkSlideView *e)
 
 
 static void draw_editing_box(cairo_t *cr, struct slide_item *item,
+                             Stylesheet *stylesheet, double slide_w, double slide_h,
                              double xmin, double ymin, double width, double height)
 {
 	const double dash[] = {2.0, 2.0};
 	double ptot_w, ptot_h;
 	double pad_l, pad_r, pad_t, pad_b;
 
-	pad_l = 0.0;  pad_r = 0.0;  pad_t = 0.0;  pad_b = 0.0;  /* FIXME */
+	slide_item_get_padding(item, stylesheet, &pad_l, &pad_r, &pad_t, &pad_b,
+	                       slide_w, slide_h);
 
 	cairo_new_path(cr);
 	cairo_rectangle(cr, xmin, ymin, width, height);
@@ -138,8 +140,8 @@ static void draw_editing_box(cairo_t *cr, struct slide_item *item,
 	ptot_h = pad_t + pad_b;
 	cairo_rectangle(cr, xmin+pad_l, ymin+pad_t, width-ptot_w, height-ptot_h);
 	cairo_set_dash(cr, dash, 2, 0.0);
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	cairo_set_line_width(cr, 0.1);
+	cairo_set_source_rgba(cr, 0.8, 0.8, 1.0, 0.5);
+	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
 
 	cairo_set_dash(cr, NULL, 0, 0.0);
@@ -252,7 +254,8 @@ static void draw_overlay(cairo_t *cr, GtkSlideView *e)
 		slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
 		slide_item_get_geom(e->cursor_frame, stylesheet, &x, &y, &w, &h,
 		                    slide_w, slide_h);
-		draw_editing_box(cr, e->cursor_frame, x, y, w, h);
+		draw_editing_box(cr, e->cursor_frame, stylesheet, slide_w, slide_h,
+		                 x, y, w, h);
 
 		if ( e->cursor_frame->resizable ) {
 			/* Draw resize handles */

@@ -1069,10 +1069,13 @@ void gtk_slide_view_set_scale(GtkSlideView *e, double scale)
 }
 
 
-void gtk_slide_view_set_slide(GtkWidget *e, Slide *slide)
+void gtk_slide_view_set_slide(GtkWidget *widget, Slide *slide)
 {
-	GTK_SLIDE_VIEW(e)->slide = slide;
-	redraw(GTK_SLIDE_VIEW(e));
+	GtkSlideView *e = GTK_SLIDE_VIEW(widget);
+	e->slide = slide;
+	unset_selection(e);
+	e->cursor_frame = NULL;
+	redraw(e);
 }
 
 

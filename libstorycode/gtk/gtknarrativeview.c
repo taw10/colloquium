@@ -679,6 +679,7 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 {
 	struct narrative_item *item = &n->items[cp->para];
 	int np = cp->pos;
+	int otrail = cp->trail;
 
 	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
 		if ( dir > 0 ) {
@@ -722,8 +723,8 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 			cp->trail = 0;
 			return;
 		} else {
-			/* Can't move any further */
-			cp->trail = 1;
+			/* Can't move any further, undo change to cp->trail */
+			cp->trail = otrail;
 			return;
 		}
 	}

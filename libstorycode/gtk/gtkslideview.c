@@ -547,6 +547,57 @@ static void unset_selection(GtkSlideView *e)
 	//rewrap_paragraph_range(e->cursor_frame, a, b, e->sel_start, e->sel_end, 0);
 }
 
+
+static void do_resize(GtkSlideView *e, double x, double y, double w, double h)
+{
+	double slide_w, slide_h;
+	Stylesheet *stylesheet;
+
+	assert(e->cursor_frame != NULL);
+
+	stylesheet = presentation_get_stylesheet(e->p);
+	slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
+
+	if ( w < 0.0 ) {
+		w = -w;
+		x -= w;
+	}
+
+	if ( h < 0.0 ) {
+		h = -h;
+		y -= h;
+	}
+
+	/* If any of the units are fractional, turn the absolute values back
+	 * into fractional values */
+	if ( e->cursor_frame->geom.x.unit == LENGTH_FRAC ) {
+		e->cursor_frame->geom.x.len = x / slide_w;
+	} else {
+		e->cursor_frame->geom.x.len = x;
+	}
+
+	if ( e->cursor_frame->geom.y.unit == LENGTH_FRAC ) {
+		e->cursor_frame->geom.y.len = y / slide_h;
+	} else {
+		e->cursor_frame->geom.y.len = y;
+	}
+
+	if ( e->cursor_frame->geom.w.unit == LENGTH_FRAC ) {
+		e->cursor_frame->geom.w.len = w / slide_w;
+	} else {
+		e->cursor_frame->geom.w.len = w;
+	}
+
+	if ( e->cursor_frame->geom.h.unit == LENGTH_FRAC ) {
+		e->cursor_frame->geom.h.len = h / slide_h;
+	} else {
+		e->cursor_frame->geom.h.len = h;
+	}
+
+	redraw(e);
+}
+
+
 static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  GtkSlideView *e)
 {
@@ -656,6 +707,317 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
+static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideView *e)
+{
+	gdouble x, y;
+	double frx, fry, frw, frh;
+
+	x = event->x + e->h_scroll_pos;
+	y = event->y + e->v_scroll_pos;
+	x /= e->view_scale;
+	y /= e->view_scale;
+
+	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
+
+		/* We just got a motion signal, and the status was "could drag",
+		 * therefore the drag has started. */
+		e->drag_status = DRAG_STATUS_DRAGGING;
+
+	}
+
+	if ( e->cursor_frame != NULL ) {
+		double slide_w, slide_h;
+		Stylesheet *stylesheet = presentation_get_stylesheet(e->p);
+		slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
+		slide_item_get_geom(e->cursor_frame, stylesheet,
+		                    &frx, &fry, &frw, &frh, slide_w, slide_h);
+	}
+
+	switch ( e->drag_reason ) {
+
+		case DRAG_REASON_NONE :
+		break;
+
+		case DRAG_REASON_CREATE :
+		e->drag_corner_x = x;
+		e->drag_corner_y = y;
+		redraw(e);
+		break;
+
+		case DRAG_REASON_IMPORT :
+		/* Do nothing, handled by dnd_motion() */
+		break;
+
+		case DRAG_REASON_RESIZE :
+		calculate_box_size(frx, fry, frw, frh, e,
+		                   (e->cursor_frame->type == SLIDE_ITEM_IMAGE),
+		                   x, y);
+		redraw(e);
+		break;
+
+		case DRAG_REASON_MOVE :
+		e->box_x = (frx - e->start_corner_x) + x;
+		e->box_y = (fry - e->start_corner_y) + y;
+		e->box_width = frw;
+		e->box_height = frh;
+		redraw(e);
+		break;
+
+		case DRAG_REASON_TEXTSEL :
+		//unset_selection(e);
+		//find_cursor(fr, x-fr->x, y-fr->y, &e->sel_end);
+		//rewrap_paragraph_range(fr, e->sel_start.para, e->sel_end.para,
+		//                       e->sel_start, e->sel_end, 1);
+		//find_cursor(fr, x-fr->x, y-fr->y, &e->cpos);
+		//e->sel_active = !positions_equal(e->sel_start, e->sel_end);
+		//sc_editor_redraw(e);
+		break;
+
+	}
+
+	gdk_event_request_motions(event);
+	return FALSE;
+}
+
+
+static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
+                                   GtkSlideView *e)
+{
+	gdouble x, y;
+
+	x = event->x + e->h_scroll_pos;
+	y = event->y + e->v_scroll_pos;
+	x /= e->view_scale;
+	y /= e->view_scale;
+
+	/* Not dragging?  Then I don't care. */
+	if ( e->drag_status != DRAG_STATUS_DRAGGING ) return FALSE;
+
+	e->drag_corner_x = x;
+	e->drag_corner_y = y;
+	e->drag_status = DRAG_STATUS_NONE;
+
+	switch ( e->drag_reason )
+	{
+
+		case DRAG_REASON_NONE :
+		printf("Release on pointless drag.\n");
+		break;
+
+		case DRAG_REASON_CREATE :
+		//fr = create_frame(e, e->start_corner_x, e->start_corner_y,
+		//                     e->drag_corner_x - e->start_corner_x,
+		//                     e->drag_corner_y - e->start_corner_y);
+		//if ( fr != NULL ) {
+		//	check_paragraph(fr, e->pc, sc_block_child(fr->scblocks));
+		//	e->selection = fr;
+		//	e->cursor_frame = fr;
+		//	e->cpos.para = 0;
+		//	e->cpos.pos = 0;
+		//	e->cpos.trail = 0;
+		//} else {
+		//	fprintf(stderr, _("Failed to create frame!\n"));
+		//}
+		break;
+
+		case DRAG_REASON_IMPORT :
+		/* Do nothing, handled in dnd_drop() or dnd_leave() */
+		break;
+
+		case DRAG_REASON_RESIZE :
+		do_resize(e, e->box_x, e->box_y, e->box_width, e->box_height);
+		break;
+
+		case DRAG_REASON_MOVE :
+		do_resize(e, e->box_x, e->box_y, e->box_width, e->box_height);
+		break;
+
+		case DRAG_REASON_TEXTSEL :
+		/* Do nothing (text is already selected) */
+		break;
+
+	}
+
+	e->drag_reason = DRAG_REASON_NONE;
+
+	gtk_widget_grab_focus(GTK_WIDGET(da));
+	redraw(e);
+	return FALSE;
+}
+
+
+static int is_text(enum slide_item_type type)
+{
+	if ( type == SLIDE_ITEM_IMAGE ) return 0;
+	return 1;
+}
+
+
+static size_t end_offset_of_para(struct slide_item *item, int pnum)
+{
+	assert(pnum >= 0);
+	if ( is_text(item->type) ) return 0;
+	return strlen(item->paragraphs[pnum]);
+}
+
+
+static void cursor_moveh(GtkSlideView *e, struct slide_pos *cp, signed int dir)
+{
+	int np = cp->pos;
+
+	if ( !is_text(e->cursor_frame->type) ) return;
+	if ( e->cursor_frame->layouts == NULL ) return;
+	if ( e->cursor_frame->layouts[e->cpos.para] == NULL ) return;
+
+	pango_layout_move_cursor_visually(e->cursor_frame->layouts[e->cpos.para],
+	                                  1, cp->pos, cp->trail, dir,
+	                                  &np, &cp->trail);
+
+	if ( np == -1 ) {
+		if ( cp->para > 0 ) {
+			size_t end_offs;
+			cp->para--;
+			end_offs = end_offset_of_para(e->cursor_frame, cp->para);
+			if ( end_offs > 0 ) {
+				cp->pos = end_offs - 1;
+				cp->trail = 1;
+			} else {
+				/* Jumping into an empty paragraph */
+				cp->pos = 0;
+				cp->trail = 0;
+			}
+			return;
+		} else {
+			/* Can't move any further */
+			return;
+		}
+	}
+
+	if ( np == G_MAXINT ) {
+		if ( cp->para < e->cursor_frame->n_paras-1 ) {
+			cp->para++;
+			cp->pos = 0;
+			cp->trail = 0;
+			return;
+		} else {
+			/* Can't move any further */
+			cp->trail = 1;
+			return;
+		}
+	}
+
+	cp->pos = np;
+}
+
+
+static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
+{
+	if ( a.para != b.para ) return 0;
+	if ( a.pos != b.pos ) return 0;
+	if ( a.trail != b.trail ) return 0;
+	return 1;
+}
+
+
+static void insert_text(char *t, GtkSlideView *e)
+{
+	//size_t off;
+
+	if ( !is_text(e->cursor_frame->type) ) return;
+
+	if ( !slide_positions_equal(e->sel_start, e->sel_end) ) {
+		//do_backspace(e, 0);
+	}
+
+	if ( strcmp(t, "\n") == 0 ) {
+		//split_paragraph_at_cursor(n, e->cpos);
+		//rewrap_range(e, e->cpos.para, e->cpos.para+1);
+		//update_size(e);
+		//cursor_moveh(n, &e->cpos, +1);
+		//check_cursor_visible(e);
+		//emit_change_sig(e);
+		//redraw(e);
+		return;
+	}
+
+	//off = pos_trail_to_offset(e->cursor_frame, e->cpos.pos, e->cpos.trail);
+	//insert_text_in_paragraph(e->cursor_frame, off, t);
+	//rewrap_range(e, e->cpos.para, e->cpos.para);
+	//update_size(e);
+	//cursor_moveh(n, &e->cpos, +1);
+	//emit_change_sig(e);
+	//check_cursor_visible(e);
+	//redraw(e);
+}
+
+
+static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
+                              GtkSlideView *e)
+{
+	insert_text(str, e);
+	return FALSE;
+}
+
+
+static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
+                              GtkSlideView *e)
+{
+	gboolean r;
+	int claim = 0;
+
+	/* Throw the event to the IM context and let it sort things out */
+	r = gtk_im_context_filter_keypress(GTK_IM_CONTEXT(e->im_context),
+		                           event);
+	if ( r ) return FALSE;  /* IM ate it */
+
+	switch ( event->keyval ) {
+
+		case GDK_KEY_Left :
+		cursor_moveh(e, &e->cpos, -1);
+		redraw(e);
+		claim = 1;
+		break;
+
+		case GDK_KEY_Right :
+		cursor_moveh(e, &e->cpos, +1);
+		redraw(e);
+		claim = 1;
+		break;
+
+		case GDK_KEY_Up :
+		cursor_moveh(e, &e->cpos, -1);
+		redraw(e);
+		claim = 1;
+		break;
+
+		case GDK_KEY_Down :
+		cursor_moveh(e, &e->cpos, +1);
+		redraw(e);
+		claim = 1;
+		break;
+
+		case GDK_KEY_Return :
+		im_commit_sig(NULL, "\n", e);
+		claim = 1;
+		break;
+
+		case GDK_KEY_BackSpace :
+		//do_backspace(e, -1);
+		claim = 1;
+		break;
+
+		case GDK_KEY_Delete :
+		//do_backspace(e, +1);
+		claim = 1;
+		break;
+
+	}
+
+	if ( claim ) return TRUE;
+	return FALSE;
+}
+
+
 static gint realise_sig(GtkWidget *da, GtkSlideView *e)
 {
 	GdkWindow *win;
@@ -665,8 +1027,8 @@ static gint realise_sig(GtkWidget *da, GtkSlideView *e)
 	win = gtk_widget_get_window(GTK_WIDGET(e));
 	gtk_im_context_set_client_window(GTK_IM_CONTEXT(e->im_context), win);
 	gdk_window_set_accept_focus(win, TRUE);
-	//g_signal_connect(G_OBJECT(e->im_context), "commit", G_CALLBACK(im_commit_sig), e);
-	//g_signal_connect(G_OBJECT(e), "key-press-event", G_CALLBACK(key_press_sig), e);
+	g_signal_connect(G_OBJECT(e->im_context), "commit", G_CALLBACK(im_commit_sig), e);
+	g_signal_connect(G_OBJECT(e), "key-press-event", G_CALLBACK(key_press_sig), e);
 
 	return FALSE;
 }
@@ -727,10 +1089,10 @@ GtkWidget *gtk_slide_view_new(Presentation *p, Slide *slide)
 	                 G_CALLBACK(realise_sig), sv);
 	g_signal_connect(G_OBJECT(sv), "button-press-event",
 	                 G_CALLBACK(button_press_sig), sv);
-	//g_signal_connect(G_OBJECT(sv), "button-release-event",
-	//                 G_CALLBACK(button_release_sig), sv);
-	//g_signal_connect(G_OBJECT(sv), "motion-notify-event",
-	//                 G_CALLBACK(motion_sig), sv);
+	g_signal_connect(G_OBJECT(sv), "button-release-event",
+	                 G_CALLBACK(button_release_sig), sv);
+	g_signal_connect(G_OBJECT(sv), "motion-notify-event",
+	                 G_CALLBACK(motion_sig), sv);
 	g_signal_connect(G_OBJECT(sv), "configure-event",
 	                 G_CALLBACK(resize_sig), sv);
 

@@ -83,3 +83,24 @@ void slide_item_get_geom(struct slide_item *item, Stylesheet *ss,
 	*w = lcalc(geom.w, slide_w);
 	*h = lcalc(geom.h, slide_h);
 }
+
+
+void slide_item_get_padding(struct slide_item *item, Stylesheet *ss,
+                            double *l, double *r, double *t, double *b,
+                            double slide_w, double slide_h)
+{
+	struct length padding[4];
+	double frx, fry, frw, frh;
+
+	if ( stylesheet_get_padding(ss, styel_for_slideitem(item->type), padding) ) {
+		*l = 0.0;  *r = 0.0;  *t = 0.0;  *b = 0.0;
+		return;
+	}
+
+	slide_item_get_geom(item, ss, &frx, &fry, &frw, &frh, slide_w, slide_h);
+
+	*l = lcalc(padding[0], frw);
+	*r = lcalc(padding[1], frh);
+	*t = lcalc(padding[2], frw);
+	*b = lcalc(padding[3], frh);
+}

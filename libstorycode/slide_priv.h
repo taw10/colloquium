@@ -72,4 +72,8 @@ extern void slide_item_get_geom(struct slide_item *item, Stylesheet *ss,
                                 double *x, double *y, double *w, double *h,
                                 double slide_w, double slide_h);
 
+extern void slide_item_get_padding(struct slide_item *item, Stylesheet *ss,
+                                   double *l, double *r, double *t, double *b,
+                                   double slide_w, double slide_h);
+
 #endif /* SLIDE_PRIV_H */

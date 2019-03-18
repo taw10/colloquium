@@ -182,33 +182,40 @@ static double para_top(struct slide_item *item, int pnum)
 }
 
 
-static int get_cursor_pos(struct slide_item *item, struct slide_pos cpos,
+static int get_cursor_pos(struct slide_item *item, Stylesheet *stylesheet,
+                          struct slide_pos cpos, double slide_w, double slide_h,
                           double *x, double *y, double *h)
 {
 	size_t offs;
 	PangoRectangle rect;
+	double padl, padr, padt, padb;
 
 	if ( item->layouts[cpos.para] == NULL ) {
 		fprintf(stderr, "get_cursor_pos: No layout\n");
 		return 1;
 	}
 
+	slide_item_get_padding(item, stylesheet, &padl, &padr, &padt, &padb,
+	                       slide_w, slide_h);
+
 	offs = pos_trail_to_offset(item, cpos.para, cpos.pos, cpos.trail);
 	pango_layout_get_cursor_pos(item->layouts[cpos.para], offs, &rect, NULL);
-	*x = pango_units_to_double(rect.x);
-	*y = pango_units_to_double(rect.y) + para_top(item, cpos.para);
+	*x = pango_units_to_double(rect.x) + padl;
+	*y = pango_units_to_double(rect.y) + para_top(item, cpos.para) + padt;
 	*h = pango_units_to_double(rect.height);
 	return 0;
 }
 
 
-static void draw_caret(cairo_t *cr, struct slide_item *item, struct slide_pos cpos,
-                       double frx, double fry)
+static void draw_caret(cairo_t *cr, Stylesheet *stylesheet,
+                       struct slide_item *item, struct slide_pos cpos,
+                       double frx, double fry, double slide_w, double slide_h)
 {
 	double cx, clow, chigh, h;
 	const double t = 1.8;
 
-	if ( get_cursor_pos(item, cpos, &cx, &clow, &h) ) return;
+	if ( get_cursor_pos(item, stylesheet, cpos, slide_w, slide_h,
+	                    &cx, &clow, &h) ) return;
 
 	cx += frx;
 	clow += fry;
@@ -256,7 +263,8 @@ static void draw_overlay(cairo_t *cr, GtkSlideView *e)
 		}
 
 		if ( e->cursor_frame->type != SLIDE_ITEM_IMAGE ) {
-			draw_caret(cr, e->cursor_frame, e->cpos, x, y);
+			draw_caret(cr, stylesheet, e->cursor_frame, e->cpos, x, y,
+			           slide_w, slide_h);
 		}
 
 	}
@@ -506,30 +514,47 @@ static void calculate_box_size(double frx, double fry, double frw, double frh,
 }
 
 
-static int find_cursor(struct slide_item *item, double x, double y, struct slide_pos *pos)
+static int is_text(enum slide_item_type type)
 {
-#if 0
-	double cur_y;
+	if ( type == SLIDE_ITEM_IMAGE ) return 0;
+	return 1;
+}
+
+
+static int find_cursor(struct slide_item *item, Stylesheet *stylesheet,
+                       double x, double y, struct slide_pos *pos,
+                       double slide_w, double slide_h)
+{
+	double cur_y = 0.0;
+	double top;
 	int i = 0;
+	double padl, padr, padt, padb;
 
-	cur_y = item->space_t;
-
-	do {
-		cur_y += n->items[i++].h;
-	} while ( (cur_y < y) && (i<n->n_items) );
-
-	pos->para = i-1;
-	item = &n->items[pos->para];
-	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+	if ( !is_text(item->type) ) {
+		pos->para = 0;
 		pos->pos = 0;
+		pos->trail = 0;
 		return 0;
 	}
 
-	pango_layout_xy_to_index(item->layout,
-	                         pango_units_from_double(x - n->space_l - item->space_l),
-	                         pango_units_from_double(y - n->space_t - para_top(n, pos->para)),
+	slide_item_get_padding(item, stylesheet, &padl, &padr, &padt, &padb,
+	                       slide_w, slide_h);
+	x -= padl;
+	y -= padt;
+
+	do {
+		PangoRectangle rect;
+		pango_layout_get_extents(item->layouts[i++], NULL, &rect);
+		top = cur_y;
+		cur_y += pango_units_to_double(rect.height);
+	} while ( (cur_y < y) && (i<item->n_paras) );
+
+	pos->para = i-1;
+
+	pango_layout_xy_to_index(item->layouts[i-1],
+	                         pango_units_from_double(x),
+	                         pango_units_from_double(y - top),
 	                         &pos->pos, &pos->trail);
-#endif
 	return 0;
 }
 
@@ -644,7 +669,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			e->diagonal_length = sqrt(e->diagonal_length);
 
 			calculate_box_size(frx, fry, frw, frh, e,
-			                   e->cursor_frame->type == SLIDE_ITEM_IMAGE ? 1 : 0,
+			                   (e->cursor_frame->type == SLIDE_ITEM_IMAGE),
 			                   x, y);
 
 			e->drag_status = DRAG_STATUS_COULD_DRAG;
@@ -654,7 +679,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 			/* Position cursor and prepare for possible drag */
 			e->cursor_frame = clicked;
-			find_cursor(clicked, x-frx, y-fry, &e->cpos);
+			find_cursor(clicked, stylesheet, x-frx, y-fry, &e->cpos,
+			            slide_w, slide_h);
 
 			e->start_corner_x = x;
 			e->start_corner_y = y;
@@ -666,7 +692,8 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_TEXTSEL;
 				unset_selection(e);
-				find_cursor(clicked, x-frx, y-fry, &e->sel_start);
+				find_cursor(clicked, stylesheet, x-frx, y-fry,
+				            &e->sel_start, slide_w, slide_h);
 			}
 
 		}
@@ -694,10 +721,13 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 		e->drag_status = DRAG_STATUS_COULD_DRAG;
 		e->drag_reason = DRAG_REASON_TEXTSEL;
 		unset_selection(e);
-		find_cursor(clicked, x-frx, y-fry, &e->sel_start);
-		find_cursor(clicked, x-frx, y-fry, &e->sel_end);
+		find_cursor(clicked, stylesheet, x-frx, y-fry, &e->sel_start,
+		            slide_w, slide_h);
+		find_cursor(clicked, stylesheet, x-frx, y-fry, &e->sel_end,
+		            slide_w, slide_h);
 		e->cursor_frame = clicked;
-		find_cursor(clicked, x-frx, y-fry, &e->cpos);
+		find_cursor(clicked, stylesheet, x-frx, y-fry, &e->cpos,
+		            slide_w, slide_h);
 
 	}
 
@@ -843,13 +873,6 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 	gtk_widget_grab_focus(GTK_WIDGET(da));
 	redraw(e);
 	return FALSE;
-}
-
-
-static int is_text(enum slide_item_type type)
-{
-	if ( type == SLIDE_ITEM_IMAGE ) return 0;
-	return 1;
 }
 
 

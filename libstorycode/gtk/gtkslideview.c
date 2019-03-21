@@ -983,7 +983,8 @@ static void insert_text(char *t, GtkSlideView *e)
 	off = pos_trail_to_offset(e->cursor_frame, e->cpos.para,
 	                          e->cpos.pos, e->cpos.trail);
 	insert_text_in_paragraph(e->cursor_frame, e->cpos.para, off, t);
-	/* FIXME: PangoLayout needs to be reconstructed before the following */
+	pango_layout_set_text(e->cursor_frame->layouts[e->cpos.para],
+	                      e->cursor_frame->paragraphs[e->cpos.para], -1);
 	cursor_moveh(e, &e->cpos, +1);
 	emit_change_sig(e);
 	redraw(e);

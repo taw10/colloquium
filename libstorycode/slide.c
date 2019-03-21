@@ -307,3 +307,37 @@ void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
 	*t = lcalc(padding[2], frw);
 	*b = lcalc(padding[3], frh);
 }
+
+
+void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
+{
+	char **np;
+
+	np = realloc(item->paragraphs, (item->n_paras+1)*sizeof(char *));
+	if ( np == NULL ) return;
+
+#ifdef HAVE_PANGO
+	PangoLayout **nl;
+	nl = realloc(item->layouts, (item->n_paras+1)*sizeof(PangoLayout *));
+	if ( nl == NULL ) {
+		free(np);
+		return;
+	}
+	item->layouts = nl;
+#endif
+
+	item->paragraphs = np;
+	item->n_paras++;
+
+	memmove(&item->paragraphs[para+1], &item->paragraphs[para],
+	        (item->n_paras - para - 1)*sizeof(char *));
+
+#ifdef HAVE_PANGO
+	memmove(&item->layouts[para+1], &item->layouts[para],
+	        (item->n_paras - para - 1)*sizeof(PangoLayout *));
+	item->layouts[para+1] = NULL;
+#endif
+
+	item->paragraphs[para+1] = strdup(&item->paragraphs[para][off]);
+	item->paragraphs[para][off] = '\0';
+}

@@ -54,6 +54,8 @@ extern void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
                                    double *l, double *r, double *t, double *b,
                                    double slide_w, double slide_h);
 
+extern void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off);
+
 /* For debugging, not really part of API */
 extern void describe_slide(Slide *s);
 

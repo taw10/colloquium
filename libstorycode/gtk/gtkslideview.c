@@ -970,13 +970,14 @@ static void insert_text(char *t, GtkSlideView *e)
 	}
 
 	if ( strcmp(t, "\n") == 0 ) {
-		//split_paragraph_at_cursor(n, e->cpos);
-		//rewrap_range(e, e->cpos.para, e->cpos.para+1);
-		//update_size(e);
-		//cursor_moveh(n, &e->cpos, +1);
-		//check_cursor_visible(e);
-		//emit_change_sig(e);
-		//redraw(e);
+		off = pos_trail_to_offset(e->cursor_frame, e->cpos.para,
+		                          e->cpos.pos, e->cpos.trail);
+		slide_item_split_text_paragraph(e->cursor_frame, e->cpos.para, off);
+		e->cpos.para++;
+		e->cpos.pos = 0;
+		e->cpos.trail = 0;
+		emit_change_sig(e);
+		redraw(e);
 		return;
 	}
 

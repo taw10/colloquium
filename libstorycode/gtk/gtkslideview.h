@@ -105,7 +105,7 @@ struct _gtkslideview
 	double               visible_height;
 
 	/* Location of the cursor */
-	struct slide_item   *cursor_frame;
+	SlideItem           *cursor_frame;
 	struct slide_pos     cpos;
 
 	/* Border surrounding actual slide within drawingarea */

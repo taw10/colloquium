@@ -45,6 +45,15 @@ extern int slide_set_logical_size(Slide *s, double w, double h);
 
 extern int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h);
 
+/* Slide items */
+extern void slide_item_get_geom(SlideItem *item, Stylesheet *ss,
+                                double *x, double *y, double *w, double *h,
+                                double slide_w, double slide_h);
+
+extern void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
+                                   double *l, double *r, double *t, double *b,
+                                   double slide_w, double slide_h);
+
 /* For debugging, not really part of API */
 extern void describe_slide(Slide *s);
 

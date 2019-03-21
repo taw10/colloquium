@@ -63,7 +63,7 @@ static PangoAlignment to_pangoalignment(enum alignment align)
 }
 
 
-static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
+static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
                         Stylesheet *ss, enum style_element el,
                         double parent_w, double parent_h)
 {
@@ -146,7 +146,7 @@ static void render_text(struct slide_item *item, cairo_t *cr, PangoContext *pc,
 }
 
 
-static void render_image(struct slide_item *item, cairo_t *cr,
+static void render_image(SlideItem *item, cairo_t *cr,
                          Stylesheet *ss, ImageStore *is,
                          double parent_w, double parent_h)
 {

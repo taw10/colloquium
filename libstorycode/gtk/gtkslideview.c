@@ -118,7 +118,7 @@ static gint destroy_sig(GtkWidget *window, GtkSlideView *e)
 }
 
 
-static void draw_editing_box(cairo_t *cr, struct slide_item *item,
+static void draw_editing_box(cairo_t *cr, SlideItem *item,
                              Stylesheet *stylesheet, double slide_w, double slide_h,
                              double xmin, double ymin, double width, double height)
 {
@@ -157,7 +157,7 @@ static void draw_resize_handle(cairo_t *cr, double x, double y)
 }
 
 
-static size_t pos_trail_to_offset(struct slide_item *item, int para,
+static size_t pos_trail_to_offset(SlideItem *item, int para,
                                   size_t offs, int trail)
 {
 	glong char_offs;
@@ -171,7 +171,7 @@ static size_t pos_trail_to_offset(struct slide_item *item, int para,
 }
 
 
-static double para_top(struct slide_item *item, int pnum)
+static double para_top(SlideItem *item, int pnum)
 {
 	int i;
 	double py = 0.0;
@@ -184,7 +184,7 @@ static double para_top(struct slide_item *item, int pnum)
 }
 
 
-static int get_cursor_pos(struct slide_item *item, Stylesheet *stylesheet,
+static int get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
                           struct slide_pos cpos, double slide_w, double slide_h,
                           double *x, double *y, double *h)
 {
@@ -210,7 +210,7 @@ static int get_cursor_pos(struct slide_item *item, Stylesheet *stylesheet,
 
 
 static void draw_caret(cairo_t *cr, Stylesheet *stylesheet,
-                       struct slide_item *item, struct slide_pos cpos,
+                       SlideItem *item, struct slide_pos cpos,
                        double frx, double fry, double slide_w, double slide_h)
 {
 	double cx, clow, chigh, h;
@@ -335,7 +335,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkSlideView *e)
 }
 
 
-static int within_frame(struct slide_item *item, Stylesheet *ss,
+static int within_frame(SlideItem *item, Stylesheet *ss,
                         double slide_w, double slide_h,
                         double xp, double yp)
 {
@@ -351,7 +351,7 @@ static int within_frame(struct slide_item *item, Stylesheet *ss,
 }
 
 
-static struct slide_item *find_frame_at_position(Slide *s, Stylesheet *ss,
+static SlideItem *find_frame_at_position(Slide *s, Stylesheet *ss,
                                                  double slide_w, double slide_h,
                                                  double x, double y)
 {
@@ -524,7 +524,7 @@ static int is_text(enum slide_item_type type)
 }
 
 
-static int find_cursor(struct slide_item *item, Stylesheet *stylesheet,
+static int find_cursor(SlideItem *item, Stylesheet *stylesheet,
                        double x, double y, struct slide_pos *pos,
                        double slide_w, double slide_h)
 {
@@ -632,7 +632,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	enum drag_corner c;
 	gdouble x, y;
 	Stylesheet *stylesheet;
-	struct slide_item *clicked;
+	SlideItem *clicked;
 	int shift;
 	double slide_w, slide_h;
 	double frx, fry, frw, frh;
@@ -879,7 +879,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 }
 
 
-static size_t end_offset_of_para(struct slide_item *item, int pnum)
+static size_t end_offset_of_para(SlideItem *item, int pnum)
 {
 	assert(pnum >= 0);
 	if ( is_text(item->type) ) return 0;
@@ -945,7 +945,7 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 }
 
 
-static void insert_text_in_paragraph(struct slide_item *item, int para,
+static void insert_text_in_paragraph(SlideItem *item, int para,
                                      size_t offs, char *t)
 {
 	char *n = malloc(strlen(t) + strlen(item->paragraphs[para]) + 1);

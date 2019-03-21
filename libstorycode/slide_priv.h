@@ -39,7 +39,7 @@ enum slide_item_type
 };
 
 
-struct slide_item
+struct _slideitem
 {
 	enum slide_item_type type;
 
@@ -65,15 +65,7 @@ struct _slide
 	double logical_w;
 	double logical_h;
 	int n_items;
-	struct slide_item *items;
+	SlideItem *items;
 };
-
-extern void slide_item_get_geom(struct slide_item *item, Stylesheet *ss,
-                                double *x, double *y, double *w, double *h,
-                                double slide_w, double slide_h);
-
-extern void slide_item_get_padding(struct slide_item *item, Stylesheet *ss,
-                                   double *l, double *r, double *t, double *b,
-                                   double slide_w, double slide_h);
 
 #endif /* SLIDE_PRIV_H */

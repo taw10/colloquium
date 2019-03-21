@@ -52,12 +52,12 @@ void slide_free(Slide *s)
 }
 
 
-static struct slide_item *add_item(Slide *s)
+static SlideItem *add_item(Slide *s)
 {
-	struct slide_item *new_items;
-	struct slide_item *item;
+	SlideItem *new_items;
+	SlideItem *item;
 
-	new_items = realloc(s->items, (s->n_items+1)*sizeof(struct slide_item));
+	new_items = realloc(s->items, (s->n_items+1)*sizeof(SlideItem));
 	if ( new_items == NULL ) return NULL;
 	s->items = new_items;
 	item = &s->items[s->n_items++];
@@ -70,7 +70,7 @@ static struct slide_item *add_item(Slide *s)
 
 int slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 {
-	struct slide_item *item;
+	SlideItem *item;
 
 	item = add_item(s);
 	if ( item == NULL ) return 1;
@@ -88,7 +88,7 @@ int add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
                   enum alignment alignment, enum slide_item_type slide_item)
 {
 	int i;
-	struct slide_item *item;
+	SlideItem *item;
 
 	item = add_item(s);
 	if ( item == NULL ) return 1;
@@ -122,7 +122,7 @@ int add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
 
 int slide_add_footer(Slide *s)
 {
-	struct slide_item *item;
+	SlideItem *item;
 
 	item = add_item(s);
 	if ( item == NULL ) return 1;
@@ -224,4 +224,86 @@ int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h)
 	*w = s->logical_w;
 	*h = s->logical_h;
 	return 0;
+}
+
+
+static enum style_element styel_for_slideitem(enum slide_item_type t)
+{
+	switch ( t ) {
+
+		case SLIDE_ITEM_TEXT :
+		return STYEL_SLIDE_TEXT;
+
+		case SLIDE_ITEM_IMAGE :
+		return STYEL_SLIDE_IMAGE;
+
+		case SLIDE_ITEM_PRESTITLE :
+		return STYEL_SLIDE_PRESTITLE;
+
+		case SLIDE_ITEM_SLIDETITLE :
+		return STYEL_SLIDE_SLIDETITLE;
+
+		case SLIDE_ITEM_FOOTER :
+		return STYEL_SLIDE_FOOTER;
+
+	}
+
+	fprintf(stderr, "Invalid slide item %i\n", t);
+	return STYEL_SLIDE_TEXT;
+}
+
+
+static double lcalc(struct length l, double pd)
+{
+	if ( l.unit == LENGTH_UNIT ) {
+		return l.len;
+	} else {
+		return l.len * pd;
+	}
+}
+
+
+void slide_item_get_geom(SlideItem *item, Stylesheet *ss,
+                         double *x, double *y, double *w, double *h,
+                         double slide_w, double slide_h)
+{
+	struct frame_geom geom;
+
+	if ( (item->type == SLIDE_ITEM_TEXT)
+	  || (item->type == SLIDE_ITEM_IMAGE) )
+	{
+		geom = item->geom;
+	} else {
+		if ( stylesheet_get_geometry(ss, styel_for_slideitem(item->type), &geom) ) {
+			*x = 0.0;  *y = 0.0;
+			*w = 0.0;  *h = 0.0;
+			return;
+		}
+	}
+
+	*x = lcalc(geom.x, slide_w);
+	*y = lcalc(geom.y, slide_h);
+	*w = lcalc(geom.w, slide_w);
+	*h = lcalc(geom.h, slide_h);
+}
+
+
+void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
+                            double *l, double *r, double *t, double *b,
+                            double slide_w, double slide_h)
+{
+	struct length padding[4];
+	double frx, fry, frw, frh;
+
+	if ( stylesheet_get_padding(ss, styel_for_slideitem(item->type), padding) ) {
+		*l = 0.0;  *r = 0.0;  *t = 0.0;  *b = 0.0;
+		return;
+	}
+
+	slide_item_get_geom(item, ss, &frx, &fry, &frw, &frh, slide_w, slide_h);
+
+	*l = lcalc(padding[0], frw);
+	*r = lcalc(padding[1], frh);
+	*t = lcalc(padding[2], frw);
+	*b = lcalc(padding[3], frh);
 }

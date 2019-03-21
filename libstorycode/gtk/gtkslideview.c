@@ -945,9 +945,23 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 }
 
 
+static void insert_text_in_paragraph(struct slide_item *item, int para,
+                                     size_t offs, char *t)
+{
+	char *n = malloc(strlen(t) + strlen(item->paragraphs[para]) + 1);
+	if ( n == NULL ) return;
+	strncpy(n, item->paragraphs[para], offs);
+	n[offs] = '\0';
+	strcat(n, t);
+	strcat(n, item->paragraphs[para]+offs);
+	free(item->paragraphs[para]);
+	item->paragraphs[para] = n;
+}
+
+
 static void insert_text(char *t, GtkSlideView *e)
 {
-	//size_t off;
+	size_t off;
 
 	if ( !is_text(e->cursor_frame->type) ) return;
 
@@ -966,14 +980,13 @@ static void insert_text(char *t, GtkSlideView *e)
 		return;
 	}
 
-	//off = pos_trail_to_offset(e->cursor_frame, e->cpos.pos, e->cpos.trail);
-	//insert_text_in_paragraph(e->cursor_frame, off, t);
-	//rewrap_range(e, e->cpos.para, e->cpos.para);
-	//update_size(e);
-	//cursor_moveh(n, &e->cpos, +1);
-	//emit_change_sig(e);
-	//check_cursor_visible(e);
-	//redraw(e);
+	off = pos_trail_to_offset(e->cursor_frame, e->cpos.para,
+	                          e->cpos.pos, e->cpos.trail);
+	insert_text_in_paragraph(e->cursor_frame, e->cpos.para, off, t);
+	/* FIXME: PangoLayout needs to be reconstructed before the following */
+	cursor_moveh(e, &e->cpos, +1);
+	emit_change_sig(e);
+	redraw(e);
 }
 
 

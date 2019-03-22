@@ -963,6 +963,7 @@ static void insert_text(char *t, GtkSlideView *e)
 {
 	size_t off;
 
+	if ( e->cursor_frame == NULL ) return;
 	if ( !is_text(e->cursor_frame->type) ) return;
 
 	if ( !slide_positions_equal(e->sel_start, e->sel_end) ) {

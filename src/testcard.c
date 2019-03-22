@@ -1,7 +1,7 @@
 /*
  * testcard.c
  *
- * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -30,19 +30,19 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <libintl.h>
+#define _(x) gettext(x)
 
-#include "presentation.h"
-#include "utils.h"
+#include <presentation.h>
 
 
 struct testcard
 {
 	GtkWidget *window;
 	char geom[256];
-	int slide_width;
-	int slide_height;
+	double slide_width;
+	double slide_height;
 	GtkWidget *drawingarea;
-	struct presentation *p;
 };
 
 static gint tc_destroy_sig(GtkWidget *widget, struct testcard *tc)
@@ -110,7 +110,7 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 {
 	double xoff, yoff;
 	double width, height;
-	int h;
+	double w, h;
 	PangoLayout *pl;
 	PangoFontDescription *desc;
 	char tmp[1024];
@@ -125,18 +125,27 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
 	cairo_fill(cr);
 
-	/* FIXME: Assumes that monitor and slide sizes are such that
-	 * letterboxing at sides.  This needn't be the case. */
-	h = tc->slide_width * tc->p->slide_height / tc->p->slide_width;
+	if ( tc->slide_width/tc->slide_height < width/height ) {
+		w = (tc->slide_width / tc->slide_height) * height;
+		h = height;
+	} else {
+		w = width;
+		h = (tc->slide_height / tc->slide_width) * width;
+	}
 
 	/* Get the overall size */
-	xoff = (width - tc->slide_width)/2.0;
+	xoff = (width - w)/2.0;
 	yoff = (height - h)/2.0;
 
 	/* Background of slide */
-	cairo_rectangle(cr, xoff, yoff, tc->slide_width, h);
+	cairo_rectangle(cr, xoff, yoff, w, h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
 	cairo_fill(cr);
+
+	cairo_rectangle(cr, xoff+10.5, yoff+10.5, w-20.0, h-20.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
 
 	/* Arrows showing edges of screen */
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -159,26 +168,31 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	cairo_move_to(cr, 0.0, 100+h/2);
 	arrow_left(cr, 80.0);
 	cairo_fill(cr);
-	cairo_move_to(cr, tc->slide_width, 100+h/2);
+	cairo_move_to(cr, w, 100+h/2);
 	arrow_right(cr, 80.0);
 	cairo_fill(cr);
-	cairo_move_to(cr, 100+tc->slide_width/2, h);
+	cairo_move_to(cr, 100+w/2, h);
 	arrow_down(cr, 80.0);
 	cairo_fill(cr);
-	cairo_move_to(cr, 100+tc->slide_width/2, 0.0);
+	cairo_move_to(cr, 100+w/2, 0.0);
 	arrow_up(cr, 80.0);
 	cairo_fill(cr);
 
+	cairo_rectangle(cr, 10.5, 10.5, w-20.0, h-20.0);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_set_line_width(cr, 1.0);
+	cairo_stroke(cr);
+
 	/* Stuff in the middle */
-	yp = (tc->slide_height-400)/2.0;
+	yp = (h-400)/2.0;
 	cairo_save(cr);
 	cairo_translate(cr, 0.0, yp);
 
-	snprintf(tmp, 1024, _("Colloquium %s test card\n"
+	snprintf(tmp, 1024, _("Test Card\nColloquium version %s\n"
 	                    "Screen resolution %.0f × %.0f\n"
-	                    "Slide resolution %i × %i"),
+	                    "Slide resolution %.0f × %.0f"),
 	                    PACKAGE_VERSION, width, height,
-	                    tc->slide_width, h);
+	                    w, h);
 
 	pl = pango_cairo_create_layout(cr);
 	desc = pango_font_description_from_string("Sans 24");
@@ -188,12 +202,12 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 	pango_layout_get_size(pl, &plw, &plh);
 	plw = pango_units_to_double(plw);
 	plh = pango_units_to_double(plh);
-	cairo_move_to(cr, (tc->slide_width-plw)/2, 0.0);
+	cairo_move_to(cr, (w-plw)/2, 0.0);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	pango_cairo_show_layout(cr, pl);
 
 	/* Colour boxes */
-	xp = (tc->slide_width-450)/2.0;
+	xp = (w-450)/2.0;
 	colour_box(cr, xp+0,   200, 1.0, 0.0, 0.0, _("Red"));
 	colour_box(cr, xp+80,  200, 0.0, 1.0, 0.0, _("Green"));
 	colour_box(cr, xp+160, 200, 0.0, 0.0, 1.0, _("Blue"));
@@ -214,18 +228,6 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 }
 
 
-static void size_sig(GtkWidget *widget, GdkRectangle *rect, struct testcard *ss)
-{
-	int w;
-
-	w = rect->height * ss->p->slide_width/ss->p->slide_height;
-	if ( w > rect->width ) w = rect->width;
-	ss->slide_width = w;
-	ss->slide_height = rect->height;
-}
-
-
-
 static gboolean tc_key_press_sig(GtkWidget *da, GdkEventKey *event,
                                  struct testcard *tc)
 {
@@ -234,7 +236,7 @@ static gboolean tc_key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
-void show_testcard(struct presentation *p)
+void show_testcard(Presentation *p)
 {
 	GdkDisplay *display;
 	int n_monitors;
@@ -243,9 +245,9 @@ void show_testcard(struct presentation *p)
 	tc = calloc(1, sizeof(struct testcard));
 	if ( tc == NULL ) return;
 
-	tc->p = p;
-
 	tc->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	stylesheet_get_slide_default_size(presentation_get_stylesheet(p),
+	                                  &tc->slide_width, &tc->slide_height);
 
 	tc->drawingarea = gtk_drawing_area_new();
 	gtk_container_add(GTK_CONTAINER(tc->window), tc->drawingarea);
@@ -257,8 +259,6 @@ void show_testcard(struct presentation *p)
 			 G_CALLBACK(tc_key_press_sig), tc);
 	g_signal_connect(G_OBJECT(tc->window), "destroy",
 	                 G_CALLBACK(tc_destroy_sig), tc);
-	g_signal_connect(G_OBJECT(tc->window), "size-allocate",
-	                 G_CALLBACK(size_sig), tc);
 	g_signal_connect(G_OBJECT(tc->drawingarea), "draw",
 			 G_CALLBACK(tc_draw_sig), tc);
 

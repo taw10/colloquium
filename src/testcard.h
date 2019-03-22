@@ -1,7 +1,7 @@
 /*
  * testcard.h
  *
- * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -27,6 +27,8 @@
 #include <config.h>
 #endif
 
-extern void show_testcard(struct presentation *p);
+#include <presentation.h>
+
+extern void show_testcard(Presentation *p);
 
 #endif	/* TESTCARD_H */

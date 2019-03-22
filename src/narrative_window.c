@@ -39,7 +39,7 @@
 #include "colloquium.h"
 #include "narrative_window.h"
 #include "slide_window.h"
-//#include "testcard.h"
+#include "testcard.h"
 //#include "pr_clock.h"
 //#include "print.h"
 //#include "stylesheet_editor.h"
@@ -381,8 +381,8 @@ static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer 
 static void testcard_sig(GSimpleAction *action, GVariant *parameter,
                          gpointer vp)
 {
-	//NarrativeWindow *nw = vp;
-//	show_testcard(nw->p);
+	NarrativeWindow *nw = vp;
+	show_testcard(nw->p);
 }
 
 

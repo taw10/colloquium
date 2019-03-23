@@ -62,7 +62,7 @@ static SlideItem *add_item(Slide *s)
 	s->items = new_items;
 	item = &s->items[s->n_items++];
 
-	item->layouts = NULL;
+	item->paras = NULL;
 
 	return item;
 }
@@ -94,16 +94,16 @@ int add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
 	if ( item == NULL ) return 1;
 
 	item->type = slide_item;
-	item->layouts = NULL;
-	item->paragraphs = malloc(n_text*sizeof(char *));
-	if ( item->paragraphs == NULL ) {
+	item->paras = malloc(n_text*sizeof(struct slide_text_paragraph));
+	if ( item->paras == NULL ) {
 		s->n_items--;
 		return 1;
 	}
 
 	for ( i=0; i<n_text; i++ ) {
 		item->n_paras = n_text;
-		item->paragraphs[i] = text[i];
+		item->paras[i].text = text[i];
+		item->paras[i].layout = NULL;
 	}
 	item->n_paras = n_text;
 
@@ -311,33 +311,18 @@ void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
 
 void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
 {
-	char **np;
+	struct slide_text_paragraph *np;
 
-	np = realloc(item->paragraphs, (item->n_paras+1)*sizeof(char *));
+	np = realloc(item->paras, (item->n_paras+1)*sizeof(struct slide_text_paragraph));
 	if ( np == NULL ) return;
 
-#ifdef HAVE_PANGO
-	PangoLayout **nl;
-	nl = realloc(item->layouts, (item->n_paras+1)*sizeof(PangoLayout *));
-	if ( nl == NULL ) {
-		free(np);
-		return;
-	}
-	item->layouts = nl;
-#endif
-
-	item->paragraphs = np;
+	item->paras = np;
 	item->n_paras++;
 
-	memmove(&item->paragraphs[para+1], &item->paragraphs[para],
-	        (item->n_paras - para - 1)*sizeof(char *));
+	memmove(&item->paras[para+1], &item->paras[para],
+	        (item->n_paras - para - 1)*sizeof(struct slide_text_paragraph));
 
-#ifdef HAVE_PANGO
-	memmove(&item->layouts[para+1], &item->layouts[para],
-	        (item->n_paras - para - 1)*sizeof(PangoLayout *));
-	item->layouts[para+1] = NULL;
-#endif
-
-	item->paragraphs[para+1] = strdup(&item->paragraphs[para][off]);
-	item->paragraphs[para][off] = '\0';
+	item->paras[para+1].text = strdup(&item->paras[para].text[off]);
+	item->paras[para+1].layout = NULL;
+	item->paras[para].text[off] = '\0';
 }

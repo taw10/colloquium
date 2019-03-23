@@ -39,17 +39,25 @@ enum slide_item_type
 };
 
 
+struct slide_text_paragraph
+{
+	char *text;
+#ifdef HAVE_PANGO
+	PangoLayout *layout;
+#else
+	void *layout;
+#endif
+};
+
+
 struct _slideitem
 {
 	enum slide_item_type type;
 
 	/* For TEXT, SLIDETITLE, PRESTITLE */
-	char **paragraphs;
 	int n_paras;
+	struct slide_text_paragraph *paras;
 	enum alignment align;
-#ifdef HAVE_PANGO
-	PangoLayout **layouts;
-#endif
 
 	/* For IMAGE */
 	char *filename;

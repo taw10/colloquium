@@ -163,11 +163,11 @@ static size_t pos_trail_to_offset(SlideItem *item, int para,
 	glong char_offs;
 	char *ptr;
 
-	char_offs = g_utf8_pointer_to_offset(item->paragraphs[para],
-	                                     item->paragraphs[para]+offs);
+	char_offs = g_utf8_pointer_to_offset(item->paras[para].text,
+	                                     item->paras[para].text+offs);
 	char_offs += trail;
-	ptr = g_utf8_offset_to_pointer(item->paragraphs[para], char_offs);
-	return ptr - item->paragraphs[para];
+	ptr = g_utf8_offset_to_pointer(item->paras[para].text, char_offs);
+	return ptr - item->paras[para].text;
 }
 
 
@@ -177,7 +177,7 @@ static double para_top(SlideItem *item, int pnum)
 	double py = 0.0;
 	for ( i=0; i<pnum; i++ ) {
 		PangoRectangle rect;
-		pango_layout_get_extents(item->layouts[i], NULL, &rect);
+		pango_layout_get_extents(item->paras[i].layout, NULL, &rect);
 		py += pango_units_to_double(rect.height);
 	}
 	return py;
@@ -192,7 +192,7 @@ static int get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
 	PangoRectangle rect;
 	double padl, padr, padt, padb;
 
-	if ( item->layouts[cpos.para] == NULL ) {
+	if ( item->paras[cpos.para].layout == NULL ) {
 		fprintf(stderr, "get_cursor_pos: No layout\n");
 		return 1;
 	}
@@ -201,7 +201,7 @@ static int get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
 	                       slide_w, slide_h);
 
 	offs = pos_trail_to_offset(item, cpos.para, cpos.pos, cpos.trail);
-	pango_layout_get_cursor_pos(item->layouts[cpos.para], offs, &rect, NULL);
+	pango_layout_get_cursor_pos(item->paras[cpos.para].layout, offs, &rect, NULL);
 	*x = pango_units_to_double(rect.x) + padl;
 	*y = pango_units_to_double(rect.y) + para_top(item, cpos.para) + padt;
 	*h = pango_units_to_double(rect.height);
@@ -547,14 +547,14 @@ static int find_cursor(SlideItem *item, Stylesheet *stylesheet,
 
 	do {
 		PangoRectangle rect;
-		pango_layout_get_extents(item->layouts[i++], NULL, &rect);
+		pango_layout_get_extents(item->paras[i++].layout, NULL, &rect);
 		top = cur_y;
 		cur_y += pango_units_to_double(rect.height);
 	} while ( (cur_y < y) && (i<item->n_paras) );
 
 	pos->para = i-1;
 
-	pango_layout_xy_to_index(item->layouts[i-1],
+	pango_layout_xy_to_index(item->paras[i-1].layout,
 	                         pango_units_from_double(x),
 	                         pango_units_from_double(y - top),
 	                         &pos->pos, &pos->trail);
@@ -883,7 +883,7 @@ static size_t end_offset_of_para(SlideItem *item, int pnum)
 {
 	assert(pnum >= 0);
 	if ( is_text(item->type) ) return 0;
-	return strlen(item->paragraphs[pnum]);
+	return strlen(item->paras[pnum].text);
 }
 
 
@@ -892,10 +892,9 @@ static void cursor_moveh(GtkSlideView *e, struct slide_pos *cp, signed int dir)
 	int np = cp->pos;
 
 	if ( !is_text(e->cursor_frame->type) ) return;
-	if ( e->cursor_frame->layouts == NULL ) return;
-	if ( e->cursor_frame->layouts[e->cpos.para] == NULL ) return;
+	if ( e->cursor_frame->paras[e->cpos.para].layout == NULL ) return;
 
-	pango_layout_move_cursor_visually(e->cursor_frame->layouts[e->cpos.para],
+	pango_layout_move_cursor_visually(e->cursor_frame->paras[e->cpos.para].layout,
 	                                  1, cp->pos, cp->trail, dir,
 	                                  &np, &cp->trail);
 
@@ -948,14 +947,14 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 static void insert_text_in_paragraph(SlideItem *item, int para,
                                      size_t offs, char *t)
 {
-	char *n = malloc(strlen(t) + strlen(item->paragraphs[para]) + 1);
+	char *n = malloc(strlen(t) + strlen(item->paras[para].text) + 1);
 	if ( n == NULL ) return;
-	strncpy(n, item->paragraphs[para], offs);
+	strncpy(n, item->paras[para].text, offs);
 	n[offs] = '\0';
 	strcat(n, t);
-	strcat(n, item->paragraphs[para]+offs);
-	free(item->paragraphs[para]);
-	item->paragraphs[para] = n;
+	strcat(n, item->paras[para].text+offs);
+	free(item->paras[para].text);
+	item->paras[para].text = n;
 }
 
 
@@ -985,8 +984,8 @@ static void insert_text(char *t, GtkSlideView *e)
 	off = pos_trail_to_offset(e->cursor_frame, e->cpos.para,
 	                          e->cpos.pos, e->cpos.trail);
 	insert_text_in_paragraph(e->cursor_frame, e->cpos.para, off, t);
-	pango_layout_set_text(e->cursor_frame->layouts[e->cpos.para],
-	                      e->cursor_frame->paragraphs[e->cpos.para], -1);
+	pango_layout_set_text(e->cursor_frame->paras[e->cpos.para].layout,
+	                      e->cursor_frame->paras[e->cpos.para].text, -1);
 	cursor_moveh(e, &e->cpos, +1);
 	emit_change_sig(e);
 	redraw(e);

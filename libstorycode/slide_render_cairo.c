@@ -92,14 +92,6 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 
 	fontdesc = pango_font_description_from_string(font);
 
-	if ( item->layouts == NULL ) {
-		item->layouts = malloc(item->n_paras*sizeof(PangoLayout *));
-		if ( item->layouts == NULL ) return;
-		for ( i=0; i<item->n_paras; i++ ) {
-			item->layouts[i] = NULL;
-		}
-	}
-
 	if ( item->align == ALIGN_INHERIT ) {
 		/* Use value from stylesheet */
 		palignment = to_pangoalignment(align);
@@ -116,16 +108,16 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 
 	for ( i=0; i<item->n_paras; i++ ) {
 
-		if ( item->layouts[i] == NULL ) {
-			item->layouts[i] = pango_layout_new(pc);
+		if ( item->paras[i].layout == NULL ) {
+			item->paras[i].layout = pango_layout_new(pc);
 		}
-		pango_layout_set_width(item->layouts[i],
+		pango_layout_set_width(item->paras[i].layout,
 		                       pango_units_from_double(w-pad_l-pad_r));
-		pango_layout_set_text(item->layouts[i], item->paragraphs[i], -1);
+		pango_layout_set_text(item->paras[i].layout, item->paras[i].text, -1);
 
-		pango_layout_set_alignment(item->layouts[i], palignment);
+		pango_layout_set_alignment(item->paras[i].layout, palignment);
 
-		pango_layout_set_font_description(item->layouts[i], fontdesc);
+		pango_layout_set_font_description(item->paras[i].layout, fontdesc);
 
 		/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
 		//pango_layout_set_attributes(item->layouts[i], attrs);
@@ -135,9 +127,9 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 
 		cairo_set_source_rgba(cr, fgcol[0], fgcol[1], fgcol[2], fgcol[3]);
 		cairo_move_to(cr, 0.0, 0.0);
-		pango_cairo_update_layout(cr, item->layouts[i]);
-		pango_cairo_show_layout(cr, item->layouts[i]);
-		pango_layout_get_extents(item->layouts[i], NULL, &rect);
+		pango_cairo_update_layout(cr, item->paras[i].layout);
+		pango_cairo_show_layout(cr, item->paras[i].layout);
+		pango_layout_get_extents(item->paras[i].layout, NULL, &rect);
 		cairo_translate(cr, 0.0, pango_units_to_double(rect.height));
 		cairo_fill(cr);
 

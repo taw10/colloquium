@@ -572,7 +572,13 @@ static void unset_selection(GtkSlideView *e)
 		a = e->sel_end.para;
 		b = e->sel_start.para;
 	}
-	//rewrap_paragraph_range(e->cursor_frame, a, b, e->sel_start, e->sel_end, 0);
+
+	e->sel_start.para = 0;
+	e->sel_start.pos = 0;
+	e->sel_start.trail = 0;
+	e->sel_end.para = 0;
+	e->sel_end.pos = 0;
+	e->sel_end.trail = 0;
 }
 
 
@@ -694,9 +700,9 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			} else {
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_TEXTSEL;
-				unset_selection(e);
 				find_cursor(clicked, stylesheet, x-frx, y-fry,
 				            &e->sel_start, slide_w, slide_h);
+				e->sel_end = e->sel_start;
 			}
 
 		}
@@ -882,7 +888,7 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 static size_t end_offset_of_para(SlideItem *item, int pnum)
 {
 	assert(pnum >= 0);
-	if ( is_text(item->type) ) return 0;
+	if ( !is_text(item->type) ) return 0;
 	return strlen(item->paras[pnum].text);
 }
 
@@ -893,6 +899,7 @@ static void cursor_moveh(GtkSlideView *e, struct slide_pos *cp, signed int dir)
 
 	if ( !is_text(e->cursor_frame->type) ) return;
 	if ( e->cursor_frame->paras[e->cpos.para].layout == NULL ) return;
+	unset_selection(e);
 
 	pango_layout_move_cursor_visually(e->cursor_frame->paras[e->cpos.para].layout,
 	                                  1, cp->pos, cp->trail, dir,
@@ -944,6 +951,60 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 }
 
 
+static void sort_slide_positions(struct slide_pos *a, struct slide_pos *b)
+{
+	if ( a->para > b->para ) {
+		size_t tpos;
+		int tpara, ttrail;
+		tpara = b->para;   tpos = b->pos;  ttrail = b->trail;
+		b->para = a->para;  b->pos = a->pos;  b->trail = a->trail;
+		a->para = tpara;    a->pos = tpos;    a->trail = ttrail;
+	}
+
+	if ( (a->para == b->para) && (a->pos > b->pos) )
+	{
+		size_t tpos = b->pos;
+		int ttrail = b->trail;
+		b->pos = a->pos;  b->trail = a->trail;
+		a->pos = tpos;    a->trail = ttrail;
+	}
+}
+
+
+static void do_backspace(GtkSlideView *e, signed int dir)
+{
+	struct slide_pos p1, p2;
+	size_t o1, o2;
+
+	if ( !slide_positions_equal(e->sel_start, e->sel_end) ) {
+
+		/* Block delete */
+		p1 = e->sel_start;
+		p2 = e->sel_end;
+
+	} else {
+
+		/* Delete one character, as represented visually */
+		p2 = e->cpos;
+		p1 = p2;
+		cursor_moveh(e, &p1, dir);
+	}
+
+	sort_slide_positions(&p1, &p2);
+	o1 = pos_trail_to_offset(e->cursor_frame, p1.para, p1.pos, p1.trail);
+	o2 = pos_trail_to_offset(e->cursor_frame, p2.para, p2.pos, p2.trail);
+	slide_item_delete_text(e->cursor_frame, p1.para, o1, p2.para, o2);
+	e->cpos = p1;
+	unset_selection(e);
+
+	pango_layout_set_text(e->cursor_frame->paras[e->cpos.para].layout,
+	                      e->cursor_frame->paras[e->cpos.para].text, -1);
+
+	emit_change_sig(e);
+	redraw(e);
+}
+
+
 static void insert_text_in_paragraph(SlideItem *item, int para,
                                      size_t offs, char *t)
 {
@@ -966,8 +1027,9 @@ static void insert_text(char *t, GtkSlideView *e)
 	if ( !is_text(e->cursor_frame->type) ) return;
 
 	if ( !slide_positions_equal(e->sel_start, e->sel_end) ) {
-		//do_backspace(e, 0);
+		do_backspace(e, 0);
 	}
+	unset_selection(e);
 
 	if ( strcmp(t, "\n") == 0 ) {
 		off = pos_trail_to_offset(e->cursor_frame, e->cpos.para,
@@ -1043,12 +1105,12 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		break;
 
 		case GDK_KEY_BackSpace :
-		//do_backspace(e, -1);
+		do_backspace(e, -1);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Delete :
-		//do_backspace(e, +1);
+		do_backspace(e, +1);
 		claim = 1;
 		break;
 

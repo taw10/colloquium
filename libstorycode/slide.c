@@ -28,6 +28,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
+
+#ifdef HAVE_PANGO
+#include <pango/pangocairo.h>
+#endif
 
 #include "slide.h"
 #include "slide_priv.h"
@@ -325,4 +330,63 @@ void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
 	item->paras[para+1].text = strdup(&item->paras[para].text[off]);
 	item->paras[para+1].layout = NULL;
 	item->paras[para].text[off] = '\0';
+}
+
+
+static void delete_paragraph(SlideItem *item, int del)
+{
+	int i;
+
+#ifdef HAVE_PANGO
+	g_object_unref(item->paras[del].layout);
+#endif
+	free(item->paras[del].text);
+
+	for ( i=del; i<item->n_paras-1; i++ ) {
+		item->paras[i] = item->paras[i+1];
+	}
+	item->n_paras--;
+}
+
+
+void slide_item_delete_text(SlideItem *item, int i1, size_t o1, int i2, size_t o2)
+{
+	int i;
+	int n_del = 0;
+
+	/* Starting item */
+	if ( i1 == i2 ) {
+		memmove(&item->paras[i1].text[o1],
+		        &item->paras[i1].text[o2],
+		        strlen(item->paras[i1].text)-o2+1);
+		return;  /* easy case */
+	} else {
+		item->paras[i1].text[o1] = '\0';
+	}
+
+	/* Middle items */
+	for ( i=i1+1; i<i2; i++ ) {
+		/* Deleting the item moves all the subsequent items up, so the
+		 * index to be deleted doesn't change. */
+		delete_paragraph(item, i1+1);
+		n_del++;
+	}
+	i2 -= n_del;
+
+	/* Last item */
+	memmove(&item->paras[i2].text[0],
+	        &item->paras[i2].text[o2],
+	        strlen(&item->paras[i2].text[o2])+1);
+
+	assert(i1 != i2);
+	char *new_text;
+	size_t len = strlen(item->paras[i1].text);
+	len += strlen(item->paras[i2].text);
+	new_text = malloc(len+1);
+	if ( new_text == NULL ) return;
+	strcpy(new_text, item->paras[i1].text);
+	strcat(new_text, item->paras[i2].text);
+	free(item->paras[i1].text);
+	item->paras[i1].text = new_text;
+	delete_paragraph(item, i2);
 }

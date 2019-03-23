@@ -38,7 +38,6 @@ struct slide_pos
 };
 
 extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
-                              int slide_number, PangoLanguage *lang,
-                              PangoContext *pc);
+                              int slide_number, PangoLanguage *lang, PangoContext *pc);
 
 #endif	/* RENDER_H */

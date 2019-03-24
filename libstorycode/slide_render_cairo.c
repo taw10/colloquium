@@ -38,6 +38,7 @@
 #include "narrative.h"
 #include "stylesheet.h"
 #include "imagestore.h"
+#include "slide_render_cairo.h"
 
 #include "slide_priv.h"
 
@@ -63,9 +64,33 @@ static PangoAlignment to_pangoalignment(enum alignment align)
 }
 
 
+static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
+{
+	if ( a.para != b.para ) return 0;
+	if ( a.pos != b.pos ) return 0;
+	if ( a.trail != b.trail ) return 0;
+	return 1;
+}
+
+
+static size_t pos_trail_to_offset(SlideItem *item, int para,
+                                  size_t offs, int trail)
+{
+	glong char_offs;
+	char *ptr;
+
+	char_offs = g_utf8_pointer_to_offset(item->paras[para].text,
+	                                     item->paras[para].text+offs);
+	char_offs += trail;
+	ptr = g_utf8_offset_to_pointer(item->paras[para].text, char_offs);
+	return ptr - item->paras[para].text;
+}
+
+
 static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
                         Stylesheet *ss, enum style_element el,
-                        double parent_w, double parent_h)
+                        double parent_w, double parent_h,
+                        struct slide_pos sel_start, struct slide_pos sel_end)
 {
 	int i;
 	double x, y, w;
@@ -77,6 +102,7 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	PangoRectangle rect;
 	PangoFontDescription *fontdesc;
 	PangoAlignment palignment;
+	size_t sel_s, sel_e;
 
 	x = lcalc(item->geom.x, parent_w);
 	y = lcalc(item->geom.y, parent_h);
@@ -100,6 +126,14 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 		palignment = to_pangoalignment(item->align);
 	}
 
+	if ( !slide_positions_equal(sel_start, sel_end) ) {
+		sel_s = pos_trail_to_offset(item, sel_start.para, sel_start.pos, sel_start.trail);
+		sel_e = pos_trail_to_offset(item, sel_end.para, sel_end.pos, sel_end.trail);
+	} else {
+		sel_s = 0;
+		sel_e = 0;
+	}
+
 	/* FIXME: Apply background */
 
 	cairo_save(cr);
@@ -107,6 +141,28 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	cairo_translate(cr, pad_l, pad_t);
 
 	for ( i=0; i<item->n_paras; i++ ) {
+
+		PangoAttrList *attrs;
+
+		size_t srt, end;
+		if ( i >= sel_start.para && i <= sel_end.para ) {
+			if ( i == sel_start.para ) {
+				srt = sel_s;
+			} else {
+				srt = 0;
+			}
+			if ( i == sel_end.para ) {
+				end = sel_e;
+			} else {
+				end = G_MAXUINT;
+			}
+			if ( i > sel_start.para && i < sel_end.para ) {
+				end = G_MAXUINT;
+			}
+		} else {
+			srt = 0;
+			end = 0;
+		}
 
 		if ( item->paras[i].layout == NULL ) {
 			item->paras[i].layout = pango_layout_new(pc);
@@ -119,9 +175,20 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 
 		pango_layout_set_font_description(item->paras[i].layout, fontdesc);
 
+		attrs = pango_attr_list_new();
+
+		if ( srt > 0 || end > 0 ) {
+			PangoAttribute *attr;
+			attr = pango_attr_background_new(42919, 58853, 65535);
+			attr->start_index = srt;
+			attr->end_index = end;
+			pango_attr_list_insert(attrs, attr);
+		}
+
 		/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
-		//pango_layout_set_attributes(item->layouts[i], attrs);
-		//pango_attr_list_unref(attrs);
+
+		pango_layout_set_attributes(item->paras[i].layout, attrs);
+		pango_attr_list_unref(attrs);
 
 		/* FIXME: Clip to w,h */
 
@@ -174,8 +241,29 @@ static void render_image(SlideItem *item, cairo_t *cr,
 }
 
 
+static void sort_slide_positions(struct slide_pos *a, struct slide_pos *b)
+{
+	if ( a->para > b->para ) {
+		size_t tpos;
+		int tpara, ttrail;
+		tpara = b->para;   tpos = b->pos;  ttrail = b->trail;
+		b->para = a->para;  b->pos = a->pos;  b->trail = a->trail;
+		a->para = tpara;    a->pos = tpos;    a->trail = ttrail;
+	}
+
+	if ( (a->para == b->para) && (a->pos > b->pos) )
+	{
+		size_t tpos = b->pos;
+		int ttrail = b->trail;
+		b->pos = a->pos;  b->trail = a->trail;
+		a->pos = tpos;    a->trail = ttrail;
+	}
+}
+
+
 int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
-                       int slide_number, PangoLanguage *lang, PangoContext *pc)
+                       int slide_number, PangoLanguage *lang, PangoContext *pc,
+                       SlideItem *sel_item, struct slide_pos sel_start, struct slide_pos sel_end)
 {
 	int i, r;
 	enum gradient bg;
@@ -188,6 +276,7 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 	if ( r ) return 1;
 
 	slide_get_logical_size(s, stylesheet, &w, &h);
+	sort_slide_positions(&sel_start, &sel_end);
 
 	/* Overall background */
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
@@ -220,11 +309,20 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 
 	for ( i=0; i<s->n_items; i++ ) {
 
+		struct slide_pos srt, end;
+
+		if ( &s->items[i] != sel_item ) {
+			srt.para = 0;  srt.pos = 0;  srt.trail = 0;
+			end.para = 0;  end.pos = 0;  end.trail = 0;
+		} else {
+			srt = sel_start;  end = sel_end;
+		}
+
 		switch ( s->items[i].type ) {
 
 			case SLIDE_ITEM_TEXT :
 			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_TEXT,
-			            w, h);
+			            w, h, srt, end);
 			break;
 
 			case SLIDE_ITEM_IMAGE :
@@ -234,12 +332,12 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 
 			case SLIDE_ITEM_SLIDETITLE :
 			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_SLIDETITLE,
-			            w, h);
+			            w, h, srt, end);
 			break;
 
 			case SLIDE_ITEM_PRESTITLE :
 			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_PRESTITLE,
-			            w, h);
+			            w, h, srt, end);
 			break;
 
 			default :

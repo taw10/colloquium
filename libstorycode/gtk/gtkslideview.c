@@ -325,7 +325,8 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkSlideView *e)
 	slide_render_cairo(e->slide, cr, presentation_get_imagestore(e->p),
 	                   presentation_get_stylesheet(e->p),
 	                   presentation_get_slide_number(e->p, e->slide),
-	                   pango_language_get_default(), pc);
+	                   pango_language_get_default(), pc,
+	                   e->cursor_frame, e->sel_start, e->sel_end);
 	g_object_unref(pc);
 
 	/* Editing overlay */
@@ -564,15 +565,6 @@ static int find_cursor(SlideItem *item, Stylesheet *stylesheet,
 
 static void unset_selection(GtkSlideView *e)
 {
-	int a, b;
-
-	a = e->sel_start.para;
-	b = e->sel_end.para;
-	if ( a > b ) {
-		a = e->sel_end.para;
-		b = e->sel_start.para;
-	}
-
 	e->sel_start.para = 0;
 	e->sel_start.pos = 0;
 	e->sel_start.trail = 0;
@@ -750,11 +742,16 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideView *e
 {
 	gdouble x, y;
 	double frx, fry, frw, frh;
+	Stylesheet *stylesheet;
+	double slide_w, slide_h;
 
-	x = event->x + e->h_scroll_pos;
-	y = event->y + e->v_scroll_pos;
+	x = event->x - e->border_offs_x + e->h_scroll_pos;
+	y = event->y - e->border_offs_y + e->v_scroll_pos;
 	x /= e->view_scale;
 	y /= e->view_scale;
+
+	stylesheet = presentation_get_stylesheet(e->p);
+	slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
 
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
 
@@ -765,9 +762,6 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideView *e
 	}
 
 	if ( e->cursor_frame != NULL ) {
-		double slide_w, slide_h;
-		Stylesheet *stylesheet = presentation_get_stylesheet(e->p);
-		slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
 		slide_item_get_geom(e->cursor_frame, stylesheet,
 		                    &frx, &fry, &frw, &frh, slide_w, slide_h);
 	}
@@ -803,13 +797,9 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideView *e
 		break;
 
 		case DRAG_REASON_TEXTSEL :
-		//unset_selection(e);
-		//find_cursor(fr, x-fr->x, y-fr->y, &e->sel_end);
-		//rewrap_paragraph_range(fr, e->sel_start.para, e->sel_end.para,
-		//                       e->sel_start, e->sel_end, 1);
-		//find_cursor(fr, x-fr->x, y-fr->y, &e->cpos);
-		//e->sel_active = !positions_equal(e->sel_start, e->sel_end);
-		//sc_editor_redraw(e);
+		find_cursor(e->cursor_frame, stylesheet, x-frx, y-fry, &e->sel_end, slide_w, slide_h);
+		e->cpos = e->sel_end;
+		redraw(e);
 		break;
 
 	}

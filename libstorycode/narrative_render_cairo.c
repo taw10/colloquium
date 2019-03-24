@@ -149,9 +149,12 @@ static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *i
 	PangoContext *pc;
 	const int rh = 1024; /* "reasonably big" height for slide */
 	int rw;
+	struct slide_pos sel;
 
 	slide_get_logical_size(s, ss, &logical_w, &logical_h);
 	rw = rh*(logical_w/logical_h);
+
+	sel.para = 0;  sel.pos = 0;  sel.trail = 0;
 
 	/* Render at a reasonably big size.  Rendering to a small surface makes
 	 * rounding of text positions (due to font hinting) cause significant
@@ -160,7 +163,8 @@ static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *i
 	cr = cairo_create(full_surf);
 	cairo_scale(cr, (double)rw/logical_w, (double)rh/logical_h);
 	pc = pango_cairo_create_context(cr);
-	slide_render_cairo(s, cr, is, ss, 0, pango_language_get_default(), pc);
+	slide_render_cairo(s, cr, is, ss, 0, pango_language_get_default(), pc,
+	                   NULL, sel, sel);
 	g_object_unref(pc);
 	cairo_destroy(cr);
 

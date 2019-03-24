@@ -51,6 +51,7 @@ static int render_slides_to_pdf(Presentation *p, ImageStore *is, const char *fil
 	cairo_t *cr;
 	int i;
 	PangoContext *pc;
+	struct slide_pos sel;
 
 	surf = cairo_pdf_surface_create(filename, w, w);
 	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
@@ -60,6 +61,8 @@ static int render_slides_to_pdf(Presentation *p, ImageStore *is, const char *fil
 
 	cr = cairo_create(surf);
 	pc = pango_cairo_create_context(cr);
+
+	sel.para = 0;  sel.pos = 0;  sel.trail = 0;
 
 	for ( i=0; i<presentation_get_num_slides(p); i++ )
 	{
@@ -75,7 +78,8 @@ static int render_slides_to_pdf(Presentation *p, ImageStore *is, const char *fil
 		cairo_save(cr);
 		cairo_scale(cr, w/log_w, w/log_w);
 		slide_render_cairo(s, cr, is, presentation_get_stylesheet(p),
-		                   i, pango_language_get_default(), pc);
+		                   i, pango_language_get_default(), pc,
+		                   NULL, sel, sel);
 		cairo_show_page(cr);
 		cairo_restore(cr);
 	}

@@ -1144,12 +1144,6 @@ static gint realise_sig(GtkWidget *da, GtkSlideView *e)
 }
 
 
-static void update_size_request(GtkSlideView *e)
-{
-	gtk_widget_set_size_request(GTK_WIDGET(e), 0, e->h + 2.0*e->min_border);
-}
-
-
 void gtk_slide_view_set_scale(GtkSlideView *e, double scale)
 {
 	e->view_scale = 1.0;

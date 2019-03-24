@@ -832,6 +832,16 @@ static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
 	text = strdup("");
 	if ( text == NULL ) return NULL;
 
+	if ( w < 0.0 ) {
+		cx += w;
+		w = -w;
+	}
+
+	if ( h < 0.0 ) {
+		cy += h;
+		h = -h;
+	}
+
 	geom.x.len = cx;  geom.x.unit = LENGTH_UNIT;
 	geom.y.len = cy;  geom.y.unit = LENGTH_UNIT;
 	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;

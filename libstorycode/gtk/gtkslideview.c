@@ -809,13 +809,31 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideView *e
 }
 
 
+static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
+                               double w, double h)
+{
+	struct frame_geom geom;
+	char *text;
+
+	text = strdup("");
+	if ( text == NULL ) return NULL;
+
+	geom.x.len = cx;  geom.x.unit = LENGTH_UNIT;
+	geom.y.len = cy;  geom.y.unit = LENGTH_UNIT;
+	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;
+	geom.h.len = h;   geom.h.unit = LENGTH_UNIT;
+	return slide_add_text(e->slide, &text, 1, geom, ALIGN_INHERIT);
+}
+
+
 static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
                                    GtkSlideView *e)
 {
 	gdouble x, y;
+	SlideItem *fr;
 
-	x = event->x + e->h_scroll_pos;
-	y = event->y + e->v_scroll_pos;
+	x = event->x - e->border_offs_x + e->h_scroll_pos;
+	y = event->y - e->border_offs_y + e->v_scroll_pos;
 	x /= e->view_scale;
 	y /= e->view_scale;
 
@@ -834,19 +852,18 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 		break;
 
 		case DRAG_REASON_CREATE :
-		//fr = create_frame(e, e->start_corner_x, e->start_corner_y,
-		//                     e->drag_corner_x - e->start_corner_x,
-		//                     e->drag_corner_y - e->start_corner_y);
-		//if ( fr != NULL ) {
-		//	check_paragraph(fr, e->pc, sc_block_child(fr->scblocks));
-		//	e->selection = fr;
-		//	e->cursor_frame = fr;
-		//	e->cpos.para = 0;
-		//	e->cpos.pos = 0;
-		//	e->cpos.trail = 0;
-		//} else {
-		//	fprintf(stderr, _("Failed to create frame!\n"));
-		//}
+		fr = create_frame(e, e->start_corner_x, e->start_corner_y,
+		                     e->drag_corner_x - e->start_corner_x,
+		                     e->drag_corner_y - e->start_corner_y);
+		if ( fr != NULL ) {
+			e->cursor_frame = fr;
+			e->cpos.para = 0;
+			e->cpos.pos = 0;
+			e->cpos.trail = 0;
+			unset_selection(e);
+		} else {
+			fprintf(stderr, _("Failed to create frame!\n"));
+		}
 		break;
 
 		case DRAG_REASON_IMPORT :

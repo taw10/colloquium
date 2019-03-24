@@ -36,11 +36,11 @@ extern Slide *slide_new(void);
 extern void slide_free(Slide *s);
 
 extern int slide_add_image(Slide *s, char *filename, struct frame_geom geom);
-extern int slide_add_text(Slide *s, char **text, int n_text,
-                          struct frame_geom geom, enum alignment alignment);
+extern SlideItem *slide_add_text(Slide *s, char **text, int n_text,
+                                 struct frame_geom geom, enum alignment alignment);
 extern int slide_add_footer(Slide *s);
-extern int slide_add_slidetitle(Slide *s, char **text, int n_text);
-extern int slide_add_prestitle(Slide *s, char **text, int n_text);
+extern SlideItem *slide_add_slidetitle(Slide *s, char **text, int n_text);
+extern SlideItem *slide_add_prestitle(Slide *s, char **text, int n_text);
 extern int slide_set_logical_size(Slide *s, double w, double h);
 
 extern int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h);

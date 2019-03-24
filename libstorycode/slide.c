@@ -89,20 +89,20 @@ int slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 }
 
 
-int add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
-                  enum alignment alignment, enum slide_item_type slide_item)
+static SlideItem *add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
+                                enum alignment alignment, enum slide_item_type slide_item)
 {
 	int i;
 	SlideItem *item;
 
 	item = add_item(s);
-	if ( item == NULL ) return 1;
+	if ( item == NULL ) return NULL;
 
 	item->type = slide_item;
 	item->paras = malloc(n_text*sizeof(struct slide_text_paragraph));
 	if ( item->paras == NULL ) {
 		s->n_items--;
-		return 1;
+		return NULL;
 	}
 
 	for ( i=0; i<n_text; i++ ) {
@@ -121,7 +121,7 @@ int add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
 		item->resizable = 0;
 	}
 
-	return 0;
+	return item;
 }
 
 
@@ -138,15 +138,15 @@ int slide_add_footer(Slide *s)
 }
 
 
-int slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom,
-                   enum alignment alignment)
+SlideItem *slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom,
+                          enum alignment alignment)
 {
 	return add_text_item(s, text, n_text, geom, alignment,
 	                     SLIDE_ITEM_TEXT);
 }
 
 
-int slide_add_slidetitle(Slide *s, char **text, int n_text)
+SlideItem *slide_add_slidetitle(Slide *s, char **text, int n_text)
 {
 	struct frame_geom geom;
 
@@ -165,7 +165,7 @@ int slide_add_slidetitle(Slide *s, char **text, int n_text)
 }
 
 
-int slide_add_prestitle(Slide *s, char **text, int n_text)
+SlideItem *slide_add_prestitle(Slide *s, char **text, int n_text)
 {
 	struct frame_geom geom;
 

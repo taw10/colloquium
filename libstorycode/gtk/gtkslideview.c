@@ -809,6 +809,20 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideView *e
 }
 
 
+static SlideItem *create_image(GtkSlideView *e, const char *filename,
+                               double cx, double cy, double w, double h)
+{
+	struct frame_geom geom;
+	char *fn = strdup(filename);
+	if ( fn == NULL ) return NULL;
+	geom.x.len = cx;  geom.x.unit = LENGTH_UNIT;
+	geom.y.len = cy;  geom.y.unit = LENGTH_UNIT;
+	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;
+	geom.h.len = h;   geom.h.unit = LENGTH_UNIT;
+	return slide_add_image(e->slide, fn, geom);
+}
+
+
 static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
                                double w, double h)
 {
@@ -1128,6 +1142,219 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
+static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
+                           gint x, gint y, guint time, GtkSlideView *e)
+{
+	GdkAtom target;
+
+	/* If we haven't already requested the data, do so now */
+	if ( !e->drag_preview_pending && !e->have_drag_data ) {
+
+		target = gtk_drag_dest_find_target(widget, drag_context, NULL);
+
+		if ( target != GDK_NONE ) {
+			gtk_drag_get_data(widget, drag_context, target, time);
+			e->drag_preview_pending = 1;
+		} else {
+			e->import_acceptable = 0;
+			gdk_drag_status(drag_context, 0, time);
+		}
+
+	}
+
+	if ( e->have_drag_data && e->import_acceptable ) {
+
+		gdk_drag_status(drag_context, GDK_ACTION_LINK, time);
+		e->start_corner_x = x - e->import_width/2.0;
+		e->start_corner_y = y - e->import_height/2.0;
+		e->drag_corner_x = x + e->import_width/2.0;
+		e->drag_corner_y = y + e->import_height/2.0;
+
+		redraw(e);
+
+	}
+
+	return TRUE;
+}
+
+
+static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
+                         gint x, gint y, guint time, GtkSlideView *e)
+{
+	GdkAtom target;
+
+	target = gtk_drag_dest_find_target(widget, drag_context, NULL);
+
+	if ( target == GDK_NONE ) {
+		gtk_drag_finish(drag_context, FALSE, FALSE, time);
+	} else {
+		gtk_drag_get_data(widget, drag_context, target, time);
+	}
+
+	return TRUE;
+}
+
+
+/* Scale the image down if it's a silly size */
+static void check_import_size(GtkSlideView *e)
+{
+	if ( e->import_width > e->w ) {
+
+		int new_import_width;
+
+		new_import_width = e->w/2;
+		e->import_height = (new_import_width * e->import_height) /
+		                     e->import_width;
+		e->import_width = new_import_width;
+
+	}
+
+	if ( e->import_height > e->h ) {
+
+		int new_import_height;
+
+		new_import_height = e->w/2;
+		e->import_width = (new_import_height*e->import_width) /
+		                    e->import_height;
+		e->import_height = new_import_height;
+
+	}
+}
+
+
+static void chomp(char *s)
+{
+	size_t i;
+
+	if ( !s ) return;
+
+	for ( i=0; i<strlen(s); i++ ) {
+		if ( (s[i] == '\n') || (s[i] == '\r') ) {
+			s[i] = '\0';
+			return;
+		}
+	}
+}
+
+
+static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
+                        gint x, gint y, GtkSelectionData *seldata,
+                        guint info, guint time, GtkSlideView *e)
+{
+	if ( e->drag_preview_pending ) {
+
+		gchar *filename = NULL;
+		GdkPixbufFormat *f;
+		gchar **uris;
+		int w, h;
+
+		e->have_drag_data = 1;
+		e->drag_preview_pending = 0;
+		uris = gtk_selection_data_get_uris(seldata);
+		if ( uris != NULL ) {
+			filename = g_filename_from_uri(uris[0], NULL, NULL);
+		}
+		g_strfreev(uris);
+
+		if ( filename == NULL ) {
+
+			/* This doesn't even look like a sensible URI.
+			 * Bail out. */
+			gdk_drag_status(drag_context, 0, time);
+			if ( e->drag_highlight ) {
+				gtk_drag_unhighlight(widget);
+				e->drag_highlight = 0;
+			}
+			e->import_acceptable = 0;
+			return;
+
+		}
+		chomp(filename);
+
+		f = gdk_pixbuf_get_file_info(filename, &w, &h);
+		g_free(filename);
+
+		e->import_width = w;
+		e->import_height = h;
+
+		if ( f == NULL ) {
+
+			gdk_drag_status(drag_context, 0, time);
+			if ( e->drag_highlight ) {
+				gtk_drag_unhighlight(widget);
+				e->drag_highlight = 0;
+			}
+			e->drag_status = DRAG_STATUS_NONE;
+			e->drag_reason = DRAG_REASON_NONE;
+			e->import_acceptable = 0;
+
+		} else {
+
+			/* Looks like a sensible image */
+			gdk_drag_status(drag_context, GDK_ACTION_PRIVATE, time);
+			e->import_acceptable = 1;
+
+			if ( !e->drag_highlight ) {
+				gtk_drag_highlight(widget);
+				e->drag_highlight = 1;
+			}
+
+			check_import_size(e);
+			e->drag_reason = DRAG_REASON_IMPORT;
+			e->drag_status = DRAG_STATUS_DRAGGING;
+
+		}
+
+	} else {
+
+		gchar **uris;
+		char *filename = NULL;
+
+		uris = gtk_selection_data_get_uris(seldata);
+		if ( uris != NULL ) {
+			filename = g_filename_from_uri(uris[0], NULL, NULL);
+		}
+		g_strfreev(uris);
+
+		if ( filename != NULL ) {
+
+			int w, h;
+
+			gtk_drag_finish(drag_context, TRUE, FALSE, time);
+			chomp(filename);
+
+			w = e->drag_corner_x - e->start_corner_x;
+			h = e->drag_corner_y - e->start_corner_y;
+
+			create_image(e, filename,
+			             e->start_corner_x, e->start_corner_y,
+			             w, h);
+			free(filename);
+			redraw(e);
+
+		} else {
+
+			gtk_drag_finish(drag_context, FALSE, FALSE, time);
+
+		}
+
+	}
+}
+
+
+static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
+                      guint time, GtkSlideView *e)
+{
+	if ( e->drag_highlight ) {
+		gtk_drag_unhighlight(widget);
+	}
+	e->have_drag_data = 0;
+	e->drag_highlight = 0;
+	e->drag_status = DRAG_STATUS_NONE;
+	e->drag_reason = DRAG_REASON_NONE;
+}
+
+
 static gint realise_sig(GtkWidget *da, GtkSlideView *e)
 {
 	GdkWindow *win;
@@ -1204,19 +1431,19 @@ GtkWidget *gtk_slide_view_new(Presentation *p, Slide *slide)
 	                 G_CALLBACK(resize_sig), sv);
 
 	/* Drag and drop */
-	//targets[0].target = "text/uri-list";
-	//targets[0].flags = 0;
-	//targets[0].info = 1;
-	//gtk_drag_dest_set(GTK_WIDGET(sv), 0, targets, 1,
-	//                  GDK_ACTION_PRIVATE);
-	//g_signal_connect(sv, "drag-data-received",
-	//                 G_CALLBACK(dnd_receive), sv);
-	//g_signal_connect(sv, "drag-motion",
-	//                 G_CALLBACK(dnd_motion), sv);
-	//g_signal_connect(sv, "drag-drop",
-	//                 G_CALLBACK(dnd_drop), sv);
-	//g_signal_connect(sv, "drag-leave",
-	//                 G_CALLBACK(dnd_leave), sv);
+	targets[0].target = "text/uri-list";
+	targets[0].flags = 0;
+	targets[0].info = 1;
+	gtk_drag_dest_set(GTK_WIDGET(sv), 0, targets, 1,
+	                  GDK_ACTION_PRIVATE);
+	g_signal_connect(sv, "drag-data-received",
+	                 G_CALLBACK(dnd_receive), sv);
+	g_signal_connect(sv, "drag-motion",
+	                 G_CALLBACK(dnd_motion), sv);
+	g_signal_connect(sv, "drag-drop",
+	                 G_CALLBACK(dnd_drop), sv);
+	g_signal_connect(sv, "drag-leave",
+	                 G_CALLBACK(dnd_leave), sv);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(sv),

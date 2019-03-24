@@ -73,19 +73,19 @@ static SlideItem *add_item(Slide *s)
 }
 
 
-int slide_add_image(Slide *s, char *filename, struct frame_geom geom)
+SlideItem *slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 {
 	SlideItem *item;
 
 	item = add_item(s);
-	if ( item == NULL ) return 1;
+	if ( item == NULL ) return NULL;
 
 	item->type = SLIDE_ITEM_IMAGE;
 	item->geom = geom;
 	item->filename = filename;
 	item->resizable = 1;
 
-	return 0;
+	return item;
 }
 
 

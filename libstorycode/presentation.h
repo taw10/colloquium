@@ -39,6 +39,8 @@ extern Presentation *presentation_new(void);
 extern Presentation *presentation_load(GFile *file);
 extern int presentation_save(Presentation *p, GFile *file);
 extern void presentation_free(Presentation *p);
+extern void presentation_set_unsaved(Presentation *p);
+extern int presentation_get_unsaved(Presentation *p);
 
 extern void presentation_add_stylesheet(Presentation *p, Stylesheet *ss);
 extern void presentation_add_narrative(Presentation *p, Narrative *n);

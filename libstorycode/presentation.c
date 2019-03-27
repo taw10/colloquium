@@ -50,6 +50,7 @@ struct _presentation
 	int n_slides;
 	Slide **slides;
 	int max_slides;
+	int saved;
 	const char *language;
 };
 
@@ -65,6 +66,7 @@ Presentation *presentation_new()
 	p->n_slides = 0;
 	p->max_slides = 0;
 	p->imagestore = NULL;
+	p->saved = 1;
 #ifdef HAVE_PANGO
 	p->language = pango_language_to_string(pango_language_get_default());
 #else
@@ -99,6 +101,18 @@ int presentation_save(Presentation *p, GFile *file)
 {
 	/* FIXME: Implementation */
 	return 1;
+}
+
+
+void presentation_set_unsaved(Presentation *p)
+{
+	p->saved = 0;
+}
+
+
+int presentation_get_unsaved(Presentation *p)
+{
+	return !p->saved;
 }
 
 

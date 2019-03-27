@@ -81,6 +81,32 @@ static void show_error(NarrativeWindow *nw, const char *err)
 }
 
 
+static void update_titlebar(NarrativeWindow *nw)
+{
+	char *title;
+	char *title_new;
+
+	title = strdup("test"); // FIXME get_titlebar_string(nw->p);
+	title_new = realloc(title, strlen(title)+16);
+	if ( title_new == NULL ) {
+		free(title);
+		return;
+	} else {
+		title = title_new;
+	}
+
+	strcat(title, " - Colloquium");
+	if ( presentation_get_unsaved(nw->p) ) {
+		strcat(title, " *");
+	}
+	gtk_window_set_title(GTK_WINDOW(nw->window), title);
+
+	/* FIXME: Update all slide windows belonging to this NW */
+
+	free(title);
+}
+
+
 static void update_toolbar(NarrativeWindow *nw)
 {
 //	int cur_para;
@@ -282,12 +308,10 @@ static void load_ss_sig(GSimpleAction *action, GVariant *parameter,
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
-	//NarrativeWindow *nw = vp;
+	NarrativeWindow *nw = vp;
 
-	/* FIXME: implementation */
-
-	//nw->p->saved = 0;
-	//update_titlebar(nw);
+	presentation_set_unsaved(nw->p);
+	update_titlebar(nw);
 }
 
 
@@ -441,8 +465,8 @@ static gboolean nw_button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 static void changed_sig(GtkWidget *da, NarrativeWindow *nw)
 {
-	//nw->p->saved = 0;
-	//update_titlebar(nw);
+	presentation_set_unsaved(nw->p);
+	update_titlebar(nw);
 }
 
 
@@ -629,32 +653,6 @@ GActionEntry nw_entries[] = {
 	{ "print", print_sig, NULL, NULL, NULL  },
 	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 };
-
-
-void update_titlebar(NarrativeWindow *nw)
-{
-	char *title;
-	char *title_new;
-
-	title = strdup("test"); // FIXME get_titlebar_string(nw->p);
-	title_new = realloc(title, strlen(title)+16);
-	if ( title_new == NULL ) {
-		free(title);
-		return;
-	} else {
-		title = title_new;
-	}
-
-	strcat(title, " - Colloquium");
-//FIXME	if ( !nw->p->saved ) {
-//		strcat(title, " *");
-//	}
-	gtk_window_set_title(GTK_WINDOW(nw->window), title);
-
-	/* FIXME: Update all slide windows belonging to this NW */
-
-	free(title);
-}
 
 
 //void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw)

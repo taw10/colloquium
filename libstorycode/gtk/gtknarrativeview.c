@@ -484,27 +484,26 @@ static double para_top(Narrative *n, int pnum)
 }
 
 
-static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para)
+static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para,
+                                double w)
 {
 	double cx, cy, cw, ch;
 	struct narrative_item *item;
 
-	cx = 0.0;
-	cy = para_top(n, cursor_para);
-
 	item = &n->items[cursor_para];
+	cx = n->space_l;
+	cy = n->space_t + para_top(n, cursor_para);
+	cw = w - n->space_l - n->space_r;
+
 
 	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
-		cw = item->slide_w;
 		ch = item->slide_h;
 	} else {
 		if ( item->layout != NULL ) {
 			PangoRectangle rect;
 			pango_layout_get_extents(item->layout, NULL, &rect);
-			cw = pango_units_to_double(rect.width) + item->space_r + item->space_l;
-			ch = pango_units_to_double(rect.height) + item->space_b + item->space_t;
+			ch = pango_units_to_double(rect.height);
 		} else {
-			cw = 0.0;
 			ch = 0.0;
 			fprintf(stderr, "No layout when drawing highlight box\n");
 		}
@@ -563,20 +562,20 @@ static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
 
 
 static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos,
-                       int hgh)
+                       int hgh, double ww)
 {
 	double cx, clow, chigh, h;
 	const double t = 1.8;
 
 	if ( hgh ) {
-		draw_para_highlight(cr, n, cpos.para);
+		draw_para_highlight(cr, n, cpos.para, ww);
 		return;
 	}
 
 	assert(n != NULL);
 
 	if ( n->items[cpos.para].type == NARRATIVE_ITEM_SLIDE ) {
-		draw_para_highlight(cr, n, cpos.para);
+		draw_para_highlight(cr, n, cpos.para, ww);
 		return;
 	}
 
@@ -606,7 +605,7 @@ static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos,
 static void draw_overlay(cairo_t *cr, GtkNarrativeView *e)
 {
 	draw_caret(cr, presentation_get_narrative(e->p),
-	           e->cpos, e->para_highlight);
+	           e->cpos, e->para_highlight, e->w);
 }
 
 

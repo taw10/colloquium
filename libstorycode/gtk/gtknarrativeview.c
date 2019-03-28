@@ -487,11 +487,28 @@ static double para_top(Narrative *n, int pnum)
 static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para)
 {
 	double cx, cy, cw, ch;
+	struct narrative_item *item;
 
-	cx = n->space_l;
-	cy = n->space_t + para_top(n, cursor_para);
-	cw = n->items[cursor_para].slide_w;
-	ch = n->items[cursor_para].slide_h;
+	cx = 0.0;
+	cy = para_top(n, cursor_para);
+
+	item = &n->items[cursor_para];
+
+	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+		cw = item->slide_w;
+		ch = item->slide_h;
+	} else {
+		if ( item->layout != NULL ) {
+			PangoRectangle rect;
+			pango_layout_get_extents(item->layout, NULL, &rect);
+			cw = pango_units_to_double(rect.width) + item->space_r + item->space_l;
+			ch = pango_units_to_double(rect.height) + item->space_b + item->space_t;
+		} else {
+			cw = 0.0;
+			ch = 0.0;
+			fprintf(stderr, "No layout when drawing highlight box\n");
+		}
+	}
 
 	cairo_new_path(cr);
 	cairo_rectangle(cr, cx, cy, cw, ch);
@@ -1175,4 +1192,26 @@ GtkWidget *gtk_narrative_view_new(Presentation *p)
 	gtk_widget_show(GTK_WIDGET(nview));
 
 	return GTK_WIDGET(nview);
+}
+
+
+void gtk_narrative_view_set_para_highlight(GtkNarrativeView *e, int para_highlight)
+{
+	e->para_highlight = para_highlight;
+	redraw(e);
+}
+
+
+int gtk_narrative_view_get_cursor_para(GtkNarrativeView *e)
+{
+	return e->cpos.para;
+}
+
+
+void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos)
+{
+	e->cpos.para = pos;
+	e->cpos.pos = 0;
+	e->cpos.trail = 0;
+	redraw(e);
 }

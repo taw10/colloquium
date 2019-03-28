@@ -29,10 +29,11 @@
 #include <string.h>
 #include <assert.h>
 #include <gtk/gtk.h>
+#include <libintl.h>
+#define _(x) gettext(x)
 
 #include "presentation.h"
 #include "pr_clock.h"
-#include "utils.h"
 
 
 struct pr_clock

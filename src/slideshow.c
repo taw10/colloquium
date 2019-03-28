@@ -30,13 +30,15 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <libintl.h>
+#define _(x) gettext(x)
 
+#include <presentation.h>
+
+#include "slide_render_cairo.h"
+#include "slideshow.h"
 #include "colloquium.h"
-#include "presentation.h"
-#include "render.h"
 #include "pr_clock.h"
-#include "frame.h"
-#include "utils.h"
 
 G_DEFINE_TYPE_WITH_CODE(SCSlideshow, sc_slideshow, GTK_TYPE_WINDOW, NULL)
 
@@ -51,27 +53,11 @@ void sc_slideshow_class_init(SCSlideshowClass *klass)
 }
 
 
-static void slideshow_rerender(SCSlideshow *ss)
+static void redraw(SCSlideshow *ss)
 {
-	int n;
 	gint w, h;
-
-	if ( ss->cur_slide == NULL ) return;
-
-	if ( ss->surface != NULL ) {
-		cairo_surface_destroy(ss->surface);
-	}
-
-	n = slide_number(ss->p, ss->cur_slide);
-	ss->surface = render_sc(ss->cur_slide,
-	                        ss->slide_width, ss->slide_height,
-	                        ss->p->slide_width, ss->p->slide_height,
-	                        ss->p->stylesheet, NULL, ss->p->is, n,
-	                        &ss->top, ss->p->lang);
-
 	w = gtk_widget_get_allocated_width(GTK_WIDGET(ss->drawingarea));
 	h = gtk_widget_get_allocated_height(GTK_WIDGET(ss->drawingarea));
-
 	gtk_widget_queue_draw_area(ss->drawingarea, 0, 0, w, h);
 }
 
@@ -80,9 +66,6 @@ static gint ssh_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 {
 	if ( ss->blank_cursor != NULL ) {
 		g_object_unref(ss->blank_cursor);
-	}
-	if ( ss->surface != NULL ) {
-		cairo_surface_destroy(ss->surface);
 	}
 	if ( ss->inhibit_cookie ) {
 		gtk_application_uninhibit(ss->app, ss->inhibit_cookie);
@@ -93,23 +76,57 @@ static gint ssh_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 
 static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
 {
-	double width, height;
+	double dw, dh;  /* Size of drawing area */
+	double lw, lh;  /* Logical size of slide */
+	double sw, sh;  /* Size of slide on screen */
+	double xoff, yoff;
 
-	width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
-	height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
+	dw = gtk_widget_get_allocated_width(GTK_WIDGET(da));
+	dh = gtk_widget_get_allocated_height(GTK_WIDGET(da));
 
 	/* Overall background */
-	cairo_rectangle(cr, 0.0, 0.0, width, height);
+	cairo_rectangle(cr, 0.0, 0.0, dw, dh);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_fill(cr);
 
+	slide_get_logical_size(ss->cur_slide,
+	                       presentation_get_stylesheet(ss->p), &lw, &lh);
+
+	if ( lw/lh > (double)dw/dh ) {
+		/* Slide is too wide.  Letterboxing top/bottom */
+		sw = dw;
+		sh = dw * lh/lw;
+	} else {
+		/* Letterboxing at sides */
+		sw = dh * lw/lh;
+		sh = dh;
+	}
+
+	xoff = (dw - sw)/2.0;
+	yoff = (dh - sh)/2.0;
+
 	if ( !ss->blank ) {
 
-		/* Draw the slide from the cache */
-		cairo_rectangle(cr, ss->xoff, ss->yoff,
-		                ss->slide_width, ss->slide_height);
-		cairo_set_source_surface(cr, ss->surface, ss->xoff, ss->yoff);
-		cairo_fill(cr);
+		PangoContext *pc;
+		int n;
+		struct slide_pos sel;
+
+		cairo_save(cr);
+		cairo_translate(cr, xoff, yoff);
+		cairo_scale(cr, sw/lw, sh/lh);
+
+		sel.para = 0;  sel.pos = 0;  sel.trail = 0;
+		n = presentation_get_slide_number(ss->p, ss->cur_slide);
+		pc = pango_cairo_create_context(cr);
+
+		slide_render_cairo(ss->cur_slide, cr,
+		                   presentation_get_imagestore(ss->p),
+		                   presentation_get_stylesheet(ss->p),
+		                   n, pango_language_get_default(), pc,
+		                   NULL, sel, sel);
+
+		g_object_unref(pc);
+		cairo_restore(cr);
 
 	}
 
@@ -132,47 +149,18 @@ static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
 		ss->blank_cursor = NULL;
 	}
 
-	slideshow_rerender(ss);
-
 	return FALSE;
 }
 
 
-static void ss_size_sig(GtkWidget *widget, GdkRectangle *rect, SCSlideshow *ss)
-{
-	const double sw = ss->p->slide_width;
-	const double sh = ss->p->slide_height;
-
-	if ( sw/sh > (double)rect->width/rect->height ) {
-		/* Slide is too wide.  Letterboxing top/bottom */
-		ss->slide_width = rect->width;
-		ss->slide_height = rect->width * sh/sw;
-	} else {
-		/* Letterboxing at sides */
-		ss->slide_width = rect->height * sw/sh;
-		ss->slide_height = rect->height;
-	}
-
-	ss->xoff = (rect->width - ss->slide_width)/2.0;
-	ss->yoff = (rect->height - ss->slide_height)/2.0;
-
-	printf("screen %i %i\n", rect->width, rect->height);
-	printf("slide %f %f\n", sw, sh);
-	printf("rendering slide at %i %i\n", ss->slide_width, ss->slide_height);
-	printf("offset %i %i\n", ss->xoff, ss->yoff);
-
-	slideshow_rerender(ss);
-}
-
-
-void sc_slideshow_set_slide(SCSlideshow *ss, SCBlock *ns)
+void sc_slideshow_set_slide(SCSlideshow *ss, Slide *ns)
 {
 	ss->cur_slide = ns;
-	slideshow_rerender(ss);
+	redraw(ss);
 }
 
 
-SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
+SCSlideshow *sc_slideshow_new(Presentation *p, GtkApplication *app)
 {
 	GdkDisplay *display;
 	int n_monitors;
@@ -185,7 +173,6 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 	ss->p = p;
 	ss->cur_slide = NULL;
 	ss->blank_cursor = NULL;
-	ss->surface = NULL;
 	ss->app = app;
 
 	ss->drawingarea = gtk_drawing_area_new();
@@ -199,9 +186,6 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 	                 G_CALLBACK(ssh_destroy_sig), ss);
 	g_signal_connect(G_OBJECT(ss), "realize",
 	                 G_CALLBACK(ss_realize_sig), ss);
-	g_signal_connect(G_OBJECT(ss), "size-allocate",
-	                 G_CALLBACK(ss_size_sig), ss);
-
 	g_signal_connect(G_OBJECT(ss->drawingarea), "draw",
 			 G_CALLBACK(ss_draw_sig), ss);
 
@@ -226,8 +210,6 @@ SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app)
 	gdk_monitor_get_geometry(mon_ss, &rect);
 	gtk_window_move(GTK_WINDOW(ss), rect.x, rect.y);
 	gtk_window_fullscreen(GTK_WINDOW(ss));
-
-	ss->linked = 1;
 
 	if ( app != NULL ) {
 		ss->inhibit_cookie = gtk_application_inhibit(app, GTK_WINDOW(ss),

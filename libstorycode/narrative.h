@@ -41,6 +41,8 @@ extern void narrative_add_slide(Narrative *n, Slide *slide);
 extern void narrative_delete_block(Narrative *n, int i1, size_t o1,
                                                  int i2, size_t o2);
 extern void narrative_split_item(Narrative *n, int i1, size_t o1);
+extern int narrative_get_num_items(Narrative *n);
+extern Slide *narrative_get_slide(Narrative *n, int para);
 
 
 #endif /* NARRATIVE_H */

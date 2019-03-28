@@ -1,7 +1,7 @@
 /*
  * slideshow.h
  *
- * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -51,21 +51,16 @@ struct _scslideshow
 	GtkWindow parent_instance;
 
 	/* <private> */
-	struct presentation *p;
-	SCBlock             *cur_slide;
+	Presentation        *p;
+	Slide               *cur_slide;
 	GtkWidget           *drawingarea;
 	GdkCursor           *blank_cursor;
 	int                  blank;
-	int                  slide_width;
-	int                  slide_height;
 	int                  xoff;
 	int                  yoff;
-	int                  linked;
-	cairo_surface_t     *surface;
-	struct frame        *top;
 	int                  single_monitor;
-	uint                 inhibit_cookie;
 	GtkApplication      *app;
+	gint                 inhibit_cookie;
 };
 
 
@@ -77,7 +72,8 @@ struct _scslideshowclass
 typedef struct _scslideshow SCSlideshow;
 typedef struct _scslideshowclass SCSlideshowClass;
 
-extern SCSlideshow *sc_slideshow_new(struct presentation *p, GtkApplication *app);
-extern void sc_slideshow_set_slide(SCSlideshow *ss, SCBlock *ns);
+extern SCSlideshow *sc_slideshow_new(Presentation *p, GtkApplication *app);
+extern void sc_slideshow_set_slide(SCSlideshow *ss, Slide *ns);
+extern Slide *sc_slideshow_get_slide(SCSlideshow *ss);
 
 #endif	/* SLIDESHOW_H */

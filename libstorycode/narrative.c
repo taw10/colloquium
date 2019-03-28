@@ -248,3 +248,17 @@ void narrative_split_item(Narrative *n, int i1, size_t o1)
 
 	item2->type = NARRATIVE_ITEM_TEXT;
 }
+
+
+int narrative_get_num_items(Narrative *n)
+{
+	return n->n_items;
+}
+
+
+Slide *narrative_get_slide(Narrative *n, int para)
+{
+	if ( para >= n->n_items ) return NULL;
+	if ( n->items[para].type != NARRATIVE_ITEM_SLIDE ) return NULL;
+	return n->items[para].slide;
+}

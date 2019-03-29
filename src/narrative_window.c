@@ -361,6 +361,7 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 	n_paras = narrative_get_num_items(narr);
 	nv = GTK_NARRATIVE_VIEW(nw->nv);
 
+	if ( gtk_narrative_view_get_cursor_para(nv) == n_paras - 1 ) return;
 	gtk_narrative_view_set_cursor_para(nv, gtk_narrative_view_get_cursor_para(nv)+1);
 
 	/* If we only have one monitor, skip to next slide */

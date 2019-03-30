@@ -27,6 +27,8 @@
 #include <config.h>
 #endif
 
+#include <stddef.h>
+
 typedef struct _slide Slide;
 typedef struct _slideitem SlideItem;
 

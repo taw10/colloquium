@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "presentation.h"
 #include "slide.h"
 #include "narrative.h"
 #include "stylesheet.h"

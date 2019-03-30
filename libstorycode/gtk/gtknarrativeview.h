@@ -32,7 +32,6 @@
 
 #include <stylesheet.h>
 #include <narrative.h>
-#include <presentation.h>
 #include <imagestore.h>
 #include <narrative_render_cairo.h>
 
@@ -66,7 +65,7 @@ struct _gtknarrativeview
 	GtkDrawingArea       parent_instance;
 
 	/*< private >*/
-	Presentation        *p;
+	Narrative           *n;
 	GtkIMContext        *im_context;
 
 	int                  w;   /* Surface size in pixels */
@@ -101,7 +100,7 @@ typedef struct _gtknarrativeview GtkNarrativeView;
 typedef struct _gtknarrativeviewclass GtkNarrativeViewClass;
 
 extern GType gtk_narrative_view_get_type(void);
-extern GtkWidget *gtk_narrative_view_new(Presentation *p);
+extern GtkWidget *gtk_narrative_view_new(Narrative *n);
 
 extern void gtk_narrative_view_set_logical_size(GtkNarrativeView *e, double w, double h);
 

@@ -33,7 +33,7 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <presentation.h>
+#include <narrative.h>
 
 
 struct testcard
@@ -236,7 +236,7 @@ static gboolean tc_key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
-void show_testcard(Presentation *p)
+void show_testcard(Narrative *n)
 {
 	GdkDisplay *display;
 	int n_monitors;
@@ -246,7 +246,7 @@ void show_testcard(Presentation *p)
 	if ( tc == NULL ) return;
 
 	tc->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	stylesheet_get_slide_default_size(presentation_get_stylesheet(p),
+	stylesheet_get_slide_default_size(narrative_get_stylesheet(n),
 	                                  &tc->slide_width, &tc->slide_height);
 
 	tc->drawingarea = gtk_drawing_area_new();

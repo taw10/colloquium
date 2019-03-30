@@ -65,7 +65,6 @@ storycode_lex_ch = flex_gen.process('libstorycode/storycode.l')
 libstorycode = library('storycode',
                    ['libstorycode/narrative.c',
                     'libstorycode/slide.c',
-                    'libstorycode/presentation.c',
                     'libstorycode/stylesheet.c',
                     'libstorycode/storycode.c',
                     'libstorycode/slide_render_cairo.c',

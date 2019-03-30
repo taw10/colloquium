@@ -27,9 +27,9 @@
 #include <config.h>
 #endif
 
-#include "presentation.h"
+#include "narrative.h"
 
-extern Presentation *storycode_parse_presentation(const char *sc);
+extern Narrative *storycode_parse_presentation(const char *sc);
 
 
 #endif /* STORYCODE_H */

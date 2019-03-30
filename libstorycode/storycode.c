@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "presentation.h"
 #include "narrative.h"
 #include "slide.h"
 #include "stylesheet.h"
@@ -38,7 +37,7 @@
 #include "scparse_priv.h"
 
 
-Presentation *storycode_parse_presentation(const char *sc)
+Narrative *storycode_parse_presentation(const char *sc)
 {
 	YY_BUFFER_STATE b;
 	struct scpctx parse_ctx;
@@ -47,5 +46,5 @@ Presentation *storycode_parse_presentation(const char *sc)
 	scparse(&parse_ctx);
 	sc_delete_buffer(b);
 
-	return parse_ctx.p;
+	return parse_ctx.n;
 }

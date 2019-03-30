@@ -27,7 +27,7 @@
 #include <config.h>
 #endif
 
-#include "presentation.h"
+#include "slide.h"
 #include "imagestore.h"
 
 struct slide_pos

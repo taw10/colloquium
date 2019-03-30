@@ -35,7 +35,7 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <presentation.h>
+#include <narrative.h>
 #include <slide_render_cairo.h>
 #include <stylesheet.h>
 
@@ -57,7 +57,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 	double log_w, log_h;
 	Stylesheet *ss;
 
-	ss = presentation_get_stylesheet(e->p);
+	ss = narrative_get_stylesheet(e->n);
 	if ( slide_get_logical_size(e->slide, ss, &log_w, &log_h) ) {
 		fprintf(stderr, "Failed to get logical size\n");
 		return FALSE;
@@ -250,7 +250,7 @@ static void draw_overlay(cairo_t *cr, GtkSlideView *e)
 		double slide_w, slide_h;
 		Stylesheet *stylesheet;
 
-		stylesheet = presentation_get_stylesheet(e->p);
+		stylesheet = narrative_get_stylesheet(e->n);
 		slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
 		slide_item_get_geom(e->cursor_frame, stylesheet, &x, &y, &w, &h,
 		                    slide_w, slide_h);
@@ -322,9 +322,9 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkSlideView *e)
 
 	/* Contents */
 	pc = pango_cairo_create_context(cr);
-	slide_render_cairo(e->slide, cr, presentation_get_imagestore(e->p),
-	                   presentation_get_stylesheet(e->p),
-	                   presentation_get_slide_number(e->p, e->slide),
+	slide_render_cairo(e->slide, cr, narrative_get_imagestore(e->n),
+	                   narrative_get_stylesheet(e->n),
+	                   narrative_get_slide_number_for_slide(e->n, e->slide),
 	                   pango_language_get_default(), pc,
 	                   e->cursor_frame, e->sel_start, e->sel_end);
 	g_object_unref(pc);
@@ -581,7 +581,7 @@ static void do_resize(GtkSlideView *e, double x, double y, double w, double h)
 
 	assert(e->cursor_frame != NULL);
 
-	stylesheet = presentation_get_stylesheet(e->p);
+	stylesheet = narrative_get_stylesheet(e->n);
 	slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
 
 	if ( w < 0.0 ) {
@@ -635,7 +635,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	double slide_w, slide_h;
 	double frx, fry, frw, frh;
 
-	stylesheet = presentation_get_stylesheet(e->p);
+	stylesheet = narrative_get_stylesheet(e->n);
 	slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
 
 	x = event->x - e->border_offs_x + e->h_scroll_pos;
@@ -750,7 +750,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideView *e
 	x /= e->view_scale;
 	y /= e->view_scale;
 
-	stylesheet = presentation_get_stylesheet(e->p);
+	stylesheet = narrative_get_stylesheet(e->n);
 	slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
 
 	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
@@ -1397,7 +1397,7 @@ void gtk_slide_view_set_slide(GtkWidget *widget, Slide *slide)
 }
 
 
-GtkWidget *gtk_slide_view_new(Presentation *p, Slide *slide)
+GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
 {
 	GtkSlideView *sv;
 	GtkTargetEntry targets[1];
@@ -1405,7 +1405,7 @@ GtkWidget *gtk_slide_view_new(Presentation *p, Slide *slide)
 
 	sv = g_object_new(GTK_TYPE_SLIDE_VIEW, NULL);
 
-	sv->p = p;
+	sv->n = n;
 	sv->slide = slide;
 	sv->w = 100;
 	sv->h = 100;

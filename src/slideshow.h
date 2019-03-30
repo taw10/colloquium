@@ -51,7 +51,7 @@ struct _scslideshow
 	GtkWindow parent_instance;
 
 	/* <private> */
-	Presentation        *p;
+	Narrative           *n;
 	Slide               *cur_slide;
 	GtkWidget           *drawingarea;
 	GdkCursor           *blank_cursor;
@@ -72,7 +72,7 @@ struct _scslideshowclass
 typedef struct _scslideshow SCSlideshow;
 typedef struct _scslideshowclass SCSlideshowClass;
 
-extern SCSlideshow *sc_slideshow_new(Presentation *p, GtkApplication *app);
+extern SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app);
 extern void sc_slideshow_set_slide(SCSlideshow *ss, Slide *ns);
 extern Slide *sc_slideshow_get_slide(SCSlideshow *ss);
 

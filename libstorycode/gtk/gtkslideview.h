@@ -33,7 +33,6 @@
 
 #include <stylesheet.h>
 #include <narrative.h>
-#include <presentation.h>
 #include <imagestore.h>
 #include <slide_render_cairo.h>
 
@@ -90,7 +89,7 @@ struct _gtkslideview
 	GtkDrawingArea       parent_instance;
 
 	/*< private >*/
-	Presentation        *p;
+	Narrative           *n;
 	Slide               *slide;
 	GtkIMContext        *im_context;
 
@@ -148,7 +147,7 @@ struct _gtkslideviewclass
 typedef struct _gtkslideview GtkSlideView;
 typedef struct _gtkslideviewclass GtkSlideViewClass;
 
-extern GtkWidget *gtk_slide_view_new(Presentation *p, Slide *slide);
+extern GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide);
 extern void gtk_slide_view_set_slide(GtkWidget *sv, Slide *slide);
 
 #endif  /* GTK_SLIDE_VIEW_H */

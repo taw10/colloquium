@@ -27,12 +27,27 @@
 #include <config.h>
 #endif
 
+#include <gio/gio.h>
+
 typedef struct _narrative Narrative;
 
 #include "slide.h"
+#include "imagestore.h"
 
 extern Narrative *narrative_new(void);
 extern void narrative_free(Narrative *n);
+
+extern void narrative_add_stylesheet(Narrative *n, Stylesheet *ss);
+extern Stylesheet *narrative_get_stylesheet(Narrative *n);
+
+extern const char *narrative_get_language(Narrative *n);
+extern ImageStore *narrative_get_imagestore(Narrative *n);
+
+extern Narrative *narrative_load(GFile *file);
+extern int narrative_save(Narrative *n, GFile *file);
+
+extern void narrative_set_unsaved(Narrative *n);
+extern int narrative_get_unsaved(Narrative *n);
 
 extern void narrative_add_prestitle(Narrative *n, char *text);
 extern void narrative_add_bp(Narrative *n, char *text);
@@ -43,8 +58,11 @@ extern void narrative_delete_block(Narrative *n, int i1, size_t o1,
                                                  int i2, size_t o2);
 extern void narrative_split_item(Narrative *n, int i1, size_t o1);
 extern int narrative_get_num_items(Narrative *n);
+extern int narrative_get_num_slides(Narrative *n);
 extern Slide *narrative_get_slide(Narrative *n, int para);
-extern int narrative_get_slide_number(Narrative *n, int para);
+extern Slide *narrative_get_slide_by_number(Narrative *n, int pos);
+extern int narrative_get_slide_number_for_para(Narrative *n, int para);
+extern int narrative_get_slide_number_for_slide(Narrative *n, Slide *s);
 
 
 #endif /* NARRATIVE_H */

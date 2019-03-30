@@ -33,7 +33,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <math.h>
 
-#include <presentation.h>
+#include <narrative.h>
 #include <narrative_render_cairo.h>
 
 //#include "slide_window.h"
@@ -131,14 +131,14 @@ static void rewrap_range(GtkNarrativeView *e, int min, int max)
 
 	pc = gtk_widget_get_pango_context(GTK_WIDGET(e));
 
-	langname = presentation_get_language(e->p);
+	langname = narrative_get_language(e->n);
 	lang = pango_language_from_string(langname);
 
 	/* Wrap everything with the current width, to get the total height */
-	narrative_wrap_range(presentation_get_narrative(e->p),
-	                     presentation_get_stylesheet(e->p),
+	narrative_wrap_range(e->n,
+	                     narrative_get_stylesheet(e->n),
 	                     lang, pc, e->w,
-	                     presentation_get_imagestore(e->p),
+	                     narrative_get_imagestore(e->n),
 	                     min, max, e->sel_start, e->sel_end);
 }
 
@@ -146,7 +146,7 @@ static void rewrap_range(GtkNarrativeView *e, int min, int max)
 static void update_size(GtkNarrativeView *e)
 {
 	e->w = e->visible_width;
-	e->h = narrative_get_height(presentation_get_narrative(e->p));
+	e->h = narrative_get_height(e->n);
 
 	set_vertical_params(e);
 	set_horizontal_params(e);
@@ -156,15 +156,11 @@ static void update_size(GtkNarrativeView *e)
 static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            GtkNarrativeView *e)
 {
-	Narrative *n;
-
-	n = presentation_get_narrative(e->p);
-
 	e->visible_height = event->height;
 	e->visible_width = event->width;
 	e->w = e->visible_width;
 
-	rewrap_range(e, 0, n->n_items-1);
+	rewrap_range(e, 0, e->n->n_items-1);
 
 	update_size(e);
 
@@ -604,8 +600,7 @@ static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos,
 
 static void draw_overlay(cairo_t *cr, GtkNarrativeView *e)
 {
-	draw_caret(cr, presentation_get_narrative(e->p),
-	           e->cpos, e->para_highlight, e->w);
+	draw_caret(cr, e->n, e->cpos, e->para_highlight, e->w);
 }
 
 
@@ -623,8 +618,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 	cairo_fill(cr);
 
 	/* Contents */
-	narrative_render_cairo(presentation_get_narrative(e->p), cr,
-	                       presentation_get_stylesheet(e->p));
+	narrative_render_cairo(e->n, cr, narrative_get_stylesheet(e->n));
 
 	/* Editing overlay */
 	draw_overlay(cr, e);
@@ -635,31 +629,20 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 
 static void check_cursor_visible(GtkNarrativeView *e)
 {
-	Narrative *n;
 	double x, y, h;
 
-	n = presentation_get_narrative(e->p);
-	get_cursor_pos(n, e->cpos, &x, &y, &h);
+	get_cursor_pos(e->n, e->cpos, &x, &y, &h);
 
 	/* Off the bottom? */
 	if ( y - e->scroll_pos + h > e->visible_height ) {
 		e->scroll_pos = y + h - e->visible_height;
-		e->scroll_pos += n->space_b;
+		e->scroll_pos += e->n->space_b;
 	}
 
 	/* Off the top? */
 	if ( y < e->scroll_pos ) {
-		e->scroll_pos = y - n->space_t;
+		e->scroll_pos = y - e->n->space_t;
 	}
-}
-
-
-static struct narrative_item *get_current_item(GtkNarrativeView *e,
-                                               Narrative **pn)
-{
-	Narrative *n = presentation_get_narrative(e->p);
-	if ( pn != NULL ) *pn = n;
-	return &n->items[e->cpos.para];
 }
 
 
@@ -780,11 +763,8 @@ static int positions_equal(struct edit_pos a, struct edit_pos b)
 
 static void do_backspace(GtkNarrativeView *e, signed int dir)
 {
-	Narrative *n;
 	struct edit_pos p1, p2;
 	size_t o1, o2;
-
-	n = presentation_get_narrative(e->p);
 
 	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 
@@ -797,13 +777,13 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 		/* Delete one character, as represented visually */
 		p2 = e->cpos;
 		p1 = p2;
-		cursor_moveh(n, &p1, dir);
+		cursor_moveh(e->n, &p1, dir);
 	}
 
 	sort_positions(&p1, &p2);
-	o1 = pos_trail_to_offset(&n->items[p1.para], p1.pos, p1.trail);
-	o2 = pos_trail_to_offset(&n->items[p2.para], p2.pos, p2.trail);
-	narrative_delete_block(n, p1.para, o1, p2.para, o2);
+	o1 = pos_trail_to_offset(&e->n->items[p1.para], p1.pos, p1.trail);
+	o2 = pos_trail_to_offset(&e->n->items[p2.para], p2.pos, p2.trail);
+	narrative_delete_block(e->n, p1.para, o1, p2.para, o2);
 	e->cpos = p1;
 	unset_selection(e);
 
@@ -848,20 +828,19 @@ static void split_paragraph_at_cursor(Narrative *n, struct edit_pos pos)
 
 static void insert_text(char *t, GtkNarrativeView *e)
 {
-	Narrative *n;
 	struct narrative_item *item;
 
 	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 		do_backspace(e, 0);
 	}
 
-	item = get_current_item(e, &n);
+	item = &e->n->items[e->cpos.para];
 
 	if ( strcmp(t, "\n") == 0 ) {
-		split_paragraph_at_cursor(n, e->cpos);
+		split_paragraph_at_cursor(e->n, e->cpos);
 		rewrap_range(e, e->cpos.para, e->cpos.para+1);
 		update_size(e);
-		cursor_moveh(n, &e->cpos, +1);
+		cursor_moveh(e->n, &e->cpos, +1);
 		check_cursor_visible(e);
 		emit_change_sig(e);
 		redraw(e);
@@ -876,7 +855,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 		insert_text_in_paragraph(item, off, t);
 		rewrap_range(e, e->cpos.para, e->cpos.para);
 		update_size(e);
-		cursor_moveh(n, &e->cpos, +1);
+		cursor_moveh(e->n, &e->cpos, +1);
 
 	} /* else do nothing: pressing enter is OK, though */
 
@@ -926,21 +905,19 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
                                  GtkNarrativeView *e)
 {
 	gdouble x, y;
-	Narrative *n;
 
-	n = presentation_get_narrative(e->p);
 	x = event->x;
 	y = event->y + e->scroll_pos;
 
 	/* Clicked an existing frame, no immediate dragging */
 	e->drag_status = DRAG_STATUS_COULD_DRAG;
 	unset_selection(e);
-	find_cursor(n, x, y, &e->sel_start);
+	find_cursor(e->n, x, y, &e->sel_start);
 	e->sel_end = e->sel_start;
 	e->cpos = e->sel_start;
 
 	if ( event->type == GDK_2BUTTON_PRESS ) {
-		struct narrative_item *item = &n->items[e->cpos.para];
+		struct narrative_item *item = &e->n->items[e->cpos.para];
 		if ( item->type == NARRATIVE_ITEM_SLIDE ) {
 			g_signal_emit_by_name(e, "slide-double-clicked",
 			                      item->slide);
@@ -966,7 +943,6 @@ static void sorti(int *a, int *b)
 static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
                            GtkNarrativeView *e)
 {
-	Narrative *n;
 	gdouble x, y;
 	struct edit_pos old_sel_end;
 	int minp, maxp;
@@ -981,8 +957,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 	}
 
 	old_sel_end = e->sel_end;
-	n = presentation_get_narrative(e->p);
-	find_cursor(n, x, y, &e->sel_end);
+	find_cursor(e->n, x, y, &e->sel_end);
 
 	minp = e->sel_start.para;
 	maxp = e->sel_end.para;
@@ -993,7 +968,7 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 	}
 
 	rewrap_range(e, minp, maxp);
-	find_cursor(n, x, y, &e->cpos);
+	find_cursor(e->n, x, y, &e->cpos);
 	redraw(e);
 
 	gdk_event_request_motions(event);
@@ -1005,7 +980,6 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
                               GtkNarrativeView *e)
 {
 	gboolean r;
-	Narrative *n;
 	int claim = 0;
 
 	/* Throw the event to the IM context and let it sort things out */
@@ -1013,30 +987,28 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		                           event);
 	if ( r ) return FALSE;  /* IM ate it */
 
-	n = presentation_get_narrative(e->p);
-
 	switch ( event->keyval ) {
 
 		case GDK_KEY_Left :
-		cursor_moveh(n, &e->cpos, -1);
+		cursor_moveh(e->n, &e->cpos, -1);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Right :
-		cursor_moveh(n, &e->cpos, +1);
+		cursor_moveh(e->n, &e->cpos, +1);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Up :
-		cursor_moveh(n, &e->cpos, -1);
+		cursor_moveh(e->n, &e->cpos, -1);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Down :
-		cursor_moveh(n, &e->cpos, +1);
+		cursor_moveh(e->n, &e->cpos, +1);
 		redraw(e);
 		claim = 1;
 		break;
@@ -1132,7 +1104,7 @@ static gint realise_sig(GtkWidget *da, GtkNarrativeView *e)
 }
 
 
-GtkWidget *gtk_narrative_view_new(Presentation *p)
+GtkWidget *gtk_narrative_view_new(Narrative *n)
 {
 	GtkNarrativeView *nview;
 	GtkTargetEntry targets[1];
@@ -1142,7 +1114,7 @@ GtkWidget *gtk_narrative_view_new(Presentation *p)
 	nview->w = 100;
 	nview->h = 100;
 	nview->scroll_pos = 0;
-	nview->p = p;
+	nview->n = n;
 
 	nview->para_highlight = 0;
 
@@ -1215,21 +1187,16 @@ void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos)
 	redraw(e);
 }
 
+
 void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 {
-	Narrative *n;
 	Slide *s;
-	int pos;
-
-	n = presentation_get_narrative(e->p);
 
 	s = slide_new();
 	if ( s == NULL ) return;
 
-	split_paragraph_at_cursor(n, e->cpos);
-	pos = narrative_get_slide_number(n, e->cpos.para);
-	presentation_insert_slide(e->p, s, pos);
-	narrative_insert_slide(n, s, e->cpos.para+1);
+	split_paragraph_at_cursor(e->n, e->cpos);
+	narrative_insert_slide(e->n, s, e->cpos.para+1);
 
 	rewrap_range(e, e->cpos.para, e->cpos.para+2);
 	e->cpos.para++;

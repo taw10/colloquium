@@ -33,7 +33,7 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <presentation.h>
+#include <narrative.h>
 
 #include "slide_render_cairo.h"
 #include "slideshow.h"
@@ -90,7 +90,7 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
 	cairo_fill(cr);
 
 	slide_get_logical_size(ss->cur_slide,
-	                       presentation_get_stylesheet(ss->p), &lw, &lh);
+	                       narrative_get_stylesheet(ss->n), &lw, &lh);
 
 	if ( lw/lh > (double)dw/dh ) {
 		/* Slide is too wide.  Letterboxing top/bottom */
@@ -116,12 +116,12 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
 		cairo_scale(cr, sw/lw, sh/lh);
 
 		sel.para = 0;  sel.pos = 0;  sel.trail = 0;
-		n = presentation_get_slide_number(ss->p, ss->cur_slide);
+		n = narrative_get_slide_number_for_slide(ss->n, ss->cur_slide);
 		pc = pango_cairo_create_context(cr);
 
 		slide_render_cairo(ss->cur_slide, cr,
-		                   presentation_get_imagestore(ss->p),
-		                   presentation_get_stylesheet(ss->p),
+		                   narrative_get_imagestore(ss->n),
+		                   narrative_get_stylesheet(ss->n),
 		                   n, pango_language_get_default(), pc,
 		                   NULL, sel, sel);
 
@@ -160,7 +160,7 @@ void sc_slideshow_set_slide(SCSlideshow *ss, Slide *ns)
 }
 
 
-SCSlideshow *sc_slideshow_new(Presentation *p, GtkApplication *app)
+SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app)
 {
 	GdkDisplay *display;
 	int n_monitors;
@@ -170,7 +170,7 @@ SCSlideshow *sc_slideshow_new(Presentation *p, GtkApplication *app)
 	if ( ss == NULL ) return NULL;
 
 	ss->blank = 0;
-	ss->p = p;
+	ss->n = n;
 	ss->cur_slide = NULL;
 	ss->blank_cursor = NULL;
 	ss->app = app;

@@ -35,7 +35,7 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <presentation.h>
+#include <narrative.h>
 
 #include "colloquium.h"
 #include "narrative_window.h"
@@ -61,16 +61,13 @@ static void colloquium_activate(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);
 	if ( !app->first_run ) {
-		Presentation *p;
 		Narrative *n;
 		Stylesheet *ss;
-		p = presentation_new();
 		n = narrative_new();
 		ss = stylesheet_new();
 		narrative_add_text(n, strdup(""));
-		presentation_add_narrative(p, n);
-		presentation_add_stylesheet(p, ss);
-		narrative_window_new(p, papp);
+		narrative_add_stylesheet(n, ss);
+		narrative_window_new(n, papp);
 	}
 }
 
@@ -231,10 +228,10 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 	int i;
 
 	for ( i=0; i<n_files; i++ ) {
-		Presentation *p;
-		p = presentation_load(files[i]);
-		if ( p != NULL ) {
-			narrative_window_new(p, papp);
+		Narrative *n;
+		n = narrative_load(files[i]);
+		if ( n != NULL ) {
+			narrative_window_new(n, papp);
 		} else {
 			char *uri = g_file_get_uri(files[i]);
 			fprintf(stderr, _("Failed to load presentation '%s'\n"),

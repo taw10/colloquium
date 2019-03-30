@@ -28,9 +28,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
+#include <gio/gio.h>
 
+#ifdef HAVE_PANGO
+#include <pango/pango.h>
+#endif
+
+#ifdef HAVE_CAIRO
+#include <cairo.h>
+#endif
+
+#include "stylesheet.h"
+#include "slide.h"
 #include "narrative.h"
 #include "narrative_priv.h"
+#include "imagestore.h"
+#include "storycode.h"
 
 Narrative *narrative_new()
 {
@@ -39,6 +53,14 @@ Narrative *narrative_new()
 	if ( n == NULL ) return NULL;
 	n->n_items = 0;
 	n->items = NULL;
+	n->stylesheet = NULL;
+	n->imagestore = NULL;
+	n->saved = 1;
+#ifdef HAVE_PANGO
+	n->language = pango_language_to_string(pango_language_get_default());
+#else
+	n->language = NULL;
+#endif
 	return n;
 }
 
@@ -67,6 +89,74 @@ void narrative_free(Narrative *n)
 	}
 	free(n->items);
 	free(n);
+}
+
+
+Narrative *narrative_load(GFile *file)
+{
+	GBytes *bytes;
+	const char *text;
+	size_t len;
+	Narrative *n;
+
+	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
+	if ( bytes == NULL ) return NULL;
+
+	text = g_bytes_get_data(bytes, &len);
+	n = storycode_parse_presentation(text);
+	g_bytes_unref(bytes);
+	if ( n == NULL ) return NULL;
+
+	n->imagestore = imagestore_new("."); /* FIXME: From app config */
+	imagestore_set_parent(n->imagestore, g_file_get_parent(file));
+	return n;
+}
+
+
+int narrative_save(Narrative *n, GFile *file)
+{
+	/* FIXME: Implementation */
+	return 1;
+}
+
+
+void narrative_set_unsaved(Narrative *n)
+{
+	n->saved = 0;
+}
+
+
+int narrative_get_unsaved(Narrative *n)
+{
+	return !n->saved;
+}
+
+
+void narrative_add_stylesheet(Narrative *n, Stylesheet *ss)
+{
+	assert(n->stylesheet == NULL);
+	n->stylesheet = ss;
+}
+
+
+Stylesheet *narrative_get_stylesheet(Narrative *n)
+{
+	if ( n == NULL ) return NULL;
+	return n->stylesheet;
+}
+
+
+const char *narrative_get_language(Narrative *n)
+{
+	if ( n == NULL ) return NULL;
+	return n->language;
+}
+
+
+ImageStore *narrative_get_imagestore(Narrative *n)
+{
+	if ( n == NULL ) return NULL;
+	return n->imagestore;
 }
 
 
@@ -265,6 +355,17 @@ int narrative_get_num_items(Narrative *n)
 }
 
 
+int narrative_get_num_slides(Narrative *n)
+{
+	int i;
+	int ns = 0;
+	for ( i=0; i<n->n_items; i++ ) {
+		if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) ns++;
+	}
+	return ns;
+}
+
+
 Slide *narrative_get_slide(Narrative *n, int para)
 {
 	if ( para >= n->n_items ) return NULL;
@@ -273,12 +374,40 @@ Slide *narrative_get_slide(Narrative *n, int para)
 }
 
 
-int narrative_get_slide_number(Narrative *n, int para)
+int narrative_get_slide_number_for_para(Narrative *n, int para)
+{
+	int i;
+	int ns = 0;
+	for ( i=0; i<para; i++ ) {
+		if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) ns++;
+	}
+	return ns;
+}
+
+
+int narrative_get_slide_number_for_slide(Narrative *n, Slide *s)
 {
 	int i;
 	int ns = 0;
 	for ( i=0; i<n->n_items; i++ ) {
-		if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) ns++;
+		if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) {
+			if ( n->items[i].slide == s ) return ns;
+			ns++;
+		}
 	}
-	return ns;
+	return n->n_items;
+}
+
+
+Slide *narrative_get_slide_by_number(Narrative *n, int pos)
+{
+	int i;
+	int ns = 0;
+	for ( i=0; i<n->n_items; i++ ) {
+		if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) {
+			if ( ns == pos ) return n->items[i].slide;
+			ns++;
+		}
+	}
+	return NULL;
 }

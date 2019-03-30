@@ -26,7 +26,6 @@
 
 %code requires {
 
-  #include "presentation.h"
   #include "narrative.h"
   #include "slide.h"
   #include "stylesheet.h"
@@ -35,7 +34,6 @@
 }
 
 %union {
-  Presentation *p;
   Stylesheet *ss;
   Narrative *n;
   Slide *s;
@@ -77,7 +75,6 @@
 %token SQOPEN SQCLOSE
 %token UNIT VALUE SIZE HEXCOL
 
-%type <p> presentation
 %type <n> narrative
 %type <s> slide
 %type <ss> stylesheet
@@ -102,11 +99,10 @@
 %parse-param { struct scpctx *ctx };
 %initial-action
 {
-    ctx->p = presentation_new();
+    ctx->n = narrative_new();
 
     /* These are the objects currently being created.  They will be
-     * added to the presentation when they're complete */
-    ctx->n = narrative_new();
+     * added to the narrative when they're complete */
     ctx->ss = stylesheet_new();
     ctx->s = slide_new();
 
@@ -179,9 +175,8 @@ void set_style(struct scpctx *ctx, enum style_element element)
 
 /* The only thing a "presentation" really needs is narrative */
 presentation:
-  stylesheet narrative  { presentation_add_stylesheet(ctx->p, ctx->ss);
-                          presentation_add_narrative(ctx->p, ctx->n);  }
-| narrative             { presentation_add_narrative(ctx->p, ctx->n);  }
+  stylesheet narrative
+| narrative
 ;
 
 
@@ -211,8 +206,7 @@ narrative_bulletpoint:
 /* -------- Slide -------- */
 
 slide:
-  SLIDE '{' slide_parts '}'  { presentation_add_slide(ctx->p, ctx->s);
-                               narrative_add_slide(ctx->n, ctx->s);
+  SLIDE '{' slide_parts '}'  { narrative_add_slide(ctx->n, ctx->s);
                                /* New work in progress object */
                                ctx->s = slide_new(); }
 ;
@@ -326,7 +320,7 @@ stylesheet:
   STYLES '{'
    style_narrative
    style_slide
-  '}'  { }
+  '}'  { narrative_add_stylesheet(ctx->n, ctx->ss); }
 ;
 
 style_narrative:

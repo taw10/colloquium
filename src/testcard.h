@@ -27,8 +27,8 @@
 #include <config.h>
 #endif
 
-#include <presentation.h>
+#include <narrative.h>
 
-extern void show_testcard(Presentation *p);
+extern void show_testcard(Narrative *n);
 
 #endif	/* TESTCARD_H */

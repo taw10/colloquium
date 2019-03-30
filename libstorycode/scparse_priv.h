@@ -23,7 +23,6 @@
 #ifndef SCPARSE_PRIV_H
 #define SCPARSE_PRIV_H
 
-#include "presentation.h"
 #include "narrative.h"
 #include "slide.h"
 
@@ -40,7 +39,6 @@ enum style_mask
 
 struct scpctx
 {
-	Presentation *p;
 	Narrative *n;
 	Stylesheet *ss;
 	Slide *s;

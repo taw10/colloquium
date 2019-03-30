@@ -29,7 +29,7 @@
 
 typedef struct _slidewindow SlideWindow;
 
-extern SlideWindow *slide_window_open(Presentation *p, Slide *slide,
+extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
                                       GApplication *papp);
 
 #endif	/* SLIDEWINDOW_H */

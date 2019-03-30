@@ -23,7 +23,6 @@
 %{
   #define YYDEBUG 1
 
-  #include "presentation.h"
   #include "narrative.h"
   #include "slide.h"
   #include "stylesheet.h"

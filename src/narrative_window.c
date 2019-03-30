@@ -33,7 +33,7 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <presentation.h>
+#include <narrative.h>
 #include <gtk/gtknarrativeview.h>
 
 #include "colloquium.h"
@@ -54,7 +54,7 @@ struct _narrative_window
 	GtkToolItem         *blast;
 	GtkWidget           *nv;
 	GApplication        *app;
-	Presentation        *p;
+	Narrative           *n;
 	GFile               *file;
 	SCSlideshow         *show;
 	int                  show_no_slides;
@@ -95,7 +95,7 @@ static void update_titlebar(NarrativeWindow *nw)
 	}
 
 	strcat(title, " - Colloquium");
-	if ( presentation_get_unsaved(nw->p) ) {
+	if ( narrative_get_unsaved(nw->n) ) {
 		strcat(title, " *");
 	}
 	gtk_window_set_title(GTK_WINDOW(nw->window), title);
@@ -119,7 +119,7 @@ static void update_toolbar(NarrativeWindow *nw)
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), TRUE);
 	}
 
-	n_para = narrative_get_num_items(presentation_get_narrative(nw->p));
+	n_para = narrative_get_num_items(nw->n);
 	if ( cur_para == n_para - 1 ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
@@ -137,11 +137,11 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 
 		GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
 
-		if ( presentation_save(nw->p, file) ) {
+		if ( narrative_save(nw->n, file) ) {
 			show_error(nw, _("Failed to save presentation"));
 		}
 
-		/* save_presentation keeps a reference to both of these */
+		/* save_narrative keeps a reference to both of these */
 		g_object_unref(file);
 
 	}
@@ -190,7 +190,7 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 		return saveas_sig(NULL, NULL, nw);
 	}
 
-	presentation_save(nw->p, nw->file);
+	narrative_save(nw->n, nw->file);
 }
 
 
@@ -212,7 +212,7 @@ static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
 //
 //	/* Full rerender */
 //	sc_editor_set_scblock(nw->nv, nw->dummy_top);
-//	nw->p->saved = 0;
+//	nw->n->saved = 0;
 //	update_titlebar(nw);
 }
 
@@ -231,7 +231,7 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 //		if ( new_ss != NULL ) {
 //
 //			stylesheet_free(nw->p->stylesheet);
-//			nw->p->stylesheet = new_ss;
+//			nw->n->stylesheet = new_ss;
 //			sc_editor_set_stylesheet(nw->nv, new_ss);
 //
 //			/* Full rerender */
@@ -256,7 +256,7 @@ static void stylesheet_changed_sig(GtkWidget *da, NarrativeWindow *nw)
 //	int i;
 //
 //	/* It might have changed (been created) since last time */
-//	sc_editor_set_stylesheet(nw->nv, nw->p->stylesheet);
+//	sc_editor_set_stylesheet(nw->nv, nwn>p->stylesheet);
 //
 //	/* Full rerender, first block may have changed */
 //	sc_editor_set_scblock(nw->nv, nw->dummy_top);
@@ -274,7 +274,7 @@ static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
 //	NarrativeWindow *nw = vp;
 //	StylesheetEditor *se;
 //
-//	se = stylesheet_editor_new(nw->p);
+//	se = stylesheet_editor_new(nw->n);
 //	gtk_window_set_transient_for(GTK_WINDOW(se), GTK_WINDOW(nw->window));
 //	g_signal_connect(G_OBJECT(se), "changed",
 //	                 G_CALLBACK(stylesheet_changed_sig), nw);
@@ -309,7 +309,7 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 {
 	NarrativeWindow *nw = vp;
 	gtk_narrative_view_add_slide_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-	presentation_set_unsaved(nw->p);
+	narrative_set_unsaved(nw->n);
 	update_titlebar(nw);
 }
 
@@ -318,7 +318,7 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	int n_paras = narrative_get_num_items(presentation_get_narrative(nw->p));
+	int n_paras = narrative_get_num_items(nw->n);
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
 	pr_clock_set_pos(nw->pr_clock,
 	                 gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)),
@@ -330,7 +330,7 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
 static void ss_prev_para(SCSlideshow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
-	int n_paras = narrative_get_num_items(presentation_get_narrative(nw->p));
+	int n_paras = narrative_get_num_items(nw->n);
 	if ( gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)) == 0 ) return;
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv),
 	                          gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv))-1);
@@ -353,12 +353,10 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
 	Slide *ns;
-	Narrative *narr;
 	GtkNarrativeView *nv;
 	int n_paras;
 
-	narr = presentation_get_narrative(nw->p);
-	n_paras = narrative_get_num_items(narr);
+	n_paras = narrative_get_num_items(nw->n);
 	nv = GTK_NARRATIVE_VIEW(nw->nv);
 
 	if ( gtk_narrative_view_get_cursor_para(nv) == n_paras - 1 ) return;
@@ -371,13 +369,13 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 		{
 			Slide *ns;
 			gtk_narrative_view_set_cursor_para(nv, i);
-			ns = narrative_get_slide(narr, i);
+			ns = narrative_get_slide(nw->n, i);
 			if ( ns != NULL ) break;
 		}
 	}
 
 	pr_clock_set_pos(nw->pr_clock, gtk_narrative_view_get_cursor_para(nv), n_paras);
-	ns = narrative_get_slide(narr, gtk_narrative_view_get_cursor_para(nv));
+	ns = narrative_get_slide(nw->n, gtk_narrative_view_get_cursor_para(nv));
 	if ( ns != NULL ) {
 		sc_slideshow_set_slide(nw->show, ns);
 	}
@@ -397,7 +395,7 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	int n_paras = narrative_get_num_items(presentation_get_narrative(nw->p));
+	int n_paras = narrative_get_num_items(nw->n);
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), -1);
 	pr_clock_set_pos(nw->pr_clock,
 	                 gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)),
@@ -417,12 +415,12 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
                          gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	show_testcard(nw->p);
+	show_testcard(nw->n);
 }
 
 
 static gint export_pdf_response_sig(GtkWidget *d, gint response,
-                                    Presentation *p)
+                                    Narrative *n)
 {
 //       if ( response == GTK_RESPONSE_ACCEPT ) {
 //               char *filename;
@@ -440,7 +438,7 @@ static gint export_pdf_response_sig(GtkWidget *d, gint response,
 static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	//NarrativeWindow *nw = vp;
-//	run_printing(nw->p, nw->window);
+//	run_printing(nw->n, nw->window);
 }
 
 
@@ -460,7 +458,7 @@ static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
 //	                                               TRUE);
 //
 //	g_signal_connect(G_OBJECT(d), "response",
-//	                 G_CALLBACK(export_pdf_response_sig), nw->p);
+//	                 G_CALLBACK(export_pdf_response_sig), nw->n);
 //
 //	gtk_widget_show_all(d);
 }
@@ -476,7 +474,7 @@ static gboolean nw_button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 static void changed_sig(GtkWidget *da, NarrativeWindow *nw)
 {
-	presentation_set_unsaved(nw->p);
+	narrative_set_unsaved(nw->n);
 	update_titlebar(nw);
 }
 
@@ -504,7 +502,7 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
                                     NarrativeWindow *nw)
 {
 	Slide *slide = (Slide *)pslide;
-	slide_window_open(nw->p, slide, nw->app);
+	slide_window_open(nw->n, slide, nw->app);
 	return FALSE;
 }
 
@@ -575,13 +573,13 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 	NarrativeWindow *nw = vp;
 	Slide *slide;
 
-	if ( presentation_get_num_slides(nw->p) == 0 ) return;
+	if ( narrative_get_num_slides(nw->n) == 0 ) return;
 
-	slide = narrative_get_slide(presentation_get_narrative(nw->p),
+	slide = narrative_get_slide(nw->n,
 	                            gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)));
 	if ( slide == NULL ) return;
 
-	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
+	nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
 	nw->show_no_slides = 0;
@@ -602,9 +600,9 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 {
 	NarrativeWindow *nw = vp;
 
-	if ( presentation_get_num_slides(nw->p) == 0 ) return;
+	if ( narrative_get_num_slides(nw->n) == 0 ) return;
 
-	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
+	nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
 	nw->show_no_slides = 1;
@@ -613,7 +611,7 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 		 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->show), "destroy",
 		 G_CALLBACK(ss_destroy_sig), nw);
-	sc_slideshow_set_slide(nw->show, presentation_get_slide_by_number(nw->p, 0));
+	sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
 	gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 1);
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
 	update_toolbar(nw);
@@ -625,9 +623,9 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 {
 	NarrativeWindow *nw = vp;
 
-	if ( presentation_get_num_slides(nw->p) == 0 ) return;
+	if ( narrative_get_num_slides(nw->n) == 0 ) return;
 
-	nw->show = sc_slideshow_new(nw->p, GTK_APPLICATION(nw->app));
+	nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
 	if ( nw->show == NULL ) return;
 
 	nw->show_no_slides = 0;
@@ -636,7 +634,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 		 G_CALLBACK(nw_key_press_sig), nw);
 	g_signal_connect(G_OBJECT(nw->show), "destroy",
 		 G_CALLBACK(ss_destroy_sig), nw);
-	sc_slideshow_set_slide(nw->show, presentation_get_slide_by_number(nw->p, 0));
+	sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
 	gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 1);
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
 	gtk_widget_show_all(GTK_WIDGET(nw->show));
@@ -690,7 +688,7 @@ GActionEntry nw_entries[] = {
 //}
 
 
-NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
+NarrativeWindow *narrative_window_new(Narrative *n, GApplication *papp)
 {
 	NarrativeWindow *nw;
 	GtkWidget *vbox;
@@ -704,7 +702,7 @@ NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
 	if ( nw == NULL ) return NULL;
 
 	nw->app = papp;
-	nw->p = p;
+	nw->n = n;
 	nw->n_slidewindows = 0;
 
 	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
@@ -716,7 +714,7 @@ NarrativeWindow *narrative_window_new(Presentation *p, GApplication *papp)
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
 
-	nw->nv = gtk_narrative_view_new(p);
+	nw->nv = gtk_narrative_view_new(n);
 
 	toolbar = gtk_toolbar_new();
 	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);

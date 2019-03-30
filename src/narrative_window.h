@@ -29,7 +29,6 @@
 
 typedef struct _narrative_window NarrativeWindow;
 
-extern NarrativeWindow *narrative_window_new(Presentation *p,
-                                             GApplication *app);
+extern NarrativeWindow *narrative_window_new(Narrative *n, GApplication *app);
 
 #endif	/* NARRATIVE_WINDOW_H */

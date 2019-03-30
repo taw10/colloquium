@@ -27,7 +27,7 @@
 #include <config.h>
 #endif
 
-#include "presentation.h"
+#include "narrative.h"
 #include "imagestore.h"
 
 struct edit_pos

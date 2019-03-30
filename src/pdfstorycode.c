@@ -35,7 +35,7 @@
 #include <pango/pangocairo.h>
 
 #include "storycode.h"
-#include "presentation.h"
+#include "narrative.h"
 #include "slide.h"
 #include "imagestore.h"
 #include "slide_render_cairo.h"
@@ -44,7 +44,7 @@
 #define _(x) gettext(x)
 
 
-static int render_slides_to_pdf(Presentation *p, ImageStore *is, const char *filename)
+static int render_slides_to_pdf(Narrative *n, ImageStore *is, const char *filename)
 {
 	double w = 2048.0;
 	cairo_surface_t *surf;
@@ -64,20 +64,20 @@ static int render_slides_to_pdf(Presentation *p, ImageStore *is, const char *fil
 
 	sel.para = 0;  sel.pos = 0;  sel.trail = 0;
 
-	for ( i=0; i<presentation_get_num_slides(p); i++ )
+	for ( i=0; i<narrative_get_num_slides(n); i++ )
 	{
 		Slide *s;
 		double log_w, log_h;
 
-		s = presentation_get_slide_by_number(p, i);
-		slide_get_logical_size(s, presentation_get_stylesheet(p),
+		s = narrative_get_slide_by_number(n, i);
+		slide_get_logical_size(s, narrative_get_stylesheet(n),
 		                       &log_w, &log_h);
 
 		cairo_pdf_surface_set_size(surf, w, w*(log_h/log_w));
 
 		cairo_save(cr);
 		cairo_scale(cr, w/log_w, w/log_w);
-		slide_render_cairo(s, cr, is, presentation_get_stylesheet(p),
+		slide_render_cairo(s, cr, is, narrative_get_stylesheet(n),
 		                   i, pango_language_get_default(), pc,
 		                   NULL, sel, sel);
 		cairo_show_page(cr);
@@ -98,20 +98,20 @@ int main(int argc, char *argv[])
 	GBytes *bytes;
 	const char *text;
 	size_t len;
-	Presentation *p;
+	Narrative *n;
 	ImageStore *is;
 
 	file = g_file_new_for_commandline_arg(argv[1]);
 	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
 	text = g_bytes_get_data(bytes, &len);
-	p = storycode_parse_presentation(text);
+	n = storycode_parse_presentation(text);
 	g_bytes_unref(bytes);
 
 	is = imagestore_new(".");
 	imagestore_set_parent(is, g_file_get_parent(file));
 
 	/* Render each slide to PDF */
-	render_slides_to_pdf(p, is, "slides.pdf");
+	render_slides_to_pdf(n, is, "slides.pdf");
 
 	return 0;
 }

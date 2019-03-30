@@ -33,7 +33,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <math.h>
 
-#include <presentation.h>
+#include <narrative.h>
 #include <slide.h>
 #include <gtkslideview.h>
 
@@ -44,7 +44,7 @@
 struct _slidewindow
 {
 	GtkWidget           *window;
-	Presentation        *p;
+	Narrative           *n;
 	Slide               *slide;
 	GtkWidget           *sv;
 };
@@ -94,16 +94,16 @@ static void change_edit_slide(SlideWindow *sw, Slide *np)
 
 static void change_slide_first(SlideWindow *sw)
 {
-	Slide *s = presentation_get_slide_by_number(sw->p, 0);
+	Slide *s = narrative_get_slide_by_number(sw->n, 0);
 	if ( s != NULL ) change_edit_slide(sw, s);
 }
 
 
 static void change_slide_backwards(SlideWindow *sw)
 {
-	int slide_n = presentation_get_slide_number(sw->p, sw->slide);
+	int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
 	if ( slide_n > 0 ) {
-		Slide *s = presentation_get_slide_by_number(sw->p, slide_n-1);
+		Slide *s = narrative_get_slide_by_number(sw->n, slide_n-1);
 		change_edit_slide(sw, s);
 	}
 }
@@ -111,16 +111,16 @@ static void change_slide_backwards(SlideWindow *sw)
 
 static void change_slide_forwards(SlideWindow *sw)
 {
-	int slide_n = presentation_get_slide_number(sw->p, sw->slide);
-	Slide *s = presentation_get_slide_by_number(sw->p, slide_n+1);
+	int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
+	Slide *s = narrative_get_slide_by_number(sw->n, slide_n+1);
 	if ( s != NULL ) change_edit_slide(sw, s);
 }
 
 
 static void change_slide_last(SlideWindow *sw)
 {
-	int slide_n = presentation_get_num_slides(sw->p);
-	Slide *s = presentation_get_slide_by_number(sw->p, slide_n);
+	int slide_n = narrative_get_num_slides(sw->n);
+	Slide *s = narrative_get_slide_by_number(sw->n, slide_n);
 	if ( s != NULL ) change_edit_slide(sw, s);
 }
 
@@ -159,7 +159,7 @@ static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
 
 static gboolean sw_close_sig(GtkWidget *w, SlideWindow *sw)
 {
-	//narrative_window_sw_closed(sw->p->narrative_window, sw);
+	//narrative_window_sw_closed(sw->n->narrative_window, sw);
 	return FALSE;
 }
 
@@ -204,7 +204,7 @@ GActionEntry sw_entries[] = {
 };
 
 
-extern SlideWindow *slide_window_open(Presentation *p, Slide *slide,
+extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
                                       GApplication *papp)
 {
 	GtkWidget *window;
@@ -218,7 +218,7 @@ extern SlideWindow *slide_window_open(Presentation *p, Slide *slide,
 	window = gtk_application_window_new(GTK_APPLICATION(app));
 	gtk_window_set_role(GTK_WINDOW(window), "slide");
 	sw->window = window;
-	sw->p = p;
+	sw->n = n;
 	sw->slide = slide;
 
 	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
@@ -227,12 +227,12 @@ extern SlideWindow *slide_window_open(Presentation *p, Slide *slide,
 	g_signal_connect(G_OBJECT(window), "destroy",
 	                 G_CALLBACK(sw_close_sig), sw);
 
-	sw->sv = gtk_slide_view_new(p, slide);
+	sw->sv = gtk_slide_view_new(n, slide);
 
 	g_signal_connect(G_OBJECT(sw->sv), "key-press-event",
 			 G_CALLBACK(sw_key_press_sig), sw);
 
-	slide_get_logical_size(slide, presentation_get_stylesheet(p), &w, &h);
+	slide_get_logical_size(slide, narrative_get_stylesheet(n), &w, &h);
 	gtk_window_set_default_size(GTK_WINDOW(window), w, h);
 
 	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(sw->sv));

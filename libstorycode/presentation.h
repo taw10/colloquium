@@ -45,6 +45,7 @@ extern int presentation_get_unsaved(Presentation *p);
 extern void presentation_add_stylesheet(Presentation *p, Stylesheet *ss);
 extern void presentation_add_narrative(Presentation *p, Narrative *n);
 extern void presentation_add_slide(Presentation *p, Slide *s);
+extern void presentation_insert_slide(Presentation *p, Slide *s, int pos);
 
 extern int presentation_get_num_slides(Presentation *p);
 extern Slide *presentation_get_slide_by_number(Presentation *p, int i);

@@ -1214,3 +1214,29 @@ void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos)
 	e->cpos.trail = 0;
 	redraw(e);
 }
+
+void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
+{
+	Narrative *n;
+	Slide *s;
+	int pos;
+
+	n = presentation_get_narrative(e->p);
+
+	s = slide_new();
+	if ( s == NULL ) return;
+
+	split_paragraph_at_cursor(n, e->cpos);
+	pos = narrative_get_slide_number(n, e->cpos.para);
+	presentation_insert_slide(e->p, s, pos);
+	narrative_insert_slide(n, s, e->cpos.para+1);
+
+	rewrap_range(e, e->cpos.para, e->cpos.para+2);
+	e->cpos.para++;
+	e->cpos.pos = 0;
+	e->cpos.trail = 0;
+	update_size(e);
+	check_cursor_visible(e);
+	emit_change_sig(e);
+	redraw(e);
+}

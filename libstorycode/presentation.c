@@ -155,6 +155,18 @@ void presentation_add_slide(Presentation *p, Slide *s)
 }
 
 
+void presentation_insert_slide(Presentation *p, Slide *s, int pos)
+{
+	int i;
+	presentation_add_slide(p, NULL);
+	assert(pos < p->n_slides);
+	for ( i=p->n_slides-1; i>pos+1; i-- ) {
+		p->slides[i] = p->slides[i-1];
+	}
+	p->slides[pos] = s;
+}
+
+
 int presentation_get_num_slides(Presentation *p)
 {
 	return p->n_slides;

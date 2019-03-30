@@ -157,6 +157,15 @@ void narrative_add_slide(Narrative *n, Slide *slide)
 }
 
 
+void narrative_insert_slide(Narrative *n, Slide *slide, int pos)
+{
+	struct narrative_item *item = insert_item(n, pos-1);
+	item->type = NARRATIVE_ITEM_SLIDE;
+	item->slide = slide;
+	item->slide_thumbnail = NULL;
+}
+
+
 static void delete_item(Narrative *n, int del)
 {
 	int i;
@@ -261,4 +270,15 @@ Slide *narrative_get_slide(Narrative *n, int para)
 	if ( para >= n->n_items ) return NULL;
 	if ( n->items[para].type != NARRATIVE_ITEM_SLIDE ) return NULL;
 	return n->items[para].slide;
+}
+
+
+int narrative_get_slide_number(Narrative *n, int para)
+{
+	int i;
+	int ns = 0;
+	for ( i=0; i<n->n_items; i++ ) {
+		if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) ns++;
+	}
+	return ns;
 }

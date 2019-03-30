@@ -308,7 +308,7 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-
+	gtk_narrative_view_add_slide_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
 	presentation_set_unsaved(nw->p);
 	update_titlebar(nw);
 }

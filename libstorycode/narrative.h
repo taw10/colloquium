@@ -38,11 +38,13 @@ extern void narrative_add_prestitle(Narrative *n, char *text);
 extern void narrative_add_bp(Narrative *n, char *text);
 extern void narrative_add_text(Narrative *n, char *text);
 extern void narrative_add_slide(Narrative *n, Slide *slide);
+extern void narrative_insert_slide(Narrative *n, Slide *slide, int pos);
 extern void narrative_delete_block(Narrative *n, int i1, size_t o1,
                                                  int i2, size_t o2);
 extern void narrative_split_item(Narrative *n, int i1, size_t o1);
 extern int narrative_get_num_items(Narrative *n);
 extern Slide *narrative_get_slide(Narrative *n, int para);
+extern int narrative_get_slide_number(Narrative *n, int para);
 
 
 #endif /* NARRATIVE_H */

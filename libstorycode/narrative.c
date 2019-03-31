@@ -31,6 +31,9 @@
 #include <stdio.h>
 #include <gio/gio.h>
 
+#include <libintl.h>
+#define _(x) gettext(x)
+
 #ifdef HAVE_PANGO
 #include <pango/pango.h>
 #endif
@@ -54,7 +57,7 @@ Narrative *narrative_new()
 	n->n_items = 0;
 	n->items = NULL;
 	n->stylesheet = NULL;
-	n->imagestore = NULL;
+	n->imagestore = imagestore_new("."); /* FIXME: From app config */
 	n->saved = 1;
 #ifdef HAVE_PANGO
 	n->language = pango_language_to_string(pango_language_get_default());
@@ -107,16 +110,57 @@ Narrative *narrative_load(GFile *file)
 	g_bytes_unref(bytes);
 	if ( n == NULL ) return NULL;
 
-	n->imagestore = imagestore_new("."); /* FIXME: From app config */
 	imagestore_set_parent(n->imagestore, g_file_get_parent(file));
 	return n;
 }
 
 
+static int write_narrative(GOutputStream *fh, Narrative *n)
+{
+	int i;
+
+	for ( i=0; i<n->n_items; i++ ) {
+
+		gssize r;
+		GError *error = NULL;
+		char *a = "Hello";
+
+		r = g_output_stream_write(fh, a, strlen(a), NULL, &error);
+		if ( r == -1 ) {
+			fprintf(stderr, "Write failed: %s\n", error->message);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
 int narrative_save(Narrative *n, GFile *file)
 {
-	/* FIXME: Implementation */
-	return 1;
+	GFileOutputStream *fh;
+	int r;
+	GError *error = NULL;
+
+	if ( file == NULL ) {
+		fprintf(stderr, "Saving to NULL!\n");
+		return 1;
+	}
+
+	fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
+	if ( fh == NULL ) {
+		fprintf(stderr, _("Open failed: %s\n"), error->message);
+		return 1;
+	}
+	r = write_narrative(G_OUTPUT_STREAM(fh), n);
+	if ( r ) {
+		fprintf(stderr, _("Couldn't save presentation\n"));
+	}
+	g_object_unref(fh);
+
+	imagestore_set_parent(n->imagestore, g_file_get_parent(file));
+
+	n->saved = 1;
+	return 0;
 }
 
 

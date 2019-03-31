@@ -67,7 +67,7 @@ static void colloquium_activate(GApplication *papp)
 		ss = stylesheet_new();
 		narrative_add_text(n, strdup(""));
 		narrative_add_stylesheet(n, ss);
-		narrative_window_new(n, papp);
+		narrative_window_new(n, NULL, papp);
 	}
 }
 
@@ -231,7 +231,7 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 		Narrative *n;
 		n = narrative_load(files[i]);
 		if ( n != NULL ) {
-			narrative_window_new(n, papp);
+			narrative_window_new(n, files[i], papp);
 		} else {
 			char *uri = g_file_get_uri(files[i]);
 			fprintf(stderr, _("Failed to load presentation '%s'\n"),

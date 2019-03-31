@@ -80,12 +80,24 @@ static void show_error(NarrativeWindow *nw, const char *err)
 }
 
 
+static char *get_titlebar_string(NarrativeWindow *nw)
+{
+	if ( nw == NULL || nw->file == NULL ) {
+		return strdup(_("(untitled)"));
+	} else {
+		char *bn = g_file_get_basename(nw->file);
+		return bn;
+	}
+}
+
+
+
 static void update_titlebar(NarrativeWindow *nw)
 {
 	char *title;
 	char *title_new;
 
-	title = strdup("test"); // FIXME get_titlebar_string(nw->p);
+	title = get_titlebar_string(nw);
 	title_new = realloc(title, strlen(title)+16);
 	if ( title_new == NULL ) {
 		free(title);
@@ -139,9 +151,15 @@ static gint saveas_response_sig(GtkWidget *d, gint response,
 
 		if ( narrative_save(nw->n, file) ) {
 			show_error(nw, _("Failed to save presentation"));
+		} else {
+			update_titlebar(nw);
 		}
 
-		/* save_narrative keeps a reference to both of these */
+		if ( nw->file != file ) {
+			if ( nw->file != NULL ) g_object_unref(nw->file);
+			nw->file = file;
+			g_object_ref(nw->file);
+		}
 		g_object_unref(file);
 
 	}
@@ -190,7 +208,11 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 		return saveas_sig(NULL, NULL, nw);
 	}
 
-	narrative_save(nw->n, nw->file);
+	if ( narrative_save(nw->n, nw->file) ) {
+		show_error(nw, _("Failed to save presentation"));
+	} else {
+		update_titlebar(nw);
+	}
 }
 
 
@@ -688,7 +710,7 @@ GActionEntry nw_entries[] = {
 //}
 
 
-NarrativeWindow *narrative_window_new(Narrative *n, GApplication *papp)
+NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *papp)
 {
 	NarrativeWindow *nw;
 	GtkWidget *vbox;
@@ -704,6 +726,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GApplication *papp)
 	nw->app = papp;
 	nw->n = n;
 	nw->n_slidewindows = 0;
+	nw->file = file;
+	g_object_ref(file);
 
 	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
 	update_titlebar(nw);

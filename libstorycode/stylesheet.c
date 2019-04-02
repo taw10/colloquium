@@ -28,11 +28,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "stylesheet.h"
 
+enum style_mask
+{
+	SM_FRAME_GEOM = 1<<0,
+	SM_FONT       = 1<<1,
+	SM_FGCOL      = 1<<2,
+	SM_BGCOL      = 1<<3,  /* Includes bggrad, bgcol and bgcol2 */
+	SM_PARASPACE  = 1<<4,
+	SM_PADDING    = 1<<5,
+	SM_ALIGNMENT  = 1<<6,
+};
+
+
 struct style
 {
+	char *name;
+	enum style_mask set;
+
 	struct frame_geom geom;
 	char *font;
 	double fgcol[4];      /* r g b a */
@@ -42,21 +58,17 @@ struct style
 	struct length paraspace[4];  /* l r t b */
 	struct length padding[4];    /* l r t b */
 	enum alignment alignment;
+
+	int n_substyles;
+	struct style *substyles;
 };
 
 
 struct _stylesheet
 {
-	struct style narrative;
-	struct style narrative_bp;
-	struct style narrative_pt;
-
+	struct style top;
 	double default_slide_w;
 	double default_slide_h;
-	struct style slide;
-	struct style slide_text;
-	struct style slide_prestitle;
-	struct style slide_slidetitle;
 };
 
 
@@ -111,27 +123,112 @@ static void default_style(struct style *s)
 }
 
 
-Stylesheet *stylesheet_new()
-{
-	Stylesheet *s;
-	s = malloc(sizeof(*s));
-	if ( s == NULL ) return NULL;
-
-	/* Ultimate defaults */
-	default_style(&s->narrative);
-	default_style(&s->narrative_bp);
-	default_style(&s->narrative_pt);
-	default_style(&s->slide);
-	default_style(&s->slide_text);
-	default_style(&s->slide_prestitle);
-	default_style(&s->slide_slidetitle);
-
-	return s;
-}
-
 void stylesheet_free(Stylesheet *s)
 {
 	free(s);
+}
+
+
+static int strdotcmp(const char *a, const char *b)
+{
+	int i = 0;
+	do {
+		if ( (b[i] != '.') && (a[i] != b[i]) ) return 1;
+		i++;
+	} while ( (a[i] != '\0') && (b[i] != '\0') && (b[i] != '.') );
+	return 0;
+}
+
+
+static struct style *lookup_style(struct style *sty, const char *path)
+{
+	int i;
+	const char *nxt = path;
+
+	if ( path[0] == '\0' ) return sty;
+
+	for ( i=0; i<sty->n_substyles; i++ ) {
+		if ( strdotcmp(sty->substyles[i].name, path) == 0 ) {
+			sty = &sty->substyles[i];
+			break;
+		}
+	}
+
+	nxt = strchr(nxt, '.');
+	if ( nxt == NULL ) return sty;
+	return lookup_style(sty, nxt+1);
+}
+
+
+static void show_style(struct style *sty, char *prefix)
+{
+	char *prefix2;
+	int i;
+	printf("%s%s:\n", prefix, sty->name);
+	prefix2 = malloc(strlen(prefix)+3);
+	strcpy(prefix2, prefix);
+	strcat(prefix2, "  ");
+	for ( i=0; i<sty->n_substyles; i++ ) {
+		show_style(&sty->substyles[i], prefix2);
+	}
+	free(prefix2);
+}
+
+
+static void show_ss(Stylesheet *ss)
+{
+	show_style(&ss->top, "");
+}
+
+
+static struct style *create_style(Stylesheet *ss, const char *path, const char *name)
+{
+	struct style *sty;
+	struct style *substy_new;
+	struct style *sty_new;
+
+	sty = lookup_style(&ss->top, path);
+	substy_new = realloc(sty->substyles, (sty->n_substyles+1)*sizeof(struct style));
+	if ( substy_new == NULL ) return NULL;
+
+	sty->substyles = substy_new;
+	sty->substyles[sty->n_substyles].n_substyles = 0;
+	sty->substyles[sty->n_substyles].substyles = NULL;
+
+	sty_new = &sty->substyles[sty->n_substyles++];
+
+	sty_new->set = 0;
+	default_style(sty_new);
+	sty_new->name = strdup(name);
+
+	return sty_new;
+}
+
+
+Stylesheet *stylesheet_new()
+{
+	Stylesheet *ss;
+	ss = malloc(sizeof(*ss));
+	if ( ss == NULL ) return NULL;
+
+	ss->default_slide_w = 1024.0;
+	ss->default_slide_h = 768.0;
+
+	ss->top.n_substyles = 0;
+	ss->top.substyles = NULL;
+	ss->top.name = strdup("");
+	ss->top.set = 0;
+	default_style(&ss->top);
+
+	create_style(ss, "", "NARRATIVE");
+	create_style(ss, "NARRATIVE", "BP");
+	create_style(ss, "NARRATIVE", "PRESTITLE");
+	create_style(ss, "", "SLIDE");
+	create_style(ss, "SLIDE", "TEXT");
+	create_style(ss, "SLIDE", "PRESTITLE");
+	create_style(ss, "SLIDE", "SLIDETITLE");
+
+	return ss;
 }
 
 
@@ -139,13 +236,13 @@ static struct style *get_style(Stylesheet *s, enum style_element el)
 {
 	if ( s == NULL ) return NULL;
 	switch ( el ) {
-		case STYEL_NARRATIVE : return &s->narrative;
-		case STYEL_NARRATIVE_BP : return &s->narrative_bp;
-		case STYEL_NARRATIVE_PRESTITLE : return &s->narrative_pt;
-		case STYEL_SLIDE : return &s->slide;
-		case STYEL_SLIDE_TEXT : return &s->slide_text;
-		case STYEL_SLIDE_PRESTITLE : return &s->slide_prestitle;
-		case STYEL_SLIDE_SLIDETITLE : return &s->slide_slidetitle;
+		case STYEL_NARRATIVE : return lookup_style(&s->top, "NARRATIVE");
+		case STYEL_NARRATIVE_BP : return lookup_style(&s->top, "NARRATIVE.BP");
+		case STYEL_NARRATIVE_PRESTITLE : return lookup_style(&s->top, "NARRATIVE.PRESTITLE");
+		case STYEL_SLIDE : return lookup_style(&s->top, "SLIDE");
+		case STYEL_SLIDE_TEXT : return lookup_style(&s->top, "SLIDE.TEXT");
+		case STYEL_SLIDE_PRESTITLE : return lookup_style(&s->top, "SLIDE.PRESTITLE");
+		case STYEL_SLIDE_SLIDETITLE : return lookup_style(&s->top, "SLIDE.SLIDETITLE");
 		default : return NULL;
 	}
 }
@@ -174,6 +271,7 @@ int stylesheet_set_geometry(Stylesheet *s, enum style_element el, struct frame_g
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return 1;
 	sty->geom = geom;
+	sty->set |= SM_FRAME_GEOM;
 	return 0;
 }
 
@@ -186,6 +284,7 @@ int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font)
 		free(sty->font);
 	}
 	sty->font = font;
+	sty->set |= SM_FONT;
 	return 0;
 }
 
@@ -198,6 +297,7 @@ int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length p
 	for ( i=0; i<4; i++ ) {
 		sty->padding[i] = padding[i];
 	}
+	sty->set |= SM_PADDING;
 	return 0;
 }
 
@@ -210,6 +310,7 @@ int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length
 	for ( i=0; i<4; i++ ) {
 		sty->paraspace[i] = paraspace[i];
 	}
+	sty->set |= SM_PARASPACE;
 	return 0;
 }
 
@@ -222,6 +323,7 @@ int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgba[4])
 	for ( i=0; i<4; i++ ) {
 		sty->fgcol[i] = rgba[i];
 	}
+	sty->set |= SM_FGCOL;
 	return 0;
 }
 
@@ -237,6 +339,7 @@ int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradien
 		sty->bgcol[i] = bgcol[i];
 		sty->bgcol2[i] = bgcol2[i];
 	}
+	sty->set |= SM_BGCOL;
 	return 0;
 }
 
@@ -247,6 +350,7 @@ int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignmen
 	if ( sty == NULL ) return 1;
 	assert(align != ALIGN_INHERIT);
 	sty->alignment = align;
+	sty->set |= SM_ALIGNMENT;
 	return 0;
 }
 

@@ -727,7 +727,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *p
 	nw->n = n;
 	nw->n_slidewindows = 0;
 	nw->file = file;
-	g_object_ref(file);
+	if ( file != NULL ) g_object_ref(file);
 
 	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
 	update_titlebar(nw);

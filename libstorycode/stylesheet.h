@@ -109,5 +109,6 @@ extern int stylesheet_get_padding(Stylesheet *s, enum style_element el,
 extern int stylesheet_get_paraspace(Stylesheet *s, enum style_element el,
                                     struct length paraspace[4]);
 
+extern char *stylesheet_serialise(Stylesheet *s);
 
 #endif /* STYLESHEET_H */

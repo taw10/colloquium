@@ -160,27 +160,6 @@ static struct style *lookup_style(struct style *sty, const char *path)
 }
 
 
-static void show_style(struct style *sty, char *prefix)
-{
-	char *prefix2;
-	int i;
-	printf("%s%s:\n", prefix, sty->name);
-	prefix2 = malloc(strlen(prefix)+3);
-	strcpy(prefix2, prefix);
-	strcat(prefix2, "  ");
-	for ( i=0; i<sty->n_substyles; i++ ) {
-		show_style(&sty->substyles[i], prefix2);
-	}
-	free(prefix2);
-}
-
-
-static void show_ss(Stylesheet *ss)
-{
-	show_style(&ss->top, "");
-}
-
-
 static struct style *create_style(Stylesheet *ss, const char *path, const char *name)
 {
 	struct style *sty;
@@ -416,4 +395,69 @@ int stylesheet_get_paraspace(Stylesheet *s, enum style_element el,
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) paraspace[i] = sty->paraspace[i];
 	return 0;
+}
+
+
+static void add_text(char **text, size_t *len, size_t *lenmax, const char *prefix,
+                     const char *tadd)
+{
+	size_t taddlen, prefixlen;
+
+	if ( *text == NULL ) return;
+	taddlen = strlen(tadd);
+	prefixlen = strlen(prefix);
+
+	if ( *len + taddlen + prefixlen + 1 > *lenmax ) {
+		*lenmax += taddlen + prefixlen + 32;
+		char *text_new = realloc(*text, *lenmax);
+		if ( text_new == NULL ) {
+			*text = NULL;
+			return;
+		}
+		*text = text_new;
+	}
+
+	strcat(*text, prefix);
+	strcat(*text, tadd);
+	*len += taddlen + prefixlen;
+}
+
+
+static void add_style(char **text, size_t *len, size_t *lenmax, const char *prefix,
+                      struct style *sty)
+{
+	char *prefix2;
+	int i;
+
+	/* FIXME: Write style details */
+
+	prefix2 = malloc(strlen(prefix)+3);
+	strcpy(prefix2, prefix);
+	strcat(prefix2, "  ");
+	for ( i=0; i<sty->n_substyles; i++ ) {
+		add_text(text, len, lenmax, prefix, sty->substyles[i].name);
+		add_text(text, len, lenmax, "", " {\n");
+		add_style(text, len, lenmax, prefix2, &sty->substyles[i]);
+		add_text(text, len, lenmax, prefix, "}\n");
+	}
+	free(prefix2);
+
+}
+
+
+char *stylesheet_serialise(Stylesheet *s)
+{
+	size_t len = 0;      /* Current length of "text", not including \0 */
+	size_t lenmax = 32;  /* Current amount of memory allocated to "text" */
+	char *text;
+
+	text = malloc(lenmax*sizeof(char));
+	if ( text == NULL ) return NULL;
+	text[0] = '\0';
+
+	add_text(&text, &len, &lenmax, "", "STYLES {\n");
+	add_style(&text, &len, &lenmax, "  ", &s->top);
+	add_text(&text, &len, &lenmax, "", "}\n\n");
+
+	return text;
 }

@@ -115,26 +115,6 @@ Narrative *narrative_load(GFile *file)
 }
 
 
-static int write_narrative(GOutputStream *fh, Narrative *n)
-{
-	int i;
-
-	for ( i=0; i<n->n_items; i++ ) {
-
-		gssize r;
-		GError *error = NULL;
-		char *a = "Hello";
-
-		r = g_output_stream_write(fh, a, strlen(a), NULL, &error);
-		if ( r == -1 ) {
-			fprintf(stderr, "Write failed: %s\n", error->message);
-			return 1;
-		}
-	}
-	return 0;
-}
-
-
 int narrative_save(Narrative *n, GFile *file)
 {
 	GFileOutputStream *fh;
@@ -151,7 +131,7 @@ int narrative_save(Narrative *n, GFile *file)
 		fprintf(stderr, _("Open failed: %s\n"), error->message);
 		return 1;
 	}
-	r = write_narrative(G_OUTPUT_STREAM(fh), n);
+	r = storycode_write_presentation(n, G_OUTPUT_STREAM(fh));
 	if ( r ) {
 		fprintf(stderr, _("Couldn't save presentation\n"));
 	}

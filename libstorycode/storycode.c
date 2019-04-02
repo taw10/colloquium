@@ -27,10 +27,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <gio/gio.h>
 
 #include "narrative.h"
 #include "slide.h"
 #include "stylesheet.h"
+#include "narrative_priv.h"
+#include "slide_priv.h"
 
 #include "storycode_parse.h"
 #include "storycode_lex.h"
@@ -47,4 +50,43 @@ Narrative *storycode_parse_presentation(const char *sc)
 	sc_delete_buffer(b);
 
 	return parse_ctx.n;
+}
+
+
+static int write_string(GOutputStream *fh, char *str)
+{
+	gssize r;
+	GError *error = NULL;
+	r = g_output_stream_write(fh, str, strlen(str), NULL, &error);
+	if ( r == -1 ) {
+		fprintf(stderr, "Write failed: %s\n", error->message);
+		return 1;
+	}
+	return 0;
+}
+
+
+int storycode_write_presentation(Narrative *n, GOutputStream *fh)
+{
+	int i;
+	char *ss_text;
+
+	/* Stylesheet */
+	ss_text = stylesheet_serialise(n->stylesheet);
+	if ( ss_text == NULL ) return 1;
+	if ( write_string(fh, ss_text) ) return 1;
+
+	for ( i=0; i<n->n_items; i++ ) {
+
+		gssize r;
+		GError *error = NULL;
+		char *a = "Hello";
+
+		r = g_output_stream_write(fh, a, strlen(a), NULL, &error);
+		if ( r == -1 ) {
+			fprintf(stderr, "Write failed: %s\n", error->message);
+			return 1;
+		}
+	}
+	return 0;
 }

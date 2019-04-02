@@ -30,6 +30,7 @@
 #include "narrative.h"
 
 extern Narrative *storycode_parse_presentation(const char *sc);
+extern int storycode_write_presentation(Narrative *n, GOutputStream *fh);
 
 
 #endif /* STORYCODE_H */

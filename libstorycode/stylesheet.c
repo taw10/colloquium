@@ -423,13 +423,95 @@ static void add_text(char **text, size_t *len, size_t *lenmax, const char *prefi
 }
 
 
+static char unitc(enum length_unit unit)
+{
+	if ( unit == LENGTH_FRAC ) return 'f';
+	if ( unit == LENGTH_UNIT ) return 'u';
+	return '?';
+}
+
+
+static const char *bgcolc(enum gradient bggrad)
+{
+	if ( bggrad == GRAD_NONE ) return "";
+	if ( bggrad == GRAD_HORIZ ) return "HORIZONTAL ";
+	if ( bggrad == GRAD_VERT ) return "VERTICAL ";
+	return "?";
+}
+
+
+static const char *alignc(enum alignment ali)
+{
+	if ( ali == ALIGN_LEFT ) return "left";
+	if ( ali == ALIGN_CENTER ) return "center";
+	if ( ali == ALIGN_RIGHT ) return "right";
+	return "?";
+}
+
+
 static void add_style(char **text, size_t *len, size_t *lenmax, const char *prefix,
                       struct style *sty)
 {
 	char *prefix2;
 	int i;
 
-	/* FIXME: Write style details */
+	if ( sty->set & SM_FRAME_GEOM ) {
+		char tmp[256];
+		snprintf(tmp, 255, "GEOMETRY %.4g%c x %.4g%c +%.4g%c +%.4g%c\n",
+		         sty->geom.w.len, unitc(sty->geom.w.unit),
+		         sty->geom.h.len, unitc(sty->geom.h.unit),
+		         sty->geom.x.len, unitc(sty->geom.x.unit),
+		         sty->geom.y.len, unitc(sty->geom.y.unit));
+		add_text(text, len, lenmax, prefix, tmp);
+	}
+
+	if ( sty->set & SM_FONT ) {
+		char tmp[256];
+		snprintf(tmp, 255, "FONT %s\n", sty->font);
+		add_text(text, len, lenmax, prefix, tmp);
+	}
+
+	if ( sty->set & SM_FGCOL ) {
+		char tmp[256];
+		snprintf(tmp, 255, "FGCOL %.4g,%.4g,%.4g,%.4g\n",
+		         sty->fgcol[0], sty->fgcol[1], sty->fgcol[2], sty->fgcol[3]);
+		add_text(text, len, lenmax, prefix, tmp);
+	}
+
+	if ( sty->set & SM_BGCOL ) {
+		char tmp[256];
+		snprintf(tmp, 255, "BGCOL %s%.4g,%.4g,%.4g,%.4g %.4g,%.4g,%.4g,%.4g\n",
+		         bgcolc(sty->bggrad),
+		         sty->bgcol[0], sty->bgcol[1], sty->bgcol[2], sty->bgcol[3],
+		         sty->bgcol2[0], sty->bgcol2[1], sty->bgcol2[2], sty->bgcol2[3]);
+		add_text(text, len, lenmax, prefix, tmp);
+	}
+
+	if ( sty->set & SM_PARASPACE ) {
+		char tmp[256];
+		snprintf(tmp, 255, "PARASPACE %.4g%c,%.4g%c,%.4g%c,%.4g%c\n",
+		         sty->paraspace[0].len, unitc(sty->paraspace[0].unit),
+		         sty->paraspace[1].len, unitc(sty->paraspace[1].unit),
+		         sty->paraspace[2].len, unitc(sty->paraspace[2].unit),
+		         sty->paraspace[3].len, unitc(sty->paraspace[3].unit));
+		add_text(text, len, lenmax, prefix, tmp);
+	}
+
+	if ( sty->set & SM_PADDING ) {
+		char tmp[256];
+		snprintf(tmp, 255, "PADDING %.4g%c,%.4g%c,%.4g%c,%.4g%c\n",
+		         sty->padding[0].len, unitc(sty->padding[0].unit),
+		         sty->padding[1].len, unitc(sty->padding[1].unit),
+		         sty->padding[2].len, unitc(sty->padding[2].unit),
+		         sty->padding[3].len, unitc(sty->padding[3].unit));
+		add_text(text, len, lenmax, prefix, tmp);
+	}
+
+	if ( sty->set & SM_ALIGNMENT ) {
+		char tmp[256];
+		snprintf(tmp, 255, "ALIGN %s\n", alignc(sty->alignment));
+		add_text(text, len, lenmax, prefix, tmp);
+	}
 
 	prefix2 = malloc(strlen(prefix)+3);
 	strcpy(prefix2, prefix);
@@ -442,6 +524,7 @@ static void add_style(char **text, size_t *len, size_t *lenmax, const char *pref
 	}
 	free(prefix2);
 
+	/* FIXME: add default slide size */
 }
 
 

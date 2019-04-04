@@ -66,6 +66,54 @@ static int write_string(GOutputStream *fh, char *str)
 }
 
 
+static int write_slide(GOutputStream *fh, Slide *s)
+{
+	int i;
+
+	for ( i=0; i<s->n_items; i++ ) {
+	}
+
+	return 0;
+}
+
+
+static int write_item(GOutputStream *fh, struct narrative_item *item)
+{
+	switch ( item->type ) {
+
+		case NARRATIVE_ITEM_TEXT:
+		/* FIXME: separate alignment */
+		if ( write_string(fh, ": ") ) return 1;
+		if ( write_string(fh, item->text) ) return 1;
+		if ( write_string(fh, "\n") ) return 1;
+		break;
+
+		case NARRATIVE_ITEM_PRESTITLE:
+		/* FIXME: separate alignment */
+		if ( write_string(fh, "PRESTITLE: ") ) return 1;
+		if ( write_string(fh, item->text) ) return 1;
+		if ( write_string(fh, "\n") ) return 1;
+		break;
+
+		case NARRATIVE_ITEM_BP:
+		/* FIXME: separate alignment */
+		if ( write_string(fh, "BP: ") ) return 1;
+		if ( write_string(fh, item->text) ) return 1;
+		if ( write_string(fh, "\n") ) return 1;
+		break;
+
+		case NARRATIVE_ITEM_SLIDE:
+		/* FIXME: separate slide size */
+		if ( write_string(fh, "SLIDE {\n") ) return 1;
+		if ( write_slide(fh, item->slide) ) return 1;
+		if ( write_string(fh, "}\n") ) return 1;
+		break;
+
+	}
+	return 0;
+}
+
+
 int storycode_write_presentation(Narrative *n, GOutputStream *fh)
 {
 	int i;
@@ -76,17 +124,11 @@ int storycode_write_presentation(Narrative *n, GOutputStream *fh)
 	if ( ss_text == NULL ) return 1;
 	if ( write_string(fh, ss_text) ) return 1;
 
+	if ( write_string(fh, "\n") ) return 1;
+
 	for ( i=0; i<n->n_items; i++ ) {
-
-		gssize r;
-		GError *error = NULL;
-		char *a = "Hello";
-
-		r = g_output_stream_write(fh, a, strlen(a), NULL, &error);
-		if ( r == -1 ) {
-			fprintf(stderr, "Write failed: %s\n", error->message);
-			return 1;
-		}
+		if ( write_item(fh, &n->items[i]) ) return 1;
 	}
+
 	return 0;
 }

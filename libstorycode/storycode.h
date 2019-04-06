@@ -29,6 +29,10 @@
 
 #include "narrative.h"
 
+extern const char *alignc(enum alignment ali);
+extern const char *bgcolc(enum gradient bggrad);
+extern char unitc(enum length_unit unit);
+
 extern Narrative *storycode_parse_presentation(const char *sc);
 extern int storycode_write_presentation(Narrative *n, GOutputStream *fh);
 

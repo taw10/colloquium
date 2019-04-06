@@ -66,11 +66,121 @@ static int write_string(GOutputStream *fh, char *str)
 }
 
 
+char unitc(enum length_unit unit)
+{
+	if ( unit == LENGTH_FRAC ) return 'f';
+	if ( unit == LENGTH_UNIT ) return 'u';
+	return '?';
+}
+
+
+const char *bgcolc(enum gradient bggrad)
+{
+	if ( bggrad == GRAD_NONE ) return "";
+	if ( bggrad == GRAD_HORIZ ) return "HORIZONTAL ";
+	if ( bggrad == GRAD_VERT ) return "VERTICAL ";
+	return "?";
+}
+
+
+const char *alignc(enum alignment ali)
+{
+	if ( ali == ALIGN_LEFT ) return "left";
+	if ( ali == ALIGN_CENTER ) return "center";
+	if ( ali == ALIGN_RIGHT ) return "right";
+	return "?";
+}
+
+
+static const char *maybe_alignment(enum alignment ali)
+{
+	if ( ali == ALIGN_INHERIT ) return "";
+	if ( ali == ALIGN_LEFT ) return "[left]";
+	if ( ali == ALIGN_CENTER ) return "[center]";
+	if ( ali == ALIGN_RIGHT ) return "[right]";
+	return "[?]";
+}
+
+
+static void write_text(GOutputStream *fh, SlideItem *item, int geom,
+                       const char *t)
+{
+	char tmp[256];
+	size_t indent;
+	int i;
+
+	if ( geom ) {
+		snprintf(tmp, 255, "  %s[%.4g%cx%.4g%c+%.4g%c+%.4g%c]%s", t,
+		         item->geom.w.len, unitc(item->geom.w.unit),
+		         item->geom.h.len, unitc(item->geom.h.unit),
+		         item->geom.x.len, unitc(item->geom.x.unit),
+		         item->geom.y.len, unitc(item->geom.y.unit),
+		         maybe_alignment(item->align));
+	} else {
+		snprintf(tmp, 255, "  %s%s",
+		         t ,maybe_alignment(item->align));
+	}
+
+	indent = strlen(tmp);
+	write_string(fh, tmp);
+	write_string(fh, ": ");
+	write_string(fh, item->paras[0].text);
+	write_string(fh, "\n");
+	for ( i=0; i<indent; i++ ) tmp[i] = ' ';
+	for ( i=1; i<item->n_paras; i++ ) {
+		write_string(fh, tmp);
+		write_string(fh, ": ");
+		write_string(fh, item->paras[i].text);
+		write_string(fh, "\n");
+	}
+}
+
+
+static void write_image(GOutputStream *fh, SlideItem *item)
+{
+	char tmp[256];
+
+	snprintf(tmp, 255, "  IMAGE[%.4g%cx%.4g%c+%.4g%c+%.4g%c]",
+	         item->geom.w.len, unitc(item->geom.w.unit),
+	         item->geom.h.len, unitc(item->geom.h.unit),
+	         item->geom.x.len, unitc(item->geom.x.unit),
+	         item->geom.y.len, unitc(item->geom.y.unit));
+
+	write_string(fh, tmp);
+	write_string(fh, ": ");
+	write_string(fh, item->filename);
+	write_string(fh, "\n");
+}
+
+
 static int write_slide(GOutputStream *fh, Slide *s)
 {
 	int i;
 
 	for ( i=0; i<s->n_items; i++ ) {
+		switch ( s->items[i].type ) {
+
+			case SLIDE_ITEM_TEXT:
+			write_text(fh, &s->items[i], 1, "TEXT");
+			break;
+
+			case SLIDE_ITEM_PRESTITLE:
+			write_text(fh, &s->items[i], 0, "PRESTITLE");
+			break;
+
+			case SLIDE_ITEM_SLIDETITLE:
+			write_text(fh, &s->items[i], 0, "SLIDETITLE");
+			break;
+
+			case SLIDE_ITEM_FOOTER:
+			write_string(fh, "  FOOTER\n");
+			break;
+
+			case SLIDE_ITEM_IMAGE:
+			write_image(fh, &s->items[i]);
+			break;
+
+		}
 	}
 
 	return 0;

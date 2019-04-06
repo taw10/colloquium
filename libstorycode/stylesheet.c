@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include "stylesheet.h"
+#include "storycode.h"
 
 enum style_mask
 {
@@ -420,32 +421,6 @@ static void add_text(char **text, size_t *len, size_t *lenmax, const char *prefi
 	strcat(*text, prefix);
 	strcat(*text, tadd);
 	*len += taddlen + prefixlen;
-}
-
-
-static char unitc(enum length_unit unit)
-{
-	if ( unit == LENGTH_FRAC ) return 'f';
-	if ( unit == LENGTH_UNIT ) return 'u';
-	return '?';
-}
-
-
-static const char *bgcolc(enum gradient bggrad)
-{
-	if ( bggrad == GRAD_NONE ) return "";
-	if ( bggrad == GRAD_HORIZ ) return "HORIZONTAL ";
-	if ( bggrad == GRAD_VERT ) return "VERTICAL ";
-	return "?";
-}
-
-
-static const char *alignc(enum alignment ali)
-{
-	if ( ali == ALIGN_LEFT ) return "left";
-	if ( ali == ALIGN_CENTER ) return "center";
-	if ( ali == ALIGN_RIGHT ) return "right";
-	return "?";
 }
 
 

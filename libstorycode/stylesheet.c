@@ -480,10 +480,16 @@ static void add_style(char **text, size_t *len, size_t *lenmax, const char *pref
 
 	if ( sty->set & SM_BGCOL ) {
 		char tmp[256];
-		snprintf(tmp, 255, "BGCOL %s%.4g,%.4g,%.4g,%.4g %.4g,%.4g,%.4g,%.4g\n",
-		         bgcolc(sty->bggrad),
-		         sty->bgcol[0], sty->bgcol[1], sty->bgcol[2], sty->bgcol[3],
-		         sty->bgcol2[0], sty->bgcol2[1], sty->bgcol2[2], sty->bgcol2[3]);
+		if ( sty->bggrad == GRAD_NONE ) {
+			snprintf(tmp, 255, "BGCOL %s%.4g,%.4g,%.4g,%.4g\n",
+			         bgcolc(sty->bggrad),
+			         sty->bgcol[0], sty->bgcol[1], sty->bgcol[2], sty->bgcol[3]);
+		} else {
+			snprintf(tmp, 255, "BGCOL %s%.4g,%.4g,%.4g,%.4g %.4g,%.4g,%.4g,%.4g\n",
+			         bgcolc(sty->bggrad),
+			         sty->bgcol[0], sty->bgcol[1], sty->bgcol[2], sty->bgcol[3],
+			         sty->bgcol2[0], sty->bgcol2[1], sty->bgcol2[2], sty->bgcol2[3]);
+		}
 		add_text(text, len, lenmax, prefix, tmp);
 	}
 
@@ -499,7 +505,7 @@ static void add_style(char **text, size_t *len, size_t *lenmax, const char *pref
 
 	if ( sty->set & SM_PADDING ) {
 		char tmp[256];
-		snprintf(tmp, 255, "PADDING %.4g%c,%.4g%c,%.4g%c,%.4g%c\n",
+		snprintf(tmp, 255, "PAD %.4g%c,%.4g%c,%.4g%c,%.4g%c\n",
 		         sty->padding[0].len, unitc(sty->padding[0].unit),
 		         sty->padding[1].len, unitc(sty->padding[1].unit),
 		         sty->padding[2].len, unitc(sty->padding[2].unit),

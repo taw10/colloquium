@@ -106,12 +106,10 @@
     ctx->ss = stylesheet_new();
     ctx->s = slide_new();
 
-    ctx->n_str = 0;
     ctx->max_str = 32;
     ctx->str = malloc(ctx->max_str*sizeof(char *));
     if ( ctx->str == NULL ) ctx->max_str = 0;
-
-    ctx->mask = 0;
+    str_reset(ctx);
 }
 
 %{

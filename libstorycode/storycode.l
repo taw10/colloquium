@@ -55,7 +55,7 @@ GEOMETRY          { BEGIN(geom); return SC_GEOMETRY; }
 TEXT              { return SC_TEXTFRAME; }
 IMAGE             { return SC_IMAGEFRAME; }
 FOOTER            { return SC_FOOTER; }
-FONT              { BEGIN(font); return SC_FONT; }
+FONT[ ]           { BEGIN(font); return SC_FONT; }
 PAD               { BEGIN(pad); return SC_PAD; }
 PARASPACE         { BEGIN(paraspace); return SC_PARASPACE; }
 ALIGN             { BEGIN(align); return SC_ALIGN; }

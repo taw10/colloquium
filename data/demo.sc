@@ -83,15 +83,15 @@ SLIDE {
   SLIDETITLE: Alpha test software
   FOOTER
   TEXT[391.8ux473.5u+567.8u+143.7u]: Colloquium is "alpha test" software.
-                                 :
-                                 : It will probably crash and lose your work a few times.  Save and back up your work as frequently as possible.
-                                 :
-                                 BP: However, in years of use it has *never* crashed on me in front of an audience.  You will find most bugs in the editing features, not playback.
-                                 :
-                                 : Creating a backup slide deck in PDF format (File->Export slides as PDF) is nevertheless a wise safety measure.
-                                 :
-                                 BP: Please report all bugs here:
-                                 : https://github.com/taw10/colloquium/issues
+                                   :
+                                   : It will probably crash and lose your work a few times.  Save and back up your work as frequently as possible.
+                                   :
+                                   BP: However, in years of use it has *never* crashed on me in front of an audience.  You will find most bugs in the editing features, not playback.
+                                   :
+                                   : Creating a backup slide deck in PDF format (File->Export slides as PDF) is nevertheless a wise safety measure.
+                                   :
+                                   BP: Please report all bugs here:
+                                   : https://github.com/taw10/colloquium/issues
   IMAGE[452.2ux431.0u+64.8u+168.9u]: alpha_warning.svg
 }
 

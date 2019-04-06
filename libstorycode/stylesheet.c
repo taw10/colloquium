@@ -68,8 +68,6 @@ struct style
 struct _stylesheet
 {
 	struct style top;
-	double default_slide_w;
-	double default_slide_h;
 };
 
 
@@ -199,11 +197,10 @@ static struct style *create_style(Stylesheet *ss, const char *path, const char *
 Stylesheet *stylesheet_new()
 {
 	Stylesheet *ss;
+	struct style *sty;
+
 	ss = malloc(sizeof(*ss));
 	if ( ss == NULL ) return NULL;
-
-	ss->default_slide_w = 1024.0;
-	ss->default_slide_h = 768.0;
 
 	ss->top.n_substyles = 0;
 	ss->top.substyles = NULL;
@@ -214,7 +211,11 @@ Stylesheet *stylesheet_new()
 	create_style(ss, "", "NARRATIVE");
 	create_style(ss, "NARRATIVE", "BP");
 	create_style(ss, "NARRATIVE", "PRESTITLE");
-	create_style(ss, "", "SLIDE");
+	sty = create_style(ss, "", "SLIDE");
+	sty->geom.w.unit = LENGTH_UNIT;
+	sty->geom.w.len = 1024.0;
+	sty->geom.h.unit = LENGTH_UNIT;
+	sty->geom.h.len = 768.0;
 	create_style(ss, "SLIDE", "TEXT");
 	create_style(ss, "SLIDE", "PRESTITLE");
 	create_style(ss, "SLIDE", "SLIDETITLE");
@@ -241,18 +242,24 @@ static struct style *get_style(Stylesheet *s, enum style_element el)
 
 int stylesheet_get_slide_default_size(Stylesheet *s, double *w, double *h)
 {
-	if ( s == NULL ) return 1;
-	*w = s->default_slide_w;
-	*h = s->default_slide_h;
+	struct style *sty = lookup_style(&s->top, "SLIDE");
+	if ( sty == NULL ) return 1;
+	assert(sty->geom.w.unit == LENGTH_UNIT);
+	assert(sty->geom.h.unit == LENGTH_UNIT);
+	*w = sty->geom.w.len;
+	*h = sty->geom.h.len;
 	return 0;
 }
 
 
 int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h)
 {
-	if ( s == NULL ) return 1;
-	s->default_slide_w = w;
-	s->default_slide_h = h;
+	struct style *sty = lookup_style(&s->top, "SLIDE");
+	if ( sty == NULL ) return 1;
+	assert(sty->geom.w.unit == LENGTH_UNIT);
+	assert(sty->geom.h.unit == LENGTH_UNIT);
+	sty->geom.w.len = w;
+	sty->geom.h.len = h;
 	return 0;
 }
 
@@ -527,7 +534,12 @@ static void add_style(char **text, size_t *len, size_t *lenmax, const char *pref
 	}
 	free(prefix2);
 
-	/* FIXME: add default slide size */
+	if ( strcmp(sty->name, "SLIDE") == 0 ) {
+		char tmp[256];
+		snprintf(tmp, 255, "SIZE %.4gu x %4gu\n",
+		         sty->geom.w.len, sty->geom.h.len);
+		add_text(text, len, lenmax, prefix, tmp);
+	}
 }
 
 

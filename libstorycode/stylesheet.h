@@ -45,6 +45,14 @@ enum length_unit
 };
 
 
+struct colour
+{
+	double rgba[4];
+	int hexcode;      /* If true, colour came from a hexcode
+	                   * (and should be written back as one) */
+};
+
+
 struct length
 {
 	double len;
@@ -94,16 +102,17 @@ extern int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font)
 extern int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignment align);
 extern int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length padding[4]);
 extern int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length paraspace[4]);
-extern int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgba[4]);
+extern int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, struct colour fgcol);
 extern int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradient grad,
-                                     double bgcol[4], double bgcol2[4]);
+                                     struct colour bgcol, struct colour bgcol2);
 
 extern int stylesheet_get_geometry(Stylesheet *s, enum style_element el,
                                    struct frame_geom *geom);
 extern const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
-                                       double *fgcol, enum alignment *alignment);
+                                       struct colour *fgcol, enum alignment *alignment);
 extern int stylesheet_get_background(Stylesheet *s, enum style_element el,
-                                     enum gradient *grad, double *bgcol, double *bgcol2);
+                                     enum gradient *grad, struct colour *bgcol,
+                                     struct colour *bgcol2);
 extern int stylesheet_get_padding(Stylesheet *s, enum style_element el,
                                   struct length padding[4]);
 extern int stylesheet_get_paraspace(Stylesheet *s, enum style_element el,

@@ -43,7 +43,7 @@
   struct frame_geom geom;
   char character;
   double val;
-  double rgba[4];
+  struct colour col;
   enum alignment align;
   enum gradient grad;
 }
@@ -87,7 +87,7 @@
 %type <str> frameopt
 %type <geom> geometry
 %type <lenquad> lenquad
-%type <rgba> colour
+%type <col> colour
 %type <str> HEXCOL
 %type <len> length
 %type <align> alignment
@@ -113,6 +113,15 @@
 }
 
 %{
+
+
+static void copy_col(struct colour *to, struct colour from)
+{
+    int i;
+    for ( i=0; i<4; i++ ) to->rgba[i] = from.rgba[i];
+    to->hexcode = from.hexcode;
+}
+
 
 static int hex_to_double(const char *v, double *r)
 {
@@ -285,11 +294,14 @@ lenquad:
 ;
 
 colour:
-  VALUE ',' VALUE ',' VALUE ',' VALUE { $$[0] = $1;  $$[1] = $3;
-                                        $$[2] = $5;  $$[3] = $7; }
+  VALUE ',' VALUE ',' VALUE ',' VALUE { $$.rgba[0] = $1;  $$.rgba[1] = $3;
+                                        $$.rgba[2] = $5;  $$.rgba[3] = $7;
+                                        $$.hexcode = 0;  }
 | HEXCOL { double col[3];
            if ( hex_to_double($1, col) ) {
-               $$[0] = col[0]; $$[1] = col[1]; $$[2] = col[2]; $$[3] = 1.0;
+               $$.rgba[0] = col[0];  $$.rgba[1] = col[1];
+               $$.rgba[2] = col[2];  $$.rgba[3] = 1.0;
+               $$.hexcode = 1;
            }
          }
 ;
@@ -368,11 +380,11 @@ style_slidesize:
 ;
 
 background:
-  BGCOL colour       { for ( int i=0; i<4; i++ ) ctx->bgcol[i] = $2[i];
+  BGCOL colour       { copy_col(&ctx->bgcol, $2);
                        ctx->bggrad = GRAD_NONE;
                        ctx->mask |= STYMASK_BGCOL; }
-| BGCOL gradtype colour colour  { for ( int i=0; i<4; i++ ) ctx->bgcol[i] = $3[i];
-                                  for ( int i=0; i<4; i++ ) ctx->bgcol2[i] = $4[i];
+| BGCOL gradtype colour colour  { copy_col(&ctx->bgcol, $3);
+                                  copy_col(&ctx->bgcol2, $4);
                                   ctx->bggrad = $2;
                                   ctx->mask |= STYMASK_BGCOL; }
 ;
@@ -403,7 +415,7 @@ styledef:
                        ctx->mask |= STYMASK_PADDING; }
 | PARASPACE lenquad  { for ( int i=0; i<4; i++ ) ctx->paraspace[i] = $2[i];
                        ctx->mask |= STYMASK_PARASPACE; }
-| FGCOL colour       { for ( int i=0; i<4; i++ ) ctx->fgcol[i] = $2[i];
+| FGCOL colour       { copy_col(&ctx->fgcol, $2);
                        ctx->mask |= STYMASK_FGCOL; }
 | background         { /* Handled in rule 'background' */ }
 | ALIGN alignment    { ctx->alignment = $2;

@@ -52,10 +52,10 @@ struct style
 
 	struct frame_geom geom;
 	char *font;
-	double fgcol[4];      /* r g b a */
+	struct colour fgcol;
 	enum gradient bggrad;
-	double bgcol[4];      /* r g b a */
-	double bgcol2[4];     /* r g b a, if gradient */
+	struct colour bgcol;
+	struct colour bgcol2;
 	struct length paraspace[4];  /* l r t b */
 	struct length padding[4];    /* l r t b */
 	enum alignment alignment;
@@ -73,6 +73,14 @@ struct _stylesheet
 };
 
 
+static void copy_col(struct colour *to, struct colour from)
+{
+    int i;
+    for ( i=0; i<4; i++ ) to->rgba[i] = from.rgba[i];
+    to->hexcode = from.hexcode;
+}
+
+
 static void default_style(struct style *s)
 {
 	s->geom.x.len = 0.0;
@@ -87,22 +95,25 @@ static void default_style(struct style *s)
 	s->font = strdup("Sans 12");
 	s->alignment = ALIGN_LEFT;
 
-	s->fgcol[0] = 0.0;
-	s->fgcol[1] = 0.0;
-	s->fgcol[2] = 0.0;
-	s->fgcol[3] = 1.0;
+	s->fgcol.rgba[0] = 0.0;
+	s->fgcol.rgba[1] = 0.0;
+	s->fgcol.rgba[2] = 0.0;
+	s->fgcol.rgba[3] = 1.0;
+	s->fgcol.hexcode = 1;
 
 	s->bggrad = GRAD_NONE;
 
-	s->bgcol[0] = 1.0;
-	s->bgcol[1] = 1.0;
-	s->bgcol[2] = 1.0;
-	s->bgcol[3] = 1.0;
+	s->bgcol.rgba[0] = 1.0;
+	s->bgcol.rgba[1] = 1.0;
+	s->bgcol.rgba[2] = 1.0;
+	s->bgcol.rgba[3] = 1.0;
+	s->bgcol.hexcode = 1;
 
-	s->bgcol2[0] = 1.0;
-	s->bgcol2[1] = 1.0;
-	s->bgcol2[2] = 1.0;
-	s->bgcol2[3] = 1.0;
+	s->bgcol2.rgba[0] = 1.0;
+	s->bgcol2.rgba[1] = 1.0;
+	s->bgcol2.rgba[2] = 1.0;
+	s->bgcol2.rgba[3] = 1.0;
+	s->bgcol2.hexcode = 1;
 
 	s->paraspace[0].len = 0.0;
 	s->paraspace[1].len = 0.0;
@@ -295,30 +306,33 @@ int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length
 }
 
 
-int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, double rgba[4])
+int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, struct colour fgcol)
 {
 	int i;
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) {
-		sty->fgcol[i] = rgba[i];
+		sty->fgcol.rgba[i] = fgcol.rgba[i];
 	}
+	sty->fgcol.hexcode = fgcol.hexcode;
 	sty->set |= SM_FGCOL;
 	return 0;
 }
 
 
 int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradient grad,
-                              double bgcol[4], double bgcol2[4])
+                              struct colour bgcol, struct colour bgcol2)
 {
 	int i;
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return 1;
 	sty->bggrad = grad;
 	for ( i=0; i<4; i++ ) {
-		sty->bgcol[i] = bgcol[i];
-		sty->bgcol2[i] = bgcol2[i];
+		sty->bgcol.rgba[i] = bgcol.rgba[i];
+		sty->bgcol2.rgba[i] = bgcol2.rgba[i];
 	}
+	sty->bgcol.hexcode = bgcol.hexcode;
+	sty->bgcol2.hexcode = bgcol2.hexcode;
 	sty->set |= SM_BGCOL;
 	return 0;
 }
@@ -345,33 +359,28 @@ int stylesheet_get_geometry(Stylesheet *s, enum style_element el, struct frame_g
 
 
 const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
-                                double *fgcol, enum alignment *alignment)
+                                struct colour *fgcol, enum alignment *alignment)
 {
-	int i;
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return NULL;
 
 	*alignment = sty->alignment;
 	if ( fgcol != NULL ) {
-		for ( i=0; i<4; i++ ) {
-			fgcol[i] = sty->fgcol[i];
-		}
+		copy_col(fgcol, sty->fgcol);
 	}
 	return sty->font;
 }
 
 
 int stylesheet_get_background(Stylesheet *s, enum style_element el,
-                              enum gradient *grad, double *bgcol, double *bgcol2)
+                              enum gradient *grad, struct colour *bgcol,
+                              struct colour *bgcol2)
 {
-	int i;
 	struct style *sty = get_style(s, el);
 	if ( sty == NULL ) return 1;
 
-	for ( i=0; i<4; i++ ) {
-		bgcol[i] = sty->bgcol[i];
-		bgcol2[i] = sty->bgcol2[i];
-	}
+	copy_col(bgcol, sty->bgcol);
+	copy_col(bgcol2, sty->bgcol2);
 	*grad = sty->bggrad;
 	return 0;
 }
@@ -424,6 +433,20 @@ static void add_text(char **text, size_t *len, size_t *lenmax, const char *prefi
 }
 
 
+static void format_col(char *a, size_t max_len, struct colour col)
+{
+	if ( !col.hexcode ) {
+		snprintf(a, max_len, "%.4g,%.4g,%.4g,%.4g",
+		         col.rgba[0], col.rgba[1], col.rgba[2], col.rgba[3]);
+	} else {
+		snprintf(a, max_len, "#%.2X%.2X%.2X",
+		         (unsigned int)(col.rgba[0]*255),
+		         (unsigned int)(col.rgba[1]*255),
+		         (unsigned int)(col.rgba[2]*255));
+	}
+}
+
+
 static void add_style(char **text, size_t *len, size_t *lenmax, const char *prefix,
                       struct style *sty)
 {
@@ -448,24 +471,23 @@ static void add_style(char **text, size_t *len, size_t *lenmax, const char *pref
 
 	if ( sty->set & SM_FGCOL ) {
 		char tmp[256];
-		snprintf(tmp, 255, "FGCOL %.4g,%.4g,%.4g,%.4g\n",
-		         sty->fgcol[0], sty->fgcol[1], sty->fgcol[2], sty->fgcol[3]);
-		add_text(text, len, lenmax, prefix, tmp);
+		format_col(tmp, 255, sty->fgcol);
+		add_text(text, len, lenmax, prefix, "FGCOL ");
+		add_text(text, len, lenmax, "", tmp);
+		add_text(text, len, lenmax, "", "\n");
 	}
 
 	if ( sty->set & SM_BGCOL ) {
 		char tmp[256];
-		if ( sty->bggrad == GRAD_NONE ) {
-			snprintf(tmp, 255, "BGCOL %s%.4g,%.4g,%.4g,%.4g\n",
-			         bgcolc(sty->bggrad),
-			         sty->bgcol[0], sty->bgcol[1], sty->bgcol[2], sty->bgcol[3]);
-		} else {
-			snprintf(tmp, 255, "BGCOL %s%.4g,%.4g,%.4g,%.4g %.4g,%.4g,%.4g,%.4g\n",
-			         bgcolc(sty->bggrad),
-			         sty->bgcol[0], sty->bgcol[1], sty->bgcol[2], sty->bgcol[3],
-			         sty->bgcol2[0], sty->bgcol2[1], sty->bgcol2[2], sty->bgcol2[3]);
+		add_text(text, len, lenmax, prefix, "BGCOL ");
+		add_text(text, len, lenmax, "", bgcolc(sty->bggrad));
+		format_col(tmp, 255, sty->bgcol);
+		add_text(text, len, lenmax, "", tmp);
+		if ( sty->bggrad != GRAD_NONE ) {
+			format_col(tmp, 255, sty->bgcol2);
+			add_text(text, len, lenmax, " ", tmp);
 		}
-		add_text(text, len, lenmax, prefix, tmp);
+		add_text(text, len, lenmax, "", "\n");
 	}
 
 	if ( sty->set & SM_PARASPACE ) {

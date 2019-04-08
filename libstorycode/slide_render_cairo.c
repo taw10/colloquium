@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <libintl.h>
+#define _(x) gettext(x)
+
 #include "slide.h"
 #include "narrative.h"
 #include "stylesheet.h"
@@ -349,6 +352,54 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 
 		}
 	}
+
+	return 0;
+}
+
+
+int render_slides_to_pdf(Narrative *n, ImageStore *is, const char *filename)
+{
+	double w = 2048.0;
+	cairo_surface_t *surf;
+	cairo_t *cr;
+	int i;
+	PangoContext *pc;
+	struct slide_pos sel;
+
+	surf = cairo_pdf_surface_create(filename, w, w);
+	if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
+		fprintf(stderr, _("Couldn't create Cairo surface\n"));
+		return 1;
+	}
+
+	cr = cairo_create(surf);
+	pc = pango_cairo_create_context(cr);
+
+	sel.para = 0;  sel.pos = 0;  sel.trail = 0;
+
+	for ( i=0; i<narrative_get_num_slides(n); i++ )
+	{
+		Slide *s;
+		double log_w, log_h;
+
+		s = narrative_get_slide_by_number(n, i);
+		slide_get_logical_size(s, narrative_get_stylesheet(n),
+		                       &log_w, &log_h);
+
+		cairo_pdf_surface_set_size(surf, w, w*(log_h/log_w));
+
+		cairo_save(cr);
+		cairo_scale(cr, w/log_w, w/log_w);
+		slide_render_cairo(s, cr, is, narrative_get_stylesheet(n),
+		                   i, pango_language_get_default(), pc,
+		                   NULL, sel, sel);
+		cairo_show_page(cr);
+		cairo_restore(cr);
+	}
+
+	g_object_unref(pc);
+	cairo_surface_finish(surf);
+	cairo_destroy(cr);
 
 	return 0;
 }

@@ -42,5 +42,6 @@ extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet 
                               SlideItem *sel_item, struct slide_pos sel_start,
                               struct slide_pos sel_end);
 
+extern int render_slides_to_pdf(Narrative *n, ImageStore *is, const char *filename);
 
 #endif	/* RENDER_H */

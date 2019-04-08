@@ -39,6 +39,7 @@
 #include "colloquium.h"
 #include "narrative_window.h"
 #include "slide_window.h"
+#include "slide_render_cairo.h"
 #include "testcard.h"
 #include "pr_clock.h"
 #include "slideshow.h"
@@ -444,15 +445,15 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
 static gint export_pdf_response_sig(GtkWidget *d, gint response,
                                     Narrative *n)
 {
-//       if ( response == GTK_RESPONSE_ACCEPT ) {
-//               char *filename;
-//               filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-//               export_pdf(p, filename);
-//               g_free(filename);
-//       }
-//
-//       gtk_widget_destroy(d);
-//
+       if ( response == GTK_RESPONSE_ACCEPT ) {
+               char *filename;
+               filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+               render_slides_to_pdf(n, narrative_get_imagestore(n), filename);
+               g_free(filename);
+       }
+
+       gtk_widget_destroy(d);
+
        return 0;
 }
 
@@ -467,22 +468,22 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
-//	NarrativeWindow *nw = vp;
-//	GtkWidget *d;
-//
-//	d = gtk_file_chooser_dialog_new(_("Export PDF"),
-//	                                NULL,
-//	                                GTK_FILE_CHOOSER_ACTION_SAVE,
-//	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
-//	                                _("_Export"), GTK_RESPONSE_ACCEPT,
-//	                                NULL);
-//	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
-//	                                               TRUE);
-//
-//	g_signal_connect(G_OBJECT(d), "response",
-//	                 G_CALLBACK(export_pdf_response_sig), nw->n);
-//
-//	gtk_widget_show_all(d);
+	NarrativeWindow *nw = vp;
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new(_("Export PDF"),
+	                                NULL,
+	                                GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
+	                                _("_Export"), GTK_RESPONSE_ACCEPT,
+	                                NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
+	                                               TRUE);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(export_pdf_response_sig), nw->n);
+
+	gtk_widget_show_all(d);
 }
 
 

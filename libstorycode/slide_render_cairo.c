@@ -97,7 +97,7 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	struct length pad[4];
 	const char *font;
 	enum alignment align;
-	double fgcol[4];
+	struct colour fgcol;
 	PangoRectangle rect;
 	PangoFontDescription *fontdesc;
 	PangoAlignment palignment;
@@ -112,7 +112,7 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	pad_r = lcalc(pad[1], parent_w);
 	pad_t = lcalc(pad[2], parent_h);
 
-	font = stylesheet_get_font(ss, el, fgcol, &align);
+	font = stylesheet_get_font(ss, el, &fgcol, &align);
 	if ( font == NULL ) return;
 
 	fontdesc = pango_font_description_from_string(font);
@@ -191,7 +191,8 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 
 		/* FIXME: Clip to w,h */
 
-		cairo_set_source_rgba(cr, fgcol[0], fgcol[1], fgcol[2], fgcol[3]);
+		cairo_set_source_rgba(cr, fgcol.rgba[0], fgcol.rgba[1], fgcol.rgba[2],
+		                          fgcol.rgba[3]);
 		cairo_move_to(cr, 0.0, 0.0);
 		pango_cairo_update_layout(cr, item->paras[i].layout);
 		pango_cairo_show_layout(cr, item->paras[i].layout);
@@ -266,12 +267,12 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 {
 	int i, r;
 	enum gradient bg;
-	double bgcol[4];
-	double bgcol2[4];
+	struct colour bgcol;
+	struct colour bgcol2;
 	cairo_pattern_t *patt = NULL;
 	double w, h;
 
-	r = stylesheet_get_background(stylesheet, STYEL_SLIDE, &bg, bgcol, bgcol2);
+	r = stylesheet_get_background(stylesheet, STYEL_SLIDE, &bg, &bgcol, &bgcol2);
 	if ( r ) return 1;
 
 	slide_get_logical_size(s, stylesheet, &w, &h);
@@ -282,20 +283,24 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 	switch ( bg ) {
 
 		case GRAD_NONE:
-		cairo_set_source_rgb(cr, bgcol[0], bgcol[1], bgcol[2]);
+		cairo_set_source_rgb(cr, bgcol.rgba[0], bgcol.rgba[1], bgcol.rgba[2]);
 		break;
 
 		case GRAD_VERT:
 		patt = cairo_pattern_create_linear(0.0, 0.0, 0.0, h);
-		cairo_pattern_add_color_stop_rgb(patt, 0.0, bgcol[0], bgcol[1], bgcol[2]);
-		cairo_pattern_add_color_stop_rgb(patt, 1.0, bgcol2[0], bgcol2[1], bgcol2[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 0.0,
+		                                 bgcol.rgba[0], bgcol.rgba[1], bgcol.rgba[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 1.0,
+		                                 bgcol2.rgba[0], bgcol2.rgba[1], bgcol2.rgba[2]);
 		cairo_set_source(cr, patt);
 		break;
 
 		case GRAD_HORIZ:
 		patt = cairo_pattern_create_linear(0.0, 0.0, w, 0.0);
-		cairo_pattern_add_color_stop_rgb(patt, 0.0, bgcol[0], bgcol[1], bgcol[2]);
-		cairo_pattern_add_color_stop_rgb(patt, 1.0, bgcol2[0], bgcol2[1], bgcol2[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 0.0,
+		                                 bgcol.rgba[0], bgcol.rgba[1], bgcol.rgba[2]);
+		cairo_pattern_add_color_stop_rgb(patt, 1.0,
+		                                 bgcol2.rgba[0], bgcol2.rgba[1], bgcol2.rgba[2]);
 		cairo_set_source(cr, patt);
 		break;
 

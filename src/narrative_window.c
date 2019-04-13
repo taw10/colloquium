@@ -43,7 +43,7 @@
 #include "testcard.h"
 #include "pr_clock.h"
 #include "slideshow.h"
-//#include "print.h"
+#include "print.h"
 //#include "stylesheet_editor.h"
 
 struct _narrative_window
@@ -460,8 +460,8 @@ static gint export_pdf_response_sig(GtkWidget *d, gint response,
 
 static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-	//NarrativeWindow *nw = vp;
-//	run_printing(nw->n, nw->window);
+	NarrativeWindow *nw = vp;
+	run_printing(nw->n, nw->window);
 }
 
 

@@ -1,7 +1,7 @@
 /*
  * print.c
  *
- * Copyright © 2016-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2016-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -30,28 +30,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "presentation.h"
+#include <libintl.h>
+#define _(x) gettext(x)
+
+#include "narrative.h"
 #include "narrative_window.h"
-#include "render.h"
-#include "utils.h"
+#include "slide_render_cairo.h"
+#include "narrative_render_cairo.h"
 
 
 static GtkPrintSettings *print_settings = NULL;
 
 struct print_stuff
 {
-	struct presentation *p;
+	Narrative *n;
 
 	/* Printing config */
 	GtkWidget *combo;
 	int slides_only;
 
 	/* When printing slides only */
-	SCBlock *slide;
+	Slide *slide;
 
 	/* When printing narrative */
 	int nar_line;
-	struct frame *top;
 	int start_paras[256];
 	int slide_number;
 };
@@ -103,15 +105,18 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 	cairo_t *cr;
 	PangoContext *pc;
 	double w, h;
-	struct frame *top;
-	const double sw = ps->p->slide_width;
-	const double sh = ps->p->slide_height;
+	double sw, sh;
 	double slide_width, slide_height;
+	struct slide_pos sel;
+	int slidenum;
 
 	cr = gtk_print_context_get_cairo_context(ctx);
 	pc = gtk_print_context_create_pango_context(ctx);
 	w = gtk_print_context_get_width(ctx);
 	h = gtk_print_context_get_height(ctx);
+
+	slide_get_logical_size(ps->slide, narrative_get_stylesheet(ps->n),
+	                       &sw, &sh);
 
 	cairo_rectangle(cr, 0.0, 0.0, w, h);
 	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
@@ -129,91 +134,51 @@ static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
 
 	printf("%f x %f ---> %f x %f\n", w, h, slide_width, slide_height);
 
-	top = interp_and_shape(ps->slide, ps->p->stylesheet, NULL,
-	                       ps->p->is, page+1, pc, sw, sh, ps->p->lang);
-
-	recursive_wrap(top, pc);
-
 	cairo_scale(cr, slide_width/sw, slide_width/sw);
 
-	recursive_draw(top, cr, ps->p->is,
-	               0.0, ps->p->slide_height);
+	sel.para = 0;  sel.pos = 0;  sel.trail = 0;
+	slidenum = narrative_get_slide_number_for_slide(ps->n,  ps->slide);
+	slide_render_cairo(ps->slide, cr, narrative_get_imagestore(ps->n),
+	                   narrative_get_stylesheet(ps->n), slidenum,
+	                   pango_language_get_default(), pc,
+	                   NULL, sel, sel);
 
-	ps->slide = next_slide(ps->p, ps->slide);
-}
-
-
-static int print_create_thumbnail(SCInterpreter *scin, SCBlock *bl,
-                                  double *w, double *h, void **bvp, void *vp)
-{
-	struct print_stuff *ps = vp;
-	struct presentation *p = ps->p;
-	SCBlock *b;
-
-	*w = 270.0*(p->slide_width / p->slide_height);
-	*h = 270.0;
-	b = bl;
-
-	*bvp = b;
-
-	return 1;
-}
-
-
-static cairo_surface_t *print_render_thumbnail(int w, int h, void *bvp, void *vp)
-{
-	struct print_stuff *ps = vp;
-	struct presentation *p = ps->p;
-	SCBlock *scblocks = bvp;
-	cairo_surface_t *surf;
-	struct frame *top;
-
-	surf = render_sc(scblocks, w, h, p->slide_width, p->slide_height,
-	                 p->stylesheet, NULL, p->is, ps->slide_number++,
-	                 &top, p->lang);
-	frame_free(top);
-
-	return surf;
+	ps->slide = narrative_get_slide_by_number(ps->n, slidenum+1);
 }
 
 
 static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
                                   struct print_stuff *ps)
 {
-	SCCallbackList *cbl;
 	PangoContext *pc;
 	int i, n_pages;
 	double h, page_height;
-	SCBlock *dummy_top;
+	struct edit_pos sel;
 
-	cbl = sc_callback_list_new();
 	ps->slide_number = 1;
-	sc_callback_list_add_callback(cbl, "slide", print_create_thumbnail,
-	                              print_render_thumbnail, NULL, ps);
 
 	pc = gtk_print_context_create_pango_context(ctx);
 
-	dummy_top = sc_block_new_parent(ps->p->scblocks, "presentation");
-	ps->top = interp_and_shape(dummy_top, ps->p->stylesheet, cbl,
-	                           ps->p->is, 0, pc,
-	                           gtk_print_context_get_width(ctx),
-	                           gtk_print_context_get_height(ctx),
-	                           ps->p->lang);
-	recursive_wrap(ps->top, pc);
+	sel.para = 0;  sel.pos = 0;  sel.trail = 0;
+	narrative_wrap_range(ps->n, narrative_get_stylesheet(ps->n),
+	                     pango_language_get_default(), pc,
+	                     gtk_print_context_get_width(ctx),
+	                     narrative_get_imagestore(ps->n),
+	                     0, narrative_get_num_items(ps->n), sel, sel);
 
 	/* Count pages */
 	page_height = gtk_print_context_get_height(ctx);
 	h = 0.0;
 	n_pages = 1;
 	ps->start_paras[0] = 0;
-	for ( i=0; i<ps->top->n_paras; i++ ) {
-		if ( h + paragraph_height(ps->top->paras[i]) > page_height ) {
+	for ( i=0; i<narrative_get_num_items(ps->n); i++ ) {
+		if ( h + narrative_item_get_height(ps->n, i) > page_height ) {
 			/* Paragraph does not fit on page */
 			ps->start_paras[n_pages] = i;
 			n_pages++;
 			h = 0.0;
 		}
-		h += paragraph_height(ps->top->paras[i]);
+		h += narrative_item_get_height(ps->n, i);
 	}
 	gtk_print_operation_set_n_pages(op, n_pages);
 	g_object_unref(pc);
@@ -231,23 +196,20 @@ static void print_narrative(GtkPrintOperation *op, GtkPrintContext *ctx,
 	cr = gtk_print_context_get_cairo_context(ctx);
 
 	h = 0.0;
-	for ( i=ps->start_paras[page]; i<ps->top->n_paras; i++ ) {
+	for ( i=ps->start_paras[page]; i<narrative_get_num_items(ps->n); i++ ) {
 
 		/* Will this paragraph fit? */
-		h += paragraph_height(ps->top->paras[i]);
+		h += narrative_item_get_height(ps->n, i);
 		if ( h > page_height ) return;
 
 		cairo_save(cr);
-		render_paragraph(cr, ps->top->paras[i], ps->p->is);
+		narrative_render_item_cairo(ps->n, cr, i);
 		cairo_restore(cr);
 
-		cairo_translate(cr, 0.0, paragraph_height(ps->top->paras[i]));
+		cairo_translate(cr, 0.0, narrative_item_get_height(ps->n, i));
 
 	}
-
-
 }
-
 
 
 static void print_begin(GtkPrintOperation *op, GtkPrintContext *ctx, void *vp)
@@ -255,8 +217,8 @@ static void print_begin(GtkPrintOperation *op, GtkPrintContext *ctx, void *vp)
 	struct print_stuff *ps = vp;
 
 	if ( ps->slides_only ) {
-		gtk_print_operation_set_n_pages(op, num_slides(ps->p));
-		ps->slide = first_slide(ps->p);
+		gtk_print_operation_set_n_pages(op, narrative_get_num_slides(ps->n));
+		ps->slide = narrative_get_slide_by_number(ps->n, 0);
 	} else {
 		begin_narrative_print(op, ctx, ps);
 	}
@@ -275,7 +237,7 @@ static void print_draw(GtkPrintOperation *op, GtkPrintContext *ctx, gint page,
 }
 
 
-void run_printing(struct presentation *p, GtkWidget *parent)
+void run_printing(Narrative *n, GtkWidget *parent)
 {
 	GtkPrintOperation *print;
 	GtkPrintOperationResult res;
@@ -283,7 +245,7 @@ void run_printing(struct presentation *p, GtkWidget *parent)
 
 	ps = malloc(sizeof(struct print_stuff));
 	if ( ps == NULL ) return;
-	ps->p = p;
+	ps->n = n;
 	ps->nar_line = 0;
 
 	print = gtk_print_operation_new();
@@ -306,8 +268,7 @@ void run_printing(struct presentation *p, GtkWidget *parent)
 		if ( print_settings != NULL ) {
 			g_object_unref(print_settings);
 		}
-		print_settings = g_object_ref(
-				 gtk_print_operation_get_print_settings(print));
+		print_settings = g_object_ref(gtk_print_operation_get_print_settings(print));
 	}
 	g_object_unref(print);
 }

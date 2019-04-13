@@ -1,7 +1,7 @@
 /*
  * print.h
  *
- * Copyright © 2016-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2016-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -27,6 +27,8 @@
 #include <config.h>
 #endif
 
-extern void run_printing(struct presentation *p, GtkWidget *parent);
+#include <narrative.h>
+
+extern void run_printing(Narrative *n, GtkWidget *parent);
 
 #endif /* PRINT_H */

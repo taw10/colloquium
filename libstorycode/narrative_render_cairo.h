@@ -44,6 +44,10 @@ extern int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet,
 
 extern double narrative_get_height(Narrative *n);
 
+extern double narrative_item_get_height(Narrative *n, int i);
+
+extern int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i);
+
 extern int narrative_render_cairo(Narrative *n, cairo_t *cr,
                                   Stylesheet *stylesheet);
 

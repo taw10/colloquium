@@ -335,6 +335,12 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 }
 
 
+double narrative_item_get_height(Narrative *n, int i)
+{
+	return n->items[i].h;
+}
+
+
 double narrative_get_height(Narrative *n)
 {
 	int i;
@@ -389,6 +395,32 @@ static void draw_text(struct narrative_item *item, cairo_t *cr)
 }
 
 
+int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
+{
+	switch ( n->items[i].type ) {
+
+		case NARRATIVE_ITEM_TEXT :
+		case NARRATIVE_ITEM_PRESTITLE :
+		draw_text(&n->items[i], cr);
+		break;
+
+		case NARRATIVE_ITEM_BP :
+		draw_text(&n->items[i], cr);
+		break;
+
+		case NARRATIVE_ITEM_SLIDE :
+		draw_slide(&n->items[i], cr);
+		break;
+
+		default :
+		return 1;
+
+	}
+
+	return 0;
+}
+
+
 /* NB You must first call narrative_wrap() */
 int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
 {
@@ -434,27 +466,7 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
 	cairo_translate(cr, n->space_l, n->space_t);
 
 	for ( i=0; i<n->n_items; i++ ) {
-
-		switch ( n->items[i].type ) {
-
-			case NARRATIVE_ITEM_TEXT :
-			case NARRATIVE_ITEM_PRESTITLE :
-			draw_text(&n->items[i], cr);
-			break;
-
-			case NARRATIVE_ITEM_BP :
-			draw_text(&n->items[i], cr);
-			break;
-
-			case NARRATIVE_ITEM_SLIDE :
-			draw_slide(&n->items[i], cr);
-			break;
-
-			default :
-			break;
-
-		}
-
+		narrative_render_item_cairo(n, cr, i);
 		cairo_translate(cr, 0.0, n->items[i].h);
 	}
 

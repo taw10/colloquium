@@ -430,7 +430,8 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
 static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	nw->pr_clock = pr_clock_new();
+	if ( nw->pr_clock != NULL ) return;
+	nw->pr_clock = pr_clock_new(&nw->pr_clock);
 }
 
 
@@ -516,6 +517,7 @@ static void scroll_down(NarrativeWindow *nw)
 
 static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
+	if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
 	g_application_release(nw->app);
 	return FALSE;
 }

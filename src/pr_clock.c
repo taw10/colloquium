@@ -37,8 +37,6 @@
 
 struct pr_clock
 {
-	int open;
-
 	GtkWidget *window;
 	GtkWidget *entry;
 	GtkWidget *startbutton;
@@ -62,6 +60,8 @@ struct pr_clock
 
 	double t;
 	double tf;
+
+	PRClock **delete_ptr;
 };
 
 
@@ -131,13 +131,6 @@ static gboolean update_clock(gpointer data)
 	double delta;
 	gint w, h;
 	char *tmp;
-
-	if ( !n->open ) {
-		g_date_time_unref(n->start);
-		g_time_zone_unref(n->tz);
-		free(n);
-		return FALSE;
-	}
 
 	dt = g_date_time_new_now(n->tz);
 
@@ -218,6 +211,9 @@ void pr_clock_set_pos(PRClock *n, int pos, int end)
 static gint close_clock_sig(GtkWidget *w, PRClock *n)
 {
 	g_source_remove(n->timer_id);
+	*n->delete_ptr = NULL;
+	if ( n->start != NULL ) g_date_time_unref(n->start);
+	g_time_zone_unref(n->tz);
 	free(n);
 	return FALSE;
 }
@@ -344,7 +340,7 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
 }
 
 
-PRClock *pr_clock_new()
+PRClock *pr_clock_new(PRClock **delete_ptr)
 {
 	struct pr_clock *n;
 	GtkWidget *vbox;
@@ -356,8 +352,8 @@ PRClock *pr_clock_new()
 
 	n = malloc(sizeof(struct pr_clock));
 	if ( n == NULL ) return NULL;
-	n->open = 1;
 
+	n->delete_ptr = delete_ptr;
 	n->tz = g_time_zone_new_local();
 
 	n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -390,7 +386,7 @@ PRClock *pr_clock_new()
 	gtk_box_pack_start(GTK_BOX(vbox), n->da, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(clock_draw_sig), n);
 	g_signal_connect(G_OBJECT(n->window), "destroy",
-	                 G_CALLBACK(close_clock_sig), n); /* FIXME: Uniqueness */
+	                 G_CALLBACK(close_clock_sig), n);
 
 	grid = gtk_grid_new();
 	gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
@@ -435,4 +431,10 @@ PRClock *pr_clock_new()
 
 	gtk_widget_show_all(n->window);
 	return n;
+}
+
+
+void pr_clock_destroy(PRClock *n)
+{
+	gtk_widget_destroy(n->window);
 }

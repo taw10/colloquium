@@ -1,7 +1,7 @@
 /*
  * pr_clock.h
  *
- * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -29,9 +29,11 @@
 
 typedef struct pr_clock PRClock;
 
-extern PRClock *pr_clock_new(void);
+extern PRClock *pr_clock_new(PRClock **delete_ptr);
 
 extern void pr_clock_set_pos(PRClock *n, int pos, int end);
+
+extern void pr_clock_destroy(PRClock *n);
 
 
 #endif	/* CLOCK_H */

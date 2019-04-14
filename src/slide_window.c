@@ -57,6 +57,7 @@ static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
 	char **text = malloc(sizeof(char *));
 	*text = strdup("Slide title");
 	slide_add_slidetitle(sw->slide, text, 1);
+	gtk_slide_view_set_slide(sw->sv, sw->slide);
 }
 
 

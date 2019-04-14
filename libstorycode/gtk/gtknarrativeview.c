@@ -792,6 +792,7 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 	 * immediately afterwards. */
 	rewrap_range(e, p1.para, p1.para+1);
 	update_size(e);
+	check_cursor_visible(e);
 	emit_change_sig(e);
 	redraw(e);
 }
@@ -991,24 +992,28 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Left :
 		cursor_moveh(e->n, &e->cpos, -1);
+		check_cursor_visible(e);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Right :
 		cursor_moveh(e->n, &e->cpos, +1);
+		check_cursor_visible(e);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Up :
 		cursor_moveh(e->n, &e->cpos, -1);
+		check_cursor_visible(e);
 		redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Down :
 		cursor_moveh(e->n, &e->cpos, +1);
+		check_cursor_visible(e);
 		redraw(e);
 		claim = 1;
 		break;

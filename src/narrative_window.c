@@ -527,7 +527,11 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
                                     NarrativeWindow *nw)
 {
 	Slide *slide = (Slide *)pslide;
-	slide_window_open(nw->n, slide, nw->app);
+	if ( nw->show == NULL ) {
+		slide_window_open(nw->n, slide, nw->app);
+	} else {
+		sc_slideshow_set_slide(nw->show, slide);
+	}
 	return FALSE;
 }
 

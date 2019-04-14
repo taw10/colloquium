@@ -94,10 +94,6 @@
           <attribute name='label' translatable='yes'>Copy Frame</attribute>
           <attribute name='action'>win.copyframe</attribute>
         </item>
-        <item>
-          <attribute name='label' translatable='yes'>Delete slide</attribute>
-          <attribute name='action'>win.deleteslide</attribute>
-        </item>
       </section>
       <section>
         <item>

@@ -217,29 +217,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static void delete_slide_sig(GSimpleAction *action, GVariant *parameter,
-                             gpointer vp)
-{
-	/* FIXME: GtkNarrativeView hooks */
-//	SCBlock *ns;
-//	NarrativeWindow *nw = vp;
-//
-//	/* Get the SCBlock corresponding to the slide */
-//	ns = sc_editor_get_cursor_bvp(nw->nv);
-//	if ( ns == NULL ) {
-//		fprintf(stderr, "Not a slide!\n");
-//		return;
-//	}
-//
-//	sc_block_delete(&nw->dummy_top, ns);
-//
-//	/* Full rerender */
-//	sc_editor_set_scblock(nw->nv, nw->dummy_top);
-//	nw->n->saved = 0;
-//	update_titlebar(nw);
-}
-
-
 static gint load_ss_response_sig(GtkWidget *d, gint response,
                                  NarrativeWindow *nw)
 {
@@ -676,7 +653,6 @@ GActionEntry nw_entries[] = {
 	{ "about", about_sig, NULL, NULL, NULL },
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
-	{ "deleteslide", delete_slide_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
 	{ "stylesheet", edit_ss_sig, NULL, NULL, NULL },

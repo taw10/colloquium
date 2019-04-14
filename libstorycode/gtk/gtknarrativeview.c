@@ -1181,9 +1181,21 @@ int gtk_narrative_view_get_cursor_para(GtkNarrativeView *e)
 
 void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos)
 {
+	double h;
+	int i;
+
 	e->cpos.para = pos;
 	e->cpos.pos = 0;
 	e->cpos.trail = 0;
+
+	h = 0;
+	for ( i=0; i<e->cpos.para; i++ ) {
+		h += narrative_item_get_height(e->n, i);
+	}
+	h += narrative_item_get_height(e->n, e->cpos.para)/2;
+	e->scroll_pos = h - (e->visible_height/2);
+	set_vertical_params(e);
+
 	redraw(e);
 }
 

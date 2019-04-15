@@ -200,6 +200,21 @@ static void set_bg_from_ss(Stylesheet *ss, enum style_element el,
 
 static void set_values_from_presentation(StylesheetEditor *se)
 {
+	GtkTreeIter iter;
+	GtkTreeIter iter2;
+	GValue val = G_VALUE_INIT;
+	GValue val2 = G_VALUE_INIT;
+
+	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter, NULL);
+	g_value_init(&val, G_TYPE_STRING);
+	g_value_set_static_string(&val, "Slide");
+	gtk_tree_store_set_value(GTK_TREE_STORE(se->element_tree), &iter, 0, &val);
+
+	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter2, &iter);
+	g_value_init(&val2, G_TYPE_STRING);
+	g_value_set_static_string(&val2, "Slide title");
+	gtk_tree_store_set_value(GTK_TREE_STORE(se->element_tree), &iter2, 0, &val2);
+
 	set_geom_from_ss(se->priv->stylesheet, se->priv->el,
 	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);
 
@@ -387,6 +402,7 @@ static void dims_sig(GtkSpinButton *widget, StylesheetEditor *se)
 #endif
 }
 
+
 static void font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
 }
@@ -396,9 +412,11 @@ static void fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
 }
 
+
 static void bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
 }
+
 
 static void selector_change_sig(GtkComboBoxText *widget, StylesheetEditor *se)
 {
@@ -458,6 +476,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	SE_BIND_CHILD(y, dims_sig);
 	SE_BIND_CHILD(w_units, dims_sig);
 	SE_BIND_CHILD(h_units, dims_sig);
+	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor, element_tree);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
 

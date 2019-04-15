@@ -58,6 +58,7 @@ struct _stylesheeteditor
 {
 	GtkDialog parent_instance;
 	GtkWidget *selector;
+	GtkTreeStore *element_tree;
 	GtkWidget *paraspace_l;
 	GtkWidget *paraspace_r;
 	GtkWidget *paraspace_t;

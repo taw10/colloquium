@@ -62,7 +62,12 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkListStore" id="element_tree"/>
+  <object class="GtkTreeStore" id="element_tree">
+    <columns>
+      <!-- column-name element -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <template class="StylesheetEditor" parent="GtkDialog">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Stylesheet editor</property>

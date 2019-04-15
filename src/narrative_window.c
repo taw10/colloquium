@@ -254,13 +254,10 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 static void stylesheet_changed_sig(GtkWidget *da, NarrativeWindow *nw)
 {
 //	int i;
-//
-//	/* It might have changed (been created) since last time */
-//	sc_editor_set_stylesheet(nw->nv, nwn>p->stylesheet);
-//
-//	/* Full rerender, first block may have changed */
-//	sc_editor_set_scblock(nw->nv, nw->dummy_top);
-//
+
+	/* Full rerender, first block may have changed */
+	gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
+
 //	/* Full rerender of all slide windows */
 //	for ( i=0; i<nw->n_slidewindows; i++ ) {
 //		slide_window_update(nw->slidewindows[i]);

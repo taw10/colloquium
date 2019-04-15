@@ -1224,3 +1224,10 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	emit_change_sig(e);
 	redraw(e);
 }
+
+
+extern void gtk_narrative_view_redraw(GtkNarrativeView *e)
+{
+	emit_change_sig(e);
+	redraw(e);
+}

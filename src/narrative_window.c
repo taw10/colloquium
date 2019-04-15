@@ -44,7 +44,7 @@
 #include "pr_clock.h"
 #include "slideshow.h"
 #include "print.h"
-//#include "stylesheet_editor.h"
+#include "stylesheet_editor.h"
 
 struct _narrative_window
 {
@@ -271,14 +271,14 @@ static void stylesheet_changed_sig(GtkWidget *da, NarrativeWindow *nw)
 static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
                         gpointer vp)
 {
-//	NarrativeWindow *nw = vp;
-//	StylesheetEditor *se;
-//
-//	se = stylesheet_editor_new(nw->n);
-//	gtk_window_set_transient_for(GTK_WINDOW(se), GTK_WINDOW(nw->window));
-//	g_signal_connect(G_OBJECT(se), "changed",
-//	                 G_CALLBACK(stylesheet_changed_sig), nw);
-//	gtk_widget_show_all(GTK_WIDGET(se));
+	NarrativeWindow *nw = vp;
+	StylesheetEditor *se;
+
+	se = stylesheet_editor_new(nw->n);
+	gtk_window_set_transient_for(GTK_WINDOW(se), GTK_WINDOW(nw->window));
+	g_signal_connect(G_OBJECT(se), "changed",
+	                 G_CALLBACK(stylesheet_changed_sig), nw);
+	gtk_widget_show_all(GTK_WIDGET(se));
 }
 
 

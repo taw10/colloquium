@@ -274,7 +274,7 @@ static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
 	NarrativeWindow *nw = vp;
 	StylesheetEditor *se;
 
-	se = stylesheet_editor_new(nw->n);
+	se = stylesheet_editor_new(narrative_get_stylesheet(nw->n));
 	gtk_window_set_transient_for(GTK_WINDOW(se), GTK_WINDOW(nw->window));
 	g_signal_connect(G_OBJECT(se), "changed",
 	                 G_CALLBACK(stylesheet_changed_sig), nw);

@@ -202,18 +202,18 @@ static void set_values_from_presentation(StylesheetEditor *se)
 {
 	GtkTreeIter iter;
 	GtkTreeIter iter2;
-	GValue val = G_VALUE_INIT;
-	GValue val2 = G_VALUE_INIT;
 
 	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter, NULL);
-	g_value_init(&val, G_TYPE_STRING);
-	g_value_set_static_string(&val, "Slide");
-	gtk_tree_store_set_value(GTK_TREE_STORE(se->element_tree), &iter, 0, &val);
+	gtk_tree_store_set(GTK_TREE_STORE(se->element_tree), &iter,
+	                   0, "Narrative", -1);
+
+	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter, NULL);
+	gtk_tree_store_set(GTK_TREE_STORE(se->element_tree), &iter,
+	                   0, "Slide", -1);
 
 	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter2, &iter);
-	g_value_init(&val2, G_TYPE_STRING);
-	g_value_set_static_string(&val2, "Slide title");
-	gtk_tree_store_set_value(GTK_TREE_STORE(se->element_tree), &iter2, 0, &val2);
+	gtk_tree_store_set(GTK_TREE_STORE(se->element_tree), &iter2,
+	                   0, "Slide title", -1);
 
 	set_geom_from_ss(se->priv->stylesheet, se->priv->el,
 	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);
@@ -476,6 +476,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	SE_BIND_CHILD(y, dims_sig);
 	SE_BIND_CHILD(w_units, dims_sig);
 	SE_BIND_CHILD(h_units, dims_sig);
+
 	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor, element_tree);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
@@ -495,6 +496,14 @@ StylesheetEditor *stylesheet_editor_new(Stylesheet *ss)
 	se->priv->stylesheet = ss;
 	se->priv->el = 0;//gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->furniture_selector));
 	set_values_from_presentation(se);
+
+	GtkCellRenderer *renderer;
+	GtkTreeViewColumn *column;
+	renderer = gtk_cell_renderer_text_new();
+	column = gtk_tree_view_column_new_with_attributes("Element", renderer,
+	                                                  "text", 0,
+	                                                  NULL);
+	gtk_tree_view_append_column(GTK_TREE_VIEW(se->selector), column);
 
 	return se;
 }

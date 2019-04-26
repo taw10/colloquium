@@ -198,24 +198,36 @@ static void set_bg_from_ss(Stylesheet *ss, const char *style_name,
 }
 
 
+static void add_style(Stylesheet *ss, const char *path,
+                      GtkTreeStore *ts, GtkTreeIter *parent_iter)
+{
+	int i, n_substyles;
+
+	n_substyles = stylesheet_get_num_substyles(ss, path);
+	for ( i=0; i<n_substyles; i++ ) {
+
+		GtkTreeIter iter;
+		const char *name = stylesheet_get_substyle_name(ss, path, i);
+
+		/* Add this style */
+		gtk_tree_store_append(ts, &iter, parent_iter);
+		gtk_tree_store_set(ts, &iter, 0, name, -1);
+
+		/* Add all substyles */
+		size_t len = strlen(path) + strlen(name) + 2;
+		char *new_path = malloc(len);
+		strcat(new_path, path);
+		strcat(new_path, ".");
+		strcat(new_path, name);
+		add_style(ss, new_path, ts, &iter);
+	}
+}
+
+
 static void set_values_from_presentation(StylesheetEditor *se)
 {
-	GtkTreeIter iter;
-	GtkTreeIter iter2;
-
 	gtk_tree_store_clear(se->element_tree);
-
-	gtk_tree_store_append(se->element_tree, &iter, NULL);
-	gtk_tree_store_set(se->element_tree, &iter,
-	                   0, "Narrative", -1);
-
-	gtk_tree_store_append(se->element_tree, &iter, NULL);
-	gtk_tree_store_set(se->element_tree, &iter,
-	                   0, "Slide", -1);
-
-	gtk_tree_store_append(se->element_tree, &iter2, &iter);
-	gtk_tree_store_set(se->element_tree, &iter2,
-	                   0, "Slide title", -1);
+	add_style(se->priv->stylesheet, "", se->element_tree, NULL);
 
 	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);

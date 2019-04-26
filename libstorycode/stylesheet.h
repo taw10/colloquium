@@ -77,45 +77,31 @@ enum gradient
 };
 
 
-enum style_element
-{
-	STYEL_NARRATIVE,
-	STYEL_NARRATIVE_PRESTITLE,
-	STYEL_NARRATIVE_BP,
-	STYEL_SLIDE,
-	STYEL_SLIDE_TEXT,
-	STYEL_SLIDE_IMAGE,
-	STYEL_SLIDE_PRESTITLE,
-	STYEL_SLIDE_SLIDETITLE,
-	STYEL_SLIDE_FOOTER,
-};
-
-
 extern Stylesheet *stylesheet_new(void);
 extern void stylesheet_free(Stylesheet *s);
 
 extern int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h);
 extern int stylesheet_get_slide_default_size(Stylesheet *s, double *w, double *h);
 
-extern int stylesheet_set_geometry(Stylesheet *s, enum style_element el, struct frame_geom geom);
-extern int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font);
-extern int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignment align);
-extern int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length padding[4]);
-extern int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length paraspace[4]);
-extern int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, struct colour fgcol);
-extern int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradient grad,
+extern int stylesheet_set_geometry(Stylesheet *s, const char *stn, struct frame_geom geom);
+extern int stylesheet_set_font(Stylesheet *s, const char *stn, char *font);
+extern int stylesheet_set_alignment(Stylesheet *s, const char *stn, enum alignment align);
+extern int stylesheet_set_padding(Stylesheet *s, const char *stn, struct length padding[4]);
+extern int stylesheet_set_paraspace(Stylesheet *s, const char *stn, struct length paraspace[4]);
+extern int stylesheet_set_fgcol(Stylesheet *s, const char *stn, struct colour fgcol);
+extern int stylesheet_set_background(Stylesheet *s, const char *stn, enum gradient grad,
                                      struct colour bgcol, struct colour bgcol2);
 
-extern int stylesheet_get_geometry(Stylesheet *s, enum style_element el,
+extern int stylesheet_get_geometry(Stylesheet *s, const char *stn,
                                    struct frame_geom *geom);
-extern const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
+extern const char *stylesheet_get_font(Stylesheet *s, const char *stn,
                                        struct colour *fgcol, enum alignment *alignment);
-extern int stylesheet_get_background(Stylesheet *s, enum style_element el,
+extern int stylesheet_get_background(Stylesheet *s, const char *stn,
                                      enum gradient *grad, struct colour *bgcol,
                                      struct colour *bgcol2);
-extern int stylesheet_get_padding(Stylesheet *s, enum style_element el,
+extern int stylesheet_get_padding(Stylesheet *s, const char *stn,
                                   struct length padding[4]);
-extern int stylesheet_get_paraspace(Stylesheet *s, enum style_element el,
+extern int stylesheet_get_paraspace(Stylesheet *s, const char *stn,
                                     struct length paraspace[4]);
 
 extern char *stylesheet_serialise(Stylesheet *s);

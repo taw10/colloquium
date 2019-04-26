@@ -90,7 +90,7 @@ static size_t pos_trail_to_offset(SlideItem *item, int para,
 
 
 static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
-                        Stylesheet *ss, enum style_element el,
+                        Stylesheet *ss, const char *stn,
                         double parent_w, double parent_h,
                         struct slide_pos sel_start, struct slide_pos sel_end)
 {
@@ -110,12 +110,12 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	y = lcalc(item->geom.y, parent_h);
 	w = lcalc(item->geom.w, parent_w);
 
-	if ( stylesheet_get_padding(ss, el, pad) ) return;
+	if ( stylesheet_get_padding(ss, stn, pad) ) return;
 	pad_l = lcalc(pad[0], parent_w);
 	pad_r = lcalc(pad[1], parent_w);
 	pad_t = lcalc(pad[2], parent_h);
 
-	font = stylesheet_get_font(ss, el, &fgcol, &align);
+	font = stylesheet_get_font(ss, stn, &fgcol, &align);
 	if ( font == NULL ) return;
 
 	fontdesc = pango_font_description_from_string(font);
@@ -275,7 +275,7 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 	cairo_pattern_t *patt = NULL;
 	double w, h;
 
-	r = stylesheet_get_background(stylesheet, STYEL_SLIDE, &bg, &bgcol, &bgcol2);
+	r = stylesheet_get_background(stylesheet, "SLIDE", &bg, &bgcol, &bgcol2);
 	if ( r ) return 1;
 
 	slide_get_logical_size(s, stylesheet, &w, &h);
@@ -328,7 +328,7 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 		switch ( s->items[i].type ) {
 
 			case SLIDE_ITEM_TEXT :
-			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_TEXT,
+			render_text(&s->items[i], cr, pc, stylesheet, "SLIDE.TEXT",
 			            w, h, srt, end);
 			break;
 
@@ -338,12 +338,12 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
 			break;
 
 			case SLIDE_ITEM_SLIDETITLE :
-			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_SLIDETITLE,
+			render_text(&s->items[i], cr, pc, stylesheet, "SLIDE.SLIDETITLE",
 			            w, h, srt, end);
 			break;
 
 			case SLIDE_ITEM_PRESTITLE :
-			render_text(&s->items[i], cr, pc, stylesheet, STYEL_SLIDE_PRESTITLE,
+			render_text(&s->items[i], cr, pc, stylesheet, "SLIDE.PRESTITLE",
 			            w, h, srt, end);
 			break;
 

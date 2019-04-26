@@ -67,7 +67,7 @@ static PangoAlignment to_pangoalignment(enum alignment align)
 
 
 static void wrap_text(struct narrative_item *item, PangoContext *pc,
-                      Stylesheet *ss, enum style_element el, double w,
+                      Stylesheet *ss, const char *stn, double w,
                       size_t sel_start, size_t sel_end)
 {
 	PangoAlignment palignment;
@@ -82,7 +82,7 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	struct colour fgcol;
 	guint16 r, g, b;
 
-	font = stylesheet_get_font(ss, el, &fgcol, &align);
+	font = stylesheet_get_font(ss, stn, &fgcol, &align);
 	if ( font == NULL ) return;
 	fontdesc = pango_font_description_from_string(font);
 
@@ -94,7 +94,7 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 		palignment = to_pangoalignment(item->align);
 	}
 
-	if ( stylesheet_get_paraspace(ss, el, paraspace) ) return;
+	if ( stylesheet_get_paraspace(ss, stn, paraspace) ) return;
 	item->space_l = lcalc(paraspace[0], w);
 	item->space_r = lcalc(paraspace[1], w);
 	item->space_t = lcalc(paraspace[2], dummy_h_val);
@@ -258,7 +258,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	struct length pad[4];
 	int sel_s, sel_e;
 
-	if ( stylesheet_get_padding(stylesheet, STYEL_NARRATIVE, pad) ) return 1;
+	if ( stylesheet_get_padding(stylesheet, "NARRATIVE", pad) ) return 1;
 	n->space_l = lcalc(pad[0], w);
 	n->space_r = lcalc(pad[1], w);
 	n->space_t = lcalc(pad[2], dummy_h_val);
@@ -308,17 +308,17 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 
 			case NARRATIVE_ITEM_TEXT :
 			wrap_text(&n->items[i], pc, stylesheet,
-			          STYEL_NARRATIVE, w, srt, end);
+			          "NARRATIVE", w, srt, end);
 			break;
 
 			case NARRATIVE_ITEM_BP :
 			wrap_text(&n->items[i], pc, stylesheet,
-			          STYEL_NARRATIVE_BP, w, srt, end);
+			          "NARRATIVE.BP", w, srt, end);
 			break;
 
 			case NARRATIVE_ITEM_PRESTITLE :
 			wrap_text(&n->items[i], pc, stylesheet,
-			          STYEL_NARRATIVE_PRESTITLE, w, srt, end);
+			          "NARRATIVE.PRESTITLE", w, srt, end);
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
@@ -430,7 +430,7 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
 	struct colour bgcol2;
 	cairo_pattern_t *patt = NULL;
 
-	r = stylesheet_get_background(stylesheet, STYEL_NARRATIVE, &bg, &bgcol, &bgcol2);
+	r = stylesheet_get_background(stylesheet, "NARRATIVE", &bg, &bgcol, &bgcol2);
 	if ( r ) return 1;
 
 	/* Overall background */

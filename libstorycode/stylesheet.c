@@ -224,22 +224,6 @@ Stylesheet *stylesheet_new()
 }
 
 
-static struct style *get_style(Stylesheet *s, enum style_element el)
-{
-	if ( s == NULL ) return NULL;
-	switch ( el ) {
-		case STYEL_NARRATIVE : return lookup_style(&s->top, "NARRATIVE");
-		case STYEL_NARRATIVE_BP : return lookup_style(&s->top, "NARRATIVE.BP");
-		case STYEL_NARRATIVE_PRESTITLE : return lookup_style(&s->top, "NARRATIVE.PRESTITLE");
-		case STYEL_SLIDE : return lookup_style(&s->top, "SLIDE");
-		case STYEL_SLIDE_TEXT : return lookup_style(&s->top, "SLIDE.TEXT");
-		case STYEL_SLIDE_PRESTITLE : return lookup_style(&s->top, "SLIDE.PRESTITLE");
-		case STYEL_SLIDE_SLIDETITLE : return lookup_style(&s->top, "SLIDE.SLIDETITLE");
-		default : return NULL;
-	}
-}
-
-
 int stylesheet_get_slide_default_size(Stylesheet *s, double *w, double *h)
 {
 	struct style *sty = lookup_style(&s->top, "SLIDE");
@@ -264,9 +248,9 @@ int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h)
 }
 
 
-int stylesheet_set_geometry(Stylesheet *s, enum style_element el, struct frame_geom geom)
+int stylesheet_set_geometry(Stylesheet *s, const char *stn, struct frame_geom geom)
 {
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	sty->geom = geom;
 	sty->set |= SM_FRAME_GEOM;
@@ -274,9 +258,9 @@ int stylesheet_set_geometry(Stylesheet *s, enum style_element el, struct frame_g
 }
 
 
-int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font)
+int stylesheet_set_font(Stylesheet *s, const char *stn, char *font)
 {
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	if ( sty->font != NULL ) {
 		free(sty->font);
@@ -287,10 +271,10 @@ int stylesheet_set_font(Stylesheet *s, enum style_element el, char *font)
 }
 
 
-int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length padding[4])
+int stylesheet_set_padding(Stylesheet *s, const char *stn, struct length padding[4])
 {
 	int i;
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) {
 		sty->padding[i] = padding[i];
@@ -300,10 +284,10 @@ int stylesheet_set_padding(Stylesheet *s, enum style_element el, struct length p
 }
 
 
-int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length paraspace[4])
+int stylesheet_set_paraspace(Stylesheet *s, const char *stn, struct length paraspace[4])
 {
 	int i;
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) {
 		sty->paraspace[i] = paraspace[i];
@@ -313,10 +297,10 @@ int stylesheet_set_paraspace(Stylesheet *s, enum style_element el, struct length
 }
 
 
-int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, struct colour fgcol)
+int stylesheet_set_fgcol(Stylesheet *s, const char *stn, struct colour fgcol)
 {
 	int i;
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) {
 		sty->fgcol.rgba[i] = fgcol.rgba[i];
@@ -327,11 +311,11 @@ int stylesheet_set_fgcol(Stylesheet *s, enum style_element el, struct colour fgc
 }
 
 
-int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradient grad,
+int stylesheet_set_background(Stylesheet *s, const char *stn, enum gradient grad,
                               struct colour bgcol, struct colour bgcol2)
 {
 	int i;
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	sty->bggrad = grad;
 	for ( i=0; i<4; i++ ) {
@@ -345,9 +329,9 @@ int stylesheet_set_background(Stylesheet *s, enum style_element el, enum gradien
 }
 
 
-int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignment align)
+int stylesheet_set_alignment(Stylesheet *s, const char *stn, enum alignment align)
 {
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	assert(align != ALIGN_INHERIT);
 	sty->alignment = align;
@@ -356,19 +340,19 @@ int stylesheet_set_alignment(Stylesheet *s, enum style_element el, enum alignmen
 }
 
 
-int stylesheet_get_geometry(Stylesheet *s, enum style_element el, struct frame_geom *geom)
+int stylesheet_get_geometry(Stylesheet *s, const char *stn, struct frame_geom *geom)
 {
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	*geom = sty->geom;
 	return 0;
 }
 
 
-const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
+const char *stylesheet_get_font(Stylesheet *s, const char *stn,
                                 struct colour *fgcol, enum alignment *alignment)
 {
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return NULL;
 
 	*alignment = sty->alignment;
@@ -379,11 +363,11 @@ const char *stylesheet_get_font(Stylesheet *s, enum style_element el,
 }
 
 
-int stylesheet_get_background(Stylesheet *s, enum style_element el,
+int stylesheet_get_background(Stylesheet *s, const char *stn,
                               enum gradient *grad, struct colour *bgcol,
                               struct colour *bgcol2)
 {
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 
 	copy_col(bgcol, sty->bgcol);
@@ -393,22 +377,22 @@ int stylesheet_get_background(Stylesheet *s, enum style_element el,
 }
 
 
-int stylesheet_get_padding(Stylesheet *s, enum style_element el,
+int stylesheet_get_padding(Stylesheet *s, const char *stn,
                            struct length padding[4])
 {
 	int i;
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) padding[i] = sty->padding[i];
 	return 0;
 }
 
 
-int stylesheet_get_paraspace(Stylesheet *s, enum style_element el,
+int stylesheet_get_paraspace(Stylesheet *s, const char *stn,
                            struct length paraspace[4])
 {
 	int i;
-	struct style *sty = get_style(s, el);
+	struct style *sty = lookup_style(&s->top, stn);
 	if ( sty == NULL ) return 1;
 	for ( i=0; i<4; i++ ) paraspace[i] = sty->paraspace[i];
 	return 0;

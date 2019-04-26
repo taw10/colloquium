@@ -43,11 +43,11 @@ G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
 struct _sspriv
 {
 	Stylesheet *stylesheet;
-	enum style_element el;
+	const char *style_name;
 };
 
 
-static void set_font_fgcol_align_from_ss(Stylesheet *ss, enum style_element el,
+static void set_font_fgcol_align_from_ss(Stylesheet *ss, const char *style_name,
                                          GtkWidget *wfont,
                                          GtkWidget *wfgcol,
                                          GtkWidget *walign)
@@ -56,7 +56,7 @@ static void set_font_fgcol_align_from_ss(Stylesheet *ss, enum style_element el,
 	struct colour fgcol;
 	enum alignment align;
 
-	font = stylesheet_get_font(ss, el, &fgcol, &align);
+	font = stylesheet_get_font(ss, style_name, &fgcol, &align);
 	if ( font != NULL ) {
 
 		GdkRGBA rgba;
@@ -93,13 +93,13 @@ static void set_font_fgcol_align_from_ss(Stylesheet *ss, enum style_element el,
 }
 
 
-static void set_padding_from_ss(Stylesheet *ss, enum style_element el,
+static void set_padding_from_ss(Stylesheet *ss, const char *style_name,
                                 GtkWidget *wl, GtkWidget *wr,
                                 GtkWidget *wt, GtkWidget *wb)
 {
 	struct length padding[4];
 
-	if ( stylesheet_get_padding(ss, el, padding) ) return;
+	if ( stylesheet_get_padding(ss, style_name, padding) ) return;
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wl), padding[0].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wr), padding[1].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wt), padding[2].len);
@@ -108,13 +108,13 @@ static void set_padding_from_ss(Stylesheet *ss, enum style_element el,
 }
 
 
-static void set_paraspace_from_ss(Stylesheet *ss, enum style_element el,
+static void set_paraspace_from_ss(Stylesheet *ss, const char *style_name,
                                   GtkWidget *wl, GtkWidget *wr,
                                   GtkWidget *wt, GtkWidget *wb)
 {
 	struct length paraspace[4];
 
-	if ( stylesheet_get_paraspace(ss, el, paraspace) ) return;
+	if ( stylesheet_get_paraspace(ss, style_name, paraspace) ) return;
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wl), paraspace[0].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wr), paraspace[1].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wt), paraspace[2].len);
@@ -123,14 +123,14 @@ static void set_paraspace_from_ss(Stylesheet *ss, enum style_element el,
 }
 
 
-static void set_geom_from_ss(Stylesheet *ss, enum style_element el,
+static void set_geom_from_ss(Stylesheet *ss, const char *style_name,
                              GtkWidget *ww, GtkWidget *wh,
                              GtkWidget *wx, GtkWidget *wy,
                              GtkWidget *wwu, GtkWidget *whu)
 {
 	struct frame_geom geom;
 
-	if ( stylesheet_get_geometry(ss, el, &geom) ) return;
+	if ( stylesheet_get_geometry(ss, style_name, &geom) ) return;
 
 	if ( geom.x.unit == LENGTH_FRAC ) {
 		geom.w.len *= 100;
@@ -151,7 +151,7 @@ static void set_geom_from_ss(Stylesheet *ss, enum style_element el,
 }
 
 
-static void set_bg_from_ss(Stylesheet *ss, enum style_element el,
+static void set_bg_from_ss(Stylesheet *ss, const char *style_name,
                            GtkWidget *wcol, GtkWidget *wcol2, GtkWidget *wgrad)
 {
 	struct colour bgcol;
@@ -159,7 +159,7 @@ static void set_bg_from_ss(Stylesheet *ss, enum style_element el,
 	enum gradient bggrad;
 	GdkRGBA rgba;
 
-	if ( stylesheet_get_background(ss, el, &bggrad, &bgcol, &bgcol2) ) return;
+	if ( stylesheet_get_background(ss, style_name, &bggrad, &bgcol, &bgcol2) ) return;
 
 	rgba.red = bgcol.rgba[0];
 	rgba.green = bgcol.rgba[1];
@@ -217,18 +217,18 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	gtk_tree_store_set(se->element_tree, &iter2,
 	                   0, "Slide title", -1);
 
-	set_geom_from_ss(se->priv->stylesheet, se->priv->el,
+	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);
 
-	set_padding_from_ss(se->priv->stylesheet, se->priv->el,
+	set_padding_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                    se->padding_l, se->padding_r, se->padding_t, se->padding_b);
 
-	set_paraspace_from_ss(se->priv->stylesheet, se->priv->el,
+	set_paraspace_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                      se->paraspace_l, se->paraspace_r, se->paraspace_t, se->paraspace_b);
 
-	set_font_fgcol_align_from_ss(se->priv->stylesheet, se->priv->el,
+	set_font_fgcol_align_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                             se->font, se->fgcol, se->alignment);
-	set_bg_from_ss(se->priv->stylesheet, se->priv->el,
+	set_bg_from_ss(se->priv->stylesheet, se->priv->style_name,
 	               se->bgcol, se->bgcol2, se->bggrad);
 }
 
@@ -243,7 +243,7 @@ static enum gradient id_to_gradtype(const gchar *id)
 }
 
 
-static void update_bg(Stylesheet *ss, enum style_element el,
+static void update_bg(Stylesheet *ss, const char *style_name,
                       GtkWidget *bggradw, GtkWidget *col1w, GtkWidget *col2w)
 {
 	enum gradient g;
@@ -268,7 +268,7 @@ static void update_bg(Stylesheet *ss, enum style_element el,
 	bgcol2.rgba[2] = rgba.blue;
 	bgcol2.rgba[3] = rgba.alpha;
 
-	stylesheet_set_background(ss, el, g, bgcol, bgcol2);
+	stylesheet_set_background(ss, style_name, g, bgcol, bgcol2);
 }
 
 
@@ -496,7 +496,7 @@ StylesheetEditor *stylesheet_editor_new(Stylesheet *ss)
 	if ( se == NULL ) return NULL;
 
 	se->priv->stylesheet = ss;
-	se->priv->el = 0;//gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->furniture_selector));
+	se->priv->style_name = "NARRATIVE";
 	set_values_from_presentation(se);
 
 	GtkCellRenderer *renderer;

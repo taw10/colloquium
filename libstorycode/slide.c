@@ -232,29 +232,29 @@ int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h)
 }
 
 
-static enum style_element styel_for_slideitem(enum slide_item_type t)
+static const char *style_name_for_slideitem(enum slide_item_type t)
 {
 	switch ( t ) {
 
 		case SLIDE_ITEM_TEXT :
-		return STYEL_SLIDE_TEXT;
+		return "SLIDE.TEXT";
 
 		case SLIDE_ITEM_IMAGE :
-		return STYEL_SLIDE_IMAGE;
+		return "SLIDE.IMAGE";
 
 		case SLIDE_ITEM_PRESTITLE :
-		return STYEL_SLIDE_PRESTITLE;
+		return "SLIDE.PRESTITLE";
 
 		case SLIDE_ITEM_SLIDETITLE :
-		return STYEL_SLIDE_SLIDETITLE;
+		return "SLIDE.SLIDETITLE";
 
 		case SLIDE_ITEM_FOOTER :
-		return STYEL_SLIDE_FOOTER;
+		return "SLIDE.FOOTER";
 
 	}
 
 	fprintf(stderr, "Invalid slide item %i\n", t);
-	return STYEL_SLIDE_TEXT;
+	return "SLIDE.TEXT";
 }
 
 
@@ -279,7 +279,7 @@ void slide_item_get_geom(SlideItem *item, Stylesheet *ss,
 	{
 		geom = item->geom;
 	} else {
-		if ( stylesheet_get_geometry(ss, styel_for_slideitem(item->type), &geom) ) {
+		if ( stylesheet_get_geometry(ss, style_name_for_slideitem(item->type), &geom) ) {
 			*x = 0.0;  *y = 0.0;
 			*w = 0.0;  *h = 0.0;
 			return;
@@ -300,7 +300,7 @@ void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
 	struct length padding[4];
 	double frx, fry, frw, frh;
 
-	if ( stylesheet_get_padding(ss, styel_for_slideitem(item->type), padding) ) {
+	if ( stylesheet_get_padding(ss, style_name_for_slideitem(item->type), padding) ) {
 		*l = 0.0;  *r = 0.0;  *t = 0.0;  *b = 0.0;
 		return;
 	}

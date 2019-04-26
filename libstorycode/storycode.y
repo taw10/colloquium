@@ -162,7 +162,7 @@ void add_str(struct scpctx *ctx, char *str)
     ctx->str[ctx->n_str++] = str;
 }
 
-void set_style(struct scpctx *ctx, enum style_element element)
+void set_style(struct scpctx *ctx, const char *element)
 {
     if ( ctx->mask & STYMASK_GEOM ) stylesheet_set_geometry(ctx->ss, element, ctx->geom);
     if ( ctx->mask & STYMASK_FONT ) stylesheet_set_font(ctx->ss, element, ctx->font);
@@ -341,15 +341,15 @@ style_narrative_def:
   %empty
 | style_narrative_def style_narrative_prestitle
 | style_narrative_def style_narrative_bp
-| style_narrative_def styledef { set_style(ctx, STYEL_NARRATIVE); }
+| style_narrative_def styledef { set_style(ctx, "NARRATIVE"); }
 ;
 
 style_narrative_prestitle:
-  PRESTITLE '{' styledefs '}' { set_style(ctx, STYEL_NARRATIVE_PRESTITLE); }
+  PRESTITLE '{' styledefs '}' { set_style(ctx, "NARRATIVE.PRESTITLE"); }
 ;
 
 style_narrative_bp:
-  BP '{' styledefs '}' { set_style(ctx, STYEL_NARRATIVE_BP); }
+  BP '{' styledefs '}' { set_style(ctx, "NARRATIVE.BP"); }
 ;
 
 style_slide:
@@ -361,7 +361,7 @@ style_slide_def:
   /* Doesn't need set_style() */
 | style_slide_def style_slidesize       { }
   /* Call set_style() immediately */
-| style_slide_def background            { set_style(ctx, STYEL_SLIDE); }
+| style_slide_def background            { set_style(ctx, "SLIDE"); }
   /* The ones below will call set_style() themselves */
 | style_slide_def style_slide_prestitle { }
 | style_slide_def style_slide_text      { }
@@ -390,15 +390,15 @@ background:
 ;
 
 style_slide_prestitle:
-  PRESTITLE '{' styledefs '}' { set_style(ctx, STYEL_SLIDE_PRESTITLE); }
+  PRESTITLE '{' styledefs '}' { set_style(ctx, "SLIDE.PRESTITLE"); }
 ;
 
 style_slide_title:
-  SLIDETITLE '{' styledefs '}' { set_style(ctx, STYEL_SLIDE_SLIDETITLE); }
+  SLIDETITLE '{' styledefs '}' { set_style(ctx, "SLIDE.SLIDETITLE"); }
 ;
 
 style_slide_text:
-  TEXTFRAME '{' styledefs '}' { set_style(ctx, STYEL_SLIDE_TEXT); }
+  TEXTFRAME '{' styledefs '}' { set_style(ctx, "SLIDE.TEXT"); }
 ;
 
 styledefs:

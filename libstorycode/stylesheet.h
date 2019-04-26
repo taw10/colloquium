@@ -104,6 +104,9 @@ extern int stylesheet_get_padding(Stylesheet *s, const char *stn,
 extern int stylesheet_get_paraspace(Stylesheet *s, const char *stn,
                                     struct length paraspace[4]);
 
+extern int stylesheet_get_num_substyles(Stylesheet *s, const char *stn);
+extern const char *stylesheet_get_substyle_name(Stylesheet *s, const char *stn, int i);
+
 extern char *stylesheet_serialise(Stylesheet *s);
 
 #endif /* STYLESHEET_H */

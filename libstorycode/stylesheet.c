@@ -543,3 +543,20 @@ char *stylesheet_serialise(Stylesheet *s)
 
 	return text;
 }
+
+
+int stylesheet_get_num_substyles(Stylesheet *s, const char *stn)
+{
+	struct style *sty = lookup_style(&s->top, stn);
+	if ( sty == NULL ) return 0;
+	return sty->n_substyles;
+}
+
+
+const char *stylesheet_get_substyle_name(Stylesheet *s, const char *stn, int i)
+{
+	struct style *sty = lookup_style(&s->top, stn);
+	if ( sty == NULL ) return NULL;
+	if ( i >= sty->n_substyles ) return NULL;
+	return sty->substyles[i].name;
+}

@@ -203,16 +203,18 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	GtkTreeIter iter;
 	GtkTreeIter iter2;
 
-	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter, NULL);
-	gtk_tree_store_set(GTK_TREE_STORE(se->element_tree), &iter,
+	gtk_tree_store_clear(se->element_tree);
+
+	gtk_tree_store_append(se->element_tree, &iter, NULL);
+	gtk_tree_store_set(se->element_tree, &iter,
 	                   0, "Narrative", -1);
 
-	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter, NULL);
-	gtk_tree_store_set(GTK_TREE_STORE(se->element_tree), &iter,
+	gtk_tree_store_append(se->element_tree, &iter, NULL);
+	gtk_tree_store_set(se->element_tree, &iter,
 	                   0, "Slide", -1);
 
-	gtk_tree_store_append(GTK_TREE_STORE(se->element_tree), &iter2, &iter);
-	gtk_tree_store_set(GTK_TREE_STORE(se->element_tree), &iter2,
+	gtk_tree_store_append(se->element_tree, &iter2, &iter);
+	gtk_tree_store_set(se->element_tree, &iter2,
 	                   0, "Slide title", -1);
 
 	set_geom_from_ss(se->priv->stylesheet, se->priv->el,

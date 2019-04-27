@@ -35,16 +35,15 @@
 
 #include "stylesheet_editor.h"
 
-
-G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
-                        GTK_TYPE_DIALOG, NULL)
-
-
 struct _sspriv
 {
 	Stylesheet *stylesheet;
 	char *style_name;
 };
+
+
+G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
+                        GTK_TYPE_DIALOG, G_ADD_PRIVATE(StylesheetEditor))
 
 
 enum selector_column
@@ -486,7 +485,6 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	gtk_widget_class_set_template_from_resource(widget_class,
 	                                    "/uk/me/bitwiz/Colloquium/stylesheeteditor.ui");
 
-	g_type_class_add_private(gobject_class, sizeof(StylesheetEditorPrivate));
 	gobject_class->finalize = stylesheet_editor_finalize;
 
 	/* Furniture */

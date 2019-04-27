@@ -109,4 +109,6 @@ extern const char *stylesheet_get_substyle_name(Stylesheet *s, const char *stn, 
 
 extern char *stylesheet_serialise(Stylesheet *s);
 
+extern const char *stylesheet_get_friendly_name(const char *in);
+
 #endif /* STYLESHEET_H */

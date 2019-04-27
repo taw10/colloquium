@@ -43,7 +43,14 @@ G_DEFINE_TYPE_WITH_CODE(StylesheetEditor, stylesheet_editor,
 struct _sspriv
 {
 	Stylesheet *stylesheet;
-	const char *style_name;
+	char *style_name;
+};
+
+
+enum selector_column
+{
+	SEL_COL_FRIENDLY_NAME,
+	SEL_COL_PATH
 };
 
 
@@ -198,8 +205,8 @@ static void set_bg_from_ss(Stylesheet *ss, const char *style_name,
 }
 
 
-static void add_style(Stylesheet *ss, const char *path,
-                      GtkTreeStore *ts, GtkTreeIter *parent_iter)
+static void add_style_to_selector(Stylesheet *ss, const char *path,
+                                  GtkTreeStore *ts, GtkTreeIter *parent_iter)
 {
 	int i, n_substyles;
 
@@ -209,26 +216,32 @@ static void add_style(Stylesheet *ss, const char *path,
 		GtkTreeIter iter;
 		const char *name = stylesheet_get_substyle_name(ss, path, i);
 
-		/* Add this style */
-		gtk_tree_store_append(ts, &iter, parent_iter);
-		gtk_tree_store_set(ts, &iter, 0, name, -1);
-
-		/* Add all substyles */
+		/* Calculate the full path for this style */
 		size_t len = strlen(path) + strlen(name) + 2;
 		char *new_path = malloc(len);
-		strcat(new_path, path);
-		strcat(new_path, ".");
+
+		if ( path[0] != '\0' ) {
+			strcpy(new_path, path);
+			strcat(new_path, ".");
+		} else {
+			new_path[0] = '\0';
+		}
 		strcat(new_path, name);
-		add_style(ss, new_path, ts, &iter);
+
+		/* Add this style */
+		gtk_tree_store_append(ts, &iter, parent_iter);
+		gtk_tree_store_set(ts, &iter, SEL_COL_FRIENDLY_NAME,
+		                   stylesheet_get_friendly_name(name),
+		                   SEL_COL_PATH, new_path, -1);
+
+		/* Add all substyles */
+		add_style_to_selector(ss, new_path, ts, &iter);
 	}
 }
 
 
 static void set_values_from_presentation(StylesheetEditor *se)
 {
-	gtk_tree_store_clear(se->element_tree);
-	add_style(se->priv->stylesheet, "", se->element_tree, NULL);
-
 	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);
 
@@ -242,6 +255,21 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	                             se->font, se->fgcol, se->alignment);
 	set_bg_from_ss(se->priv->stylesheet, se->priv->style_name,
 	               se->bgcol, se->bgcol2, se->bggrad);
+}
+
+
+static void element_changed(GtkTreeSelection *sel, StylesheetEditor *se)
+{
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	gchar *new_path;
+
+	g_free(se->priv->style_name);
+	if ( gtk_tree_selection_get_selected(sel, &model, &iter) ) {
+		gtk_tree_model_get(model, &iter, SEL_COL_PATH, &new_path, -1);
+		se->priv->style_name = new_path;
+		set_values_from_presentation(se);
+	}
 }
 
 
@@ -432,13 +460,6 @@ static void bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 }
 
 
-static void selector_change_sig(GtkComboBoxText *widget, StylesheetEditor *se)
-{
-	//se->priv->el = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
-	//set_furniture(se, se->priv->el);
-}
-
-
 static void stylesheet_editor_finalize(GObject *obj)
 {
 	G_OBJECT_CLASS(stylesheet_editor_parent_class)->finalize(obj);
@@ -469,7 +490,6 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	gobject_class->finalize = stylesheet_editor_finalize;
 
 	/* Furniture */
-	SE_BIND_CHILD(selector, selector_change_sig);
 	SE_BIND_CHILD(paraspace_l, paraspace_sig);
 	SE_BIND_CHILD(paraspace_r, paraspace_sig);
 	SE_BIND_CHILD(paraspace_t, paraspace_sig);
@@ -491,6 +511,7 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	SE_BIND_CHILD(w_units, dims_sig);
 	SE_BIND_CHILD(h_units, dims_sig);
 
+	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor, selector);
 	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor, element_tree);
 
 	gtk_widget_class_bind_template_callback(widget_class, revert_sig);
@@ -503,21 +524,28 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 StylesheetEditor *stylesheet_editor_new(Stylesheet *ss)
 {
 	StylesheetEditor *se;
+	GtkTreeSelection *sel;
 
 	se = g_object_new(COLLOQUIUM_TYPE_STYLESHEET_EDITOR, NULL);
 	if ( se == NULL ) return NULL;
 
 	se->priv->stylesheet = ss;
-	se->priv->style_name = "NARRATIVE";
-	set_values_from_presentation(se);
+	se->priv->style_name = NULL;
 
 	GtkCellRenderer *renderer;
 	GtkTreeViewColumn *column;
 	renderer = gtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes("Element", renderer,
-	                                                  "text", 0,
+	                                                  "text", SEL_COL_FRIENDLY_NAME,
 	                                                  NULL);
 	gtk_tree_view_append_column(GTK_TREE_VIEW(se->selector), column);
+
+	gtk_tree_store_clear(se->element_tree);
+	add_style_to_selector(se->priv->stylesheet, "", se->element_tree, NULL);
+
+	sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(se->selector));
+	gtk_tree_selection_set_mode(sel, GTK_SELECTION_SINGLE);
+	g_signal_connect(G_OBJECT(sel), "changed", G_CALLBACK(element_changed), se);
 
 	return se;
 }

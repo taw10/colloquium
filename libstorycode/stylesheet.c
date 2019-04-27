@@ -560,3 +560,15 @@ const char *stylesheet_get_substyle_name(Stylesheet *s, const char *stn, int i)
 	if ( i >= sty->n_substyles ) return NULL;
 	return sty->substyles[i].name;
 }
+
+
+const char *stylesheet_get_friendly_name(const char *in)
+{
+	if ( strcmp(in, "SLIDE") == 0 ) return "Slide";
+	if ( strcmp(in, "NARRATIVE") == 0 ) return "Narrative";
+	if ( strcmp(in, "BP") == 0 ) return "Bullet point";
+	if ( strcmp(in, "SLIDETITLE") == 0 ) return "Slide title";
+	if ( strcmp(in, "PRESTITLE") == 0 ) return "Presentation title";
+	if ( strcmp(in, "TEXT") == 0 ) return "Text frame";
+	return in;
+}

@@ -300,7 +300,6 @@ static void element_changed(GtkTreeSelection *sel, StylesheetEditor *se)
 }
 
 
-
 static void revert_sig(GtkButton *button, StylesheetEditor *se)
 {
 	/* FIXME: implement */

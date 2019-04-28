@@ -48,6 +48,12 @@
 G_DEFINE_TYPE_WITH_CODE(GtkSlideView, gtk_slide_view, GTK_TYPE_DRAWING_AREA,
                         NULL)
 
+static int resizable(SlideItem *item)
+{
+	if ( item->type == SLIDE_ITEM_TEXT ) return 1;
+	if ( item->type == SLIDE_ITEM_IMAGE ) return 1;
+	return 0;
+}
 
 static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
                            GtkSlideView *e)
@@ -257,7 +263,7 @@ static void draw_overlay(cairo_t *cr, GtkSlideView *e)
 		draw_editing_box(cr, e->cursor_frame, stylesheet, slide_w, slide_h,
 		                 x, y, w, h);
 
-		if ( e->cursor_frame->resizable ) {
+		if ( resizable(e->cursor_frame) ) {
 			/* Draw resize handles */
 			draw_resize_handle(cr, x, y+h-20.0);
 			draw_resize_handle(cr, x+w-20.0, y);
@@ -658,7 +664,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 
 		/* Within the resizing region? */
 		c = which_corner(x, y, frx, fry, frw, frh);
-		if ( (c != CORNER_NONE) && e->cursor_frame->resizable && shift ) {
+		if ( (c != CORNER_NONE) && resizable(e->cursor_frame) && shift ) {
 
 			e->drag_reason = DRAG_REASON_RESIZE;
 			e->drag_corner = c;
@@ -686,7 +692,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 			e->start_corner_x = x;
 			e->start_corner_y = y;
 
-			if ( clicked->resizable && shift ) {
+			if ( resizable(clicked) && shift ) {
 				e->drag_status = DRAG_STATUS_COULD_DRAG;
 				e->drag_reason = DRAG_REASON_MOVE;
 			} else {

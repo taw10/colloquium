@@ -83,7 +83,6 @@ SlideItem *slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 	item->type = SLIDE_ITEM_IMAGE;
 	item->geom = geom;
 	item->filename = filename;
-	item->resizable = 1;
 
 	return item;
 }
@@ -114,12 +113,6 @@ static SlideItem *add_text_item(Slide *s, char **text, int n_text, struct frame_
 
 	item->geom = geom;
 	item->align = alignment;
-
-	if ( slide_item == SLIDE_ITEM_TEXT ) {
-		item->resizable = 1;
-	} else {
-		item->resizable = 0;
-	}
 
 	return item;
 }

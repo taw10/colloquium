@@ -64,7 +64,6 @@ struct _slideitem
 
 	/* For TEXT and IMAGE */
 	struct frame_geom geom;
-	int resizable;
 };
 
 

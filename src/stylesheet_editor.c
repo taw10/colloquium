@@ -311,29 +311,41 @@ static void revert_sig(GtkButton *button, StylesheetEditor *se)
 
 static void paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
-#if 0
-	update_spacing(se->priv->p, se->priv->furniture, "pad",
-	               se->furniture_padding_l,
-	               se->furniture_padding_r,
-	               se->furniture_padding_t,
-	               se->furniture_padding_b);
+	struct length paraspace[4];
+
+	paraspace[0].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->paraspace_l));
+	paraspace[0].unit = LENGTH_UNIT;
+	paraspace[1].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->paraspace_r));
+	paraspace[1].unit = LENGTH_UNIT;
+	paraspace[2].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->paraspace_t));
+	paraspace[2].unit = LENGTH_UNIT;
+	paraspace[3].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->paraspace_b));
+	paraspace[3].unit = LENGTH_UNIT;
+
+	stylesheet_set_paraspace(se->priv->stylesheet, se->priv->style_name, paraspace);
+
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
-#endif
 }
 
 
 static void padding_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
-#if 0
-	update_spacing(se->priv->p, se->priv->furniture, "pad",
-	               se->furniture_padding_l,
-	               se->furniture_padding_r,
-	               se->furniture_padding_t,
-	               se->furniture_padding_b);
+	struct length padding[4];
+
+	padding[0].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->padding_l));
+	padding[0].unit = LENGTH_UNIT;
+	padding[1].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->padding_r));
+	padding[1].unit = LENGTH_UNIT;
+	padding[2].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->padding_t));
+	padding[2].unit = LENGTH_UNIT;
+	padding[3].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->padding_b));
+	padding[3].unit = LENGTH_UNIT;
+
+	stylesheet_set_padding(se->priv->stylesheet, se->priv->style_name, padding);
+
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
-#endif
 }
 
 

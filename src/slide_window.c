@@ -244,3 +244,12 @@ extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
 
 	return sw;
 }
+
+
+void slide_window_update(SlideWindow *sw)
+{
+	gint w, h;
+	w = gtk_widget_get_allocated_width(GTK_WIDGET(sw->sv));
+	h = gtk_widget_get_allocated_height(GTK_WIDGET(sw->sv));
+	gtk_widget_queue_draw_area(GTK_WIDGET(sw->sv), 0, 0, w, h);
+}

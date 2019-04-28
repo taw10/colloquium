@@ -253,15 +253,15 @@ static gint load_ss_response_sig(GtkWidget *d, gint response,
 
 static void stylesheet_changed_sig(GtkWidget *da, NarrativeWindow *nw)
 {
-//	int i;
+	int i;
 
-	/* Full rerender, first block may have changed */
+	/* Full rerender */
 	gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
 
-//	/* Full rerender of all slide windows */
-//	for ( i=0; i<nw->n_slidewindows; i++ ) {
-//		slide_window_update(nw->slidewindows[i]);
-//	}
+	/* Full rerender of all slide windows */
+	for ( i=0; i<nw->n_slidewindows; i++ ) {
+		slide_window_update(nw->slidewindows[i]);
+	}
 }
 
 
@@ -502,7 +502,10 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
 {
 	Slide *slide = (Slide *)pslide;
 	if ( nw->show == NULL ) {
-		slide_window_open(nw->n, slide, nw->app);
+		if ( nw->n_slidewindows < 16 ) {
+			nw->slidewindows[nw->n_slidewindows++] = slide_window_open(nw->n, slide,
+			                                                           nw->app);
+		}
 	} else {
 		sc_slideshow_set_slide(nw->show, slide);
 	}

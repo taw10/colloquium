@@ -225,7 +225,7 @@ void narrative_add_prestitle(Narrative *n, char *text)
 
 	item->type = NARRATIVE_ITEM_PRESTITLE;
 	item->text = text;
-	item->align = ALIGN_LEFT;
+	item->align = ALIGN_INHERIT;
 	item->layout = NULL;
 }
 
@@ -239,7 +239,7 @@ void narrative_add_bp(Narrative *n, char *text)
 
 	item->type = NARRATIVE_ITEM_BP;
 	item->text = text;
-	item->align = ALIGN_LEFT;
+	item->align = ALIGN_INHERIT;
 	item->layout = NULL;
 }
 
@@ -253,7 +253,7 @@ void narrative_add_text(Narrative *n, char *text)
 
 	item->type = NARRATIVE_ITEM_TEXT;
 	item->text = text;
-	item->align = ALIGN_LEFT;
+	item->align = ALIGN_INHERIT;
 	item->layout = NULL;
 }
 

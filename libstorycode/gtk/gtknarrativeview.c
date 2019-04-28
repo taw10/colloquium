@@ -606,6 +606,11 @@ static void draw_overlay(cairo_t *cr, GtkNarrativeView *e)
 
 static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 {
+	if ( e->rewrap_needed ) {
+		rewrap_range(e, 0, e->n->n_items);
+		e->rewrap_needed = 0;
+	}
+
 	/* Ultimate background */
 	cairo_set_source_rgba(cr, 0.8, 0.8, 1.0, 1.0);
 	cairo_paint(cr);
@@ -1120,7 +1125,7 @@ GtkWidget *gtk_narrative_view_new(Narrative *n)
 	nview->h = 100;
 	nview->scroll_pos = 0;
 	nview->n = n;
-
+	nview->rewrap_needed = 0;
 	nview->para_highlight = 0;
 
 	gtk_widget_set_size_request(GTK_WIDGET(nview),
@@ -1228,7 +1233,7 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 
 extern void gtk_narrative_view_redraw(GtkNarrativeView *e)
 {
-	rewrap_range(e, 0, e->n->n_items);
+	e->rewrap_needed = 1;
 	emit_change_sig(e);
 	redraw(e);
 }

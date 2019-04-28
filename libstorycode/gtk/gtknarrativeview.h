@@ -81,6 +81,7 @@ struct _gtknarrativeview
 	double               h_scroll_pos;
 	int                  visible_height;
 	int                  visible_width;
+	int                  rewrap_needed;
 
 	/* Location of the cursor */
 	struct edit_pos      cpos;

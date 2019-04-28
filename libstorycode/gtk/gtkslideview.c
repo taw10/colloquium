@@ -39,10 +39,8 @@
 #include <slide_render_cairo.h>
 #include <stylesheet.h>
 
-//#include "slide_window.h"
 #include "gtkslideview.h"
 #include "slide_priv.h"
-//#include "slideshow.h"
 
 
 G_DEFINE_TYPE_WITH_CODE(GtkSlideView, gtk_slide_view, GTK_TYPE_DRAWING_AREA,

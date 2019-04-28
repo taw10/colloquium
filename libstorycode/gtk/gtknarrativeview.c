@@ -36,10 +36,8 @@
 #include <narrative.h>
 #include <narrative_render_cairo.h>
 
-//#include "slide_window.h"
 #include "gtknarrativeview.h"
 #include "narrative_priv.h"
-//#include "slideshow.h"
 
 
 static void scroll_interface_init(GtkScrollable *iface)

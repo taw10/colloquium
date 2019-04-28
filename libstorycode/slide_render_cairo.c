@@ -105,10 +105,16 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	PangoFontDescription *fontdesc;
 	PangoAlignment palignment;
 	size_t sel_s, sel_e;
+	struct frame_geom geom;
 
-	x = lcalc(item->geom.x, parent_w);
-	y = lcalc(item->geom.y, parent_h);
-	w = lcalc(item->geom.w, parent_w);
+	if ( (item->type == SLIDE_ITEM_TEXT) || (item->type == SLIDE_ITEM_IMAGE) ) {
+		geom = item->geom;
+	} else {
+		stylesheet_get_geometry(ss, stn, &geom);
+	}
+	x = lcalc(geom.x, parent_w);
+	y = lcalc(geom.y, parent_h);
+	w = lcalc(geom.w, parent_w);
 
 	if ( stylesheet_get_padding(ss, stn, pad) ) return;
 	pad_l = lcalc(pad[0], parent_w);

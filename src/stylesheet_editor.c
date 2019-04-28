@@ -294,6 +294,23 @@ static void set_padding_sensitive(StylesheetEditor *se, gboolean val)
 }
 
 
+static void set_paraspace_sensitive(StylesheetEditor *se, gboolean val)
+{
+	gtk_widget_set_sensitive(se->paraspace_l, val);
+	gtk_widget_set_sensitive(se->paraspace_r, val);
+	gtk_widget_set_sensitive(se->paraspace_t, val);
+	gtk_widget_set_sensitive(se->paraspace_b, val);
+}
+
+
+static void set_font_fgcol_align_sensitive(StylesheetEditor *se, gboolean val)
+{
+	gtk_widget_set_sensitive(se->font, val);
+	gtk_widget_set_sensitive(se->fgcol, val);
+	gtk_widget_set_sensitive(se->alignment, val);
+}
+
+
 static void set_values_from_presentation(StylesheetEditor *se)
 {
 	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
@@ -314,6 +331,8 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	set_geom_sensitive(se, TRUE);
 	set_bg_sensitive(se, TRUE);
 	set_padding_sensitive(se, TRUE);
+	set_font_fgcol_align_sensitive(se, TRUE);
+	set_paraspace_sensitive(se, TRUE);
 	if ( strncmp(se->priv->style_name, "NARRATIVE", 9) == 0 ) {
 		set_geom_sensitive(se, FALSE);
 		if ( se->priv->style_name[9] == '.' ) {
@@ -338,8 +357,14 @@ static void set_values_from_presentation(StylesheetEditor *se)
 			gtk_widget_set_sensitive(se->w, TRUE);
 			gtk_widget_set_sensitive(se->h, TRUE);
 			set_padding_sensitive(se, FALSE);
+			set_font_fgcol_align_sensitive(se, FALSE);
+			set_paraspace_sensitive(se, FALSE);
 
 		}
+	}
+
+	if ( strcmp(se->priv->style_name, "SLIDE.TEXT") == 0 ) {
+		set_geom_sensitive(se, FALSE);
 	}
 }
 

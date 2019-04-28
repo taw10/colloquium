@@ -365,6 +365,9 @@ static void geometry_sig(GtkSpinButton *widget, StylesheetEditor *se)
 	uid = gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->h_units));
 	new_geom.h.unit = id_to_units(uid);
 
+	new_geom.x.unit = LENGTH_UNIT;
+	new_geom.y.unit = LENGTH_UNIT;
+
 	if ( new_geom.w.unit == LENGTH_FRAC ) new_geom.w.len /= 100.0;
 	if ( new_geom.h.unit == LENGTH_FRAC ) new_geom.h.len /= 100.0;
 

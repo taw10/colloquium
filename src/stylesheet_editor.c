@@ -266,6 +266,34 @@ static void add_style_to_selector(Stylesheet *ss, const char *path,
 }
 
 
+static void set_geom_sensitive(StylesheetEditor *se, gboolean val)
+{
+	gtk_widget_set_sensitive(se->x, val);
+	gtk_widget_set_sensitive(se->y, val);
+	gtk_widget_set_sensitive(se->w, val);
+	gtk_widget_set_sensitive(se->h, val);
+	gtk_widget_set_sensitive(se->w_units, val);
+	gtk_widget_set_sensitive(se->h_units, val);
+}
+
+
+static void set_bg_sensitive(StylesheetEditor *se, gboolean val)
+{
+	gtk_widget_set_sensitive(se->bgcol, val);
+	gtk_widget_set_sensitive(se->bgcol2, val);
+	gtk_widget_set_sensitive(se->bggrad, val);
+}
+
+
+static void set_padding_sensitive(StylesheetEditor *se, gboolean val)
+{
+	gtk_widget_set_sensitive(se->padding_l, val);
+	gtk_widget_set_sensitive(se->padding_r, val);
+	gtk_widget_set_sensitive(se->padding_t, val);
+	gtk_widget_set_sensitive(se->padding_b, val);
+}
+
+
 static void set_values_from_presentation(StylesheetEditor *se)
 {
 	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
@@ -282,6 +310,37 @@ static void set_values_from_presentation(StylesheetEditor *se)
 
 	set_paraspace_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                      se->paraspace_l, se->paraspace_r, se->paraspace_t, se->paraspace_b);
+
+	set_geom_sensitive(se, TRUE);
+	set_bg_sensitive(se, TRUE);
+	set_padding_sensitive(se, TRUE);
+	if ( strncmp(se->priv->style_name, "NARRATIVE", 9) == 0 ) {
+		set_geom_sensitive(se, FALSE);
+		if ( se->priv->style_name[9] == '.' ) {
+
+			/* Narrative item */
+			set_bg_sensitive(se, FALSE);
+			set_padding_sensitive(se, FALSE);
+
+		}
+	}
+	if ( strncmp(se->priv->style_name, "SLIDE", 5) == 0 ) {
+		if ( se->priv->style_name[5] == '.' ) {
+
+			/* Slide item */
+			set_bg_sensitive(se, FALSE);
+			set_padding_sensitive(se, TRUE);
+
+		} else {
+
+			/* Top level "slide" */
+			set_geom_sensitive(se, FALSE);
+			gtk_widget_set_sensitive(se->w, TRUE);
+			gtk_widget_set_sensitive(se->h, TRUE);
+			set_padding_sensitive(se, FALSE);
+
+		}
+	}
 }
 
 

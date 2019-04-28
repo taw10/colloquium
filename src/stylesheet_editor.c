@@ -53,6 +53,35 @@ enum selector_column
 };
 
 
+static enum gradient id_to_gradtype(const gchar *id)
+{
+	assert(id != NULL);
+	if ( strcmp(id, "flat") == 0 ) return GRAD_NONE;
+	if ( strcmp(id, "horiz") == 0 ) return GRAD_HORIZ;
+	if ( strcmp(id, "vert") == 0 ) return GRAD_VERT;
+	return GRAD_NONE;
+}
+
+
+static enum length_unit id_to_units(const char *id)
+{
+	if ( strcmp(id, "units") == 0 ) return LENGTH_UNIT;
+	if ( strcmp(id, "percent") == 0 ) return LENGTH_FRAC;
+	return LENGTH_UNIT;
+}
+
+
+static enum alignment id_to_align(const char *id, int *err)
+{
+	*err = 0;
+	if ( strcmp(id, "left") == 0 ) return ALIGN_LEFT;
+	if ( strcmp(id, "center") == 0 ) return ALIGN_CENTER;
+	if ( strcmp(id, "right") == 0 ) return ALIGN_RIGHT;
+	*err = 1;
+	return ALIGN_LEFT;
+}
+
+
 static void set_font_fgcol_align_from_ss(Stylesheet *ss, const char *style_name,
                                          GtkWidget *wfont,
                                          GtkWidget *wfgcol,
@@ -110,7 +139,6 @@ static void set_padding_from_ss(Stylesheet *ss, const char *style_name,
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wr), padding[1].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wt), padding[2].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wb), padding[3].len);
-	/* FIXME: units */
 }
 
 
@@ -125,7 +153,6 @@ static void set_paraspace_from_ss(Stylesheet *ss, const char *style_name,
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wr), paraspace[1].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wt), paraspace[2].len);
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(wb), paraspace[3].len);
-	/* FIXME: units */
 }
 
 
@@ -138,13 +165,13 @@ static void set_geom_from_ss(Stylesheet *ss, const char *style_name,
 
 	if ( stylesheet_get_geometry(ss, style_name, &geom) ) return;
 
-	if ( geom.x.unit == LENGTH_FRAC ) {
+	if ( geom.w.unit == LENGTH_FRAC ) {
 		geom.w.len *= 100;
 		gtk_combo_box_set_active_id(GTK_COMBO_BOX(wwu), "percent");
 	} else {
 		gtk_combo_box_set_active_id(GTK_COMBO_BOX(wwu), "units");
 	}
-	if ( geom.y.unit == LENGTH_FRAC ) {
+	if ( geom.h.unit == LENGTH_FRAC ) {
 		geom.h.len *= 100;
 		gtk_combo_box_set_active_id(GTK_COMBO_BOX(whu), "percent");
 	} else {
@@ -244,16 +271,17 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);
 
+	set_font_fgcol_align_from_ss(se->priv->stylesheet, se->priv->style_name,
+	                             se->font, se->fgcol, se->alignment);
+
+	set_bg_from_ss(se->priv->stylesheet, se->priv->style_name,
+	               se->bgcol, se->bgcol2, se->bggrad);
+
 	set_padding_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                    se->padding_l, se->padding_r, se->padding_t, se->padding_b);
 
 	set_paraspace_from_ss(se->priv->stylesheet, se->priv->style_name,
 	                      se->paraspace_l, se->paraspace_r, se->paraspace_t, se->paraspace_b);
-
-	set_font_fgcol_align_from_ss(se->priv->stylesheet, se->priv->style_name,
-	                             se->font, se->fgcol, se->alignment);
-	set_bg_from_ss(se->priv->stylesheet, se->priv->style_name,
-	               se->bgcol, se->bgcol2, se->bggrad);
 }
 
 
@@ -272,122 +300,12 @@ static void element_changed(GtkTreeSelection *sel, StylesheetEditor *se)
 }
 
 
-static enum gradient id_to_gradtype(const gchar *id)
-{
-	assert(id != NULL);
-	if ( strcmp(id, "flat") == 0 ) return GRAD_NONE;
-	if ( strcmp(id, "horiz") == 0 ) return GRAD_HORIZ;
-	if ( strcmp(id, "vert") == 0 ) return GRAD_VERT;
-	return GRAD_NONE;
-}
-
-
-static void update_bg(Stylesheet *ss, const char *style_name,
-                      GtkWidget *bggradw, GtkWidget *col1w, GtkWidget *col2w)
-{
-	enum gradient g;
-	const gchar *id;
-	GdkRGBA rgba;
-	struct colour bgcol, bgcol2;
-
-	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(bggradw));
-	g = id_to_gradtype(id);
-
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col1w), &rgba);
-	if ( rgba.alpha < 0.000001 ) rgba.alpha = 0.0;
-	bgcol.rgba[0] = rgba.red;
-	bgcol.rgba[1] = rgba.green;
-	bgcol.rgba[2] = rgba.blue;
-	bgcol.rgba[3] = rgba.alpha;
-
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(col2w), &rgba);
-	if ( rgba.alpha < 0.000001 ) rgba.alpha = 0.0;
-	bgcol2.rgba[0] = rgba.red;
-	bgcol2.rgba[1] = rgba.green;
-	bgcol2.rgba[2] = rgba.blue;
-	bgcol2.rgba[3] = rgba.alpha;
-
-	stylesheet_set_background(ss, style_name, g, bgcol, bgcol2);
-}
-
-
-static char units_id_to_char(const char *id)
-{
-	if ( strcmp(id, "units") == 0 ) return 'u';
-	if ( strcmp(id, "percent") == 0 ) return 'f';
-	return 'u';
-}
-
-
-static void update_ss_dims(Stylesheet *ss, const char *style_name,
-                           const char *key, GtkWidget *ww, GtkWidget *wh,
-                           GtkWidget *wx, GtkWidget *wy,
-                           GtkWidget *wwu, GtkWidget *whu)
-{
-#if 0
-	float w, h, x, y;
-	char w_units, h_units;
-	const gchar *uid;
-	char tmp[256];
-
-	w = gtk_spin_button_get_value(GTK_SPIN_BUTTON(ww));
-	h = gtk_spin_button_get_value(GTK_SPIN_BUTTON(wh));
-	x = gtk_spin_button_get_value(GTK_SPIN_BUTTON(wx));
-	y = gtk_spin_button_get_value(GTK_SPIN_BUTTON(wy));
-	uid = gtk_combo_box_get_active_id(GTK_COMBO_BOX(wwu));
-	w_units = units_id_to_char(uid);
-	uid = gtk_combo_box_get_active_id(GTK_COMBO_BOX(whu));
-	h_units = units_id_to_char(uid);
-
-	if ( w_units == 'f' ) w /= 100.0;
-	if ( h_units == 'f' ) h /= 100.0;
-
-	if ( snprintf(tmp, 256, "%.2f%cx%.2f%c+%.0f+%0.f",
-		      w, w_units, h, h_units, x, y) >= 256 )
-	{
-		fprintf(stderr, "Spacing too long\n");
-	} else {
-		stylesheet_set(p->stylesheet, style_name, key, tmp);
-	}
-#endif
-}
-
 
 static void revert_sig(GtkButton *button, StylesheetEditor *se)
 {
 	/* FIXME: implement */
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
-}
-
-
-static void set_font(GtkFontButton *widget, StylesheetEditor *se,
-                     const char *style_name)
-{
-#if 0
-	const gchar *font;
-	font = gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
-
-	stylesheet_set(se->priv->p->stylesheet, style_name, "font", font);
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-#endif
-}
-
-
-static void set_col(GtkColorButton *widget, StylesheetEditor *se,
-                    const char *style_name, const char *col_name)
-{
-#if 0
-	GdkRGBA rgba;
-	gchar *col;
-	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget), &rgba);
-	col = gdk_rgba_to_string(&rgba);
-	stylesheet_set(se->priv->p->stylesheet, style_name, "fgcol", col);
-	g_free(col);
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-#endif
 }
 
 
@@ -421,41 +339,101 @@ static void padding_sig(GtkSpinButton *widget, StylesheetEditor *se)
 
 static void alignment_sig(GtkComboBoxText *widget, StylesheetEditor *se)
 {
-#if 0
 	const gchar *id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
-	stylesheet_set(se->priv->p->stylesheet, se->priv->furniture,
-	               "alignment", id);
-	set_values_from_presentation(se);
-	g_signal_emit_by_name(se, "changed");
-#endif
+	int err;
+	enum alignment align = id_to_align(id, &err);
+	if ( !err ) {
+		stylesheet_set_alignment(se->priv->stylesheet, se->priv->style_name, align);
+		set_values_from_presentation(se);
+		g_signal_emit_by_name(se, "changed");
+	}
 }
 
 
-static void dims_sig(GtkSpinButton *widget, StylesheetEditor *se)
+static void geometry_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
-#if 0
-	update_ss_dims(se->priv->p, se->priv->furniture, "geometry",
-	               se->furniture_w, se->furniture_h,
-	               se->furniture_x, se->furniture_y,
-	               se->furniture_w_units, se->furniture_h_units);
+	struct frame_geom new_geom;
+	const gchar *uid;
+
+	new_geom.w.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->w));
+	new_geom.h.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->h));
+	new_geom.x.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->x));
+	new_geom.y.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->y));
+
+	uid = gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->w_units));
+	new_geom.w.unit = id_to_units(uid);
+	uid = gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->h_units));
+	new_geom.h.unit = id_to_units(uid);
+
+	if ( new_geom.w.unit == LENGTH_FRAC ) new_geom.w.len /= 100.0;
+	if ( new_geom.h.unit == LENGTH_FRAC ) new_geom.h.len /= 100.0;
+
+	stylesheet_set_geometry(se->priv->stylesheet, se->priv->style_name, new_geom);
+
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
-#endif
 }
 
 
 static void font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
+	gchar *font = gtk_font_chooser_get_font(GTK_FONT_CHOOSER(widget));
+	stylesheet_set_font(se->priv->stylesheet, se->priv->style_name, font);
+	/* Don't free: now owned by stylesheet */
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
+	GdkRGBA rgba;
+	struct colour col;
+
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget), &rgba);
+	col.rgba[0] = rgba.red;
+	col.rgba[1] = rgba.green;
+	col.rgba[2] = rgba.blue;
+	col.rgba[3] = rgba.alpha;
+	col.hexcode = 0;
+	stylesheet_set_fgcol(se->priv->stylesheet, se->priv->style_name, col);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
 static void bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
+	enum gradient g;
+	const gchar *id;
+	GdkRGBA rgba;
+	struct colour bgcol, bgcol2;
+
+	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->bggrad));
+	g = id_to_gradtype(id);
+
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->bgcol), &rgba);
+	if ( rgba.alpha < 0.000001 ) rgba.alpha = 0.0;
+	bgcol.rgba[0] = rgba.red;
+	bgcol.rgba[1] = rgba.green;
+	bgcol.rgba[2] = rgba.blue;
+	bgcol.rgba[3] = rgba.alpha;
+	bgcol.hexcode = 0;
+
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(se->bgcol2), &rgba);
+	if ( rgba.alpha < 0.000001 ) rgba.alpha = 0.0;
+	bgcol2.rgba[0] = rgba.red;
+	bgcol2.rgba[1] = rgba.green;
+	bgcol2.rgba[2] = rgba.blue;
+	bgcol2.rgba[3] = rgba.alpha;
+	bgcol2.hexcode = 0;
+
+	stylesheet_set_background(se->priv->stylesheet, se->priv->style_name, g, bgcol, bgcol2);
+
+	set_values_from_presentation(se);
+	g_signal_emit_by_name(se, "changed");
 }
 
 
@@ -487,7 +465,6 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 
 	gobject_class->finalize = stylesheet_editor_finalize;
 
-	/* Furniture */
 	SE_BIND_CHILD(paraspace_l, paraspace_sig);
 	SE_BIND_CHILD(paraspace_r, paraspace_sig);
 	SE_BIND_CHILD(paraspace_t, paraspace_sig);
@@ -502,12 +479,12 @@ void stylesheet_editor_class_init(StylesheetEditorClass *klass)
 	SE_BIND_CHILD(bgcol2, bg_sig);
 	SE_BIND_CHILD(bggrad, bg_sig);
 	SE_BIND_CHILD(alignment, alignment_sig);
-	SE_BIND_CHILD(w, dims_sig);
-	SE_BIND_CHILD(h, dims_sig);
-	SE_BIND_CHILD(x, dims_sig);
-	SE_BIND_CHILD(y, dims_sig);
-	SE_BIND_CHILD(w_units, dims_sig);
-	SE_BIND_CHILD(h_units, dims_sig);
+	SE_BIND_CHILD(w, geometry_sig);
+	SE_BIND_CHILD(h, geometry_sig);
+	SE_BIND_CHILD(x, geometry_sig);
+	SE_BIND_CHILD(y, geometry_sig);
+	SE_BIND_CHILD(w_units, geometry_sig);
+	SE_BIND_CHILD(h_units, geometry_sig);
 
 	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor, selector);
 	gtk_widget_class_bind_template_child(widget_class, StylesheetEditor, element_tree);

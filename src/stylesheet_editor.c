@@ -344,14 +344,7 @@ static void set_values_from_presentation(StylesheetEditor *se)
 		}
 	}
 	if ( strncmp(se->priv->style_name, "SLIDE", 5) == 0 ) {
-		if ( se->priv->style_name[5] == '.' ) {
-
-			/* Slide item */
-			set_bg_sensitive(se, FALSE);
-			set_padding_sensitive(se, TRUE);
-
-		} else {
-
+		if ( se->priv->style_name[5] != '.' ) {
 			/* Top level "slide" */
 			set_geom_sensitive(se, FALSE);
 			gtk_widget_set_sensitive(se->w, TRUE);

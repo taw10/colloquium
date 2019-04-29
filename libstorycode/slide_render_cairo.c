@@ -89,6 +89,59 @@ static size_t pos_trail_to_offset(SlideItem *item, int para,
 }
 
 
+static void do_background(Stylesheet *ss, const char *stn, cairo_t *cr,
+                          double x, double y, double w, double h)
+{
+	enum gradient bg;
+	struct colour bgcol;
+	struct colour bgcol2;
+	cairo_pattern_t *patt = NULL;
+
+	if ( stylesheet_get_background(ss, stn, &bg, &bgcol, &bgcol2) ) return;
+
+	cairo_save(cr);
+	cairo_translate(cr, x, y);
+	cairo_rectangle(cr, 0.0, 0.0, w, h);
+
+	switch ( bg ) {
+
+		case GRAD_NONE:
+		cairo_set_source_rgba(cr, bgcol.rgba[0], bgcol.rgba[1],
+		                           bgcol.rgba[2], bgcol.rgba[3]);
+		break;
+
+		case GRAD_VERT:
+		patt = cairo_pattern_create_linear(0.0, 0.0, 0.0, h);
+		cairo_pattern_add_color_stop_rgba(patt, 0.0,
+		                                  bgcol.rgba[0], bgcol.rgba[1],
+		                                  bgcol.rgba[2], bgcol.rgba[3]);
+		cairo_pattern_add_color_stop_rgba(patt, 1.0,
+		                                  bgcol2.rgba[0], bgcol2.rgba[1],
+		                                  bgcol2.rgba[2], bgcol2.rgba[3]);
+		cairo_set_source(cr, patt);
+		break;
+
+		case GRAD_HORIZ:
+		patt = cairo_pattern_create_linear(0.0, 0.0, w, 0.0);
+		cairo_pattern_add_color_stop_rgba(patt, 0.0,
+		                                  bgcol.rgba[0], bgcol.rgba[1],
+		                                  bgcol.rgba[2], bgcol.rgba[3]);
+		cairo_pattern_add_color_stop_rgba(patt, 1.0,
+		                                  bgcol2.rgba[0], bgcol2.rgba[1],
+		                                  bgcol2.rgba[2], bgcol2.rgba[3]);
+		cairo_set_source(cr, patt);
+		break;
+
+		default:
+		fprintf(stderr, "Unrecognised slide background type %i\n", bg);
+		break;
+
+	}
+	cairo_fill(cr);
+	cairo_restore(cr);
+}
+
+
 static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
                         Stylesheet *ss, const char *stn,
                         double parent_w, double parent_h,
@@ -145,7 +198,8 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 		sel_e = 0;
 	}
 
-	/* FIXME: Apply background */
+	do_background(ss, stn, cr, x, y, w, h);
+
 	if ( stylesheet_get_paraspace(ss, stn, paraspacel) == 0 ) {
 		paraspace[0] = lcalc(paraspacel[0], w);
 		paraspace[1] = lcalc(paraspacel[1], w);
@@ -289,51 +343,14 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
                        int slide_number, PangoLanguage *lang, PangoContext *pc,
                        SlideItem *sel_item, struct slide_pos sel_start, struct slide_pos sel_end)
 {
-	int i, r;
-	enum gradient bg;
-	struct colour bgcol;
-	struct colour bgcol2;
-	cairo_pattern_t *patt = NULL;
+	int i;
 	double w, h;
-
-	r = stylesheet_get_background(stylesheet, "SLIDE", &bg, &bgcol, &bgcol2);
-	if ( r ) return 1;
 
 	slide_get_logical_size(s, stylesheet, &w, &h);
 	sort_slide_positions(&sel_start, &sel_end);
 
 	/* Overall background */
-	cairo_rectangle(cr, 0.0, 0.0, w, h);
-	switch ( bg ) {
-
-		case GRAD_NONE:
-		cairo_set_source_rgb(cr, bgcol.rgba[0], bgcol.rgba[1], bgcol.rgba[2]);
-		break;
-
-		case GRAD_VERT:
-		patt = cairo_pattern_create_linear(0.0, 0.0, 0.0, h);
-		cairo_pattern_add_color_stop_rgb(patt, 0.0,
-		                                 bgcol.rgba[0], bgcol.rgba[1], bgcol.rgba[2]);
-		cairo_pattern_add_color_stop_rgb(patt, 1.0,
-		                                 bgcol2.rgba[0], bgcol2.rgba[1], bgcol2.rgba[2]);
-		cairo_set_source(cr, patt);
-		break;
-
-		case GRAD_HORIZ:
-		patt = cairo_pattern_create_linear(0.0, 0.0, w, 0.0);
-		cairo_pattern_add_color_stop_rgb(patt, 0.0,
-		                                 bgcol.rgba[0], bgcol.rgba[1], bgcol.rgba[2]);
-		cairo_pattern_add_color_stop_rgb(patt, 1.0,
-		                                 bgcol2.rgba[0], bgcol2.rgba[1], bgcol2.rgba[2]);
-		cairo_set_source(cr, patt);
-		break;
-
-		default:
-		fprintf(stderr, "Unrecognised slide background type %i\n", bg);
-		break;
-
-	}
-	cairo_fill(cr);
+	do_background(stylesheet, "SLIDE", cr, 0.0, 0.0, w, h);
 
 	for ( i=0; i<s->n_items; i++ ) {
 

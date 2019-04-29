@@ -95,9 +95,11 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
                         struct slide_pos sel_start, struct slide_pos sel_end)
 {
 	int i;
-	double x, y, w;
+	double x, y, w, h;
 	double pad_l, pad_r, pad_t;
 	struct length pad[4];
+	struct length paraspacel[4];
+	double paraspace[4];
 	const char *font;
 	enum alignment align;
 	struct colour fgcol;
@@ -115,6 +117,7 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	x = lcalc(geom.x, parent_w);
 	y = lcalc(geom.y, parent_h);
 	w = lcalc(geom.w, parent_w);
+	h = lcalc(geom.h, parent_h);
 
 	if ( stylesheet_get_padding(ss, stn, pad) ) return;
 	pad_l = lcalc(pad[0], parent_w);
@@ -143,10 +146,21 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	}
 
 	/* FIXME: Apply background */
+	if ( stylesheet_get_paraspace(ss, stn, paraspacel) == 0 ) {
+		paraspace[0] = lcalc(paraspacel[0], w);
+		paraspace[1] = lcalc(paraspacel[1], w);
+		paraspace[2] = lcalc(paraspacel[2], h);
+		paraspace[3] = lcalc(paraspacel[3], h);
+	} else {
+		paraspace[0] = 0.0;
+		paraspace[1] = 0.0;
+		paraspace[2] = 0.0;
+		paraspace[3] = 0.0;
+	}
 
 	cairo_save(cr);
 	cairo_translate(cr, x, y);
-	cairo_translate(cr, pad_l, pad_t);
+	cairo_translate(cr, pad_l+paraspace[0], pad_t);
 
 	for ( i=0; i<item->n_paras; i++ ) {
 
@@ -202,11 +216,12 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 
 		cairo_set_source_rgba(cr, fgcol.rgba[0], fgcol.rgba[1], fgcol.rgba[2],
 		                          fgcol.rgba[3]);
+		cairo_translate(cr, 0.0, paraspace[2]);
 		cairo_move_to(cr, 0.0, 0.0);
 		pango_cairo_update_layout(cr, item->paras[i].layout);
 		pango_cairo_show_layout(cr, item->paras[i].layout);
 		pango_layout_get_extents(item->paras[i].layout, NULL, &rect);
-		cairo_translate(cr, 0.0, pango_units_to_double(rect.height));
+		cairo_translate(cr, 0.0, pango_units_to_double(rect.height)+paraspace[3]);
 		cairo_fill(cr);
 
 	}

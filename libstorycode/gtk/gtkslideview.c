@@ -196,6 +196,8 @@ static int get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
 	PangoRectangle rect;
 	double padl, padr, padt, padb;
 
+	if ( item->paras == NULL ) return 1;
+
 	if ( item->paras[cpos.para].layout == NULL ) {
 		fprintf(stderr, "get_cursor_pos: No layout\n");
 		return 1;
@@ -549,6 +551,14 @@ static int find_cursor(SlideItem *item, Stylesheet *stylesheet,
 	                       slide_w, slide_h);
 	x -= padl;
 	y -= padt;
+
+	if ( item->paras == NULL ) {
+		printf("No paragraphs (item %p)!\n", item);
+		pos->para = 0;
+		pos->pos = 0;
+		pos->trail = 0;
+		return 0;
+	}
 
 	do {
 		PangoRectangle rect;

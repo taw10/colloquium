@@ -237,18 +237,6 @@ int stylesheet_get_slide_default_size(Stylesheet *s, double *w, double *h)
 }
 
 
-int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h)
-{
-	struct style *sty = lookup_style(&s->top, "SLIDE");
-	if ( sty == NULL ) return 1;
-	assert(sty->geom.w.unit == LENGTH_UNIT);
-	assert(sty->geom.h.unit == LENGTH_UNIT);
-	sty->geom.w.len = w;
-	sty->geom.h.len = h;
-	return 0;
-}
-
-
 int stylesheet_set_geometry(Stylesheet *s, const char *stn, struct frame_geom geom)
 {
 	struct style *sty = lookup_style(&s->top, stn);
@@ -518,13 +506,6 @@ static void add_style(char **text, size_t *len, size_t *lenmax, const char *pref
 		add_text(text, len, lenmax, prefix, "}\n");
 	}
 	free(prefix2);
-
-	if ( strcmp(sty->name, "SLIDE") == 0 ) {
-		char tmp[256];
-		snprintf(tmp, 255, "SIZE %.4gu x %4gu\n",
-		         sty->geom.w.len, sty->geom.h.len);
-		add_text(text, len, lenmax, prefix, tmp);
-	}
 }
 
 

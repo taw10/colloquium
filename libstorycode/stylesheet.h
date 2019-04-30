@@ -80,7 +80,6 @@ enum gradient
 extern Stylesheet *stylesheet_new(void);
 extern void stylesheet_free(Stylesheet *s);
 
-extern int stylesheet_set_slide_default_size(Stylesheet *s, double w, double h);
 extern int stylesheet_get_slide_default_size(Stylesheet *s, double *w, double *h);
 
 extern int stylesheet_set_geometry(Stylesheet *s, const char *stn, struct frame_geom geom);

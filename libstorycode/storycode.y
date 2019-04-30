@@ -73,7 +73,7 @@
 %token LEFT CENTER RIGHT
 %token STRING
 %token SQOPEN SQCLOSE
-%token UNIT VALUE SIZE HEXCOL
+%token UNIT VALUE HEXCOL
 
 %type <n> narrative
 %type <s> slide
@@ -364,26 +364,13 @@ style_slide:
 
 style_slide_def:
   %empty
-  /* Doesn't need set_style() */
-| style_slide_def style_slidesize       { }
   /* Call set_style() immediately */
 | style_slide_def background            { set_style(ctx, "SLIDE"); }
+| style_slide_def slide_geom            { set_style(ctx, "SLIDE"); }
   /* The ones below will call set_style() themselves */
 | style_slide_def style_slide_prestitle { }
 | style_slide_def style_slide_text      { }
 | style_slide_def style_slide_title     { }
-;
-
-style_slidesize:
-  SIZE length 'x' length { if ( ($2.unit != LENGTH_UNIT)
-                               || ($4.unit != LENGTH_UNIT) )
-                             {
-                                fprintf(stderr, "Wrong slide size units\n");
-                             } else {
-                                stylesheet_set_slide_default_size(narrative_get_stylesheet(ctx->n),
-                                                                  $2.len, $4.len);
-                             }
-                           }
 ;
 
 background:
@@ -394,6 +381,11 @@ background:
                                   copy_col(&ctx->bgcol2, $4);
                                   ctx->bggrad = $2;
                                   ctx->mask |= STYMASK_BGCOL; }
+;
+
+slide_geom:
+  GEOMETRY geometry  { ctx->geom = $2;
+                       ctx->mask |= STYMASK_GEOM; }
 ;
 
 style_slide_prestitle:

@@ -14,7 +14,7 @@ STYLES {
     }
   }
   SLIDE {
-    SIZE 1024u x 768u
+    GEOMETRY 1024u x 768u +0u +0u
     BGCOL VERTICAL #333333 #000055
     TEXT {
       FONT Cantarell Regular 14

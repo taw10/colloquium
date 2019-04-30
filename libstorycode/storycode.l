@@ -65,7 +65,6 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
 <col>VERTICAL     { return SC_VERT; }
 <col>HORIZ        { return SC_HORIZ; }
 <col>HORIZONTAL   { return SC_HORIZ; }
-SIZE              { return SC_SIZE; }
 <align,sqb>(?i:left)   { return SC_LEFT; }
 <align,sqb>(?i:center) { return SC_CENTER; }
 <align,sqb>(?i:right)  { return SC_RIGHT; }

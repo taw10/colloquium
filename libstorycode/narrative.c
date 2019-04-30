@@ -110,6 +110,11 @@ Narrative *narrative_load(GFile *file)
 	g_bytes_unref(bytes);
 	if ( n == NULL ) return NULL;
 
+	if ( n->n_items == 0 ) {
+		/* Presentation is empty.  Add a dummy to start things off */
+		narrative_add_text(n, strdup(""));
+	}
+
 	imagestore_set_parent(n->imagestore, g_file_get_parent(file));
 	return n;
 }

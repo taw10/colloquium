@@ -61,12 +61,8 @@ static void colloquium_activate(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);
 	if ( !app->first_run ) {
-		Narrative *n;
-		Stylesheet *ss;
-		n = narrative_new();
-		ss = stylesheet_new();
+		Narrative *n = narrative_new();
 		narrative_add_text(n, strdup(""));
-		narrative_add_stylesheet(n, ss);
 		narrative_window_new(n, NULL, papp);
 	}
 }

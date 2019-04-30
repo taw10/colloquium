@@ -40,7 +40,6 @@ enum style_mask
 struct scpctx
 {
 	Narrative *n;
-	Stylesheet *ss;
 	Slide *s;
 
 	int n_str;

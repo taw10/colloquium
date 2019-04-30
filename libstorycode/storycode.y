@@ -101,9 +101,8 @@
 {
     ctx->n = narrative_new();
 
-    /* These are the objects currently being created.  They will be
-     * added to the narrative when they're complete */
-    ctx->ss = stylesheet_new();
+    /* The slide currently being created.
+     * Will be added to the narrative when complete */
     ctx->s = slide_new();
 
     ctx->max_str = 32;
@@ -164,13 +163,20 @@ void add_str(struct scpctx *ctx, char *str)
 
 void set_style(struct scpctx *ctx, const char *element)
 {
-    if ( ctx->mask & STYMASK_GEOM ) stylesheet_set_geometry(ctx->ss, element, ctx->geom);
-    if ( ctx->mask & STYMASK_FONT ) stylesheet_set_font(ctx->ss, element, ctx->font);
-    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_alignment(ctx->ss, element, ctx->alignment);
-    if ( ctx->mask & STYMASK_PADDING ) stylesheet_set_padding(ctx->ss, element, ctx->padding);
-    if ( ctx->mask & STYMASK_PARASPACE ) stylesheet_set_paraspace(ctx->ss, element, ctx->paraspace);
-    if ( ctx->mask & STYMASK_FGCOL ) stylesheet_set_fgcol(ctx->ss, element, ctx->fgcol);
-    if ( ctx->mask & STYMASK_BGCOL ) stylesheet_set_background(ctx->ss, element, ctx->bggrad,
+    if ( ctx->mask & STYMASK_GEOM ) stylesheet_set_geometry(narrative_get_stylesheet(ctx->n),
+                                                            element, ctx->geom);
+    if ( ctx->mask & STYMASK_FONT ) stylesheet_set_font(narrative_get_stylesheet(ctx->n),
+                                                        element, ctx->font);
+    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_alignment(narrative_get_stylesheet(ctx->n),
+                                                                  element, ctx->alignment);
+    if ( ctx->mask & STYMASK_PADDING ) stylesheet_set_padding(narrative_get_stylesheet(ctx->n),
+                                                              element, ctx->padding);
+    if ( ctx->mask & STYMASK_PARASPACE ) stylesheet_set_paraspace(narrative_get_stylesheet(ctx->n),
+                                                                  element, ctx->paraspace);
+    if ( ctx->mask & STYMASK_FGCOL ) stylesheet_set_fgcol(narrative_get_stylesheet(ctx->n),
+                                                          element, ctx->fgcol);
+    if ( ctx->mask & STYMASK_BGCOL ) stylesheet_set_background(narrative_get_stylesheet(ctx->n),
+                                                               element, ctx->bggrad,
                                                                ctx->bgcol, ctx->bgcol2);
     ctx->mask = 0;
     ctx->alignment = ALIGN_INHERIT;
@@ -330,7 +336,7 @@ stylesheet:
   STYLES '{'
    style_narrative
    style_slide
-  '}'  { narrative_add_stylesheet(ctx->n, ctx->ss); }
+  '}' { }
 ;
 
 style_narrative:
@@ -374,7 +380,8 @@ style_slidesize:
                              {
                                 fprintf(stderr, "Wrong slide size units\n");
                              } else {
-                                stylesheet_set_slide_default_size(ctx->ss, $2.len, $4.len);
+                                stylesheet_set_slide_default_size(narrative_get_stylesheet(ctx->n),
+                                                                  $2.len, $4.len);
                              }
                            }
 ;

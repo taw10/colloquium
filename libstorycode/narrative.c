@@ -56,7 +56,7 @@ Narrative *narrative_new()
 	if ( n == NULL ) return NULL;
 	n->n_items = 0;
 	n->items = NULL;
-	n->stylesheet = NULL;
+	n->stylesheet = stylesheet_new();
 	n->imagestore = imagestore_new("."); /* FIXME: From app config */
 	n->saved = 1;
 #ifdef HAVE_PANGO

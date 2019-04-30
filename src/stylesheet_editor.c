@@ -313,21 +313,6 @@ static void set_font_fgcol_align_sensitive(StylesheetEditor *se, gboolean val)
 
 static void set_values_from_presentation(StylesheetEditor *se)
 {
-	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
-	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);
-
-	set_font_fgcol_align_from_ss(se->priv->stylesheet, se->priv->style_name,
-	                             se->font, se->fgcol, se->alignment);
-
-	set_bg_from_ss(se->priv->stylesheet, se->priv->style_name,
-	               se->bgcol, se->bgcol2, se->bggrad);
-
-	set_padding_from_ss(se->priv->stylesheet, se->priv->style_name,
-	                    se->padding_l, se->padding_r, se->padding_t, se->padding_b);
-
-	set_paraspace_from_ss(se->priv->stylesheet, se->priv->style_name,
-	                      se->paraspace_l, se->paraspace_r, se->paraspace_t, se->paraspace_b);
-
 	set_geom_sensitive(se, TRUE);
 	set_bg_sensitive(se, TRUE);
 	set_padding_sensitive(se, TRUE);
@@ -359,6 +344,21 @@ static void set_values_from_presentation(StylesheetEditor *se)
 	if ( strcmp(se->priv->style_name, "SLIDE.TEXT") == 0 ) {
 		set_geom_sensitive(se, FALSE);
 	}
+
+	set_geom_from_ss(se->priv->stylesheet, se->priv->style_name,
+	                 se->w, se->h, se->x, se->y, se->w_units, se->h_units);
+
+	set_font_fgcol_align_from_ss(se->priv->stylesheet, se->priv->style_name,
+	                             se->font, se->fgcol, se->alignment);
+
+	set_bg_from_ss(se->priv->stylesheet, se->priv->style_name,
+	               se->bgcol, se->bgcol2, se->bggrad);
+
+	set_padding_from_ss(se->priv->stylesheet, se->priv->style_name,
+	                    se->padding_l, se->padding_r, se->padding_t, se->padding_b);
+
+	set_paraspace_from_ss(se->priv->stylesheet, se->priv->style_name,
+	                      se->paraspace_l, se->paraspace_r, se->paraspace_t, se->paraspace_b);
 }
 
 
@@ -389,6 +389,8 @@ static void paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
 	struct length paraspace[4];
 
+	if ( !gtk_widget_get_sensitive(GTK_WIDGET(widget)) ) return;
+
 	paraspace[0].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->paraspace_l));
 	paraspace[0].unit = LENGTH_UNIT;
 	paraspace[1].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->paraspace_r));
@@ -408,6 +410,8 @@ static void paraspace_sig(GtkSpinButton *widget, StylesheetEditor *se)
 static void padding_sig(GtkSpinButton *widget, StylesheetEditor *se)
 {
 	struct length padding[4];
+
+	if ( !gtk_widget_get_sensitive(GTK_WIDGET(widget)) ) return;
 
 	padding[0].len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->padding_l));
 	padding[0].unit = LENGTH_UNIT;
@@ -429,7 +433,11 @@ static void alignment_sig(GtkComboBoxText *widget, StylesheetEditor *se)
 {
 	const gchar *id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(widget));
 	int err;
-	enum alignment align = id_to_align(id, &err);
+	enum alignment align;
+
+	if ( !gtk_widget_get_sensitive(GTK_WIDGET(widget)) ) return;
+
+	align = id_to_align(id, &err);
 	if ( !err ) {
 		stylesheet_set_alignment(se->priv->stylesheet, se->priv->style_name, align);
 		set_values_from_presentation(se);
@@ -443,6 +451,7 @@ static void geometry_sig(GtkSpinButton *widget, StylesheetEditor *se)
 	struct frame_geom new_geom;
 	const gchar *uid;
 
+	if ( !gtk_widget_get_sensitive(GTK_WIDGET(widget)) ) return;
 	new_geom.w.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->w));
 	new_geom.h.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->h));
 	new_geom.x.len = gtk_spin_button_get_value(GTK_SPIN_BUTTON(se->x));
@@ -469,6 +478,8 @@ static void geometry_sig(GtkSpinButton *widget, StylesheetEditor *se)
 static void font_sig(GtkFontButton *widget, StylesheetEditor *se)
 {
 	gchar *font = gtk_font_chooser_get_font(GTK_FONT_CHOOSER(widget));
+	if ( !gtk_widget_get_sensitive(GTK_WIDGET(widget)) ) return;
+
 	stylesheet_set_font(se->priv->stylesheet, se->priv->style_name, font);
 	/* Don't free: now owned by stylesheet */
 
@@ -481,6 +492,8 @@ static void fgcol_sig(GtkColorButton *widget, StylesheetEditor *se)
 {
 	GdkRGBA rgba;
 	struct colour col;
+
+	if ( !gtk_widget_get_sensitive(GTK_WIDGET(widget)) ) return;
 
 	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(widget), &rgba);
 	col.rgba[0] = rgba.red;
@@ -501,6 +514,8 @@ static void bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 	const gchar *id;
 	GdkRGBA rgba;
 	struct colour bgcol, bgcol2;
+
+	if ( !gtk_widget_get_sensitive(GTK_WIDGET(widget)) ) return;
 
 	id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(se->bggrad));
 	g = id_to_gradtype(id);

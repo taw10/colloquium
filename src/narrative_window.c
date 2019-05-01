@@ -506,6 +506,9 @@ static void scroll_down(NarrativeWindow *nw)
 static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
 	if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
+	while ( nw->n_slidewindows > 0 ) {
+		slide_window_destroy(nw->slidewindows[nw->n_slidewindows-1]);
+	}
 	g_application_release(nw->app);
 	return FALSE;
 }

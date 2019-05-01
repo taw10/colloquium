@@ -37,6 +37,8 @@ extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
 
 extern void slide_window_update(SlideWindow *sw);
 
+extern void slide_window_destroy(SlideWindow *sw);
+
 extern void slide_window_update_titlebar(SlideWindow *sw);
 
 #endif	/* SLIDEWINDOW_H */

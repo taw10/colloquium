@@ -273,3 +273,9 @@ void slide_window_update_titlebar(SlideWindow *sw)
 
 	gtk_window_set_title(GTK_WINDOW(sw->window), title);
 }
+
+
+void slide_window_destroy(SlideWindow *sw)
+{
+	gtk_widget_destroy(sw->window);
+}

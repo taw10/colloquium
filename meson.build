@@ -129,7 +129,3 @@ install_data(['data/colloquium.desktop'],
 # Icon
 install_data(['data/colloquium.svg'],
              install_dir : get_option('datadir')+'/icons/hicolor/scalable/apps')
-
-
-# Tests
-subdir('tests')

@@ -416,7 +416,7 @@ static void add_text(char **text, size_t *len, size_t *lenmax, const char *prefi
 static void format_col(char *a, size_t max_len, struct colour col)
 {
 	if ( !col.hexcode ) {
-		snprintf(a, max_len, "%.4g,%.4g,%.4g,%.4g",
+		snprintf(a, max_len, "%.2f,%.2f,%.2f,%.2f",
 		         col.rgba[0], col.rgba[1], col.rgba[2], col.rgba[3]);
 	} else {
 		snprintf(a, max_len, "#%.2X%.2X%.2X",

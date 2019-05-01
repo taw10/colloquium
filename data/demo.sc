@@ -52,7 +52,6 @@ STYLES {
 
 PRESTITLE: Hi there, welcome to Colloquium!
 : It looks like this is the first time you've used Colloquium.  Keep reading to understand a little bit about how Colloquium works and how to use it.
-: 
 : Colloquium works differently to other presentation programs. Colloquium makes /narrative, not slides,/ the centre of attention.  Slides come when you need to illustrate something.  This window is called the /narrative editor/.  Your slides are embedded into the narrative text, like this:
 SLIDE {
   PRESTITLE: Welcome to Colloquium

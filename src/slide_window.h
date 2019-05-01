@@ -29,9 +29,14 @@
 
 typedef struct _slidewindow SlideWindow;
 
+#include "narrative_window.h"
+
 extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
+                                      NarrativeWindow *parent,
                                       GApplication *papp);
 
 extern void slide_window_update(SlideWindow *sw);
+
+extern void slide_window_update_titlebar(SlideWindow *sw);
 
 #endif	/* SLIDEWINDOW_H */

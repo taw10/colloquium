@@ -81,41 +81,36 @@ static void show_error(NarrativeWindow *nw, const char *err)
 }
 
 
-static char *get_titlebar_string(NarrativeWindow *nw)
+char *narrative_window_get_filename(NarrativeWindow *nw)
 {
+	char *filename;
 	if ( nw == NULL || nw->file == NULL ) {
-		return strdup(_("(untitled)"));
+		filename = strdup(_("(untitled)"));
 	} else {
-		char *bn = g_file_get_basename(nw->file);
-		return bn;
+		filename = g_file_get_basename(nw->file);
 	}
+	return filename;
 }
-
 
 
 static void update_titlebar(NarrativeWindow *nw)
 {
-	char *title;
-	char *title_new;
+	char title[1026];
+	char *filename;
+	int i;
 
-	title = get_titlebar_string(nw);
-	title_new = realloc(title, strlen(title)+16);
-	if ( title_new == NULL ) {
-		free(title);
-		return;
-	} else {
-		title = title_new;
-	}
+	filename = narrative_window_get_filename(nw);
+	snprintf(title, 1024, "%s - Colloquium", filename);
+	if ( narrative_get_unsaved(nw->n) ) strcat(title, " *");
+	free(filename);
 
-	strcat(title, " - Colloquium");
-	if ( narrative_get_unsaved(nw->n) ) {
-		strcat(title, " *");
-	}
 	gtk_window_set_title(GTK_WINDOW(nw->window), title);
 
-	/* FIXME: Update all slide windows belonging to this NW */
+	for ( i=0; i<nw->n_slidewindows; i++ ) {
+		slide_window_update_titlebar(nw->slidewindows[i]);
+	}
+}
 
-	free(title);
 }
 
 
@@ -503,7 +498,7 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
 	if ( nw->show == NULL ) {
 		if ( nw->n_slidewindows < 16 ) {
 			nw->slidewindows[nw->n_slidewindows++] = slide_window_open(nw->n, slide,
-			                                                           nw->app);
+			                                                           nw, nw->app);
 		}
 	} else {
 		sc_slideshow_set_slide(nw->show, slide);

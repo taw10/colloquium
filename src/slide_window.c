@@ -1,7 +1,7 @@
 /*
  * slide_window.c
  *
- * Copyright © 2013-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -39,6 +39,7 @@
 
 #include "colloquium.h"
 #include "slide_window.h"
+#include "narrative_window.h"
 
 
 struct _slidewindow
@@ -47,6 +48,7 @@ struct _slidewindow
 	Narrative           *n;
 	Slide               *slide;
 	GtkWidget           *sv;
+	NarrativeWindow     *parent;
 };
 
 
@@ -90,6 +92,7 @@ static void change_edit_slide(SlideWindow *sw, Slide *np)
 {
 	gtk_slide_view_set_slide(sw->sv, np);
 	sw->slide = np;
+	slide_window_update_titlebar(sw);
 }
 
 
@@ -205,8 +208,8 @@ GActionEntry sw_entries[] = {
 };
 
 
-extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
-                                      GApplication *papp)
+SlideWindow *slide_window_open(Narrative *n, Slide *slide,
+                               NarrativeWindow *nw, GApplication *papp)
 {
 	GtkWidget *window;
 	SlideWindow *sw;
@@ -221,6 +224,9 @@ extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
 	sw->window = window;
 	sw->n = n;
 	sw->slide = slide;
+	sw->parent = nw;
+
+	slide_window_update_titlebar(sw);
 
 	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);
@@ -252,4 +258,18 @@ void slide_window_update(SlideWindow *sw)
 	w = gtk_widget_get_allocated_width(GTK_WIDGET(sw->sv));
 	h = gtk_widget_get_allocated_height(GTK_WIDGET(sw->sv));
 	gtk_widget_queue_draw_area(GTK_WIDGET(sw->sv), 0, 0, w, h);
+}
+
+
+void slide_window_update_titlebar(SlideWindow *sw)
+{
+	char title[1026];
+	char *filename;
+
+	filename = narrative_window_get_filename(sw->parent);
+	snprintf(title, 1024, "%s (slide %i) - Colloquium", filename,
+	         1+narrative_get_slide_number_for_slide(sw->n, sw->slide));
+	if ( narrative_get_unsaved(sw->n) ) strcat(title, " *");
+
+	gtk_window_set_title(GTK_WINDOW(sw->window), title);
 }

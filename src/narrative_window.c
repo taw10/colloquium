@@ -111,6 +111,26 @@ static void update_titlebar(NarrativeWindow *nw)
 	}
 }
 
+
+void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw)
+{
+	int i;
+	int found = 0;
+
+	for ( i=0; i<nw->n_slidewindows; i++ ) {
+		if ( nw->slidewindows[i] == sw ) {
+			int j;
+			for ( j=i; j<nw->n_slidewindows-1; j++ ) {
+				nw->slidewindows[j] = nw->slidewindows[j+1];
+			}
+			nw->n_slidewindows--;
+			found = 1;
+		}
+	}
+
+	if ( !found ) {
+		fprintf(stderr, "Couldn't find slide window in narrative record\n");
+	}
 }
 
 
@@ -499,6 +519,8 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
 		if ( nw->n_slidewindows < 16 ) {
 			nw->slidewindows[nw->n_slidewindows++] = slide_window_open(nw->n, slide,
 			                                                           nw, nw->app);
+		} else {
+			fprintf(stderr, _("Too many slide windows\n"));
 		}
 	} else {
 		sc_slideshow_set_slide(nw->show, slide);

@@ -163,7 +163,7 @@ static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
 
 static gboolean sw_close_sig(GtkWidget *w, SlideWindow *sw)
 {
-	//narrative_window_sw_closed(sw->n->narrative_window, sw);
+	narrative_window_sw_closed(sw->parent, sw);
 	return FALSE;
 }
 

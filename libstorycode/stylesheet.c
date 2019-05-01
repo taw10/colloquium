@@ -220,6 +220,7 @@ Stylesheet *stylesheet_new()
 	create_style(ss, "SLIDE", "TEXT");
 	create_style(ss, "SLIDE", "PRESTITLE");
 	create_style(ss, "SLIDE", "SLIDETITLE");
+	create_style(ss, "SLIDE", "FOOTER");
 
 	return ss;
 }
@@ -552,5 +553,6 @@ const char *stylesheet_get_friendly_name(const char *in)
 	if ( strcmp(in, "SLIDETITLE") == 0 ) return "Slide title";
 	if ( strcmp(in, "PRESTITLE") == 0 ) return "Presentation title";
 	if ( strcmp(in, "TEXT") == 0 ) return "Text frame";
+	if ( strcmp(in, "FOOTER") == 0 ) return "Footer";
 	return in;
 }

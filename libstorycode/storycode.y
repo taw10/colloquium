@@ -371,6 +371,7 @@ style_slide_def:
 | style_slide_def style_slide_prestitle { }
 | style_slide_def style_slide_text      { }
 | style_slide_def style_slide_title     { }
+| style_slide_def style_slide_footer    { }
 ;
 
 background:
@@ -398,6 +399,10 @@ style_slide_title:
 
 style_slide_text:
   TEXTFRAME '{' styledefs '}' { set_style(ctx, "SLIDE.TEXT"); }
+;
+
+style_slide_footer:
+  FOOTER '{' styledefs '}' { set_style(ctx, "SLIDE.FOOTER"); }
 ;
 
 styledefs:

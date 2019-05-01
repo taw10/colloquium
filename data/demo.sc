@@ -38,6 +38,14 @@ STYLES {
       FGCOL #eeeeee
       BGCOL 0,0,0,0
     }
+    FOOTER {
+      GEOMETRY 1f x 35u +0u +738u
+      FGCOL 1.00,1.00,1.00,1.00
+      BGCOL 0.76,0.49,0.07,1.00
+      PARASPACE 0u,0u,0u,0u
+      PAD 0u,0u,0u,0u
+      ALIGN right
+    }
   }
 }
 

@@ -451,6 +451,7 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
 	run_printing(nw->n, nw->window);
+	gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
 }
 
 

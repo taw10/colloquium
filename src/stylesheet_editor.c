@@ -606,6 +606,8 @@ StylesheetEditor *stylesheet_editor_new(Stylesheet *ss)
 {
 	StylesheetEditor *se;
 	GtkTreeSelection *sel;
+	GtkCellRenderer *renderer;
+	GtkTreeViewColumn *column;
 
 	se = g_object_new(COLLOQUIUM_TYPE_STYLESHEET_EDITOR, NULL);
 	if ( se == NULL ) return NULL;
@@ -613,8 +615,6 @@ StylesheetEditor *stylesheet_editor_new(Stylesheet *ss)
 	se->priv->stylesheet = ss;
 	se->priv->style_name = NULL;
 
-	GtkCellRenderer *renderer;
-	GtkTreeViewColumn *column;
 	renderer = gtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes("Element", renderer,
 	                                                  "text", SEL_COL_FRIENDLY_NAME,

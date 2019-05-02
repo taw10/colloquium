@@ -568,3 +568,23 @@ const char *stylesheet_get_friendly_name(const char *in)
 	if ( strcmp(in, "FOOTER") == 0 ) return "Footer";
 	return in;
 }
+
+
+int stylesheet_set_from_storycode(Stylesheet *ss, const char *sc)
+{
+	Stylesheet *ssnew;
+	Narrative *n;
+
+	n = storycode_parse_presentation(sc);
+	if ( n == NULL ) return 1;
+
+	ssnew = narrative_get_stylesheet(n);
+	if ( ssnew == NULL ) return 1;
+
+	narrative_free(n);
+
+	free_style_contents(&ss->top);
+	ss->top = ssnew->top;
+
+	return 0;
+}

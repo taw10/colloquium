@@ -38,6 +38,7 @@
 struct _sspriv
 {
 	Stylesheet *stylesheet;
+	char *orig_ss;
 	char *style_name;
 };
 
@@ -379,7 +380,7 @@ static void element_changed(GtkTreeSelection *sel, StylesheetEditor *se)
 
 static void revert_sig(GtkButton *button, StylesheetEditor *se)
 {
-	/* FIXME: implement */
+	stylesheet_set_from_storycode(se->priv->stylesheet, se->priv->orig_ss);
 	set_values_from_presentation(se);
 	g_signal_emit_by_name(se, "changed");
 }
@@ -545,6 +546,7 @@ static void bg_sig(GtkColorButton *widget, StylesheetEditor *se)
 
 static void stylesheet_editor_finalize(GObject *obj)
 {
+	free(COLLOQUIUM_STYLESHEET_EDITOR(obj)->priv->orig_ss);
 	G_OBJECT_CLASS(stylesheet_editor_parent_class)->finalize(obj);
 }
 
@@ -614,6 +616,7 @@ StylesheetEditor *stylesheet_editor_new(Stylesheet *ss)
 
 	se->priv->stylesheet = ss;
 	se->priv->style_name = NULL;
+	se->priv->orig_ss = stylesheet_serialise(ss);
 
 	renderer = gtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes("Element", renderer,

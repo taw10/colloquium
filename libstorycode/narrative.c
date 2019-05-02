@@ -84,6 +84,7 @@ static void narrative_item_destroy(struct narrative_item *item)
 }
 
 
+/* Free the narrative and all contents, but not the stylesheet */
 void narrative_free(Narrative *n)
 {
 	int i;

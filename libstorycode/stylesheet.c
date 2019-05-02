@@ -133,8 +133,20 @@ static void default_style(struct style *s)
 }
 
 
+static void free_style_contents(struct style *sty)
+{
+	int i;
+	for ( i=0; i<sty->n_substyles; i++ ) {
+		free_style_contents(&sty->substyles[i]);
+	}
+	free(sty->name);
+	free(sty->substyles);
+}
+
+
 void stylesheet_free(Stylesheet *s)
 {
+	free_style_contents(&s->top);
 	free(s);
 }
 

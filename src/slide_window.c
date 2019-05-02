@@ -170,8 +170,8 @@ static void copy_frame_sig(GSimpleAction *action, GVariant *parameter,
 static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
-	//SlideWindow *sw = vp;
-	//sc_editor_delete_selected_frame(sw->sceditor);
+	SlideWindow *sw = vp;
+	gtk_slide_view_delete_selected_frame(GTK_SLIDE_VIEW(sw->sv));
 }
 
 

@@ -1021,6 +1021,11 @@ static void do_backspace(GtkSlideView *e, signed int dir)
 	struct slide_pos p1, p2;
 	size_t o1, o2;
 
+	if ( e->cursor_frame->type == SLIDE_ITEM_IMAGE ) {
+		gtk_slide_view_delete_selected_frame(e);
+		return;
+	}
+
 	if ( !slide_positions_equal(e->sel_start, e->sel_end) ) {
 
 		/* Block delete */
@@ -1118,6 +1123,8 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 		                           event);
 	if ( r ) return FALSE;  /* IM ate it */
 
+	if ( e->cursor_frame == NULL ) return FALSE;
+
 	switch ( event->keyval ) {
 
 		case GDK_KEY_Left :
@@ -1163,6 +1170,17 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 	if ( claim ) return TRUE;
 	return FALSE;
+}
+
+
+void gtk_slide_view_delete_selected_frame(GtkSlideView *e)
+{
+	if ( e->cursor_frame == NULL ) return;
+	slide_delete_item(e->slide, e->cursor_frame);
+	unset_selection(e);
+	e->cursor_frame = NULL;
+	emit_change_sig(e);
+	redraw(e);
 }
 
 

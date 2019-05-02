@@ -151,5 +151,6 @@ extern GType gtk_slide_view_get_type(void);
 
 extern GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide);
 extern void gtk_slide_view_set_slide(GtkWidget *sv, Slide *slide);
+extern void gtk_slide_view_delete_selected_frame(GtkSlideView *e);
 
 #endif  /* GTK_SLIDE_VIEW_H */

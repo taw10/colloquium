@@ -189,6 +189,7 @@ void set_style(struct scpctx *ctx, const char *element)
 /* The only thing a "presentation" really needs is narrative */
 presentation:
   stylesheet narrative
+| stylesheet
 | narrative
 ;
 

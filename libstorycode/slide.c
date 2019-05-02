@@ -57,6 +57,21 @@ void slide_free(Slide *s)
 }
 
 
+void slide_delete_item(Slide *s, SlideItem *item)
+{
+	int i;
+	for ( i=0; i<s->n_items; i++ ) {
+		if ( &s->items[i] == item ) {
+			memmove(&s->items[i], &s->items[i+1],
+			        (s->n_items-i-1)*sizeof(SlideItem));
+			s->n_items--;
+			return;
+		}
+	}
+	fprintf(stderr, "Didn't find slide item to delete!\n");
+}
+
+
 static SlideItem *add_item(Slide *s)
 {
 	SlideItem *new_items;

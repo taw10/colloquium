@@ -37,6 +37,8 @@ typedef struct _slideitem SlideItem;
 extern Slide *slide_new(void);
 extern void slide_free(Slide *s);
 
+extern void slide_delete_item(Slide *s, SlideItem *item);
+
 extern SlideItem *slide_add_image(Slide *s, char *filename, struct frame_geom geom);
 extern SlideItem *slide_add_text(Slide *s, char **text, int n_text,
                                  struct frame_geom geom, enum alignment alignment);

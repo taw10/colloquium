@@ -1,7 +1,7 @@
 /*
  * sc_editor.h
  *
- * Copyright © 2014-2018 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2014-2019 Thomas White <taw@bitwiz.org.uk>
  *
  * This file is part of Colloquium.
  *
@@ -146,6 +146,8 @@ struct _gtkslideviewclass
 
 typedef struct _gtkslideview GtkSlideView;
 typedef struct _gtkslideviewclass GtkSlideViewClass;
+
+extern GType gtk_slide_view_get_type(void);
 
 extern GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide);
 extern void gtk_slide_view_set_slide(GtkWidget *sv, Slide *slide);

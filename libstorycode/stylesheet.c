@@ -73,9 +73,9 @@ struct _stylesheet
 
 static void copy_col(struct colour *to, struct colour from)
 {
-    int i;
-    for ( i=0; i<4; i++ ) to->rgba[i] = from.rgba[i];
-    to->hexcode = from.hexcode;
+	int i;
+	for ( i=0; i<4; i++ ) to->rgba[i] = from.rgba[i];
+	to->hexcode = from.hexcode;
 }
 
 

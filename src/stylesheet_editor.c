@@ -630,4 +630,3 @@ StylesheetEditor *stylesheet_editor_new(Stylesheet *ss)
 
 	return se;
 }
-

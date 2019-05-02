@@ -434,16 +434,16 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
 static gint export_pdf_response_sig(GtkWidget *d, gint response,
                                     Narrative *n)
 {
-       if ( response == GTK_RESPONSE_ACCEPT ) {
-               char *filename;
-               filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-               render_slides_to_pdf(n, narrative_get_imagestore(n), filename);
-               g_free(filename);
-       }
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+		char *filename;
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+		render_slides_to_pdf(n, narrative_get_imagestore(n), filename);
+		g_free(filename);
+	}
 
-       gtk_widget_destroy(d);
+	gtk_widget_destroy(d);
 
-       return 0;
+	return 0;
 }
 
 

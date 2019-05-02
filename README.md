@@ -1,8 +1,7 @@
---------------------------------------------------------------------------------
-
 Colloquium: Narrative-based presentation system
+===============================================
 
-Copyright © 2017-2018 Thomas White
+Copyright © 2017-2019 Thomas White
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,10 +16,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-Author: Thomas White <taw@bitwiz.org.uk>
-See the COPYING file for full licence conditions.
+Author: Thomas White <taw@bitwiz.me.uk>
 
---------------------------------------------------------------------------------
+See the COPYING file for full licence conditions.
 
 Summary
 -------
@@ -37,27 +35,43 @@ Installation instructions
 Colloquium uses the Meson build system (http://mesonbuild.com), which works
 with Ninja (https://ninja-build.org/).  Start by installing these if you don't
 already have them.  For example, in Fedora:
-   $ sudo dnf install meson ninja-build
-or for Debian/Ubuntu:
-   $ sudo apt install meson ninja-build
-or for Mac OS users, using Homebrew (https://brew.sh):
-   $ brew install meson ninja
 
-You will also need the gettext, GTK 3 and JSON-GLib development files:
-   $ sudo dnf install gettext-devel gtk3-devel json-glib-devel
+    $ sudo dnf install meson ninja-build
+
+or for Debian/Ubuntu:
+
+    $ sudo apt install meson ninja-build
+
+or for Mac OS users, using Homebrew (https://brew.sh):
+
+    $ brew install meson ninja
+
+You will also need the gettext and GTK 3 development files:
+
+    $ sudo dnf install gettext-devel gtk3-devel
+
 or:
-   $ sudo apt install gettext-devel libgtk-3-dev libjson-glib-dev
+
+    $ sudo apt install gettext-devel libgtk-3-dev
+
 or:
-   $ brew install gettext gtk+3 json-glib
+
+    $ brew install gettext gtk+3
+
+This should pull in the other dependencies, which are GDK, GLib, GIO, Cairo,
+Pango and gdk-pixbuf.  You may need to additionally install Flex and Bison.
 
 Set up the build directory using Meson:
-   $ meson build
+
+    $ meson build
 
 Compile Colloquium using Ninja:
-   $ ninja -C build
+
+    $ ninja -C build
 
 To install:
-   $ sudo ninja -C build install
+
+    $ sudo ninja -C build install
 
 
 Running the program
@@ -65,17 +79,21 @@ Running the program
 
 Colloquium should appear in your desktop environment's menus.  Alternatively,
 it can be started from the command line:
-   $ colloquium
 
-The first time Colloquium runs, it will show an introduction document.
+    $ colloquium
+
+The first time Colloquium runs, it will show an introduction document to help
+you get started.
 
 
 Contributing
 ------------
 
-Git repository:  git://git.bitwiz.me.uk/colloquium.git
-                 https://git.bitwiz.me.uk/?p=colloquium.git
+Clone from either GitHub or my private repository:
 
-  Or on GitHub:  https://github.com/taw10/colloquium/
+    $ git clone git://git.bitwiz.me.uk/colloquium.git
+    $ git clone https://github.com/taw10/colloquium.git
 
- Issue tracker:  https://github.com/taw10/colloquium/issues
+Browse the repository:  https://git.bitwiz.me.uk/?p=colloquium.git or https://github.com/taw10/colloquium
+
+Issue tracker:  https://github.com/taw10/colloquium/issues

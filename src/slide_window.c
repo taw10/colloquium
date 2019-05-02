@@ -33,6 +33,9 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <math.h>
 
+#include <libintl.h>
+#define _(x) gettext(x)
+
 #include <narrative.h>
 #include <slide.h>
 #include <gtkslideview.h>
@@ -60,6 +63,91 @@ static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
 	*text = strdup("Slide title");
 	slide_add_slidetitle(sw->slide, text, 1);
 	gtk_slide_view_set_slide(sw->sv, sw->slide);
+}
+
+
+static gint insert_image_response_sig(GtkWidget *d, gint response, SlideWindow *sw)
+{
+	GtkWidget *cb;
+	const char *size_str;
+
+	cb = gtk_file_chooser_get_extra_widget(GTK_FILE_CHOOSER(d));
+	size_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(cb));
+
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		char *filename;
+		struct frame_geom geom;
+		char *fn;
+		double slide_w, slide_h;
+		gint image_w, image_h;
+		double aspect;
+		GdkPixbufFormat *f;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+		fn = strdup(filename);
+		if ( fn == NULL ) return 0;
+
+		if ( slide_get_logical_size(sw->slide, narrative_get_stylesheet(sw->n),
+		                            &slide_w, &slide_h) ) return 0;
+
+		f = gdk_pixbuf_get_file_info(filename, &image_w, &image_h);
+		if ( f == NULL ) return 0;
+		aspect = (double)image_h / image_w;
+		g_free(filename);
+
+		if ( strcmp(size_str, "normal") == 0 ) {
+			geom.x.len = slide_w/4.0;  geom.x.unit = LENGTH_UNIT;
+			geom.y.len = slide_h/4.0;  geom.y.unit = LENGTH_UNIT;
+			geom.w.len = slide_w/2.0;  geom.w.unit = LENGTH_UNIT;
+			geom.h.len = geom.w.len*aspect;  geom.h.unit = LENGTH_UNIT;
+		}
+
+		if ( strcmp(size_str, "fillentire") == 0 ) {
+			geom.x.len = 0.0;  geom.x.unit = LENGTH_UNIT;
+			geom.y.len = 0.0;  geom.y.unit = LENGTH_UNIT;
+			geom.w.len = 1.0;  geom.w.unit = LENGTH_FRAC;
+			geom.h.len = 1.0;  geom.h.unit = LENGTH_FRAC;
+		}
+
+		slide_add_image(sw->slide, fn, geom);
+	}
+
+	gtk_widget_destroy(d);
+
+	return 0;
+}
+
+
+static void insert_image_sig(GSimpleAction *action, GVariant *parameter,
+                             gpointer vp)
+{
+	SlideWindow *sw = vp;
+	GtkWidget *d;
+	GtkWidget *cb;
+
+	d = gtk_file_chooser_dialog_new(_("Insert image"),
+	                                NULL,
+	                                GTK_FILE_CHOOSER_ACTION_OPEN,
+	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
+	                                _("_Insert"), GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	cb = gtk_combo_box_text_new();
+
+	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "normal",
+	                          _("Make the image about half the width of the slide"));
+	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "fillentire",
+	                          _("Fill the entire slide, even the title and footer regions"));
+
+	gtk_combo_box_set_active_id(GTK_COMBO_BOX(cb), "normal");
+
+	gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(d), cb);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(insert_image_response_sig), sw);
+
+	gtk_widget_show_all(d);
 }
 
 
@@ -205,6 +293,7 @@ GActionEntry sw_entries[] = {
 	{ "next", next_slide_sig, NULL, NULL, NULL },
 	{ "last", last_slide_sig, NULL, NULL, NULL },
 	{ "slidetitle", insert_slidetitle_sig, NULL, NULL, NULL },
+	{ "image", insert_image_sig, NULL, NULL, NULL },
 };
 
 

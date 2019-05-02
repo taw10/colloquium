@@ -117,9 +117,15 @@
           <attribute name='label' translatable='yes'>Slide</attribute>
           <attribute name='action'>win.slide</attribute>
         </item>
+      </section>
+      <section>
         <item>
           <attribute name='label' translatable='yes'>Slide title</attribute>
           <attribute name='action'>win.slidetitle</attribute>
+        </item>
+        <item>
+          <attribute name='label' translatable='yes'>Image</attribute>
+          <attribute name='action'>win.image</attribute>
         </item>
       </section>
     </submenu>

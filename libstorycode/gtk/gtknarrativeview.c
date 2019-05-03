@@ -815,18 +815,24 @@ static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
 }
 
 
-static void split_paragraph_at_cursor(Narrative *n, struct edit_pos pos)
+static void split_paragraph_at_cursor(Narrative *n, struct edit_pos *pos)
 {
 	size_t off;
 
-	if ( n->items[pos.para].type != NARRATIVE_ITEM_SLIDE ) {
-		off = pos_trail_to_offset(&n->items[pos.para],
-		                          pos.pos, pos.trail);
+	if ( n->items[pos->para].type != NARRATIVE_ITEM_SLIDE ) {
+		off = pos_trail_to_offset(&n->items[pos->para],
+		                          pos->pos, pos->trail);
 	} else {
 		off = 0;
 	}
 
-	narrative_split_item(n, pos.para, off);
+	if ( (off > 0) && (off < strlen(n->items[pos->para].text)) )  {
+		narrative_split_item(n, pos->para, off);
+	} else if ( off == 0 ) {
+		pos->para--;
+		pos->pos = 0;
+		pos->trail = 0;
+	}
 }
 
 
@@ -841,7 +847,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 	item = &e->n->items[e->cpos.para];
 
 	if ( strcmp(t, "\n") == 0 ) {
-		split_paragraph_at_cursor(e->n, e->cpos);
+		split_paragraph_at_cursor(e->n, &e->cpos);
 		rewrap_range(e, e->cpos.para, e->cpos.para+1);
 		update_size(e);
 		cursor_moveh(e->n, &e->cpos, +1);
@@ -1216,7 +1222,7 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	s = slide_new();
 	if ( s == NULL ) return;
 
-	split_paragraph_at_cursor(e->n, e->cpos);
+	split_paragraph_at_cursor(e->n, &e->cpos);
 	narrative_insert_slide(e->n, s, e->cpos.para+1);
 
 	rewrap_range(e, e->cpos.para, e->cpos.para+2);

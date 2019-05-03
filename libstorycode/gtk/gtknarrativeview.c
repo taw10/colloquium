@@ -1192,6 +1192,7 @@ void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos)
 	double h;
 	int i;
 
+	if ( pos < 0 ) pos = e->n->n_items-1;
 	e->cpos.para = pos;
 	e->cpos.pos = 0;
 	e->cpos.trail = 0;

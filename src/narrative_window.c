@@ -138,6 +138,8 @@ static void update_toolbar(NarrativeWindow *nw)
 {
 	int cur_para, n_para;
 
+	if ( nw->show == NULL ) return;
+
 	cur_para = gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv));
 	if ( cur_para == 0 ) {
 		gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
@@ -374,7 +376,7 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 	gtk_narrative_view_set_cursor_para(nv, gtk_narrative_view_get_cursor_para(nv)+1);
 
 	/* If we only have one monitor, skip to next slide */
-	if ( ss->single_monitor && !nw->show_no_slides ) {
+	if ( ss != NULL && ss->single_monitor && !nw->show_no_slides ) {
 		int i;
 		for ( i=gtk_narrative_view_get_cursor_para(nv); i<n_paras; i++ )
 		{
@@ -387,7 +389,7 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 
 	pr_clock_set_pos(nw->pr_clock, gtk_narrative_view_get_cursor_para(nv), n_paras);
 	ns = narrative_get_slide(nw->n, gtk_narrative_view_get_cursor_para(nv));
-	if ( ns != NULL ) {
+	if ( nw->show != NULL && ns != NULL ) {
 		sc_slideshow_set_slide(nw->show, ns);
 	}
 	update_toolbar(nw);
@@ -797,7 +799,10 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *p
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
 	                               "win.last");
 
-	update_toolbar(nw);
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
 
 	scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),

@@ -303,11 +303,13 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	int i;
 	int n_del = 0;
 	int merge = 1;
+	int middle;    /* This is where the "middle deletion" will begin */
 
 	/* Starting item */
 	if ( n->items[i1].type == NARRATIVE_ITEM_SLIDE ) {
 		delete_item(n, i1);
-		i1--;
+		if ( i1 == i2 ) return;  /* only one slide to delete */
+		middle = i1; /* ... which is now the item just after the slide */
 		i2--;
 		merge = 0;
 	} else {
@@ -318,14 +320,15 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 			return;  /* easy case */
 		} else {
 			n->items[i1].text[o1] = '\0';
+			middle = i1+1;
 		}
 	}
 
 	/* Middle items */
-	for ( i=i1+1; i<i2; i++ ) {
+	for ( i=middle; i<i2; i++ ) {
 		/* Deleting the item moves all the subsequent items up, so the
 		 * index to be deleted doesn't change. */
-		delete_item(n, i1+1);
+		delete_item(n, middle);
 		n_del++;
 	}
 	i2 -= n_del;
@@ -333,21 +336,22 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	/* Last item */
 	if ( n->items[i2].type == NARRATIVE_ITEM_SLIDE ) {
 		delete_item(n, i2);
-		merge = 0;
-	} else {
-		memmove(&n->items[i2].text[0],
-		        &n->items[i2].text[o2],
-		        strlen(&n->items[i2].text[o2])+1);
+		return;
 	}
+
+	/* We end with a text item */
+	memmove(&n->items[i2].text[0],
+	        &n->items[i2].text[o2],
+	        strlen(&n->items[i2].text[o2])+1);
 
 	/* If the start and end points are in different paragraphs, and both
 	 * of them are text (any kind), merge them.  Note that at this point,
-	 * we know that i1 and i2 are different because otherwise we would've
-	 * returned earlier ("easy case"). */
-	assert(i1 != i2);
+	 * we know that i1 and i2 are different because otherwise we
+	 * would've returned earlier ("easy case"). */
 	if ( merge ) {
 		char *new_text;
 		size_t len = strlen(n->items[i1].text);
+		assert(i1 != i2);
 		len += strlen(n->items[i2].text);
 		new_text = malloc(len+1);
 		if ( new_text == NULL ) return;

@@ -489,7 +489,6 @@ static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para,
 	cy = n->space_t + para_top(n, cursor_para);
 	cw = w - n->space_l - n->space_r;
 
-
 	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
 		ch = item->slide_h;
 	} else {

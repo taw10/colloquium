@@ -162,6 +162,13 @@ int narrative_get_unsaved(Narrative *n)
 }
 
 
+int narrative_item_is_text(Narrative *n, int item)
+{
+	if ( n->items[item].type == NARRATIVE_ITEM_SLIDE ) return 0;
+	return 1;
+}
+
+
 void narrative_add_stylesheet(Narrative *n, Stylesheet *ss)
 {
 	assert(n->stylesheet == NULL);

@@ -554,50 +554,66 @@ static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
 }
 
 
-static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos,
-                       int hgh, double ww)
+static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos, double ww)
 {
-	double cx, clow, chigh, h;
-	const double t = 1.8;
-
-	if ( hgh ) {
-		draw_para_highlight(cr, n, cpos.para, ww);
-		return;
-	}
-
 	assert(n != NULL);
 
-	if ( n->items[cpos.para].type == NARRATIVE_ITEM_SLIDE ) {
-		draw_para_highlight(cr, n, cpos.para, ww);
-		return;
+	if ( narrative_item_is_text(n, cpos.para) ) {
+
+		/* Normal text-style cursor */
+
+		double cx, clow, chigh, h;
+		const double t = 1.8;
+
+		get_cursor_pos(n, cpos, &cx, &clow, &h);
+
+		chigh = clow+h;
+
+		cairo_move_to(cr, cx, clow);
+		cairo_line_to(cr, cx, chigh);
+
+		cairo_move_to(cr, cx-t, clow-t);
+		cairo_line_to(cr, cx, clow);
+		cairo_move_to(cr, cx+t, clow-t);
+		cairo_line_to(cr, cx, clow);
+
+		cairo_move_to(cr, cx-t, chigh+t);
+		cairo_line_to(cr, cx, chigh);
+		cairo_move_to(cr, cx+t, chigh+t);
+		cairo_line_to(cr, cx, chigh);
+
+		cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
+		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
+
+	} else {
+
+		/* Block highlight cursor */
+
+		double cx, cy, cw, ch;
+
+		cx = n->space_l - 5.5;
+		cy = n->space_t + para_top(n, cpos.para) - 5.5;
+		cw = n->items[cpos.para].slide_w + 11.0;
+		ch = n->items[cpos.para].slide_h + 11.0;
+
+		cairo_new_path(cr);
+		cairo_rectangle(cr, cx, cy, cw, ch);
+		cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
+		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
+
 	}
-
-	get_cursor_pos(n, cpos, &cx, &clow, &h);
-
-	chigh = clow+h;
-
-	cairo_move_to(cr, cx, clow);
-	cairo_line_to(cr, cx, chigh);
-
-	cairo_move_to(cr, cx-t, clow-t);
-	cairo_line_to(cr, cx, clow);
-	cairo_move_to(cr, cx+t, clow-t);
-	cairo_line_to(cr, cx, clow);
-
-	cairo_move_to(cr, cx-t, chigh+t);
-	cairo_line_to(cr, cx, chigh);
-	cairo_move_to(cr, cx+t, chigh+t);
-	cairo_line_to(cr, cx, chigh);
-
-	cairo_set_source_rgb(cr, 0.86, 0.0, 0.0);
-	cairo_set_line_width(cr, 1.0);
-	cairo_stroke(cr);
 }
 
 
 static void draw_overlay(cairo_t *cr, GtkNarrativeView *e)
 {
-	draw_caret(cr, e->n, e->cpos, e->para_highlight, e->w);
+	if ( e->para_highlight ) {
+		draw_para_highlight(cr, e->n, e->cpos.para, e->w);
+	} else {
+		draw_caret(cr, e->n, e->cpos, e->w);
+	}
 }
 
 

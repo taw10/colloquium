@@ -49,6 +49,8 @@ extern int narrative_save(Narrative *n, GFile *file);
 extern void narrative_set_unsaved(Narrative *n);
 extern int narrative_get_unsaved(Narrative *n);
 
+extern int narrative_item_is_text(Narrative *n, int item);
+
 extern void narrative_add_prestitle(Narrative *n, char *text);
 extern void narrative_add_bp(Narrative *n, char *text);
 extern void narrative_add_text(Narrative *n, char *text);

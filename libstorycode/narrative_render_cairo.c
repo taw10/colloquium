@@ -181,7 +181,7 @@ static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *i
 }
 
 
-static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *is)
+static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *is, int sel_block)
 {
 	double w, h;
 
@@ -201,6 +201,7 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *
 	}
 	item->slide_thumbnail = render_thumbnail(item->slide, ss, is,
 	                                         item->slide_w, item->slide_h);
+	item->selected = sel_block;
 }
 
 
@@ -285,6 +286,8 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	for ( i=min; i<=max; i++ ) {
 
 		size_t srt, end;
+		int sel_block = 0;
+
 		if ( i >= sel_start.para && i <= sel_end.para ) {
 			if ( i == sel_start.para ) {
 				srt = sel_s;
@@ -299,6 +302,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			if ( i > sel_start.para && i < sel_end.para ) {
 				end = G_MAXUINT;
 			}
+			sel_block = 1;
 		} else {
 			srt = 0;
 			end = 0;
@@ -322,7 +326,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
-			wrap_slide(&n->items[i], stylesheet, is);
+			wrap_slide(&n->items[i], stylesheet, is, sel_block);
 			break;
 
 			default :
@@ -363,6 +367,12 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 	cairo_user_to_device(cr, &x, &y);
 	x = rint(x);  y = rint(y);
 	cairo_device_to_user(cr, &x, &y);
+
+	if ( item->selected ) {
+		cairo_rectangle(cr, x-5.0, y-5.0, item->slide_w+10.0, item->slide_h+10.0);
+		cairo_set_source_rgb(cr, 0.655, 0.899, 1.0);
+		cairo_fill(cr);
+	}
 
 	cairo_rectangle(cr, x, y, item->slide_w, item->slide_h);
 	cairo_set_source_surface(cr, item->slide_thumbnail, 0.0, 0.0);

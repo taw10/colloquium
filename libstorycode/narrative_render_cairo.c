@@ -236,6 +236,15 @@ static void sort_positions(struct edit_pos *a, struct edit_pos *b)
 }
 
 
+static void wrap_marker(struct narrative_item *item, PangoContext *pc, double w,
+                        int sel_block)
+{
+	item->obj_w = w - item->space_l - item->space_r;
+	item->obj_h = 20.0;
+	item->selected = sel_block;
+}
+
+
 int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
                          PangoContext *pc, double w, ImageStore *is,
                          int min, int max,
@@ -310,6 +319,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			case NARRATIVE_ITEM_SLIDE :
 			stn = "NARRATIVE.SLIDE";
 			break;
+
+			case NARRATIVE_ITEM_EOP :
+			stn = "NARRATIVE.EOP";
+			break;
 		}
 
 		if ( stylesheet_get_paraspace(stylesheet, stn, paraspace) == 0 ) {
@@ -332,6 +345,8 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			wrap_slide(&n->items[i], stylesheet, is, sel_block);
 			break;
 
+			case NARRATIVE_ITEM_EOP :
+			wrap_marker(&n->items[i], pc, w, sel_block);
 			break;
 		}
 	}
@@ -388,6 +403,32 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 }
 
 
+static void draw_eop(struct narrative_item *item, cairo_t *cr)
+{
+	double x, y;
+
+	cairo_save(cr);
+	cairo_translate(cr, item->space_l, item->space_t);
+
+	x = 0.0;  y = 0.0;
+	cairo_user_to_device(cr, &x, &y);
+	x = rint(x);  y = rint(y);
+	cairo_device_to_user(cr, &x, &y);
+
+	if ( item->selected ) {
+		cairo_rectangle(cr, x-5.0, y-5.0, item->obj_w+10.0, item->obj_h+10.0);
+		cairo_set_source_rgb(cr, 0.655, 0.899, 1.0);
+		cairo_fill(cr);
+	}
+
+	cairo_rectangle(cr, x, y, item->obj_w, item->obj_h);
+	cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+	cairo_fill(cr);
+
+	cairo_restore(cr);
+}
+
+
 static void draw_text(struct narrative_item *item, cairo_t *cr)
 {
 	if ( item->layout == NULL ) return;
@@ -423,8 +464,9 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 		draw_slide(&n->items[i], cr);
 		break;
 
-		default :
-		return 1;
+		case NARRATIVE_ITEM_EOP :
+		draw_eop(&n->items[i], cr);
+		break;
 
 	}
 

@@ -165,6 +165,7 @@ int narrative_get_unsaved(Narrative *n)
 int narrative_item_is_text(Narrative *n, int item)
 {
 	if ( n->items[item].type == NARRATIVE_ITEM_SLIDE ) return 0;
+	if ( n->items[item].type == NARRATIVE_ITEM_EOP ) return 0;
 	return 1;
 }
 
@@ -281,6 +282,17 @@ void narrative_add_slide(Narrative *n, Slide *slide)
 	item->type = NARRATIVE_ITEM_SLIDE;
 	item->slide = slide;
 	item->slide_thumbnail = NULL;
+}
+
+
+void narrative_add_eop(Narrative *n)
+{
+	struct narrative_item *item;
+
+	item = add_item(n);
+	if ( item == NULL ) return;
+
+	item->type = NARRATIVE_ITEM_EOP;
 }
 
 

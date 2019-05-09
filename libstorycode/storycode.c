@@ -219,6 +219,10 @@ static int write_item(GOutputStream *fh, struct narrative_item *item)
 		if ( write_string(fh, "}\n") ) return 1;
 		break;
 
+		case NARRATIVE_ITEM_EOP:
+		if ( write_string(fh, "ENDOFPRESENTATION\n") ) return 1;
+		break;
+
 	}
 	return 0;
 }

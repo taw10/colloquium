@@ -55,6 +55,7 @@ extern void narrative_add_prestitle(Narrative *n, char *text);
 extern void narrative_add_bp(Narrative *n, char *text);
 extern void narrative_add_text(Narrative *n, char *text);
 extern void narrative_add_slide(Narrative *n, Slide *slide);
+extern void narrative_add_eop(Narrative *n);
 extern void narrative_insert_slide(Narrative *n, Slide *slide, int pos);
 extern void narrative_delete_block(Narrative *n, int i1, size_t o1,
                                                  int i2, size_t o2);

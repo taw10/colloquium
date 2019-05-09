@@ -61,6 +61,7 @@
 
 %token STYLES
 %token SLIDE
+%token EOP
 %token NARRATIVE
 %token PRESTITLE
 %token SLIDETITLE
@@ -206,6 +207,7 @@ narrative_el:
 | narrative_bulletpoint { narrative_add_bp(ctx->n, $1); }
 | slide                 { }
 | STRING                { narrative_add_text(ctx->n, $1); }
+| EOP                   { narrative_add_eop(ctx->n); }
 ;
 
 narrative_prestitle:

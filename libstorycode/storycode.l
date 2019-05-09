@@ -50,6 +50,7 @@ PRESTITLE         { return SC_PRESTITLE; }
 SLIDETITLE        { return SC_SLIDETITLE; }
 NARRATIVE         { return SC_NARRATIVE; }
 SLIDE             { return SC_SLIDE; }
+ENDOFPRESENTATION { return SC_EOP; }
 BP                { return SC_BP; }
 GEOMETRY          { BEGIN(geom); return SC_GEOMETRY; }
 TEXT              { return SC_TEXTFRAME; }

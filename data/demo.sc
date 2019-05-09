@@ -94,3 +94,5 @@ SLIDE {
   IMAGE[452.2ux431u+64.8u+168.9u]: alpha_warning.svg
 }
 : That's enough to get you started.  I hope you enjoy using Colloquium!
+ENDOFPRESENTATION
+: You can also have "bonus material", not included in your presentation's timing.

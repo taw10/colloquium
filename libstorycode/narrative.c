@@ -313,7 +313,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	int middle;    /* This is where the "middle deletion" will begin */
 
 	/* Starting item */
-	if ( n->items[i1].type == NARRATIVE_ITEM_SLIDE ) {
+	if ( !narrative_item_is_text(n, i1) ) {
 		delete_item(n, i1);
 		if ( i1 == i2 ) return;  /* only one slide to delete */
 		middle = i1; /* ... which is now the item just after the slide */
@@ -341,7 +341,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	i2 -= n_del;
 
 	/* Last item */
-	if ( n->items[i2].type == NARRATIVE_ITEM_SLIDE ) {
+	if ( !narrative_item_is_text(n, i2) ) {
 		delete_item(n, i2);
 		return;
 	}
@@ -379,7 +379,7 @@ void narrative_split_item(Narrative *n, int i1, size_t o1)
 	item1 = &n->items[i1];
 	item2 = insert_item(n, i1);
 
-	if ( item1->type != NARRATIVE_ITEM_SLIDE ) {
+	if ( !narrative_item_is_text(n, i1) ) {
 		item2->text = strdup(&item1->text[o1]);
 		item1->text[o1] = '\0';
 	} else {

@@ -44,11 +44,19 @@ enum narrative_item_type
 struct narrative_item
 {
 	enum narrative_item_type type;
-	double h;
+
+	/* Space around the thing (PangoLayout, slide, marker etc) */
 	double space_l;
 	double space_r;
-	double space_t;  /* Already included in "h" */
-	double space_b;  /* Already included in "h" */
+	double space_t;
+	double space_b;
+
+	/* Size of the thing (PangoLayout, slide, marker etc) */
+	double obj_w;
+	double obj_h;
+
+	/* Total height is obj_h + space_t + space_b.
+	 * obj_w + space_l + space_r might be less than width of rendering surface */
 
 	/* For TEXT, BP, PRESTITLE */
 	char *text;
@@ -61,8 +69,6 @@ struct narrative_item
 
 	/* For SLIDE */
 	Slide *slide;
-	double slide_w;
-	double slide_h;
 #ifdef HAVE_CAIRO
 	cairo_surface_t *slide_thumbnail;
 #else

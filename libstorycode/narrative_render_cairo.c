@@ -75,7 +75,6 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	const char *font;
 	PangoFontDescription *fontdesc;
 	enum alignment align;
-	struct length paraspace[4];
 	double wrap_w;
 	PangoAttrList *attrs;
 	PangoAttribute *attr;
@@ -93,12 +92,6 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 		/* Use item-specific value */
 		palignment = to_pangoalignment(item->align);
 	}
-
-	if ( stylesheet_get_paraspace(ss, stn, paraspace) ) return;
-	item->space_l = lcalc(paraspace[0], w);
-	item->space_r = lcalc(paraspace[1], w);
-	item->space_t = lcalc(paraspace[2], dummy_h_val);
-	item->space_b = lcalc(paraspace[3], dummy_h_val);
 
 	/* Calculate width of actual text */
 	wrap_w = w - item->space_l - item->space_r;
@@ -134,7 +127,8 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	//pango_attr_list_unref(attrs);
 
 	pango_layout_get_extents(item->layout, NULL, &rect);
-	item->h = pango_units_to_double(rect.height)+item->space_t+item->space_b;
+	item->obj_w = pango_units_to_double(rect.width);
+	item->obj_h = pango_units_to_double(rect.height);
 }
 
 
@@ -185,34 +179,26 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *
 {
 	double w, h;
 
-	item->space_l = 0.0;
-	item->space_r = 0.0;
-	item->space_t = 10.0;
-	item->space_b = 10.0;
-
 	slide_get_logical_size(item->slide, ss, &w, &h);
-	item->slide_h = 320.0;  /* Actual height of thumbnail */
-	item->slide_w = rint(item->slide_h*w/h);
-
-	item->h = item->slide_h + item->space_t + item->space_b;
+	item->obj_h = 320.0;  /* Actual height of thumbnail */
+	item->obj_w = rint(item->obj_h*w/h);
 
 	if ( item->slide_thumbnail != NULL ) {
 		cairo_surface_destroy(item->slide_thumbnail);
 	}
 	item->slide_thumbnail = render_thumbnail(item->slide, ss, is,
-	                                         item->slide_w, item->slide_h);
+	                                         item->obj_w, item->obj_h);
 	item->selected = sel_block;
 }
 
 
-static size_t pos_trail_to_offset(struct narrative_item *item, int offs, int trail)
+static size_t pos_trail_to_offset(Narrative *n, int i, int offs, int trail)
 {
 	glong char_offs;
 	char *ptr;
+	struct narrative_item *item = &n->items[i];
 
-	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
-		return offs;
-	}
+	if ( !narrative_item_is_text(n, i) ) return offs;
 
 	char_offs = g_utf8_pointer_to_offset(item->text, item->text+offs);
 	char_offs += trail;
@@ -258,6 +244,8 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	int i;
 	struct length pad[4];
 	int sel_s, sel_e;
+	const char *stn;
+	struct length paraspace[4];
 
 	if ( stylesheet_get_padding(stylesheet, "NARRATIVE", pad) ) return 1;
 	n->space_l = lcalc(pad[0], w);
@@ -273,11 +261,8 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	if ( max >= n->n_items ) max = n->n_items-1;
 
 	if ( !positions_equal(sel_start, sel_end) ) {
-		struct narrative_item *item;
-		item = &n->items[sel_start.para];
-		sel_s = pos_trail_to_offset(item, sel_start.pos, sel_start.trail);
-		item = &n->items[sel_end.para];
-		sel_e = pos_trail_to_offset(item, sel_end.pos, sel_end.trail);
+		sel_s = pos_trail_to_offset(n, sel_start.para, sel_start.pos, sel_start.trail);
+		sel_e = pos_trail_to_offset(n, sel_end.para, sel_end.pos, sel_end.trail);
 	} else {
 		sel_s = 0;
 		sel_e = 0;
@@ -311,27 +296,43 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 		switch ( n->items[i].type ) {
 
 			case NARRATIVE_ITEM_TEXT :
-			wrap_text(&n->items[i], pc, stylesheet,
-			          "NARRATIVE", w, srt, end);
+			stn = "NARRATIVE.TEXT";
 			break;
 
 			case NARRATIVE_ITEM_BP :
-			wrap_text(&n->items[i], pc, stylesheet,
-			          "NARRATIVE.BP", w, srt, end);
+			stn = "NARRATIVE.BP";
 			break;
 
 			case NARRATIVE_ITEM_PRESTITLE :
+			stn = "NARRATIVE.PRESTITLE";
+			break;
+
+			case NARRATIVE_ITEM_SLIDE :
+			stn = "NARRATIVE.SLIDE";
+			break;
+		}
+
+		if ( stylesheet_get_paraspace(stylesheet, stn, paraspace) == 0 ) {
+			n->items[i].space_l = lcalc(paraspace[0], w);
+			n->items[i].space_r = lcalc(paraspace[1], w);
+			n->items[i].space_t = lcalc(paraspace[2], dummy_h_val);
+			n->items[i].space_b = lcalc(paraspace[3], dummy_h_val);
+		}
+
+		switch ( n->items[i].type ) {
+
+			case NARRATIVE_ITEM_TEXT :
+			case NARRATIVE_ITEM_BP :
+			case NARRATIVE_ITEM_PRESTITLE :
 			wrap_text(&n->items[i], pc, stylesheet,
-			          "NARRATIVE.PRESTITLE", w, srt, end);
+			          stn, w, srt, end);
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
 			wrap_slide(&n->items[i], stylesheet, is, sel_block);
 			break;
 
-			default :
 			break;
-
 		}
 	}
 
@@ -341,7 +342,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 
 double narrative_item_get_height(Narrative *n, int i)
 {
-	return n->items[i].h;
+	return n->items[i].obj_h + n->items[i].space_t + n->items[i].space_b;
 }
 
 
@@ -350,7 +351,7 @@ double narrative_get_height(Narrative *n)
 	int i;
 	double total = 0.0;
 	for ( i=0; i<n->n_items; i++ ) {
-		total += n->items[i].h;
+		total += narrative_item_get_height(n, i);
 	}
 	return total + n->space_t + n->space_b;
 }
@@ -369,16 +370,16 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 	cairo_device_to_user(cr, &x, &y);
 
 	if ( item->selected ) {
-		cairo_rectangle(cr, x-5.0, y-5.0, item->slide_w+10.0, item->slide_h+10.0);
+		cairo_rectangle(cr, x-5.0, y-5.0, item->obj_w+10.0, item->obj_h+10.0);
 		cairo_set_source_rgb(cr, 0.655, 0.899, 1.0);
 		cairo_fill(cr);
 	}
 
-	cairo_rectangle(cr, x, y, item->slide_w, item->slide_h);
+	cairo_rectangle(cr, x, y, item->obj_w, item->obj_h);
 	cairo_set_source_surface(cr, item->slide_thumbnail, 0.0, 0.0);
 	cairo_fill(cr);
 
-	cairo_rectangle(cr, x+0.5, y+0.5, item->slide_w, item->slide_h);
+	cairo_rectangle(cr, x+0.5, y+0.5, item->obj_w, item->obj_h);
 	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 	cairo_set_line_width(cr, 1.0);
 	cairo_stroke(cr);
@@ -477,7 +478,7 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
 
 	for ( i=0; i<n->n_items; i++ ) {
 		narrative_render_item_cairo(n, cr, i);
-		cairo_translate(cr, 0.0, n->items[i].h);
+		cairo_translate(cr, 0.0, narrative_item_get_height(n, i));
 	}
 
 	cairo_restore(cr);

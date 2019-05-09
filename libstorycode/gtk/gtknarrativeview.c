@@ -473,37 +473,23 @@ static double para_top(Narrative *n, int pnum)
 {
 	int i;
 	double py = 0.0;
-	for ( i=0; i<pnum; i++ ) py += n->items[i].h;
-	return py + n->items[pnum].space_t;
+	for ( i=0; i<pnum; i++ ) py += narrative_item_get_height(n, i);
+	return py;
 }
 
 
 static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para,
                                 double w)
 {
-	double cx, cy, cw, ch;
+	double cx, cy;
 	struct narrative_item *item;
 
 	item = &n->items[cursor_para];
-	cx = n->space_l;
-	cy = n->space_t + para_top(n, cursor_para);
-	cw = w - n->space_l - n->space_r;
-
-	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
-		ch = item->slide_h;
-	} else {
-		if ( item->layout != NULL ) {
-			PangoRectangle rect;
-			pango_layout_get_extents(item->layout, NULL, &rect);
-			ch = pango_units_to_double(rect.height);
-		} else {
-			ch = 0.0;
-			fprintf(stderr, "No layout when drawing highlight box\n");
-		}
-	}
+	cx = item->space_l;
+	cy = para_top(n, cursor_para) + item->space_t;
 
 	cairo_new_path(cr);
-	cairo_rectangle(cr, cx, cy, cw, ch);
+	cairo_rectangle(cr, cx-5.0, cy-5.0, item->obj_w+10.0, item->obj_h+10.0);
 	cairo_set_source_rgba(cr, 0.7, 0.7, 1.0, 0.5);
 	cairo_set_line_width(cr, 5.0);
 	cairo_stroke(cr);
@@ -534,10 +520,10 @@ static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
 	struct narrative_item *item;
 
 	item = &n->items[cpos.para];
-	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
-		*x = n->space_l + item->space_l;
-		*y = n->space_t + para_top(n, cpos.para);
-		*h = item->slide_h;
+	if ( !narrative_item_is_text(n, cpos.para) ) {
+		*x = item->space_l;
+		*y = para_top(n, cpos.para) + item->space_t;
+		*h = item->obj_h + item->space_t + item->space_b;
 		return;
 	}
 
@@ -548,8 +534,8 @@ static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
 
 	offs = pos_trail_to_offset(item, cpos.pos, cpos.trail);
 	pango_layout_get_cursor_pos(item->layout, offs, &rect, NULL);
-	*x = pango_units_to_double(rect.x) + n->space_l + item->space_l;
-	*y = pango_units_to_double(rect.y) + n->space_t + para_top(n, cpos.para);
+	*x = pango_units_to_double(rect.x) + item->space_l;
+	*y = pango_units_to_double(rect.y) + para_top(n, cpos.para) + item->space_t;
 	*h = pango_units_to_double(rect.height);
 }
 
@@ -591,11 +577,14 @@ static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos, double w
 		/* Block highlight cursor */
 
 		double cx, cy, cw, ch;
+		struct narrative_item *item;
 
-		cx = n->space_l - 5.5;
-		cy = n->space_t + para_top(n, cpos.para) - 5.5;
-		cw = n->items[cpos.para].slide_w + 11.0;
-		ch = n->items[cpos.para].slide_h + 11.0;
+		item = &n->items[cpos.para];
+
+		cx = item->space_l - 5.5;
+		cy = para_top(n, cpos.para) + item->space_t - 5.5;
+		cw = item->obj_w + 11.0;
+		ch = item->obj_h + 11.0;
 
 		cairo_new_path(cr);
 		cairo_rectangle(cr, cx, cy, cw, ch);
@@ -639,6 +628,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 	narrative_render_cairo(e->n, cr, narrative_get_stylesheet(e->n));
 
 	/* Editing overlay */
+	cairo_translate(cr, e->n->space_l, e->n->space_t);
 	draw_overlay(cr, e);
 
 	return FALSE;
@@ -667,7 +657,7 @@ static void check_cursor_visible(GtkNarrativeView *e)
 static size_t end_offset_of_para(Narrative *n, int pnum)
 {
 	assert(pnum >= 0);
-	if ( n->items[pnum].type == NARRATIVE_ITEM_SLIDE ) return 0;
+	if ( !narrative_item_is_text(n, pnum) ) return 0;
 	return strlen(n->items[pnum].text);
 }
 
@@ -698,7 +688,7 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 	int np = cp->pos;
 	int otrail = cp->trail;
 
-	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+	if ( !narrative_item_is_text(n, cp->para) ) {
 		if ( dir > 0 ) {
 			np = G_MAXINT;
 			cp->trail = 0;
@@ -834,7 +824,7 @@ static void split_paragraph_at_cursor(Narrative *n, struct edit_pos *pos)
 {
 	size_t off;
 
-	if ( n->items[pos->para].type != NARRATIVE_ITEM_SLIDE ) {
+	if ( narrative_item_is_text(n, pos->para) ) {
 		off = pos_trail_to_offset(&n->items[pos->para],
 		                          pos->pos, pos->trail);
 	} else {
@@ -872,7 +862,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 		return;
 	}
 
-	if ( item->type != NARRATIVE_ITEM_SLIDE ) {
+	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
 
 		size_t off;
 
@@ -907,12 +897,12 @@ static int find_cursor(Narrative *n, double x, double y, struct edit_pos *pos)
 	cur_y = n->space_t;
 
 	do {
-		cur_y += n->items[i++].h;
+		cur_y += narrative_item_get_height(n, i++);
 	} while ( (cur_y < y) && (i<n->n_items) );
 
 	pos->para = i-1;
 	item = &n->items[pos->para];
-	if ( item->type == NARRATIVE_ITEM_SLIDE ) {
+	if ( !narrative_item_is_text(n, pos->para) ) {
 		pos->pos = 0;
 		return 0;
 	}

@@ -569,12 +569,6 @@ static gboolean nw_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		}
 		break;
 
-		case GDK_KEY_F5 :
-		if ( nw->show != NULL ) {
-			/* Trap F5 so that full rerender does NOT happen */
-			return TRUE;
-		}
-
 	}
 
 	return FALSE;
@@ -690,29 +684,6 @@ GActionEntry nw_entries[] = {
 	{ "print", print_sig, NULL, NULL, NULL  },
 	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 };
-
-
-//void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw)
-//{
-//	int i;
-//	int found = 0;
-//
-//	for ( i=0; i<nw->n_slidewindows; i++ ) {
-//		if ( nw->slidewindows[i] == sw ) {
-//
-//			int j;
-//			for ( j=i; j<nw->n_slidewindows-1; j++ ) {
-//				nw->slidewindows[j] = nw->slidewindows[j+1];
-//			}
-//			nw->n_slidewindows--;
-//			found = 1;
-//		}
-//	}
-//
-//	if ( !found ) {
-//		fprintf(stderr, "Couldn't find slide window in narrative record\n");
-//	}
-//}
 
 
 NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *papp)

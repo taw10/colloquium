@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <libintl.h>
+#define _(x) gettext(x)
+
 #include "slide.h"
 #include "narrative.h"
 #include "stylesheet.h"
@@ -403,9 +406,11 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 }
 
 
-static void draw_eop(struct narrative_item *item, cairo_t *cr)
+static void draw_marker(struct narrative_item *item, cairo_t *cr)
 {
 	double x, y;
+	PangoLayout *layout;
+	PangoFontDescription *fontdesc;
 
 	cairo_save(cr);
 	cairo_translate(cr, item->space_l, item->space_t);
@@ -422,8 +427,28 @@ static void draw_eop(struct narrative_item *item, cairo_t *cr)
 	}
 
 	cairo_rectangle(cr, x, y, item->obj_w, item->obj_h);
-	cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+	cairo_set_source_rgb(cr, 0.8, 0.0, 0.0);
 	cairo_fill(cr);
+
+	layout = pango_cairo_create_layout(cr);
+	pango_layout_set_text(layout, _("End of presentation"), -1);
+
+	fontdesc = pango_font_description_new();
+	pango_font_description_set_family_static(fontdesc, "Sans");
+	pango_font_description_set_style(fontdesc, PANGO_STYLE_ITALIC);
+	pango_font_description_set_absolute_size(fontdesc, 0.9*item->obj_h*PANGO_SCALE);
+	pango_layout_set_font_description(layout, fontdesc);
+	pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
+	pango_layout_set_width(layout, item->obj_w*PANGO_SCALE);
+
+	cairo_move_to(cr, 0.0, 0.0);
+	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	pango_cairo_update_layout(cr, layout);
+	pango_cairo_show_layout(cr, layout);
+	cairo_fill(cr);
+
+	g_object_unref(layout);
+	pango_font_description_free(fontdesc);
 
 	cairo_restore(cr);
 }
@@ -465,7 +490,7 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 		break;
 
 		case NARRATIVE_ITEM_EOP :
-		draw_eop(&n->items[i], cr);
+		draw_marker(&n->items[i], cr);
 		break;
 
 	}

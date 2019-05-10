@@ -409,6 +409,16 @@ int narrative_get_num_items(Narrative *n)
 }
 
 
+int narrative_get_num_items_to_eop(Narrative *n)
+{
+	int i;
+	for ( i=0; i<n->n_items; i++ ) {
+		if ( n->items[i].type == NARRATIVE_ITEM_EOP ) return i;
+	}
+	return n->n_items;
+}
+
+
 int narrative_get_num_slides(Narrative *n)
 {
 	int i;

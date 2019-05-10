@@ -327,15 +327,21 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void set_clock_pos(NarrativeWindow *nw)
+{
+	int pos = gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv));
+	int end = narrative_get_num_items_to_eop(nw->n);
+	if ( pos >= end ) pos = end-1;
+	pr_clock_set_pos(nw->pr_clock, pos, end);
+}
+
+
 static void first_para_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	int n_paras = narrative_get_num_items(nw->n);
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
-	pr_clock_set_pos(nw->pr_clock,
-	                 gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)),
-	                 n_paras);
+	set_clock_pos(nw);
 	update_toolbar(nw);
 }
 
@@ -343,13 +349,10 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
 static void ss_prev_para(SCSlideshow *ss, void *vp)
 {
 	NarrativeWindow *nw = vp;
-	int n_paras = narrative_get_num_items(nw->n);
 	if ( gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)) == 0 ) return;
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv),
 	                          gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv))-1);
-	pr_clock_set_pos(nw->pr_clock,
-	                 gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)),
-	                 n_paras);
+	                 set_clock_pos(nw);
 	update_toolbar(nw);
 }
 
@@ -387,7 +390,7 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 		}
 	}
 
-	pr_clock_set_pos(nw->pr_clock, gtk_narrative_view_get_cursor_para(nv), n_paras);
+	set_clock_pos(nw);
 	ns = narrative_get_slide(nw->n, gtk_narrative_view_get_cursor_para(nv));
 	if ( nw->show != NULL && ns != NULL ) {
 		sc_slideshow_set_slide(nw->show, ns);
@@ -408,11 +411,8 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	int n_paras = narrative_get_num_items(nw->n);
 	gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), -1);
-	pr_clock_set_pos(nw->pr_clock,
-	                 gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)),
-	                 n_paras);
+	set_clock_pos(nw);
 	update_toolbar(nw);
 }
 

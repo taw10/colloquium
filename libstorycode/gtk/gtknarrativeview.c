@@ -820,27 +820,6 @@ static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
 }
 
 
-static void split_paragraph_at_cursor(Narrative *n, struct edit_pos *pos)
-{
-	size_t off;
-
-	if ( narrative_item_is_text(n, pos->para) ) {
-		off = pos_trail_to_offset(&n->items[pos->para],
-		                          pos->pos, pos->trail);
-	} else {
-		off = 0;
-	}
-
-	if ( (off > 0) && (off < strlen(n->items[pos->para].text)) )  {
-		narrative_split_item(n, pos->para, off);
-	} else if ( off == 0 ) {
-		pos->para--;
-		pos->pos = 0;
-		pos->trail = 0;
-	}
-}
-
-
 static void insert_text(char *t, GtkNarrativeView *e)
 {
 	struct narrative_item *item;
@@ -851,28 +830,22 @@ static void insert_text(char *t, GtkNarrativeView *e)
 
 	item = &e->n->items[e->cpos.para];
 
-	if ( strcmp(t, "\n") == 0 ) {
-		split_paragraph_at_cursor(e->n, &e->cpos);
-		rewrap_range(e, e->cpos.para, e->cpos.para+1);
-		update_size(e);
-		cursor_moveh(e->n, &e->cpos, +1);
-		check_cursor_visible(e);
-		emit_change_sig(e);
-		redraw(e);
-		return;
-	}
-
 	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
 
-		size_t off;
+		size_t off = pos_trail_to_offset(item, e->cpos.pos, e->cpos.trail);
 
-		off = pos_trail_to_offset(item, e->cpos.pos, e->cpos.trail);
-		insert_text_in_paragraph(item, off, t);
-		rewrap_range(e, e->cpos.para, e->cpos.para);
+		if ( strcmp(t, "\n") == 0 ) {
+			narrative_split_item(e->n, e->cpos.para, off);
+			rewrap_range(e, e->cpos.para, e->cpos.para+1);
+		} else {
+			insert_text_in_paragraph(item, off, t);
+			rewrap_range(e, e->cpos.para, e->cpos.para);
+		}
+
 		update_size(e);
 		cursor_moveh(e->n, &e->cpos, +1);
 
-	} /* else do nothing: pressing enter is OK, though */
+	} /* else do nothing */
 
 	emit_change_sig(e);
 	check_cursor_visible(e);
@@ -1227,8 +1200,20 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	s = slide_new();
 	if ( s == NULL ) return;
 
-	split_paragraph_at_cursor(e->n, &e->cpos);
-	narrative_insert_slide(e->n, s, e->cpos.para+1);
+	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
+		size_t off = pos_trail_to_offset(&e->n->items[e->cpos.para],
+		                                 e->cpos.pos, e->cpos.trail);
+		if ( (off > 0) && (off < strlen(e->n->items[e->cpos.para].text)) )  {
+			narrative_split_item(e->n, e->cpos.para, off);
+			narrative_insert_slide(e->n, s, e->cpos.para+1);
+		} else if ( off == 0 ) {
+			narrative_insert_slide(e->n, s, e->cpos.para);
+		} else {
+			narrative_insert_slide(e->n, s, e->cpos.para+1);
+		}
+	} else {
+		narrative_insert_slide(e->n, s, e->cpos.para+1);
+	}
 
 	rewrap_range(e, e->cpos.para, e->cpos.para+2);
 	e->cpos.para++;

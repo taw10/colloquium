@@ -220,13 +220,14 @@ static struct narrative_item *add_item(Narrative *n)
 }
 
 
+/* New item will have index 'pos' */
 static struct narrative_item *insert_item(Narrative *n, int pos)
 {
 	add_item(n);
 	memmove(&n->items[pos+1], &n->items[pos],
 	        (n->n_items-pos-1)*sizeof(struct narrative_item));
-	init_item(&n->items[pos+1]);
-	return &n->items[pos+1];
+	init_item(&n->items[pos]);
+	return &n->items[pos];
 }
 
 
@@ -298,7 +299,7 @@ void narrative_add_eop(Narrative *n)
 
 void narrative_insert_slide(Narrative *n, Slide *slide, int pos)
 {
-	struct narrative_item *item = insert_item(n, pos-1);
+	struct narrative_item *item = insert_item(n, pos);
 	item->type = NARRATIVE_ITEM_SLIDE;
 	item->slide = slide;
 	item->slide_thumbnail = NULL;
@@ -389,9 +390,9 @@ void narrative_split_item(Narrative *n, int i1, size_t o1)
 	struct narrative_item *item2;
 
 	item1 = &n->items[i1];
-	item2 = insert_item(n, i1);
+	item2 = insert_item(n, i1+1);
 
-	if ( !narrative_item_is_text(n, i1) ) {
+	if ( narrative_item_is_text(n, i1) ) {
 		item2->text = strdup(&item1->text[o1]);
 		item1->text[o1] = '\0';
 	} else {

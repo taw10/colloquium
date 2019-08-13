@@ -1368,9 +1368,9 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			w = e->drag_corner_x - e->start_corner_x;
 			h = e->drag_corner_y - e->start_corner_y;
 
-			create_image(e, filename,
-			             e->start_corner_x, e->start_corner_y,
-			             w, h);
+			e->cursor_frame = create_image(e, filename,
+			                               e->start_corner_x, e->start_corner_y,
+			                               w, h);
 			free(filename);
 			redraw(e);
 

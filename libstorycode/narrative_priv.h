@@ -64,6 +64,9 @@ struct narrative_item
 	enum alignment align;
 #ifdef HAVE_PANGO
 	PangoLayout *layout;
+	char *layout_text;
+	int *chars_removed;
+	int n_chars_removed;
 #else
 	void *layout;
 #endif

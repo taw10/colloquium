@@ -75,6 +75,8 @@ static void narrative_item_destroy(struct narrative_item *item)
 	if ( item->layout != NULL ) {
 		g_object_unref(item->layout);
 	}
+	free(item->chars_removed);
+	free(item->layout_text);
 #endif
 #ifdef HAVE_CAIRO
 	if ( item->slide_thumbnail != NULL ) {
@@ -200,7 +202,12 @@ ImageStore *narrative_get_imagestore(Narrative *n)
 
 static void init_item(struct narrative_item *item)
 {
+#ifdef HAVE_PANGO
 	item->layout = NULL;
+	item->layout_text = NULL;
+	item->chars_removed = NULL;
+	item->n_chars_removed = 0;
+#endif
 	item->text = NULL;
 	item->slide = NULL;
 	item->slide_thumbnail = NULL;

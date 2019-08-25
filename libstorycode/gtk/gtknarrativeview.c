@@ -505,10 +505,10 @@ static size_t pos_trail_to_offset(struct narrative_item *item, int offs, int tra
 		return offs;
 	}
 
-	char_offs = g_utf8_pointer_to_offset(item->text, item->text+offs);
+	char_offs = g_utf8_pointer_to_offset(item->layout_text, item->layout_text+offs);
 	char_offs += trail;
-	ptr = g_utf8_offset_to_pointer(item->text, char_offs);
-	return ptr - item->text;
+	ptr = g_utf8_offset_to_pointer(item->layout_text, char_offs);
+	return ptr - item->layout_text;
 }
 
 
@@ -773,6 +773,8 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 {
 	struct edit_pos p1, p2;
 	size_t o1, o2;
+	struct narrative_item *item1;
+	struct narrative_item *item2;
 
 	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 
@@ -789,8 +791,12 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 	}
 
 	sort_positions(&p1, &p2);
-	o1 = pos_trail_to_offset(&e->n->items[p1.para], p1.pos, p1.trail);
-	o2 = pos_trail_to_offset(&e->n->items[p2.para], p2.pos, p2.trail);
+	item1 = &e->n->items[p1.para];
+	item2 = &e->n->items[p2.para];
+	o1 = pos_trail_to_offset(item1, p1.pos, p1.trail);
+	o2 = pos_trail_to_offset(item2, p2.pos, p2.trail);
+	o1 = layout_index_to_text(item1, o1);
+	o2 = layout_index_to_text(item2, o2);
 	narrative_delete_block(e->n, p1.para, o1, p2.para, o2);
 	e->cpos = p1;
 	unset_selection(e);
@@ -833,6 +839,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
 
 		size_t off = pos_trail_to_offset(item, e->cpos.pos, e->cpos.trail);
+		off = layout_index_to_text(item, off);
 
 		if ( strcmp(t, "\n") == 0 ) {
 			narrative_split_item(e->n, e->cpos.para, off);

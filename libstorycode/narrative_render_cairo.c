@@ -118,8 +118,9 @@ static int add_range(struct narrative_item *item, int *max_chars_removed,
 		if ( *add == NULL ) return 1;
 	}
 
-	(*add)[*n_add].start = start;
-	(*add)[*n_add].end = end;
+	/* Indices NOT including the markers */
+	(*add)[*n_add].start = start+1;
+	(*add)[*n_add].end = end-1;
 	(*add)[*n_add].type = type;
 	(*n_add)++;
 
@@ -128,12 +129,12 @@ static int add_range(struct narrative_item *item, int *max_chars_removed,
 
 
 /* How many bytes were removed up to idx? */
-int index_before_removal(int *chars_removed, int n_chars_removed, int idx)
+int layout_index_to_text(struct narrative_item *item, int idx)
 {
 	int i;
 
-	for ( i=0; i<n_chars_removed; i++ ) {
-		if ( chars_removed[i] > idx ) break;
+	for ( i=0; i<item->n_chars_removed; i++ ) {
+		if ( item->chars_removed[i] > idx ) break;
 	}
 
 	return idx + i;
@@ -141,12 +142,13 @@ int index_before_removal(int *chars_removed, int n_chars_removed, int idx)
 
 
 /* How many bytes were removed up to idx? */
-int index_with_removal(int *chars_removed, int n_chars_removed, int idx)
+int text_index_to_layout(struct narrative_item *item, int idx)
 {
 	int i;
 
-	for ( i=0; i<n_chars_removed; i++ ) {
-		if ( chars_removed[i] > idx ) break;
+	for ( i=0; i<item->n_chars_removed; i++ ) {
+		assert(item->chars_removed[i] != idx);
+		if ( item->chars_removed[i] > idx ) break;
 	}
 
 	return idx - i;
@@ -229,13 +231,9 @@ static void process_tags(struct narrative_item *item, PangoAttrList *attrs)
 
 		}
 
-		attr->start_index = index_with_removal(item->chars_removed,
-		                                       item->n_chars_removed,
-		                                       add[i].start);
+		attr->start_index = text_index_to_layout(item, add[i].start);
 
-		attr->end_index = index_with_removal(item->chars_removed,
-		                                     item->n_chars_removed,
-		                                     add[i].end) + 1;
+		attr->end_index = text_index_to_layout(item, add[i].end)+1;
 
 		pango_attr_list_insert(attrs, attr);
 

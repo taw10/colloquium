@@ -42,6 +42,13 @@ enum narrative_item_type
 };
 
 
+struct narrative_text_run
+{
+	enum narrative_run_type type;
+	char *text;
+};
+
+
 struct narrative_item
 {
 	enum narrative_item_type type;
@@ -60,13 +67,11 @@ struct narrative_item
 	 * obj_w + space_l + space_r might be less than width of rendering surface */
 
 	/* For TEXT, BP, PRESTITLE */
-	char *text;
+	int n_runs;
+	struct narrative_text_run *runs;
 	enum alignment align;
 #ifdef HAVE_PANGO
 	PangoLayout *layout;
-	char *layout_text;
-	int *chars_removed;
-	int n_chars_removed;
 #else
 	void *layout;
 #endif

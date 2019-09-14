@@ -42,9 +42,10 @@ struct scpctx
 	Narrative *n;
 	Slide *s;
 
-	int n_str;
-	int max_str;
-	char **str;
+	int n_runs;
+	int max_runs;
+	char **runs;
+	enum narrative_run_type *run_types;
 
 	/* Current style or frame options.
 	 * These will be copied to a stylesheet entry or frame when the

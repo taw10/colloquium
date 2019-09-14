@@ -31,11 +31,20 @@
 
 typedef struct _narrative Narrative;
 
+enum narrative_run_type
+{
+	NARRATIVE_RUN_NORMAL,
+	NARRATIVE_RUN_BOLD,
+	NARRATIVE_RUN_ITALIC,
+	NARRATIVE_RUN_UNDERLINE,
+};
+
 #include "slide.h"
 #include "imagestore.h"
 
 extern Narrative *narrative_new(void);
 extern void narrative_free(Narrative *n);
+extern void narrative_add_empty_item(Narrative *n);
 
 extern void narrative_add_stylesheet(Narrative *n, Stylesheet *ss);
 extern Stylesheet *narrative_get_stylesheet(Narrative *n);
@@ -51,9 +60,15 @@ extern int narrative_get_unsaved(Narrative *n);
 
 extern int narrative_item_is_text(Narrative *n, int item);
 
-extern void narrative_add_prestitle(Narrative *n, char *text);
-extern void narrative_add_bp(Narrative *n, char *text);
-extern void narrative_add_text(Narrative *n, char *text);
+extern void narrative_add_text(Narrative *n, char **texts,
+                               enum narrative_run_type *types, int n_runs);
+
+extern void narrative_add_bp(Narrative *n, char **texts,
+                             enum narrative_run_type *types, int n_runs);
+
+extern void narrative_add_prestitle(Narrative *n, char **texts,
+                                    enum narrative_run_type *types, int n_runs);
+
 extern void narrative_add_slide(Narrative *n, Slide *slide);
 extern void narrative_add_eop(Narrative *n);
 extern void narrative_insert_slide(Narrative *n, Slide *slide, int pos);
@@ -68,5 +83,6 @@ extern Slide *narrative_get_slide_by_number(Narrative *n, int pos);
 extern int narrative_get_slide_number_for_para(Narrative *n, int para);
 extern int narrative_get_slide_number_for_slide(Narrative *n, Slide *s);
 
+extern void narrative_debug(Narrative *n);
 
 #endif /* NARRATIVE_H */

@@ -46,6 +46,8 @@ extern double narrative_get_height(Narrative *n);
 
 extern double narrative_item_get_height(Narrative *n, int i);
 
+extern size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int trail);
+
 extern int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i);
 
 extern int narrative_render_cairo(Narrative *n, cairo_t *cr,

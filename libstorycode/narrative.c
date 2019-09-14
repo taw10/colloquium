@@ -70,13 +70,15 @@ Narrative *narrative_new()
 
 static void narrative_item_destroy(struct narrative_item *item)
 {
-	free(item->text);
+	int i;
+	for ( i=0; i<item->n_runs; i++ ) {
+		free(item->runs[i].text);
+	}
+	free(item->runs);
 #ifdef HAVE_PANGO
 	if ( item->layout != NULL ) {
 		g_object_unref(item->layout);
 	}
-	free(item->chars_removed);
-	free(item->layout_text);
 #endif
 #ifdef HAVE_CAIRO
 	if ( item->slide_thumbnail != NULL ) {
@@ -98,6 +100,24 @@ void narrative_free(Narrative *n)
 }
 
 
+void narrative_add_empty_item(Narrative *n)
+{
+	char **texts;
+	enum narrative_run_type *types;
+	char *text;
+
+	texts = malloc(sizeof(char *));
+	types = malloc(sizeof(enum narrative_run_type));
+	text = strdup("");
+
+	if ( (texts != NULL) && (types != NULL) && (text != NULL) ) {
+		texts[0] = text;
+		types[0] = NARRATIVE_RUN_NORMAL;
+		narrative_add_text(n, texts, types, 1);
+	}
+}
+
+
 Narrative *narrative_load(GFile *file)
 {
 	GBytes *bytes;
@@ -115,7 +135,7 @@ Narrative *narrative_load(GFile *file)
 
 	if ( n->n_items == 0 ) {
 		/* Presentation is empty.  Add a dummy to start things off */
-		narrative_add_text(n, strdup(""));
+		narrative_add_empty_item(n);
 	}
 
 	imagestore_set_parent(n->imagestore, g_file_get_parent(file));
@@ -204,11 +224,9 @@ static void init_item(struct narrative_item *item)
 {
 #ifdef HAVE_PANGO
 	item->layout = NULL;
-	item->layout_text = NULL;
-	item->chars_removed = NULL;
-	item->n_chars_removed = 0;
 #endif
-	item->text = NULL;
+	item->runs = NULL;
+	item->n_runs = 0;
 	item->slide = NULL;
 	item->slide_thumbnail = NULL;
 }
@@ -238,45 +256,52 @@ static struct narrative_item *insert_item(Narrative *n, int pos)
 }
 
 
-void narrative_add_prestitle(Narrative *n, char *text)
+extern void add_text_item(Narrative *n, char **texts, enum narrative_run_type *types,
+                          int n_runs, enum narrative_item_type type)
 {
 	struct narrative_item *item;
+	int i;
 
 	item = add_item(n);
 	if ( item == NULL ) return;
 
-	item->type = NARRATIVE_ITEM_PRESTITLE;
-	item->text = text;
+	item->type = type;
 	item->align = ALIGN_INHERIT;
 	item->layout = NULL;
+
+	/* Add all the runs */
+	item->runs = malloc(n_runs * sizeof(struct narrative_text_run));
+	if ( item->runs == NULL ) {
+		item->n_runs = 0;
+		return;
+	}
+
+	for ( i=0; i<n_runs; i++ ) {
+		item->runs[i].type = types[i];
+		item->runs[i].text = texts[i];
+	}
+	item->n_runs = n_runs;
 }
 
 
-void narrative_add_bp(Narrative *n, char *text)
+void narrative_add_text(Narrative *n, char **texts,
+                        enum narrative_run_type *types, int n_runs)
 {
-	struct narrative_item *item;
-
-	item = add_item(n);
-	if ( item == NULL ) return;
-
-	item->type = NARRATIVE_ITEM_BP;
-	item->text = text;
-	item->align = ALIGN_INHERIT;
-	item->layout = NULL;
+	add_text_item(n, texts, types, n_runs, NARRATIVE_ITEM_TEXT);
 }
 
 
-void narrative_add_text(Narrative *n, char *text)
+void narrative_add_prestitle(Narrative *n, char **texts,
+                             enum narrative_run_type *types, int n_runs)
 {
-	struct narrative_item *item;
+	add_text_item(n, texts, types, n_runs, NARRATIVE_ITEM_PRESTITLE);
+}
 
-	item = add_item(n);
-	if ( item == NULL ) return;
 
-	item->type = NARRATIVE_ITEM_TEXT;
-	item->text = text;
-	item->align = ALIGN_INHERIT;
-	item->layout = NULL;
+void narrative_add_bp(Narrative *n, char **texts,
+                      enum narrative_run_type *types, int n_runs)
+{
+	add_text_item(n, texts, types, n_runs, NARRATIVE_ITEM_BP);
 }
 
 
@@ -327,6 +352,7 @@ static void delete_item(Narrative *n, int del)
 /* Delete from item i1 offset o1 to item i2 offset o2, inclusive */
 void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 {
+#if 0
 	int i;
 	int n_del = 0;
 	int merge = 1;
@@ -388,11 +414,13 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 		n->items[i1].text = new_text;
 		delete_item(n, i2);
 	}
+#endif
 }
 
 
 void narrative_split_item(Narrative *n, int i1, size_t o1)
 {
+#if 0
 	struct narrative_item *item1;
 	struct narrative_item *item2;
 
@@ -407,6 +435,7 @@ void narrative_split_item(Narrative *n, int i1, size_t o1)
 	}
 
 	item2->type = NARRATIVE_ITEM_TEXT;
+#endif
 }
 
 
@@ -481,4 +510,51 @@ Slide *narrative_get_slide_by_number(Narrative *n, int pos)
 		}
 	}
 	return NULL;
+}
+
+
+static void debug_runs(struct narrative_item *item)
+{
+	int j;
+	for ( j=0; j<item->n_runs; j++ ) {
+		printf("Run %i: '%s'\n", j, item->runs[j].text);
+	}
+}
+
+void narrative_debug(Narrative *n)
+{
+	int i;
+
+	for ( i=0; i<n->n_items; i++ ) {
+
+		struct narrative_item *item = &n->items[i];
+		printf("Item %i ", i);
+		switch ( item->type ) {
+
+			case NARRATIVE_ITEM_TEXT :
+			printf("(text):\n");
+			debug_runs(item);
+			break;
+
+			case NARRATIVE_ITEM_BP :
+			printf("(bp):\n");
+			debug_runs(item);
+			break;
+
+			case NARRATIVE_ITEM_PRESTITLE :
+			printf("(prestitle):\n");
+			debug_runs(item);
+			break;
+
+			case NARRATIVE_ITEM_EOP :
+			printf("(EOP marker)\n");
+			break;
+
+			case NARRATIVE_ITEM_SLIDE :
+			printf("(slide)\n");
+			break;
+
+		}
+
+	}
 }

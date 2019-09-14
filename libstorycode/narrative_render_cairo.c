@@ -69,197 +69,6 @@ static PangoAlignment to_pangoalignment(enum alignment align)
 }
 
 
-static int find_pair(const gchar *p, gunichar c, gchar **start, gchar **end)
-{
-	gchar *s;
-	gchar *e;
-	gchar *next;
-
-	/* FIXME: Check it's not escaped */
-	s = g_utf8_strchr(p, -1, c);
-	if ( s == NULL ) return 0;
-
-	next = g_utf8_find_next_char(s, NULL);
-	if ( next == NULL ) return 0;
-
-	e = g_utf8_strchr(next, -1, c);
-	if ( e == NULL ) return 0;
-
-	*start = s;
-	*end = e;
-	return 1;
-}
-
-
-struct attr_to_add
-{
-	int start;
-	int end;
-	char type;  /* b=bold, i=italic, u=underline */
-};
-
-
-static int add_range(struct narrative_item *item, int *max_chars_removed,
-                     int start, int end, int *n_add, int *max_add,
-                     struct attr_to_add **add, char type)
-{
-	if ( item->n_chars_removed == *max_chars_removed ) {
-		(*max_chars_removed) += 256;
-		item->chars_removed = realloc(item->chars_removed, *max_chars_removed*sizeof(int));
-		if ( item->chars_removed == NULL ) return 1;
-	}
-
-	item->chars_removed[item->n_chars_removed++] = start;
-	item->chars_removed[item->n_chars_removed++] = end;
-
-	if ( *n_add == *max_add ) {
-		*max_add += 64;
-		*add = realloc(*add, *max_add*sizeof(struct attr_to_add));
-		if ( *add == NULL ) return 1;
-	}
-
-	/* Indices NOT including the markers */
-	(*add)[*n_add].start = start+1;
-	(*add)[*n_add].end = end-1;
-	(*add)[*n_add].type = type;
-	(*n_add)++;
-
-	return 0;
-}
-
-
-/* How many bytes were removed up to idx? */
-int layout_index_to_text(struct narrative_item *item, int idx)
-{
-	int i;
-
-	for ( i=0; i<item->n_chars_removed; i++ ) {
-		if ( item->chars_removed[i] > idx ) break;
-	}
-
-	return idx + i;
-}
-
-
-/* How many bytes were removed up to idx? */
-int text_index_to_layout(struct narrative_item *item, int idx)
-{
-	int i;
-
-	for ( i=0; i<item->n_chars_removed; i++ ) {
-		assert(item->chars_removed[i] != idx);
-		if ( item->chars_removed[i] > idx ) break;
-	}
-
-	return idx - i;
-}
-
-
-static int cmpi(const void *a, const void *b)
-{
-	return *(int *)a - *(int *)b;
-}
-
-
-static void process_tags(struct narrative_item *item, PangoAttrList *attrs)
-{
-	gchar *efstart;
-	gchar *efend;
-	gchar *text;
-	PangoAttribute *attr;
-	struct attr_to_add *add;
-	int n_add;
-	int max_add;
-	int max_chars_removed;
-	int i, j, k;
-	size_t len;
-
-	item->n_chars_removed = 0;
-	free(item->chars_removed);
-	item->chars_removed = NULL;
-	max_chars_removed = 0;
-
-	add = NULL;
-	n_add = 0;
-	max_add = 0;
-
-	/* Scan the text, identify characters to remove and character ranges
-	 * (in the original text) which need attributes applied */
-	text = item->text;
-	while ( find_pair(text, '*', &efstart, &efend) ) {
-		if ( add_range(item, &max_chars_removed,
-		               efstart - item->text, efend - item->text,
-		               &n_add, &max_add, &add, 'b') ) return;
-		text = g_utf8_find_next_char(efend, NULL);
-	}
-	text = item->text;
-	while ( find_pair(text, '/', &efstart, &efend) ) {
-		if ( add_range(item, &max_chars_removed,
-		               efstart - item->text, efend - item->text,
-		               &n_add, &max_add, &add, 'i') ) return;
-		text = g_utf8_find_next_char(efend, NULL);
-	}
-	text = item->text;
-	while ( find_pair(text, '_', &efstart, &efend) ) {
-		if ( add_range(item, &max_chars_removed,
-		               efstart - item->text, efend - item->text,
-		               &n_add, &max_add, &add, 'u') ) return;
-		text = g_utf8_find_next_char(efend, NULL);
-	}
-
-	/* Sort the list of removed characters */
-	qsort(item->chars_removed, item->n_chars_removed, sizeof(int), cmpi);
-
-	/* Go through the list of attributes, and correct the character ranges
-	 * so that they refer to the text with characters removed, and add them
-	 * to the PangoAttrList */
-	for ( i=0; i<n_add; i++ ) {
-
-		switch ( add[i].type ) {
-
-			case 'b' :
-			attr = pango_attr_weight_new(PANGO_WEIGHT_BOLD);
-			break;
-
-			case 'i' :
-			attr = pango_attr_style_new(PANGO_STYLE_ITALIC);
-			break;
-
-			case 'u' :
-			attr = pango_attr_underline_new(PANGO_UNDERLINE_SINGLE);
-			break;
-
-		}
-
-		attr->start_index = text_index_to_layout(item, add[i].start);
-
-		attr->end_index = text_index_to_layout(item, add[i].end)+1;
-
-		pango_attr_list_insert(attrs, attr);
-
-	}
-
-	/* Create the version of the text with characters removed */
-	if ( item->n_chars_removed == 0 ) {
-		   item->layout_text = strdup(item->text);
-	} else {
-		len = strlen(item->text);
-		item->layout_text = malloc(len);
-		if ( item->layout_text == NULL ) return;
-		j = 0;
-		for ( i=0; i<len+1; i++ ) {  /* \0 terminator please */
-			if ( item->chars_removed[k] == i ) {
-				k++;
-			} else {
-				item->layout_text[j++] = item->text[i];
-			}
-		}
-	}
-
-	free(add);
-}
-
-
 static void wrap_text(struct narrative_item *item, PangoContext *pc,
                       Stylesheet *ss, const char *stn, double w,
                       size_t sel_start, size_t sel_end)
@@ -314,12 +123,66 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	pango_layout_set_alignment(item->layout, palignment);
 	pango_layout_set_font_description(item->layout, fontdesc);
 
-	/* Handle *bold*, _underline_, /italic/ etc. */
-	process_tags(item, attrs);
-	pango_layout_set_attributes(item->layout, attrs);
-	pango_attr_list_unref(attrs);
+	size_t total_len = 0;
+	int i;
+	char *text;
 
-	pango_layout_set_text(item->layout, item->layout_text, -1);
+	/* Work out length of all text in item (paragraph) */
+	for ( i=0; i<item->n_runs; i++ ) {
+		total_len += strlen(item->runs[i].text);
+	}
+
+	/* Allocate the complete text */
+	text = malloc(total_len+1);
+	if ( text == NULL ) {
+		fprintf(stderr, "Couldn't allocate combined text (%lli)\n",
+		       (long long int)total_len);
+		return;
+	}
+
+	/* Put all of the text together */
+	text[0] = '\0';
+	size_t pos = 0;
+	for ( i=0; i<item->n_runs; i++ ) {
+
+		PangoAttribute *attr = NULL;
+		size_t run_len = strlen(item->runs[i].text);
+
+		switch ( item->runs[i].type ) {
+
+			case NARRATIVE_RUN_NORMAL :
+			break;
+
+			case NARRATIVE_RUN_BOLD:
+			attr = pango_attr_weight_new(PANGO_WEIGHT_BOLD);
+			break;
+
+			case NARRATIVE_RUN_ITALIC:
+			attr = pango_attr_style_new(PANGO_STYLE_ITALIC);
+			break;
+
+			case NARRATIVE_RUN_UNDERLINE:
+			attr = pango_attr_underline_new(PANGO_UNDERLINE_SINGLE);
+			break;
+
+
+
+		}
+
+		if ( attr != NULL ) {
+			attr->start_index = pos;
+			attr->end_index = pos + run_len;
+			pango_attr_list_insert(attrs, attr);
+		}
+
+		/* FIXME: Should check that each bit of text finishes on a character boundary */
+		pos += run_len;
+		strcat(text, item->runs[i].text);
+
+	}
+	pango_layout_set_attributes(item->layout, attrs);
+	pango_layout_set_text(item->layout, text, -1);
+	pango_attr_list_unref(attrs);
 
 	pango_layout_get_extents(item->layout, NULL, &rect);
 	item->obj_w = pango_units_to_double(rect.width);
@@ -387,18 +250,30 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *
 }
 
 
-static size_t pos_trail_to_offset(Narrative *n, int i, int offs, int trail)
+size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int trail)
 {
-	glong char_offs;
-	char *ptr;
+	int run;
 	struct narrative_item *item = &n->items[i];
+	size_t pos;
 
 	if ( !narrative_item_is_text(n, i) ) return offs;
 
-	char_offs = g_utf8_pointer_to_offset(item->text, item->text+offs);
-	char_offs += trail;
-	ptr = g_utf8_offset_to_pointer(item->text, char_offs);
-	return ptr - item->text;
+	pos = 0;
+	for ( run=0; run<item->n_runs; run++ ) {
+		pos += strlen(item->runs[run].text);
+		if ( pos > offs ) {
+			glong char_offs;
+			char *ptr;
+			char_offs = g_utf8_pointer_to_offset(item->runs[run].text,
+			                                     item->runs[run].text+offs);
+			char_offs += trail;
+			ptr = g_utf8_offset_to_pointer(item->runs[run].text, char_offs);
+			return ptr - item->runs[run].text;
+		}
+	}
+
+	fprintf(stderr, "narrative_pos_trail_to_offset: Outside last run\n");
+	return 0;
 }
 
 
@@ -465,8 +340,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	if ( max >= n->n_items ) max = n->n_items-1;
 
 	if ( !positions_equal(sel_start, sel_end) ) {
-		sel_s = pos_trail_to_offset(n, sel_start.para, sel_start.pos, sel_start.trail);
-		sel_e = pos_trail_to_offset(n, sel_end.para, sel_end.pos, sel_end.trail);
+		sel_s = narrative_pos_trail_to_offset(n, sel_start.para,
+		                                      sel_start.pos, sel_start.trail);
+		sel_e = narrative_pos_trail_to_offset(n, sel_end.para,
+		                                      sel_end.pos, sel_end.trail);
 	} else {
 		sel_s = 0;
 		sel_e = 0;

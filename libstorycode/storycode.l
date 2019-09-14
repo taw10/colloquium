@@ -30,18 +30,23 @@
   #include "storycode_parse.h"
 
   int lineno = 0;
+  int sqb_caller = 0;
 %}
 
 %option prefix="sc"
 %option noyywrap nounput noinput
-%s string
 %s geom
 %s font
+%s filename
 %s paraspace
 %s pad
 %s align
 %s col
 %s sqb
+%x stringesc
+%x runtext
+%s image
+%s image_filename
 
 %%
 
@@ -54,7 +59,6 @@ ENDOFPRESENTATION { return SC_EOP; }
 BP                { return SC_BP; }
 GEOMETRY          { BEGIN(geom); return SC_GEOMETRY; }
 TEXT              { return SC_TEXTFRAME; }
-IMAGE             { return SC_IMAGEFRAME; }
 FOOTER            { return SC_FOOTER; }
 FONT[ ]           { BEGIN(font); return SC_FONT; }
 PAD               { BEGIN(pad); return SC_PAD; }
@@ -69,19 +73,36 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
 <align,sqb>(?i:left)   { return SC_LEFT; }
 <align,sqb>(?i:center) { return SC_CENTER; }
 <align,sqb>(?i:right)  { return SC_RIGHT; }
-<string,font>.*\n { sclval.str = strdup(yytext);
+
+<font>.*\n        { sclval.str = strdup(yytext);
                     sclval.str[yyleng-1] = '\0';
                     BEGIN(0);
                     lineno++;
-                    return SC_STRING; }
-"["               { BEGIN(sqb); return SC_SQOPEN; }
-"]"               { BEGIN(0); return SC_SQCLOSE; }
-<INITIAL>:[ ]     { BEGIN(string); }
-:\n               { sclval.str = strdup(""); lineno++; return SC_STRING; }
+                    return SC_FONTNAME; }
+
+<INITIAL>IMAGE    { BEGIN(image); return SC_IMAGEFRAME; }
+<image>:[ ]       { BEGIN(image_filename); return SC_TEXT_START; }
+<image_filename>[^\n]*  { sclval.str = strdup(yytext);
+                    lineno++;
+                    return SC_FILENAME; }
+
+<INITIAL>:[ ]     { BEGIN(runtext); return SC_TEXT_START; }
+<runtext>[\\]     { BEGIN(stringesc); }
+<stringesc>[.]    { sclval.str = strdup(yytext); BEGIN(runtext); return SC_RUN_TEXT; }
+<runtext>[\*]     { return '*'; }
+<runtext>[^\*\n]* { sclval.str = strdup(yytext);
+                    sclval.str[yyleng] = '\0';
+                    lineno++;
+                    return SC_RUN_TEXT; }
+<runtext>\n       { BEGIN(0); lineno++; }
+
+\n                { BEGIN(0); lineno++; }
+
+"["               { sqb_caller = YY_START; BEGIN(sqb); return SC_SQOPEN; }
+"]"               { BEGIN(sqb_caller); return SC_SQCLOSE; }
 [{]               { return '{'; }
 [}]               { return '}'; }
 [. ]              {}
-\n                { BEGIN(0); lineno++; }
 [0-9\.]+          { sclval.val = atof(yytext); return SC_VALUE; }
 [uf]              { sclval.character = yytext[0]; return SC_UNIT; }
 [+]               { return '+'; }

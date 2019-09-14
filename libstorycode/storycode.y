@@ -27,10 +27,12 @@
 %code requires {
 
   #include "narrative.h"
+  #include "narrative_priv.h"
   #include "slide.h"
   #include "stylesheet.h"
 
   #include "scparse_priv.h"
+
 }
 
 %union {
@@ -38,6 +40,10 @@
   Narrative *n;
   Slide *s;
   char *str;
+  struct {
+     char *text;
+     enum narrative_run_type type;
+  } str_w_type;
   struct length len;
   struct length lenquad[4];
   struct frame_geom geom;
@@ -59,6 +65,8 @@
   extern int lineno;
 %}
 
+%define parse.trace
+
 %token STYLES
 %token SLIDE
 %token EOP
@@ -68,24 +76,27 @@
 %token FOOTER
 %token TEXTFRAME
 %token IMAGEFRAME
+%token FILENAME
 %token BP
 %token FONT GEOMETRY PAD ALIGN FGCOL BGCOL PARASPACE
 %token VERT HORIZ
 %token LEFT CENTER RIGHT
-%token STRING
+%token FONTNAME RUN_TEXT
 %token SQOPEN SQCLOSE
 %token UNIT VALUE HEXCOL
+%token TEXT_START
 
 %type <n> narrative
 %type <s> slide
 %type <ss> stylesheet
-%type <str> narrative_prestitle
 %type <str> slide_prestitle
-%type <str> STRING
+%type <str> FONTNAME
 %type <str> imageframe
 %type <str> slide_bulletpoint
-%type <str> narrative_bulletpoint
 %type <str> frameopt
+%type <str> FILENAME
+%type <str> RUN_TEXT
+%type <str_w_type> text_run
 %type <geom> geometry
 %type <lenquad> lenquad
 %type <col> colour
@@ -106,10 +117,11 @@
      * Will be added to the narrative when complete */
     ctx->s = slide_new();
 
-    ctx->max_str = 32;
-    ctx->str = malloc(ctx->max_str*sizeof(char *));
-    if ( ctx->str == NULL ) ctx->max_str = 0;
-    str_reset(ctx);
+    ctx->max_runs = 32;
+    ctx->runs = malloc(ctx->max_runs*sizeof(char *));
+    ctx->run_types = malloc(ctx->max_runs*sizeof(enum narrative_run_type));
+    if ( (ctx->runs == NULL) || (ctx->run_types == NULL) ) ctx->max_runs = 0;
+    reset_runs(ctx);
 }
 
 %{
@@ -144,23 +156,33 @@ static int hex_to_double(const char *v, double *r)
     return 1;
 }
 
-void str_reset(struct scpctx *ctx)
+
+void reset_runs(struct scpctx *ctx)
 {
-    ctx->n_str = 0;
+    ctx->n_runs = 0;
     ctx->mask = 0;
     ctx->alignment = ALIGN_INHERIT;
 }
 
-void add_str(struct scpctx *ctx, char *str)
+
+void add_run(struct scpctx *ctx, char *str, enum narrative_run_type type)
 {
-    if ( ctx->n_str == ctx->max_str ) {
-        char **nstr = realloc(ctx->str, (ctx->max_str+32)*sizeof(char *));
-        if ( nstr == NULL ) return;
-        ctx->max_str += 32;
+    if ( ctx->n_runs == ctx->max_runs ) {
+        char **nruns;
+        enum narrative_run_type *ntype;
+        nruns = realloc(ctx->runs, (ctx->max_runs+32)*sizeof(char *));
+        ntype = realloc(ctx->run_types, (ctx->max_runs+32)*sizeof(enum narrative_run_type));
+        if ( (nruns == NULL) || (ntype == NULL) ) return;
+        ctx->max_runs += 32;
+        ctx->runs = nruns;
+        ctx->run_types = ntype;
     }
 
-    ctx->str[ctx->n_str++] = str;
+    ctx->runs[ctx->n_runs] = str;
+    ctx->run_types[ctx->n_runs] = type;
+    ctx->n_runs++;
 }
+
 
 void set_style(struct scpctx *ctx, const char *element)
 {
@@ -198,26 +220,29 @@ presentation:
 /* ------ Narrative ------ */
 
 narrative:
-  narrative_el            { }
+  narrative_el { }
 | narrative narrative_el  { }
 ;
 
 narrative_el:
-  narrative_prestitle   { narrative_add_prestitle(ctx->n, $1); }
-| narrative_bulletpoint { narrative_add_bp(ctx->n, $1); }
-| slide                 { }
-| STRING                { narrative_add_text(ctx->n, $1); }
-| EOP                   { narrative_add_eop(ctx->n); }
+  PRESTITLE TEXT_START text_line  { narrative_add_prestitle(ctx->n, ctx->runs, ctx->run_types, ctx->n_runs);
+                                    reset_runs(ctx); }
+| BP TEXT_START text_line         { narrative_add_bp(ctx->n, ctx->runs, ctx->run_types, ctx->n_runs);
+                                    reset_runs(ctx); }
+| TEXT_START text_line            { narrative_add_text(ctx->n, ctx->runs, ctx->run_types, ctx->n_runs);
+                                    reset_runs(ctx); }
+| slide                { }
+| EOP                  { narrative_add_eop(ctx->n); }
 ;
 
-narrative_prestitle:
-  PRESTITLE STRING { $$ = $2; }
+text_line:
+  %empty
+| text_line text_run   { add_run(ctx, $2.text, $2.type); }
 ;
 
-narrative_bulletpoint:
-  BP STRING { $$ = $2; }
-;
-
+text_run:
+  RUN_TEXT         { $$.text = $1;  $$.type = NARRATIVE_RUN_NORMAL; }
+| '*' RUN_TEXT '*' { $$.text = $2;  $$.type = NARRATIVE_RUN_BOLD; }
 
 /* -------- Slide -------- */
 
@@ -233,16 +258,16 @@ slide_parts:
 ;
 
 slide_part:
-  slide_prestitle { slide_add_prestitle(ctx->s, ctx->str, ctx->n_str);
-                    str_reset(ctx); }
+  slide_prestitle { slide_add_prestitle(ctx->s, ctx->runs, ctx->n_runs);
+                    reset_runs(ctx); }
 | imageframe      { slide_add_image(ctx->s, $1, ctx->geom);
-                    str_reset(ctx); }
-| textframe       { slide_add_text(ctx->s, ctx->str, ctx->n_str,
+                    reset_runs(ctx); }
+| textframe       { slide_add_text(ctx->s, ctx->runs, ctx->n_runs,
                                    ctx->geom, ctx->alignment);
-                    str_reset(ctx); }
+                    reset_runs(ctx); }
 | FOOTER          { slide_add_footer(ctx->s); }
-| slidetitle      { slide_add_slidetitle(ctx->s, ctx->str, ctx->n_str);
-                    str_reset(ctx); }
+| slidetitle      { slide_add_slidetitle(ctx->s, ctx->runs, ctx->n_runs);
+                    reset_runs(ctx); }
 ;
 
 slide_prestitle:
@@ -256,7 +281,7 @@ slidetitle:
 ;
 
 imageframe:
-  IMAGEFRAME frame_options STRING { $$ = $STRING; }
+  IMAGEFRAME frame_options TEXT_START FILENAME { $$ = $FILENAME; }
 ;
 
 textframe:
@@ -264,15 +289,19 @@ textframe:
 | TEXTFRAME frame_options '{' multi_line_string '}' { }
 ;
 
+text_line_with_start:
+  TEXT_START text_line { }
+;
+
 multi_line_string:
-  STRING                              { add_str(ctx, $1); }
-| multi_line_string STRING            { add_str(ctx, $2); }
-| slide_bulletpoint                   { add_str(ctx, $1); }
-| multi_line_string slide_bulletpoint { add_str(ctx, $2); }
+  text_line_with_start                { }
+| multi_line_string text_line_with_start { }
+| slide_bulletpoint                   { }
+| multi_line_string slide_bulletpoint { }
 ;
 
 slide_bulletpoint:
-  BP STRING { $$ = $2; }
+  BP TEXT_START text_line { }
 ;
 
 /* There can be any number of options */
@@ -414,7 +443,7 @@ styledefs:
 ;
 
 styledef:
-  FONT STRING        { ctx->font = $2;
+  FONT FONTNAME      { ctx->font = $2;
                        ctx->mask |= STYMASK_FONT; }
 | GEOMETRY geometry  { ctx->geom = $2;
                        ctx->mask |= STYMASK_GEOM; }

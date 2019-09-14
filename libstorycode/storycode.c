@@ -40,14 +40,19 @@
 #include "scparse_priv.h"
 
 
+extern int scdebug;
+
+
 Narrative *storycode_parse_presentation(const char *sc)
 {
 	YY_BUFFER_STATE b;
 	struct scpctx parse_ctx;
 
 	b = sc_scan_string(sc);
+	//scdebug = 1;
 	scparse(&parse_ctx);
 	sc_delete_buffer(b);
+	//narrative_debug(parse_ctx.n);
 
 	return parse_ctx.n;
 }
@@ -189,26 +194,37 @@ static int write_slide(GOutputStream *fh, Slide *s)
 
 static int write_item(GOutputStream *fh, struct narrative_item *item)
 {
+	int i;
+
 	switch ( item->type ) {
 
 		case NARRATIVE_ITEM_TEXT:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, ": ") ) return 1;
-		if ( write_string(fh, item->text) ) return 1;
+		for ( i=0; i<item->n_runs; i++ ) {
+			/* FIXME: Run markers (e.g. '*') */
+			if ( write_string(fh, item->runs[i].text) ) return 1;
+		}
 		if ( write_string(fh, "\n") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_PRESTITLE:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, "PRESTITLE: ") ) return 1;
-		if ( write_string(fh, item->text) ) return 1;
+		for ( i=0; i<item->n_runs; i++ ) {
+			/* FIXME: Run markers (e.g. '*') */
+			if ( write_string(fh, item->runs[i].text) ) return 1;
+		}
 		if ( write_string(fh, "\n") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_BP:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, "BP: ") ) return 1;
-		if ( write_string(fh, item->text) ) return 1;
+		for ( i=0; i<item->n_runs; i++ ) {
+			/* FIXME: Run markers (e.g. '*') */
+			if ( write_string(fh, item->runs[i].text) ) return 1;
+		}
 		if ( write_string(fh, "\n") ) return 1;
 		break;
 

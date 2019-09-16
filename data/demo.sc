@@ -81,8 +81,8 @@ BP: Use it as a journal, adding slides whenever you have an illustration.  You'l
 SLIDE {
   SLIDETITLE: Alpha test software
   FOOTER
-  TEXT[391.8ux473.5u+567.8u+143.7u]: Colloquium is "alpha test" software.
-                                   : 
+  TEXT[391.8ux473.5u+567.8u+143.7u]: Colloquium is _alpha test_ software.
+                                   :
                                    : It will probably crash and lose your work a few times.  Save and back up your work as frequently as possible.
                                    : 
                                    : However, in years of use it has *never* crashed on me in front of an audience.  You will find most bugs in the editing features, not playback.
@@ -90,9 +90,12 @@ SLIDE {
                                    : Creating a backup slide deck in PDF format (File->Export slides as PDF) is nevertheless a wise safety measure.
                                    : 
                                    : Please report all bugs here:
-                                   : https://github.com/taw10/colloquium/issues
+                                   : https:\/\/github.com\/taw10\/colloquium\/issues
   IMAGE[452.2ux431u+64.8u+168.9u]: alpha_warning.svg
 }
 : That's enough to get you started.  I hope you enjoy using Colloquium!
 ENDOFPRESENTATION
-: You can also have "bonus material", not included in your presentation's timing.
+: ... by the way, anything after the "End of presentation" marker will not be included in your presentation's timing.  This is where you should put "bonus material", perhaps to be referred to when answering questions after your talk.
+SLIDE {
+  SLIDETITLE: Bonus slide #1
+}

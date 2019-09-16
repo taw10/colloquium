@@ -243,6 +243,8 @@ text_line:
 text_run:
   RUN_TEXT         { $$.text = $1;  $$.type = NARRATIVE_RUN_NORMAL; }
 | '*' RUN_TEXT '*' { $$.text = $2;  $$.type = NARRATIVE_RUN_BOLD; }
+| '/' RUN_TEXT '/' { $$.text = $2;  $$.type = NARRATIVE_RUN_ITALIC; }
+| '_' RUN_TEXT '_' { $$.text = $2;  $$.type = NARRATIVE_RUN_UNDERLINE; }
 
 /* -------- Slide -------- */
 

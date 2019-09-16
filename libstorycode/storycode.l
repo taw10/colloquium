@@ -88,11 +88,12 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
 
 <INITIAL>:[ ]     { BEGIN(runtext); return SC_TEXT_START; }
 <runtext>[\\]     { BEGIN(stringesc); }
-<stringesc>[.]    { sclval.str = strdup(yytext); BEGIN(runtext); return SC_RUN_TEXT; }
+<stringesc>.      { sclval.str = strdup(yytext); BEGIN(runtext);  return SC_RUN_TEXT; }
 <runtext>[\*]     { return '*'; }
-<runtext>[^\*\n]* { sclval.str = strdup(yytext);
+<runtext>[/]      { return '/'; }
+<runtext>[_]      { return '_'; }
+<runtext>[^\\\*/_\n]* { sclval.str = strdup(yytext);
                     sclval.str[yyleng] = '\0';
-                    lineno++;
                     return SC_RUN_TEXT; }
 <runtext>\n       { BEGIN(0); lineno++; }
 

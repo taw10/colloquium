@@ -33,17 +33,31 @@
 
   #include "scparse_priv.h"
 
+  struct paragraph {
+    struct text_run *runs;
+    int n_runs;
+    int max_runs;
+  };
+
+  struct many_paragraphs {
+    struct paragraph *paras;
+    int n_paras;
+    int max_paras;
+  };
+
 }
 
 %union {
+
   Stylesheet *ss;
   Narrative *n;
   Slide *s;
+
   char *str;
-  struct {
-     char *text;
-     enum narrative_run_type type;
-  } str_w_type;
+  struct text_run run;
+  struct paragraph para;
+  struct many_paragraphs many_paragraphs;
+
   struct length len;
   struct length lenquad[4];
   struct frame_geom geom;
@@ -52,6 +66,7 @@
   struct colour col;
   enum alignment align;
   enum gradient grad;
+
 }
 
 %{
@@ -89,21 +104,27 @@
 %type <n> narrative
 %type <s> slide
 %type <ss> stylesheet
-%type <str> slide_prestitle
+%type <many_paragraphs> textframe
+%type <many_paragraphs> slide_prestitle
+%type <many_paragraphs> slidetitle
+%type <many_paragraphs> multi_line_string
+%type <para> text_line
+%type <para> slide_bulletpoint
+%type <para> text_line_with_start
+%type <run> text_run
+%type <str> RUN_TEXT
+
 %type <str> FONTNAME
 %type <str> imageframe
-%type <str> slide_bulletpoint
 %type <str> frameopt
 %type <str> FILENAME
-%type <str> RUN_TEXT
-%type <str_w_type> text_run
+
 %type <geom> geometry
 %type <lenquad> lenquad
 %type <col> colour
 %type <str> HEXCOL
 %type <len> length
 %type <align> alignment
-%type <str> slidetitle
 %type <character> UNIT
 %type <val> VALUE
 %type <grad> gradtype
@@ -116,12 +137,6 @@
     /* The slide currently being created.
      * Will be added to the narrative when complete */
     ctx->s = slide_new();
-
-    ctx->max_runs = 32;
-    ctx->runs = malloc(ctx->max_runs*sizeof(char *));
-    ctx->run_types = malloc(ctx->max_runs*sizeof(enum narrative_run_type));
-    if ( (ctx->runs == NULL) || (ctx->run_types == NULL) ) ctx->max_runs = 0;
-    reset_runs(ctx);
 }
 
 %{
@@ -157,30 +172,43 @@ static int hex_to_double(const char *v, double *r)
 }
 
 
-void reset_runs(struct scpctx *ctx)
+void push_paragraph(struct many_paragraphs *mp, struct paragraph p)
 {
-    ctx->n_runs = 0;
-    ctx->mask = 0;
-    ctx->alignment = ALIGN_INHERIT;
+    if ( mp->n_paras == mp->max_paras ) {
+        struct paragraph *nparas;
+        nparas = realloc(mp->paras, (mp->max_paras+8)*sizeof(struct paragraph));
+        if ( nparas == NULL ) return;
+        mp->max_paras += 8;
+        mp->paras = nparas;
+    }
+
+printf("pushing para with %i runs\n", p.n_runs);
+
+    mp->paras[mp->n_paras++] = p;
+    printf("now %i paras\n", mp->n_paras);
 }
 
 
-void add_run(struct scpctx *ctx, char *str, enum narrative_run_type type)
+struct text_run **combine_paras(struct many_paragraphs mp, int **pn_runs)
 {
-    if ( ctx->n_runs == ctx->max_runs ) {
-        char **nruns;
-        enum narrative_run_type *ntype;
-        nruns = realloc(ctx->runs, (ctx->max_runs+32)*sizeof(char *));
-        ntype = realloc(ctx->run_types, (ctx->max_runs+32)*sizeof(enum narrative_run_type));
-        if ( (nruns == NULL) || (ntype == NULL) ) return;
-        ctx->max_runs += 32;
-        ctx->runs = nruns;
-        ctx->run_types = ntype;
+    struct text_run **combined_paras;
+    int *n_runs;
+    int i;
+
+    printf("combining %i paras\n", mp.n_paras);
+    combined_paras = malloc(mp.n_paras * sizeof(struct text_run *));
+    n_runs = malloc(mp.n_paras * sizeof(int));
+    for ( i=0; i<mp.n_paras; i++ ) {
+        printf("para %i (%i runs)\n", i, mp.paras[i].n_runs);
+        for ( int j=0; j<mp.paras[i].n_runs; j++ ) {
+            printf("run %i: '%s'\n", j, mp.paras[i].runs[j].text);
+        }
+        combined_paras[i] = mp.paras[i].runs;
+        n_runs[i] = mp.paras[i].n_runs;
     }
 
-    ctx->runs[ctx->n_runs] = str;
-    ctx->run_types[ctx->n_runs] = type;
-    ctx->n_runs++;
+    *pn_runs = n_runs;
+    return combined_paras;
 }
 
 
@@ -225,26 +253,50 @@ narrative:
 ;
 
 narrative_el:
-  PRESTITLE TEXT_START text_line  { narrative_add_prestitle(ctx->n, ctx->runs, ctx->run_types, ctx->n_runs);
-                                    reset_runs(ctx); }
-| BP TEXT_START text_line         { narrative_add_bp(ctx->n, ctx->runs, ctx->run_types, ctx->n_runs);
-                                    reset_runs(ctx); }
-| TEXT_START text_line            { narrative_add_text(ctx->n, ctx->runs, ctx->run_types, ctx->n_runs);
-                                    reset_runs(ctx); }
-| slide                { }
-| EOP                  { narrative_add_eop(ctx->n); }
+  PRESTITLE TEXT_START text_line  { narrative_add_prestitle(ctx->n, $3.runs, $3.n_runs); }
+| BP TEXT_START text_line         { narrative_add_bp(ctx->n, $3.runs, $3.n_runs); }
+| TEXT_START text_line            { narrative_add_text(ctx->n, $2.runs, $2.n_runs); }
+| slide                           { }
+| EOP                             { narrative_add_eop(ctx->n); }
 ;
 
-text_line:
+text_line: { $<para>$.n_runs = 0;
+             $<para>$.max_runs = 0;
+             $<para>$.runs = NULL;
+           }
   %empty
-| text_line text_run   { add_run(ctx, $2.text, $2.type); }
+| text_line text_run   {
+                         if ( $<para>$.n_runs == $<para>$.max_runs ) {
+                             struct text_run *nruns;
+                             nruns = realloc($<para>$.runs,
+                                             ($<para>$.max_runs+8)*sizeof(struct text_run));
+                             if ( nruns != NULL ) {
+                                $<para>$.max_runs += 8;
+                                $<para>$.runs = nruns;
+                            }
+                         }
+                         if ( $<para>$.n_runs < $<para>$.max_runs ) {
+                            $<para>$.runs[$<para>$.n_runs++] = $2;
+                         }
+                       }
+
 ;
 
+/* FIXME: Modifiers might be nested or overlap, e.g.
+ *      _hello *there*, world_
+ *      _hello *there_, world*
+ */
+
+/* FIXME: Adjacent RUN_TEXTs should be concatenated, otherwise escaped characters
+ * within modifiers won't work:
+ *      *hello \\ backslash*
+ * = '*' RUN_TEXT RUN_TEXT RUN_TEXT '*'
+ */
 text_run:
-  RUN_TEXT         { $$.text = $1;  $$.type = NARRATIVE_RUN_NORMAL; }
-| '*' RUN_TEXT '*' { $$.text = $2;  $$.type = NARRATIVE_RUN_BOLD; }
-| '/' RUN_TEXT '/' { $$.text = $2;  $$.type = NARRATIVE_RUN_ITALIC; }
-| '_' RUN_TEXT '_' { $$.text = $2;  $$.type = NARRATIVE_RUN_UNDERLINE; }
+  RUN_TEXT         { $$.text = $1;  $$.type = TEXT_RUN_NORMAL; }
+| '*' RUN_TEXT '*' { $$.text = $2;  $$.type = TEXT_RUN_BOLD; }
+| '/' RUN_TEXT '/' { $$.text = $2;  $$.type = TEXT_RUN_ITALIC; }
+| '_' RUN_TEXT '_' { $$.text = $2;  $$.type = TEXT_RUN_UNDERLINE; }
 
 /* -------- Slide -------- */
 
@@ -260,26 +312,31 @@ slide_parts:
 ;
 
 slide_part:
-  slide_prestitle { slide_add_prestitle(ctx->s, ctx->runs, ctx->n_runs);
-                    reset_runs(ctx); }
-| imageframe      { slide_add_image(ctx->s, $1, ctx->geom);
-                    reset_runs(ctx); }
-| textframe       { slide_add_text(ctx->s, ctx->runs, ctx->n_runs,
-                                   ctx->geom, ctx->alignment);
-                    reset_runs(ctx); }
+  slide_prestitle { struct text_run **cp;
+                    int *n_runs;
+                    cp = combine_paras($1, &n_runs);
+                    slide_add_prestitle(ctx->s, cp, n_runs, $1.n_paras); }
+| textframe       { struct text_run **cp;
+                    int *n_runs;
+                    cp = combine_paras($1, &n_runs);
+                    slide_add_text(ctx->s, cp, n_runs, $1.n_paras,
+                                   ctx->geom, ctx->alignment); }
+| slidetitle      { struct text_run **cp;
+                    int *n_runs;
+                    cp = combine_paras($1, &n_runs);
+                    slide_add_slidetitle(ctx->s, cp, n_runs, $1.n_paras); }
+| imageframe      { slide_add_image(ctx->s, $1, ctx->geom); }
 | FOOTER          { slide_add_footer(ctx->s); }
-| slidetitle      { slide_add_slidetitle(ctx->s, ctx->runs, ctx->n_runs);
-                    reset_runs(ctx); }
 ;
 
 slide_prestitle:
-  PRESTITLE frame_options multi_line_string         { }
-| PRESTITLE frame_options '{' multi_line_string '}' { }
+  PRESTITLE frame_options multi_line_string         { $$ = $3; }
+| PRESTITLE frame_options '{' multi_line_string '}' { $$ = $4; }
 ;
 
 slidetitle:
-  SLIDETITLE frame_options multi_line_string         { }
-| SLIDETITLE frame_options '{' multi_line_string '}' { }
+  SLIDETITLE frame_options multi_line_string         { $$ = $3; }
+| SLIDETITLE frame_options '{' multi_line_string '}' { $$ = $4; }
 ;
 
 imageframe:
@@ -287,23 +344,25 @@ imageframe:
 ;
 
 textframe:
-  TEXTFRAME frame_options multi_line_string         { }
-| TEXTFRAME frame_options '{' multi_line_string '}' { }
+  TEXTFRAME frame_options multi_line_string         { $$ = $3; }
+| TEXTFRAME frame_options '{' multi_line_string '}' { $$ = $4; }
 ;
 
 text_line_with_start:
-  TEXT_START text_line { }
-;
-
-multi_line_string:
-  text_line_with_start                { }
-| multi_line_string text_line_with_start { }
-| slide_bulletpoint                   { }
-| multi_line_string slide_bulletpoint { }
+  TEXT_START text_line { $$ = $2; }
 ;
 
 slide_bulletpoint:
-  BP TEXT_START text_line { }
+  BP TEXT_START text_line { $$ = $3; }
+;
+
+multi_line_string:   { $<many_paragraphs>$.n_paras = 0;
+                       $<many_paragraphs>$.paras = NULL;
+                       $<many_paragraphs>$.max_paras = 0;  }
+  text_line_with_start                   { push_paragraph(&$<many_paragraphs>$, $2); }
+| multi_line_string text_line_with_start { push_paragraph(&$<many_paragraphs>$, $2); }
+| slide_bulletpoint                      { push_paragraph(&$<many_paragraphs>$, $1); }
+| multi_line_string slide_bulletpoint    { push_paragraph(&$<many_paragraphs>$, $2); }
 ;
 
 /* There can be any number of options */

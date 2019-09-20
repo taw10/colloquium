@@ -42,6 +42,7 @@
 #include "imagestore.h"
 #include "slide_render_cairo.h"
 #include "narrative_render_cairo.h"
+#include "render_cairo_common.h"
 
 #include "narrative_priv.h"
 
@@ -122,71 +123,15 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 	pango_layout_set_width(item->layout, pango_units_from_double(wrap_w));
 	pango_layout_set_alignment(item->layout, palignment);
 	pango_layout_set_font_description(item->layout, fontdesc);
-
-	size_t total_len = 0;
-	int i;
-	char *text;
-
-	/* Work out length of all text in item (paragraph) */
-	for ( i=0; i<item->n_runs; i++ ) {
-		total_len += strlen(item->runs[i].text);
-	}
-
-	/* Allocate the complete text */
-	text = malloc(total_len+1);
-	if ( text == NULL ) {
-		fprintf(stderr, "Couldn't allocate combined text (%lli)\n",
-		       (long long int)total_len);
-		return;
-	}
-
-	/* Put all of the text together */
-	text[0] = '\0';
-	size_t pos = 0;
-	for ( i=0; i<item->n_runs; i++ ) {
-
-		PangoAttribute *attr = NULL;
-		size_t run_len = strlen(item->runs[i].text);
-
-		switch ( item->runs[i].type ) {
-
-			case NARRATIVE_RUN_NORMAL :
-			break;
-
-			case NARRATIVE_RUN_BOLD:
-			attr = pango_attr_weight_new(PANGO_WEIGHT_BOLD);
-			break;
-
-			case NARRATIVE_RUN_ITALIC:
-			attr = pango_attr_style_new(PANGO_STYLE_ITALIC);
-			break;
-
-			case NARRATIVE_RUN_UNDERLINE:
-			attr = pango_attr_underline_new(PANGO_UNDERLINE_SINGLE);
-			break;
-
-
-
-		}
-
-		if ( attr != NULL ) {
-			attr->start_index = pos;
-			attr->end_index = pos + run_len;
-			pango_attr_list_insert(attrs, attr);
-		}
-
-		/* FIXME: Should check that each bit of text finishes on a character boundary */
-		pos += run_len;
-		strcat(text, item->runs[i].text);
-
-	}
 	pango_layout_set_attributes(item->layout, attrs);
-	pango_layout_set_text(item->layout, text, -1);
-	pango_attr_list_unref(attrs);
+
+	if ( runs_to_pangolayout(item->layout, item->runs, item->n_runs) ) return;
 
 	pango_layout_get_extents(item->layout, NULL, &rect);
 	item->obj_w = pango_units_to_double(rect.width);
 	item->obj_h = pango_units_to_double(rect.height);
+
+	pango_attr_list_unref(attrs);
 }
 
 

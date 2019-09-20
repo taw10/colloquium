@@ -42,13 +42,6 @@ enum narrative_item_type
 };
 
 
-struct narrative_text_run
-{
-	enum narrative_run_type type;
-	char *text;
-};
-
-
 struct narrative_item
 {
 	enum narrative_item_type type;
@@ -68,7 +61,7 @@ struct narrative_item
 
 	/* For TEXT, BP, PRESTITLE */
 	int n_runs;
-	struct narrative_text_run *runs;
+	struct text_run *runs;
 	enum alignment align;
 #ifdef HAVE_PANGO
 	PangoLayout *layout;

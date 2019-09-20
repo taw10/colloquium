@@ -1,5 +1,5 @@
 /*
- * scparse_priv.h
+ * render_cairo_common.h
  *
  * Copyright © 2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -20,41 +20,17 @@
  *
  */
 
-#ifndef SCPARSE_PRIV_H
-#define SCPARSE_PRIV_H
+#ifndef RENDER_CAIRO_COMMON_H
+#define RENDER_CAIRO_COMMON_H
 
-#include "narrative.h"
-#include "slide.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
-enum style_mask
-{
-	STYMASK_GEOM = 1<<0,
-	STYMASK_FONT = 1<<1,
-	STYMASK_ALIGNMENT = 1<<2,
-	STYMASK_PADDING = 1<<3,
-	STYMASK_PARASPACE = 1<<4,
-	STYMASK_FGCOL = 1<<5,
-	STYMASK_BGCOL = 1<<6,
-};
+#include <pango/pango.h>
 
-struct scpctx
-{
-	Narrative *n;
-	Slide *s;
+#include "storycode.h"
 
-	/* Current style or frame options.
-	 * These will be copied to a stylesheet entry or frame when the
-	 * top-level rule is matched. */
-	enum style_mask mask;
-	struct frame_geom geom;
-	char *font;
-	enum alignment alignment;
-	struct length padding[4];
-	struct length paraspace[4];
-	struct colour fgcol;
-	enum gradient bggrad;
-	struct colour bgcol;
-	struct colour bgcol2;
-};
+extern int runs_to_pangolayout(PangoLayout *layout, struct text_run *runs, int n_runs);
 
-#endif /* SCPARSE_PRIV_H */
+#endif	/* RENDER_CAIRO_COMMON_H */

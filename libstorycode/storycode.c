@@ -107,6 +107,25 @@ static const char *maybe_alignment(enum alignment ali)
 }
 
 
+static void write_run_border(GOutputStream *fh, enum text_run_type t)
+{
+	if ( t == TEXT_RUN_BOLD ) write_string(fh, "*");
+	if ( t == TEXT_RUN_ITALIC ) write_string(fh, "/");
+	if ( t == TEXT_RUN_UNDERLINE ) write_string(fh, "_");
+}
+
+
+static void write_para(GOutputStream *fh, struct text_run *runs, int n_runs)
+{
+	int i;
+	for ( i=0; i<n_runs; i++ ) {
+		write_run_border(fh, runs[i].type);
+		write_string(fh, runs[i].text);
+		write_run_border(fh, runs[i].type);
+	}
+}
+
+
 static void write_text(GOutputStream *fh, SlideItem *item, int geom,
                        const char *t)
 {
@@ -129,13 +148,13 @@ static void write_text(GOutputStream *fh, SlideItem *item, int geom,
 	indent = strlen(tmp);
 	write_string(fh, tmp);
 	write_string(fh, ": ");
-	write_string(fh, item->paras[0].text);
+	write_para(fh, &item->paras[0], item->paras[0].n_runs);
 	write_string(fh, "\n");
 	for ( i=0; i<indent; i++ ) tmp[i] = ' ';
 	for ( i=1; i<item->n_paras; i++ ) {
 		write_string(fh, tmp);
 		write_string(fh, ": ");
-		write_string(fh, item->paras[i].text);
+		write_para(fh, &item->paras[i], item->paras[i].n_runs);
 		write_string(fh, "\n");
 	}
 }

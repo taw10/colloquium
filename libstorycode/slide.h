@@ -33,6 +33,7 @@ typedef struct _slide Slide;
 typedef struct _slideitem SlideItem;
 
 #include "stylesheet.h"
+#include "storycode.h"
 
 extern Slide *slide_new(void);
 extern void slide_free(Slide *s);
@@ -40,11 +41,11 @@ extern void slide_free(Slide *s);
 extern void slide_delete_item(Slide *s, SlideItem *item);
 
 extern SlideItem *slide_add_image(Slide *s, char *filename, struct frame_geom geom);
-extern SlideItem *slide_add_text(Slide *s, char **text, int n_text,
+extern SlideItem *slide_add_text(Slide *s, struct text_run **paras, int *n_runs, int n_paras,
                                  struct frame_geom geom, enum alignment alignment);
 extern int slide_add_footer(Slide *s);
-extern SlideItem *slide_add_slidetitle(Slide *s, char **text, int n_text);
-extern SlideItem *slide_add_prestitle(Slide *s, char **text, int n_text);
+extern SlideItem *slide_add_slidetitle(Slide *s, struct text_run **paras, int *n_runs, int n_paras);
+extern SlideItem *slide_add_prestitle(Slide *s, struct text_run **paras, int *n_runs, int n_paras);
 extern int slide_set_logical_size(Slide *s, double w, double h);
 
 extern int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h);

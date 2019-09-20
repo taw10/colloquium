@@ -102,19 +102,19 @@ void narrative_free(Narrative *n)
 
 void narrative_add_empty_item(Narrative *n)
 {
-	char **texts;
-	enum narrative_run_type *types;
-	char *text;
+	struct text_run *runs;
 
-	texts = malloc(sizeof(char *));
-	types = malloc(sizeof(enum narrative_run_type));
-	text = strdup("");
+	runs = malloc(sizeof(struct text_run));
+	if ( runs == NULL ) return;
 
-	if ( (texts != NULL) && (types != NULL) && (text != NULL) ) {
-		texts[0] = text;
-		types[0] = NARRATIVE_RUN_NORMAL;
-		narrative_add_text(n, texts, types, 1);
+	runs[0].text = strdup("");
+	runs[0].type = TEXT_RUN_NORMAL;
+	if ( runs[0].text == NULL ) {
+		free(runs);
+		return;
 	}
+
+	narrative_add_text(n, runs, 1);
 }
 
 
@@ -256,11 +256,11 @@ static struct narrative_item *insert_item(Narrative *n, int pos)
 }
 
 
-extern void add_text_item(Narrative *n, char **texts, enum narrative_run_type *types,
-                          int n_runs, enum narrative_item_type type)
+/* The new text item takes ownership of the array of runs */
+extern void add_text_item(Narrative *n, struct text_run *runs, int n_runs,
+                          enum narrative_item_type type)
 {
 	struct narrative_item *item;
-	int i;
 
 	item = add_item(n);
 	if ( item == NULL ) return;
@@ -269,39 +269,26 @@ extern void add_text_item(Narrative *n, char **texts, enum narrative_run_type *t
 	item->align = ALIGN_INHERIT;
 	item->layout = NULL;
 
-	/* Add all the runs */
-	item->runs = malloc(n_runs * sizeof(struct narrative_text_run));
-	if ( item->runs == NULL ) {
-		item->n_runs = 0;
-		return;
-	}
-
-	for ( i=0; i<n_runs; i++ ) {
-		item->runs[i].type = types[i];
-		item->runs[i].text = texts[i];
-	}
+	item->runs = runs;
 	item->n_runs = n_runs;
 }
 
 
-void narrative_add_text(Narrative *n, char **texts,
-                        enum narrative_run_type *types, int n_runs)
+void narrative_add_text(Narrative *n, struct text_run *runs, int n_runs)
 {
-	add_text_item(n, texts, types, n_runs, NARRATIVE_ITEM_TEXT);
+	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_TEXT);
 }
 
 
-void narrative_add_prestitle(Narrative *n, char **texts,
-                             enum narrative_run_type *types, int n_runs)
+void narrative_add_prestitle(Narrative *n, struct text_run *runs, int n_runs)
 {
-	add_text_item(n, texts, types, n_runs, NARRATIVE_ITEM_PRESTITLE);
+	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_PRESTITLE);
 }
 
 
-void narrative_add_bp(Narrative *n, char **texts,
-                      enum narrative_run_type *types, int n_runs)
+void narrative_add_bp(Narrative *n, struct text_run *runs, int n_runs)
 {
-	add_text_item(n, texts, types, n_runs, NARRATIVE_ITEM_BP);
+	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_BP);
 }
 
 

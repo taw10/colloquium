@@ -31,15 +31,8 @@
 
 typedef struct _narrative Narrative;
 
-enum narrative_run_type
-{
-	NARRATIVE_RUN_NORMAL,
-	NARRATIVE_RUN_BOLD,
-	NARRATIVE_RUN_ITALIC,
-	NARRATIVE_RUN_UNDERLINE,
-};
-
 #include "slide.h"
+#include "storycode.h"
 #include "imagestore.h"
 
 extern Narrative *narrative_new(void);
@@ -60,14 +53,11 @@ extern int narrative_get_unsaved(Narrative *n);
 
 extern int narrative_item_is_text(Narrative *n, int item);
 
-extern void narrative_add_text(Narrative *n, char **texts,
-                               enum narrative_run_type *types, int n_runs);
+extern void narrative_add_text(Narrative *n, struct text_run *runs, int n_runs);
 
-extern void narrative_add_bp(Narrative *n, char **texts,
-                             enum narrative_run_type *types, int n_runs);
+extern void narrative_add_bp(Narrative *n, struct text_run *runs, int n_runs);
 
-extern void narrative_add_prestitle(Narrative *n, char **texts,
-                                    enum narrative_run_type *types, int n_runs);
+extern void narrative_add_prestitle(Narrative *n, struct text_run *runs, int n_runs);
 
 extern void narrative_add_slide(Narrative *n, Slide *slide);
 extern void narrative_add_eop(Narrative *n);

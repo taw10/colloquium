@@ -103,8 +103,16 @@ SlideItem *slide_add_image(Slide *s, char *filename, struct frame_geom geom)
 }
 
 
-static SlideItem *add_text_item(Slide *s, char **text, int n_text, struct frame_geom geom,
-                                enum alignment alignment, enum slide_item_type slide_item)
+/* paras: array of arrays of text runs
+ * n_runs: array of numbers of runs in each paragraph
+ * n_paras: the number of paragraphs
+ *
+ * Will take ownership of the arrays of text runs, but not the array of arrays
+ * Will NOT take ownership of the array of numbers of runs
+ */
+static SlideItem *add_text_item(Slide *s, struct text_run **paras, int *n_runs, int n_paras,
+                                struct frame_geom geom, enum alignment alignment,
+                                enum slide_item_type slide_item)
 {
 	int i;
 	SlideItem *item;
@@ -113,18 +121,18 @@ static SlideItem *add_text_item(Slide *s, char **text, int n_text, struct frame_
 	if ( item == NULL ) return NULL;
 
 	item->type = slide_item;
-	item->paras = malloc(n_text*sizeof(struct slide_text_paragraph));
+	item->paras = malloc(n_paras*sizeof(struct slide_text_paragraph));
 	if ( item->paras == NULL ) {
 		s->n_items--;
 		return NULL;
 	}
+	item->n_paras = n_paras;
 
-	for ( i=0; i<n_text; i++ ) {
-		item->n_paras = n_text;
-		item->paras[i].text = text[i];
+	for ( i=0; i<n_paras; i++ ) {
+		item->paras[i].runs = paras[i];
+		item->paras[i].n_runs = n_runs[i];
 		item->paras[i].layout = NULL;
 	}
-	item->n_paras = n_text;
 
 	item->geom = geom;
 	item->align = alignment;
@@ -146,15 +154,15 @@ int slide_add_footer(Slide *s)
 }
 
 
-SlideItem *slide_add_text(Slide *s, char **text, int n_text, struct frame_geom geom,
-                          enum alignment alignment)
+SlideItem *slide_add_text(Slide *s, struct text_run **paras, int *n_runs, int n_paras,
+                          struct frame_geom geom, enum alignment alignment)
 {
-	return add_text_item(s, text, n_text, geom, alignment,
+	return add_text_item(s, paras, n_runs, n_paras, geom, alignment,
 	                     SLIDE_ITEM_TEXT);
 }
 
 
-SlideItem *slide_add_slidetitle(Slide *s, char **text, int n_text)
+SlideItem *slide_add_slidetitle(Slide *s, struct text_run **paras, int *n_runs, int n_paras)
 {
 	struct frame_geom geom;
 
@@ -168,12 +176,12 @@ SlideItem *slide_add_slidetitle(Slide *s, char **text, int n_text)
 	geom.h.len = 1.0;
 	geom.h.unit = LENGTH_FRAC;
 
-	return add_text_item(s, text, n_text, geom, ALIGN_INHERIT,
+	return add_text_item(s, paras, n_runs, n_paras, geom, ALIGN_INHERIT,
 	                     SLIDE_ITEM_SLIDETITLE);
 }
 
 
-SlideItem *slide_add_prestitle(Slide *s, char **text, int n_text)
+SlideItem *slide_add_prestitle(Slide *s, struct text_run **paras, int *n_runs, int n_paras)
 {
 	struct frame_geom geom;
 
@@ -187,7 +195,7 @@ SlideItem *slide_add_prestitle(Slide *s, char **text, int n_text)
 	geom.h.len = 1.0;
 	geom.h.unit = LENGTH_FRAC;
 
-	return add_text_item(s, text, n_text, geom, ALIGN_INHERIT,
+	return add_text_item(s, paras, n_runs, n_paras, geom, ALIGN_INHERIT,
 	                     SLIDE_ITEM_PRESTITLE);
 }
 
@@ -324,6 +332,7 @@ void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
 
 void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
 {
+#if 0
 	struct slide_text_paragraph *np;
 
 	np = realloc(item->paras, (item->n_paras+1)*sizeof(struct slide_text_paragraph));
@@ -338,11 +347,13 @@ void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
 	item->paras[para+1].text = strdup(&item->paras[para].text[off]);
 	item->paras[para+1].layout = NULL;
 	item->paras[para].text[off] = '\0';
+#endif
 }
 
 
 static void delete_paragraph(SlideItem *item, int del)
 {
+#if 0
 	int i;
 
 #ifdef HAVE_PANGO
@@ -354,11 +365,13 @@ static void delete_paragraph(SlideItem *item, int del)
 		item->paras[i] = item->paras[i+1];
 	}
 	item->n_paras--;
+#endif
 }
 
 
 void slide_item_delete_text(SlideItem *item, int i1, size_t o1, int i2, size_t o2)
 {
+#if 0
 	int i;
 	int n_del = 0;
 
@@ -397,4 +410,5 @@ void slide_item_delete_text(SlideItem *item, int i1, size_t o1, int i2, size_t o
 	free(item->paras[i1].text);
 	item->paras[i1].text = new_text;
 	delete_paragraph(item, i2);
+#endif
 }

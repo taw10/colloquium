@@ -41,6 +41,7 @@
 #include "stylesheet.h"
 #include "imagestore.h"
 #include "slide_render_cairo.h"
+#include "render_cairo_common.h"
 
 #include "slide_priv.h"
 
@@ -75,17 +76,17 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 }
 
 
-static size_t pos_trail_to_offset(SlideItem *item, int para,
+static size_t pos_trail_to_offset(SlideItem *item, int para, int run,
                                   size_t offs, int trail)
 {
 	glong char_offs;
 	char *ptr;
 
-	char_offs = g_utf8_pointer_to_offset(item->paras[para].text,
-	                                     item->paras[para].text+offs);
+	char_offs = g_utf8_pointer_to_offset(item->paras[para].runs[run].text,
+	                                     item->paras[para].runs[run].text+offs);
 	char_offs += trail;
-	ptr = g_utf8_offset_to_pointer(item->paras[para].text, char_offs);
-	return ptr - item->paras[para].text;
+	ptr = g_utf8_offset_to_pointer(item->paras[para].runs[run].text, char_offs);
+	return ptr - item->paras[para].runs[run].text;
 }
 
 
@@ -191,8 +192,10 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	}
 
 	if ( !slide_positions_equal(sel_start, sel_end) ) {
-		sel_s = pos_trail_to_offset(item, sel_start.para, sel_start.pos, sel_start.trail);
-		sel_e = pos_trail_to_offset(item, sel_end.para, sel_end.pos, sel_end.trail);
+		sel_s = pos_trail_to_offset(item, sel_start.para, sel_start.run,
+		                            sel_start.pos, sel_start.trail);
+		sel_e = pos_trail_to_offset(item, sel_end.para, sel_end.run,
+		                            sel_end.pos, sel_end.trail);
 	} else {
 		sel_s = 0;
 		sel_e = 0;
@@ -245,10 +248,7 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 		}
 		pango_layout_set_width(item->paras[i].layout,
 		                       pango_units_from_double(w-pad_l-pad_r));
-		pango_layout_set_text(item->paras[i].layout, item->paras[i].text, -1);
-
 		pango_layout_set_alignment(item->paras[i].layout, palignment);
-
 		pango_layout_set_font_description(item->paras[i].layout, fontdesc);
 
 		attrs = pango_attr_list_new();
@@ -261,9 +261,11 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 			pango_attr_list_insert(attrs, attr);
 		}
 
-		/* FIXME: Handle *bold*, _underline_, /italic/ etc. */
-
 		pango_layout_set_attributes(item->paras[i].layout, attrs);
+
+		runs_to_pangolayout(item->paras[i].layout, item->paras[i].runs,
+		                    item->paras[i].n_runs);
+
 		pango_attr_list_unref(attrs);
 
 		/* FIXME: Clip to w,h */

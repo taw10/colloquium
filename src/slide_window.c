@@ -59,9 +59,15 @@ static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
                                   gpointer vp)
 {
 	SlideWindow *sw = vp;
-	char **text = malloc(sizeof(char *));
-	*text = strdup("Slide title");
-	slide_add_slidetitle(sw->slide, text, 1);
+	struct text_run *runs;
+	int nruns = 1;
+
+	/* Ownership of this struct will be taken over by the Slide. */
+	runs = malloc(sizeof(struct text_run));
+	runs[0].type = TEXT_RUN_NORMAL;
+	runs[0].text = strdup("Slide title");
+
+	slide_add_slidetitle(sw->slide, &runs, &nruns, 1);
 	gtk_slide_view_set_slide(sw->sv, sw->slide);
 }
 

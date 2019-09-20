@@ -69,6 +69,8 @@ SLIDE {
                                    : Change their shape and size by shift-dragging the handles at the corners.
 }
 : You can add a new slide from the "Insert" menu or using the toolbar at the top of the narrative window.  Try it now: click to place the cursor at the end of this paragraph, then add a new slide.
+: Here is a web link: https:\/\/www.bitwiz.me.uk\/some\/where\/index.html
+: Here is a setence with overlapping runs: _hello _*world*_ !!!!11one_
 : What is the narrative window for?  Well, it's up to you!  Here are some suggestions:
 BP: Use it just to help plan a smooth flow for your talk, reading it through to spot awkward transitions.
 BP: Write your talk word for word.  Deliver your talk precisely as you planned it, no matter how nervous you get.

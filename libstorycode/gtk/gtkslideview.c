@@ -161,17 +161,17 @@ static void draw_resize_handle(cairo_t *cr, double x, double y)
 }
 
 
-static size_t pos_trail_to_offset(SlideItem *item, int para,
+static size_t pos_trail_to_offset(SlideItem *item, int para, int run,
                                   size_t offs, int trail)
 {
 	glong char_offs;
 	char *ptr;
 
-	char_offs = g_utf8_pointer_to_offset(item->paras[para].text,
-	                                     item->paras[para].text+offs);
+	char_offs = g_utf8_pointer_to_offset(item->paras[para].runs[run].text,
+	                                     item->paras[para].runs[run].text+offs);
 	char_offs += trail;
-	ptr = g_utf8_offset_to_pointer(item->paras[para].text, char_offs);
-	return ptr - item->paras[para].text;
+	ptr = g_utf8_offset_to_pointer(item->paras[para].runs[run].text, char_offs);
+	return ptr - item->paras[para].runs[run].text;
 }
 
 
@@ -206,7 +206,7 @@ static int get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
 	slide_item_get_padding(item, stylesheet, &padl, &padr, &padt, &padb,
 	                       slide_w, slide_h);
 
-	offs = pos_trail_to_offset(item, cpos.para, cpos.pos, cpos.trail);
+	offs = pos_trail_to_offset(item, cpos.para, cpos.run, cpos.pos, cpos.trail);
 	pango_layout_get_cursor_pos(item->paras[cpos.para].layout, offs, &rect, NULL);
 	*x = pango_units_to_double(rect.x) + padl;
 	*y = pango_units_to_double(rect.y) + para_top(item, cpos.para) + padt;
@@ -841,10 +841,15 @@ static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
                                double w, double h)
 {
 	struct frame_geom geom;
-	char *text;
+	struct text_run *runs;
+	int nruns = 1;
 
-	text = strdup("");
-	if ( text == NULL ) return NULL;
+	/* Ownership of this struct will be taken over by the Slide. */
+	runs = malloc(sizeof(struct text_run));
+	if ( runs == NULL ) return NULL;
+	runs[0].type = TEXT_RUN_NORMAL;
+	runs[0].text = strdup("Slide title");
+	if ( runs[0].text == NULL ) return NULL;
 
 	if ( w < 0.0 ) {
 		cx += w;
@@ -860,7 +865,7 @@ static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
 	geom.y.len = cy;  geom.y.unit = LENGTH_UNIT;
 	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;
 	geom.h.len = h;   geom.h.unit = LENGTH_UNIT;
-	return slide_add_text(e->slide, &text, 1, geom, ALIGN_INHERIT);
+	return slide_add_text(e->slide, &runs, &nruns, 1, geom, ALIGN_INHERIT);
 }
 
 
@@ -932,9 +937,11 @@ static gboolean button_release_sig(GtkWidget *da, GdkEventButton *event,
 
 static size_t end_offset_of_para(SlideItem *item, int pnum)
 {
+	struct slide_text_paragraph *para;
 	assert(pnum >= 0);
 	if ( !is_text(item->type) ) return 0;
-	return strlen(item->paras[pnum].text);
+	para = &item->paras[pnum];
+	return strlen(para->runs[para->n_runs-1].text);
 }
 
 
@@ -1018,6 +1025,7 @@ static void sort_slide_positions(struct slide_pos *a, struct slide_pos *b)
 
 static void do_backspace(GtkSlideView *e, signed int dir)
 {
+#if 0
 	struct slide_pos p1, p2;
 	size_t o1, o2;
 
@@ -1041,8 +1049,8 @@ static void do_backspace(GtkSlideView *e, signed int dir)
 	}
 
 	sort_slide_positions(&p1, &p2);
-	o1 = pos_trail_to_offset(e->cursor_frame, p1.para, p1.pos, p1.trail);
-	o2 = pos_trail_to_offset(e->cursor_frame, p2.para, p2.pos, p2.trail);
+	o1 = pos_trail_to_offset(e->cursor_frame, p1.para, p1.run, p1.pos, p1.trail);
+	o2 = pos_trail_to_offset(e->cursor_frame, p2.para, p1.run, p2.pos, p2.trail);
 	slide_item_delete_text(e->cursor_frame, p1.para, o1, p2.para, o2);
 	e->cpos = p1;
 	unset_selection(e);
@@ -1052,12 +1060,14 @@ static void do_backspace(GtkSlideView *e, signed int dir)
 
 	emit_change_sig(e);
 	redraw(e);
+#endif
 }
 
 
 static void insert_text_in_paragraph(SlideItem *item, int para,
                                      size_t offs, char *t)
 {
+#if 0
 	char *n = malloc(strlen(t) + strlen(item->paras[para].text) + 1);
 	if ( n == NULL ) return;
 	strncpy(n, item->paras[para].text, offs);
@@ -1066,11 +1076,13 @@ static void insert_text_in_paragraph(SlideItem *item, int para,
 	strcat(n, item->paras[para].text+offs);
 	free(item->paras[para].text);
 	item->paras[para].text = n;
+#endif
 }
 
 
 static void insert_text(char *t, GtkSlideView *e)
 {
+#if 0
 	size_t off;
 
 	if ( e->cursor_frame == NULL ) return;
@@ -1101,6 +1113,7 @@ static void insert_text(char *t, GtkSlideView *e)
 	cursor_moveh(e, &e->cpos, +1);
 	emit_change_sig(e);
 	redraw(e);
+#endif
 }
 
 

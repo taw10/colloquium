@@ -41,7 +41,8 @@ enum slide_item_type
 
 struct slide_text_paragraph
 {
-	char *text;
+	struct text_run *runs;
+	int n_runs;
 #ifdef HAVE_PANGO
 	PangoLayout *layout;
 #else

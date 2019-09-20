@@ -33,7 +33,8 @@
 struct slide_pos
 {
 	int para;    /* Paragraph number (corresponding to narrative items) */
-	int pos;     /* Byte position within paragraph (yes, really)  */
+	int run;     /* Run number */
+	int pos;     /* Byte position within run (yes, really)  */
 	int trail;   /* 1 = end of character, 0 = before */
 };
 

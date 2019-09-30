@@ -182,10 +182,7 @@ void push_paragraph(struct many_paragraphs *mp, struct paragraph p)
         mp->paras = nparas;
     }
 
-printf("pushing para with %i runs\n", p.n_runs);
-
     mp->paras[mp->n_paras++] = p;
-    printf("now %i paras\n", mp->n_paras);
 }
 
 
@@ -195,13 +192,10 @@ struct text_run **combine_paras(struct many_paragraphs mp, int **pn_runs)
     int *n_runs;
     int i;
 
-    printf("combining %i paras\n", mp.n_paras);
     combined_paras = malloc(mp.n_paras * sizeof(struct text_run *));
     n_runs = malloc(mp.n_paras * sizeof(int));
     for ( i=0; i<mp.n_paras; i++ ) {
-        printf("para %i (%i runs)\n", i, mp.paras[i].n_runs);
         for ( int j=0; j<mp.paras[i].n_runs; j++ ) {
-            printf("run %i: '%s'\n", j, mp.paras[i].runs[j].text);
         }
         combined_paras[i] = mp.paras[i].runs;
         n_runs[i] = mp.paras[i].n_runs;

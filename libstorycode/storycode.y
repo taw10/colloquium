@@ -113,6 +113,7 @@
 %type <para> text_line_with_start
 %type <run> text_run
 %type <str> RUN_TEXT
+%type <str> one_or_more_runs
 
 %type <str> FONTNAME
 %type <str> imageframe
@@ -281,16 +282,29 @@ text_line: { $<para>$.n_runs = 0;
  *      _hello *there_, world*
  */
 
-/* FIXME: Adjacent RUN_TEXTs should be concatenated, otherwise escaped characters
- * within modifiers won't work:
- *      *hello \\ backslash*
- * = '*' RUN_TEXT RUN_TEXT RUN_TEXT '*'
- */
 text_run:
   RUN_TEXT         { $$.text = $1;  $$.type = TEXT_RUN_NORMAL; }
-| '*' RUN_TEXT '*' { $$.text = $2;  $$.type = TEXT_RUN_BOLD; }
-| '/' RUN_TEXT '/' { $$.text = $2;  $$.type = TEXT_RUN_ITALIC; }
-| '_' RUN_TEXT '_' { $$.text = $2;  $$.type = TEXT_RUN_UNDERLINE; }
+| '*' one_or_more_runs '*' { $$.text = $2;  $$.type = TEXT_RUN_BOLD; }
+| '/' one_or_more_runs '/' { $$.text = $2;  $$.type = TEXT_RUN_ITALIC; }
+| '_' one_or_more_runs '_' { $$.text = $2;  $$.type = TEXT_RUN_UNDERLINE; }
+
+one_or_more_runs:
+  RUN_TEXT { $$ = $1; }
+| one_or_more_runs RUN_TEXT { char *nt;
+                              size_t len;
+                              len = strlen($1) + strlen($2) + 1;
+                              nt = malloc(len);
+                              if ( nt != NULL ) {
+                                  nt[0] = '\0';
+                                  strcat(nt, $1);
+                                  strcat(nt, $2);
+                                  free($1);
+                                  $$ = nt;
+                              } else {
+                                  $$ = strdup("ERROR");
+                              }
+                            }
+;
 
 /* -------- Slide -------- */
 

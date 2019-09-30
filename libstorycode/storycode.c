@@ -148,13 +148,13 @@ static void write_text(GOutputStream *fh, SlideItem *item, int geom,
 	indent = strlen(tmp);
 	write_string(fh, tmp);
 	write_string(fh, ": ");
-	write_para(fh, &item->paras[0], item->paras[0].n_runs);
+	write_para(fh, item->paras[0].runs, item->paras[0].n_runs);
 	write_string(fh, "\n");
 	for ( i=0; i<indent; i++ ) tmp[i] = ' ';
 	for ( i=1; i<item->n_paras; i++ ) {
 		write_string(fh, tmp);
 		write_string(fh, ": ");
-		write_para(fh, &item->paras[i], item->paras[i].n_runs);
+		write_para(fh, item->paras[i].runs, item->paras[i].n_runs);
 		write_string(fh, "\n");
 	}
 }

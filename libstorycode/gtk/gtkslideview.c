@@ -1025,6 +1025,7 @@ static void sort_slide_positions(struct slide_pos *a, struct slide_pos *b)
 
 static void do_backspace(GtkSlideView *e, signed int dir)
 {
+	/* FIXME! */
 #if 0
 	struct slide_pos p1, p2;
 	size_t o1, o2;
@@ -1067,6 +1068,7 @@ static void do_backspace(GtkSlideView *e, signed int dir)
 static void insert_text_in_paragraph(SlideItem *item, int para,
                                      size_t offs, char *t)
 {
+	/* FIXME! */
 #if 0
 	char *n = malloc(strlen(t) + strlen(item->paras[para].text) + 1);
 	if ( n == NULL ) return;
@@ -1082,6 +1084,7 @@ static void insert_text_in_paragraph(SlideItem *item, int para,
 
 static void insert_text(char *t, GtkSlideView *e)
 {
+	/* FIXME! */
 #if 0
 	size_t off;
 

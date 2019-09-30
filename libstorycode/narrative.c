@@ -339,6 +339,7 @@ static void delete_item(Narrative *n, int del)
 /* Delete from item i1 offset o1 to item i2 offset o2, inclusive */
 void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 {
+	/* FIXME! */
 #if 0
 	int i;
 	int n_del = 0;
@@ -407,6 +408,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 
 void narrative_split_item(Narrative *n, int i1, size_t o1)
 {
+	/* FIXME! */
 #if 0
 	struct narrative_item *item1;
 	struct narrative_item *item2;

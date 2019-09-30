@@ -332,6 +332,7 @@ void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
 
 void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
 {
+	/* FIXME */
 #if 0
 	struct slide_text_paragraph *np;
 
@@ -353,6 +354,7 @@ void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
 
 static void delete_paragraph(SlideItem *item, int del)
 {
+	/* FIXME */
 #if 0
 	int i;
 
@@ -371,6 +373,7 @@ static void delete_paragraph(SlideItem *item, int del)
 
 void slide_item_delete_text(SlideItem *item, int i1, size_t o1, int i2, size_t o2)
 {
+	/* FIXME */
 #if 0
 	int i;
 	int n_del = 0;

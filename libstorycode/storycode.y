@@ -138,6 +138,7 @@
     /* The slide currently being created.
      * Will be added to the narrative when complete */
     ctx->s = slide_new();
+    ctx->mask = 0;
 }
 
 %{

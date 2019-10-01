@@ -254,37 +254,26 @@ static int write_slide(GOutputStream *fh, Slide *s)
 
 static int write_item(GOutputStream *fh, struct narrative_item *item)
 {
-	int i;
-
 	switch ( item->type ) {
 
 		case NARRATIVE_ITEM_TEXT:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, ": ") ) return 1;
-		for ( i=0; i<item->n_runs; i++ ) {
-			/* FIXME: Run markers (e.g. '*') */
-			if ( write_string(fh, item->runs[i].text) ) return 1;
-		}
+		write_para(fh, item->runs, item->n_runs);
 		if ( write_string(fh, "\n") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_PRESTITLE:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, "PRESTITLE: ") ) return 1;
-		for ( i=0; i<item->n_runs; i++ ) {
-			/* FIXME: Run markers (e.g. '*') */
-			if ( write_string(fh, item->runs[i].text) ) return 1;
-		}
+		write_para(fh, item->runs, item->n_runs);
 		if ( write_string(fh, "\n") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_BP:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, "BP: ") ) return 1;
-		for ( i=0; i<item->n_runs; i++ ) {
-			/* FIXME: Run markers (e.g. '*') */
-			if ( write_string(fh, item->runs[i].text) ) return 1;
-		}
+		write_para(fh, item->runs, item->n_runs);
 		if ( write_string(fh, "\n") ) return 1;
 		break;
 

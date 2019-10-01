@@ -183,7 +183,7 @@ static void write_text(GOutputStream *fh, SlideItem *item, int geom,
 		         maybe_alignment(item->align));
 	} else {
 		snprintf(tmp, 255, "  %s%s",
-		         t ,maybe_alignment(item->align));
+		         t, maybe_alignment(item->align));
 	}
 
 	indent = strlen(tmp);

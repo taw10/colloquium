@@ -115,12 +115,53 @@ static void write_run_border(GOutputStream *fh, enum text_run_type t)
 }
 
 
+static char *escape_text(const char *in)
+{
+	int i, j;
+	size_t len;
+	size_t nl = 0;
+	size_t np = 0;
+	const char *esc = "*/_";
+	size_t n_esc = 3;
+	char *out;
+
+	len = strlen(in);
+	for ( i=0; i<len; i++ ) {
+		for ( j=0; j<n_esc; j++ ) {
+			if ( in[i] == esc[j] ) {
+				nl++;
+				break;
+			}
+		}
+	}
+
+	out = malloc(len + nl + 1);
+	if ( out == NULL ) return NULL;
+
+	np = 0;
+	for ( i=0; i<=len; i++ ) {
+		for ( j=0; j<n_esc; j++ ) {
+			if ( in[i] == esc[j] ) {
+				out[np++] = '\\';
+				break;
+			}
+		}
+		out[np++] = in[i];
+	}
+
+	return out;
+}
+
+
 static void write_para(GOutputStream *fh, struct text_run *runs, int n_runs)
 {
 	int i;
 	for ( i=0; i<n_runs; i++ ) {
+		char *escaped_str;
 		write_run_border(fh, runs[i].type);
-		write_string(fh, runs[i].text);
+		escaped_str = escape_text(runs[i].text);
+		write_string(fh, escaped_str);
+		free(escaped_str);
 		write_run_border(fh, runs[i].type);
 	}
 }

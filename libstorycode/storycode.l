@@ -83,8 +83,8 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
 <INITIAL>IMAGE    { BEGIN(image); return SC_IMAGEFRAME; }
 <image>:[ ]       { BEGIN(image_filename); return SC_TEXT_START; }
 <image_filename>[^\n]*  { sclval.str = strdup(yytext);
-                    lineno++;
-                    return SC_FILENAME; }
+                          lineno++;
+                          return SC_FILENAME; }
 
 <INITIAL>:[ ]     { BEGIN(runtext); return SC_TEXT_START; }
 <runtext>[\\]     { BEGIN(stringesc); }
@@ -93,8 +93,8 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
 <runtext>[/]      { return '/'; }
 <runtext>[_]      { return '_'; }
 <runtext>[^\\\*/_\n]* { sclval.str = strdup(yytext);
-                    sclval.str[yyleng] = '\0';
-                    return SC_RUN_TEXT; }
+                        sclval.str[yyleng] = '\0';
+                        return SC_RUN_TEXT; }
 <runtext>\n       { BEGIN(0); lineno++; }
 
 \n                { BEGIN(0); lineno++; }

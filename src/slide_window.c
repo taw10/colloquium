@@ -58,6 +58,7 @@ struct _slidewindow
 static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
                                   gpointer vp)
 {
+	SlideItem *item;
 	SlideWindow *sw = vp;
 	struct text_run *runs;
 	int nruns = 1;
@@ -67,7 +68,8 @@ static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
 	runs[0].type = TEXT_RUN_NORMAL;
 	runs[0].text = strdup("Slide title");
 
-	slide_add_slidetitle(sw->slide, &runs, &nruns, 1);
+	item = slide_item_slidetitle(&runs, &nruns, 1);
+	slide_add_item(sw->slide, item);
 	gtk_slide_view_set_slide(sw->sv, sw->slide);
 }
 
@@ -83,6 +85,7 @@ static gint insert_image_response_sig(GtkWidget *d, gint response, SlideWindow *
 	if ( response == GTK_RESPONSE_ACCEPT ) {
 
 		char *filename;
+		SlideItem *item;
 		struct frame_geom geom;
 		char *fn;
 		double slide_w, slide_h;
@@ -116,7 +119,8 @@ static gint insert_image_response_sig(GtkWidget *d, gint response, SlideWindow *
 			geom.h.len = 1.0;  geom.h.unit = LENGTH_FRAC;
 		}
 
-		slide_add_image(sw->slide, fn, geom);
+		item = slide_item_image(fn, geom);
+		slide_add_item(sw->slide, item);
 	}
 
 	gtk_widget_destroy(d);

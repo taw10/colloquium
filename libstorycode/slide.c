@@ -72,27 +72,35 @@ void slide_delete_item(Slide *s, SlideItem *item)
 }
 
 
-static SlideItem *add_item(Slide *s)
+static SlideItem *slide_item_new()
 {
-	SlideItem *new_items;
 	SlideItem *item;
-
-	new_items = realloc(s->items, (s->n_items+1)*sizeof(SlideItem));
-	if ( new_items == NULL ) return NULL;
-	s->items = new_items;
-	item = &s->items[s->n_items++];
-
+	item = malloc(sizeof(struct _slideitem));
+	if ( item == NULL ) return NULL;
 	item->paras = NULL;
-
 	return item;
 }
 
 
-SlideItem *slide_add_image(Slide *s, char *filename, struct frame_geom geom)
+void slide_add_item(Slide *s, SlideItem *item)
+{
+	SlideItem *new_items;
+
+	new_items = realloc(s->items, (s->n_items+1)*sizeof(SlideItem));
+	if ( new_items == NULL ) return;
+	s->items = new_items;
+
+	/* Copy contents and free top-level */
+	s->items[s->n_items++] = *item;
+	free(item);
+}
+
+
+SlideItem *slide_item_image(char *filename, struct frame_geom geom)
 {
 	SlideItem *item;
 
-	item = add_item(s);
+	item = slide_item_new();
 	if ( item == NULL ) return NULL;
 
 	item->type = SLIDE_ITEM_IMAGE;
@@ -110,20 +118,20 @@ SlideItem *slide_add_image(Slide *s, char *filename, struct frame_geom geom)
  * Will take ownership of the arrays of text runs, but not the array of arrays
  * Will NOT take ownership of the array of numbers of runs
  */
-static SlideItem *add_text_item(Slide *s, struct text_run **paras, int *n_runs, int n_paras,
+static SlideItem *text_item_new(struct text_run **paras, int *n_runs, int n_paras,
                                 struct frame_geom geom, enum alignment alignment,
                                 enum slide_item_type slide_item)
 {
 	int i;
 	SlideItem *item;
 
-	item = add_item(s);
+	item = slide_item_new();
 	if ( item == NULL ) return NULL;
 
 	item->type = slide_item;
 	item->paras = malloc(n_paras*sizeof(struct slide_text_paragraph));
 	if ( item->paras == NULL ) {
-		s->n_items--;
+		free(item);
 		return NULL;
 	}
 	item->n_paras = n_paras;
@@ -141,28 +149,24 @@ static SlideItem *add_text_item(Slide *s, struct text_run **paras, int *n_runs, 
 }
 
 
-int slide_add_footer(Slide *s)
+SlideItem *slide_item_footer()
 {
-	SlideItem *item;
-
-	item = add_item(s);
-	if ( item == NULL ) return 1;
-
+	SlideItem *item = slide_item_new();
+	if ( item == NULL ) return NULL;
 	item->type = SLIDE_ITEM_FOOTER;
-
-	return 0;
+	return item;
 }
 
 
-SlideItem *slide_add_text(Slide *s, struct text_run **paras, int *n_runs, int n_paras,
-                          struct frame_geom geom, enum alignment alignment)
+SlideItem *slide_item_text(struct text_run **paras, int *n_runs, int n_paras,
+                           struct frame_geom geom, enum alignment alignment)
 {
-	return add_text_item(s, paras, n_runs, n_paras, geom, alignment,
+	return text_item_new(paras, n_runs, n_paras, geom, alignment,
 	                     SLIDE_ITEM_TEXT);
 }
 
 
-SlideItem *slide_add_slidetitle(Slide *s, struct text_run **paras, int *n_runs, int n_paras)
+SlideItem *slide_item_slidetitle(struct text_run **paras, int *n_runs, int n_paras)
 {
 	struct frame_geom geom;
 
@@ -176,12 +180,12 @@ SlideItem *slide_add_slidetitle(Slide *s, struct text_run **paras, int *n_runs, 
 	geom.h.len = 1.0;
 	geom.h.unit = LENGTH_FRAC;
 
-	return add_text_item(s, paras, n_runs, n_paras, geom, ALIGN_INHERIT,
+	return text_item_new(paras, n_runs, n_paras, geom, ALIGN_INHERIT,
 	                     SLIDE_ITEM_SLIDETITLE);
 }
 
 
-SlideItem *slide_add_prestitle(Slide *s, struct text_run **paras, int *n_runs, int n_paras)
+SlideItem *slide_item_prestitle(struct text_run **paras, int *n_runs, int n_paras)
 {
 	struct frame_geom geom;
 
@@ -195,7 +199,7 @@ SlideItem *slide_add_prestitle(Slide *s, struct text_run **paras, int *n_runs, i
 	geom.h.len = 1.0;
 	geom.h.unit = LENGTH_FRAC;
 
-	return add_text_item(s, paras, n_runs, n_paras, geom, ALIGN_INHERIT,
+	return text_item_new(paras, n_runs, n_paras, geom, ALIGN_INHERIT,
 	                     SLIDE_ITEM_PRESTITLE);
 }
 

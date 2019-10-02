@@ -51,7 +51,8 @@
 
   Stylesheet *ss;
   Narrative *n;
-  Slide *s;
+  Slide *slide;
+  SlideItem *slide_item;
 
   char *str;
   struct text_run run;
@@ -102,8 +103,9 @@
 %token TEXT_START
 
 %type <n> narrative
-%type <s> slide
+%type <slide> slide_parts
 %type <ss> stylesheet
+%type <slide_item> slide_part
 %type <many_paragraphs> textframe
 %type <many_paragraphs> slide_prestitle
 %type <many_paragraphs> slidetitle
@@ -134,10 +136,6 @@
 %initial-action
 {
     ctx->n = narrative_new();
-
-    /* The slide currently being created.
-     * Will be added to the narrative when complete */
-    ctx->s = slide_new();
     ctx->mask = 0;
 }
 
@@ -310,32 +308,30 @@ one_or_more_runs:
 /* -------- Slide -------- */
 
 slide:
-  SLIDE '{' slide_parts '}'  { narrative_add_slide(ctx->n, ctx->s);
-                               /* New work in progress object */
-                               ctx->s = slide_new(); }
+  SLIDE '{' slide_parts '}'  { narrative_add_slide(ctx->n, $3); }
 ;
 
-slide_parts:
+slide_parts: { $<slide>$ = slide_new(); }
   %empty
-| slide_parts slide_part
+| slide_parts slide_part { slide_add_item($<slide>$, $2); }
 ;
 
 slide_part:
   slide_prestitle { struct text_run **cp;
                     int *n_runs;
                     cp = combine_paras($1, &n_runs);
-                    slide_add_prestitle(ctx->s, cp, n_runs, $1.n_paras); }
+                    $$ = slide_item_prestitle(cp, n_runs, $1.n_paras); }
 | textframe       { struct text_run **cp;
                     int *n_runs;
                     cp = combine_paras($1, &n_runs);
-                    slide_add_text(ctx->s, cp, n_runs, $1.n_paras,
-                                   ctx->geom, ctx->alignment); }
+                    $$ = slide_item_text(cp, n_runs, $1.n_paras,
+                                         ctx->geom, ctx->alignment); }
 | slidetitle      { struct text_run **cp;
                     int *n_runs;
                     cp = combine_paras($1, &n_runs);
-                    slide_add_slidetitle(ctx->s, cp, n_runs, $1.n_paras); }
-| imageframe      { slide_add_image(ctx->s, $1, ctx->geom); }
-| FOOTER          { slide_add_footer(ctx->s); }
+                    $$ = slide_item_slidetitle(cp, n_runs, $1.n_paras); }
+| imageframe      { $$ = slide_item_image($1, ctx->geom); }
+| FOOTER          { $$ = slide_item_footer(); }
 ;
 
 slide_prestitle:

@@ -827,19 +827,23 @@ static SlideItem *create_image(GtkSlideView *e, const char *filename,
                                double cx, double cy, double w, double h)
 {
 	struct frame_geom geom;
+	SlideItem *item;
 	char *fn = strdup(filename);
 	if ( fn == NULL ) return NULL;
 	geom.x.len = cx;  geom.x.unit = LENGTH_UNIT;
 	geom.y.len = cy;  geom.y.unit = LENGTH_UNIT;
 	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;
 	geom.h.len = h;   geom.h.unit = LENGTH_UNIT;
-	return slide_add_image(e->slide, fn, geom);
+	item = slide_item_image(fn, geom);
+	slide_add_item(e->slide, item);
+	return item;
 }
 
 
 static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
                                double w, double h)
 {
+	SlideItem *item;
 	struct frame_geom geom;
 	struct text_run *runs;
 	int nruns = 1;
@@ -865,7 +869,9 @@ static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
 	geom.y.len = cy;  geom.y.unit = LENGTH_UNIT;
 	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;
 	geom.h.len = h;   geom.h.unit = LENGTH_UNIT;
-	return slide_add_text(e->slide, &runs, &nruns, 1, geom, ALIGN_INHERIT);
+	item = slide_item_text(&runs, &nruns, 1, geom, ALIGN_INHERIT);
+	slide_add_item(e->slide, item);
+	return item;
 }
 
 

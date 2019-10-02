@@ -40,7 +40,6 @@ enum style_mask
 struct scpctx
 {
 	Narrative *n;
-	Slide *s;
 
 	/* Current style or frame options.
 	 * These will be copied to a stylesheet entry or frame when the

@@ -103,6 +103,7 @@
 %token TEXT_START
 
 %type <n> narrative
+%type <slide> slide
 %type <slide> slide_parts
 %type <ss> stylesheet
 %type <slide_item> slide_part
@@ -250,7 +251,7 @@ narrative_el:
   PRESTITLE TEXT_START text_line  { narrative_add_prestitle(ctx->n, $3.runs, $3.n_runs); }
 | BP TEXT_START text_line         { narrative_add_bp(ctx->n, $3.runs, $3.n_runs); }
 | TEXT_START text_line            { narrative_add_text(ctx->n, $2.runs, $2.n_runs); }
-| slide                           { }
+| slide                           { narrative_add_slide(ctx->n, $1); }
 | EOP                             { narrative_add_eop(ctx->n); }
 ;
 
@@ -308,7 +309,7 @@ one_or_more_runs:
 /* -------- Slide -------- */
 
 slide:
-  SLIDE '{' slide_parts '}'  { narrative_add_slide(ctx->n, $3); }
+  SLIDE '{' slide_parts '}'  { $$ = $3; }
 ;
 
 slide_parts: { $<slide>$ = slide_new(); }

@@ -540,7 +540,8 @@ void narrative_debug(Narrative *n)
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
-			printf("(slide)\n");
+			printf("Slide:\n");
+			describe_slide(item->slide);
 			break;
 
 		}

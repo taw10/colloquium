@@ -45,6 +45,7 @@
 %s sqb
 %x stringesc
 %x runtext
+%x prerun
 %s image
 %s image_filename
 
@@ -86,7 +87,8 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
                           lineno++;
                           return SC_FILENAME; }
 
-<INITIAL>:[ ]     { BEGIN(runtext); return SC_TEXT_START; }
+<INITIAL>:        { BEGIN(prerun); return SC_TEXT_START; }
+<prerun>[ ]       { BEGIN(runtext); }
 <runtext>[\\]     { BEGIN(stringesc); }
 <stringesc>.      { sclval.str = strdup(yytext); BEGIN(runtext);  return SC_RUN_TEXT; }
 <runtext>[\*]     { return '*'; }
@@ -96,6 +98,7 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
                         sclval.str[yyleng] = '\0';
                         return SC_RUN_TEXT; }
 <runtext>\n       { BEGIN(0); lineno++; }
+<prerun>\n        { BEGIN(0); lineno++; }
 
 \n                { BEGIN(0); lineno++; }
 

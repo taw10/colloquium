@@ -340,6 +340,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			case NARRATIVE_ITEM_EOP :
 			stn = "NARRATIVE.EOP";
 			break;
+
+			default :
+			stn = NULL;
+			break;
 		}
 
 		if ( stylesheet_get_paraspace(stylesheet, stn, paraspace) == 0 ) {

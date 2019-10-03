@@ -31,7 +31,30 @@
   #include "slide.h"
   #include "stylesheet.h"
 
-  #include "scparse_priv.h"
+  enum style_mask
+  {
+    STYMASK_GEOM = 1<<0,
+    STYMASK_FONT = 1<<1,
+    STYMASK_ALIGNMENT = 1<<2,
+    STYMASK_PADDING = 1<<3,
+    STYMASK_PARASPACE = 1<<4,
+    STYMASK_FGCOL = 1<<5,
+    STYMASK_BGCOL = 1<<6,
+  };
+
+  struct style
+  {
+    enum style_mask mask;
+    struct frame_geom geom;
+    char *font;
+    enum alignment alignment;
+    struct length padding[4];
+    struct length paraspace[4];
+    struct colour fgcol;
+    enum gradient bggrad;
+    struct colour bgcol;
+    struct colour bgcol2;
+  };
 
   struct paragraph {
     struct text_run *runs;
@@ -59,6 +82,8 @@
   struct paragraph para;
   struct many_paragraphs many_paragraphs;
 
+  struct style style;
+
   struct length len;
   struct length lenquad[4];
   struct frame_geom geom;
@@ -77,7 +102,7 @@
 
   extern int sclex();
   extern int scparse();
-  void scerror(struct scpctx *ctx, const char *s);
+  void scerror(Narrative *n, const char *s);
   extern int lineno;
 %}
 
@@ -105,11 +130,11 @@
 %type <n> narrative
 %type <slide> slide
 %type <slide> slide_parts
-%type <ss> stylesheet
 %type <slide_item> slide_part
-%type <many_paragraphs> textframe
-%type <many_paragraphs> slide_prestitle
-%type <many_paragraphs> slidetitle
+%type <slide_item> imageframe
+%type <slide_item> slidetitle
+%type <slide_item> textframe
+%type <slide_item> slide_prestitle
 %type <many_paragraphs> multi_line_string
 %type <para> text_line
 %type <para> slide_bulletpoint
@@ -118,9 +143,22 @@
 %type <str> RUN_TEXT
 %type <str> one_or_more_runs
 
+%type <ss> stylesheet
+%type <style> style_narrative_bp
+%type <style> style_narrative_prestitle
+%type <style> styledefs
+%type <style> styledef
+%type <style> slide_geom
+%type <style> background
+%type <style> frame_options
+%type <style> frame_option
+%type <style> frameopt
+%type <style> style_slide_prestitle
+%type <style> style_slide_text
+%type <style> style_slide_title
+%type <style> style_slide_footer
+
 %type <str> FONTNAME
-%type <str> imageframe
-%type <str> frameopt
 %type <str> FILENAME
 
 %type <geom> geometry
@@ -133,21 +171,61 @@
 %type <val> VALUE
 %type <grad> gradtype
 
-%parse-param { struct scpctx *ctx };
-%initial-action
-{
-    ctx->n = narrative_new();
-    ctx->mask = 0;
-}
+%parse-param { Narrative *n };
 
 %{
-
 
 static void copy_col(struct colour *to, struct colour from)
 {
     int i;
     for ( i=0; i<4; i++ ) to->rgba[i] = from.rgba[i];
     to->hexcode = from.hexcode;
+}
+
+
+static void merge_style(struct style *combined, struct style inp)
+{
+    int i;
+
+    switch ( inp.mask ) {
+
+        case STYMASK_GEOM :
+        combined->geom = inp.geom;
+        break;
+
+        case STYMASK_FONT :
+        combined->font = inp.font;
+        break;
+
+        case STYMASK_ALIGNMENT :
+        combined->alignment = inp.alignment;
+        break;
+
+        case STYMASK_PADDING :
+        for ( i=0; i<4; i++ ) combined->padding[i] = inp.padding[i];
+        break;
+
+        case STYMASK_PARASPACE :
+        for ( i=0; i<4; i++ ) combined->paraspace[i] = inp.paraspace[i];
+        break;
+
+        case STYMASK_FGCOL :
+        copy_col(&combined->fgcol, inp.fgcol);
+        break;
+
+        case STYMASK_BGCOL :
+        copy_col(&combined->bgcol, inp.bgcol);
+        copy_col(&combined->bgcol2, inp.bgcol2);
+        combined->bggrad = inp.bggrad;
+        break;
+
+        default :
+        printf("Can't merge style %i\n", inp.mask);
+        return;
+
+    }
+
+    combined->mask |= inp.mask;
 }
 
 
@@ -207,25 +285,17 @@ struct text_run **combine_paras(struct many_paragraphs mp, int **pn_runs)
 }
 
 
-void set_style(struct scpctx *ctx, const char *element)
+void set_stylesheet(Narrative *n, struct style *style, const char *element)
 {
-    if ( ctx->mask & STYMASK_GEOM ) stylesheet_set_geometry(narrative_get_stylesheet(ctx->n),
-                                                            element, ctx->geom);
-    if ( ctx->mask & STYMASK_FONT ) stylesheet_set_font(narrative_get_stylesheet(ctx->n),
-                                                        element, ctx->font);
-    if ( ctx->mask & STYMASK_ALIGNMENT ) stylesheet_set_alignment(narrative_get_stylesheet(ctx->n),
-                                                                  element, ctx->alignment);
-    if ( ctx->mask & STYMASK_PADDING ) stylesheet_set_padding(narrative_get_stylesheet(ctx->n),
-                                                              element, ctx->padding);
-    if ( ctx->mask & STYMASK_PARASPACE ) stylesheet_set_paraspace(narrative_get_stylesheet(ctx->n),
-                                                                  element, ctx->paraspace);
-    if ( ctx->mask & STYMASK_FGCOL ) stylesheet_set_fgcol(narrative_get_stylesheet(ctx->n),
-                                                          element, ctx->fgcol);
-    if ( ctx->mask & STYMASK_BGCOL ) stylesheet_set_background(narrative_get_stylesheet(ctx->n),
-                                                               element, ctx->bggrad,
-                                                               ctx->bgcol, ctx->bgcol2);
-    ctx->mask = 0;
-    ctx->alignment = ALIGN_INHERIT;
+    Stylesheet *ss = narrative_get_stylesheet(n);
+    if ( style->mask & STYMASK_GEOM ) stylesheet_set_geometry(ss, element, style->geom);
+    if ( style->mask & STYMASK_FONT ) stylesheet_set_font(ss, element, style->font);
+    if ( style->mask & STYMASK_ALIGNMENT ) stylesheet_set_alignment(ss, element, style->alignment);
+    if ( style->mask & STYMASK_PADDING ) stylesheet_set_padding(ss, element, style->padding);
+    if ( style->mask & STYMASK_PARASPACE ) stylesheet_set_paraspace(ss, element, style->paraspace);
+    if ( style->mask & STYMASK_FGCOL ) stylesheet_set_fgcol(ss, element, style->fgcol);
+    if ( style->mask & STYMASK_BGCOL ) stylesheet_set_background(ss, element, style->bggrad,
+                                                               style->bgcol, style->bgcol2);
 }
 
 %}
@@ -248,11 +318,11 @@ narrative:
 ;
 
 narrative_el:
-  PRESTITLE TEXT_START text_line  { narrative_add_prestitle(ctx->n, $3.runs, $3.n_runs); }
-| BP TEXT_START text_line         { narrative_add_bp(ctx->n, $3.runs, $3.n_runs); }
-| TEXT_START text_line            { narrative_add_text(ctx->n, $2.runs, $2.n_runs); }
-| slide                           { narrative_add_slide(ctx->n, $1); }
-| EOP                             { narrative_add_eop(ctx->n); }
+  PRESTITLE TEXT_START text_line  { narrative_add_prestitle(n, $3.runs, $3.n_runs); }
+| BP TEXT_START text_line         { narrative_add_bp(n, $3.runs, $3.n_runs); }
+| TEXT_START text_line            { narrative_add_text(n, $2.runs, $2.n_runs); }
+| slide                           { narrative_add_slide(n, $1); }
+| EOP                             { narrative_add_eop(n); }
 ;
 
 text_line: { $<para>$.n_runs = 0;
@@ -318,40 +388,61 @@ slide_parts: { $<slide>$ = slide_new(); }
 ;
 
 slide_part:
-  slide_prestitle { struct text_run **cp;
-                    int *n_runs;
-                    cp = combine_paras($1, &n_runs);
-                    $$ = slide_item_prestitle(cp, n_runs, $1.n_paras); }
-| textframe       { struct text_run **cp;
-                    int *n_runs;
-                    cp = combine_paras($1, &n_runs);
-                    $$ = slide_item_text(cp, n_runs, $1.n_paras,
-                                         ctx->geom, ctx->alignment); }
-| slidetitle      { struct text_run **cp;
-                    int *n_runs;
-                    cp = combine_paras($1, &n_runs);
-                    $$ = slide_item_slidetitle(cp, n_runs, $1.n_paras); }
-| imageframe      { $$ = slide_item_image($1, ctx->geom); }
+  slide_prestitle { $$ = $1; }
+| textframe       { $$ = $1; }
+| slidetitle      { $$ = $1; }
+| imageframe      { $$ = $1; }
 | FOOTER          { $$ = slide_item_footer(); }
 ;
 
 slide_prestitle:
-  PRESTITLE frame_options multi_line_string         { $$ = $3; }
-| PRESTITLE frame_options '{' multi_line_string '}' { $$ = $4; }
+  PRESTITLE multi_line_string { struct text_run **cp;
+                                int *n_runs;
+                                cp = combine_paras($2, &n_runs);
+                                $$ = slide_item_prestitle(cp, n_runs, $2.n_paras);
+                              }
+| PRESTITLE '{' multi_line_string '}' { struct text_run **cp;
+                                        int *n_runs;
+                                        cp = combine_paras($3, &n_runs);
+                                        $$ = slide_item_prestitle(cp, n_runs, $3.n_paras);
+                                      }
 ;
 
 slidetitle:
-  SLIDETITLE frame_options multi_line_string         { $$ = $3; }
-| SLIDETITLE frame_options '{' multi_line_string '}' { $$ = $4; }
+  SLIDETITLE multi_line_string { struct text_run **cp;
+                                   int *n_runs;
+                                   cp = combine_paras($2, &n_runs);
+                                   $$ = slide_item_slidetitle(cp, n_runs, $2.n_paras);
+                                 }
+| SLIDETITLE '{' multi_line_string '}' { struct text_run **cp;
+                                         int *n_runs;
+                                         cp = combine_paras($3, &n_runs);
+                                         $$ = slide_item_slidetitle(cp, n_runs, $3.n_paras);
+                                       }
 ;
 
 imageframe:
-  IMAGEFRAME frame_options TEXT_START FILENAME { $$ = $FILENAME; }
+  IMAGEFRAME frame_options TEXT_START FILENAME { if ( $2.mask & STYMASK_GEOM ) {
+                                                     $$ = slide_item_image($4, $2.geom);
+                                                 } else {
+                                                     printf("Image frame must have geometry.\n");
+                                                 }
+                                               }
 ;
 
 textframe:
-  TEXTFRAME frame_options multi_line_string         { $$ = $3; }
-| TEXTFRAME frame_options '{' multi_line_string '}' { $$ = $4; }
+  TEXTFRAME frame_options multi_line_string { struct text_run **cp;
+                                              int *n_runs;
+                                              cp = combine_paras($3, &n_runs);
+                                              $$ = slide_item_text(cp, n_runs, $3.n_paras,
+                                                                   $2.geom, $2.alignment);
+                                            }
+| TEXTFRAME frame_options '{' multi_line_string '}' { struct text_run **cp;
+                                                      int *n_runs;
+                                                      cp = combine_paras($4, &n_runs);
+                                                      $$ = slide_item_text(cp, n_runs, $4.n_paras,
+                                                                           $2.geom, $2.alignment);
+                                                    }
 ;
 
 text_line_with_start:
@@ -372,19 +463,19 @@ multi_line_string:   { $<many_paragraphs>$.n_paras = 0;
 ;
 
 /* There can be any number of options */
-frame_options:
+frame_options: { $<style>$.mask = 0;  $<style>$.alignment = ALIGN_INHERIT; }
   %empty
-| frame_options frame_option
+| frame_options frame_option { merge_style(&$<style>$, $2); }
 ;
 
 /* Each option is enclosed in square brackets */
 frame_option:
-  SQOPEN frameopt SQCLOSE
+  SQOPEN frameopt SQCLOSE { $$ = $2; }
 ;
 
 frameopt:
-  geometry   { ctx->geom = $1; }
-| alignment  { ctx->alignment = $1; }
+  geometry   { $$.geom = $1;  $$.mask = STYMASK_GEOM; }
+| alignment  { $$.alignment = $1; $$.mask = STYMASK_ALIGNMENT; }
 ;
 
 /* Primitives for describing styles (used in frame options and stylesheets) */
@@ -431,102 +522,87 @@ gradtype:
 
 /* ------ Stylesheet ------ */
 
-stylesheet:
+stylesheet: { $<ss>$ = stylesheet_new(); }
   STYLES '{'
-   style_narrative
-   style_slide
-  '}' { }
-;
-
-style_narrative:
-  NARRATIVE '{' style_narrative_def '}' { }
+  NARRATIVE '{' style_narrative_def '}'
+  SLIDE '{' style_slide_def '}'
+  '}' {  }
 ;
 
 style_narrative_def:
   %empty
-| style_narrative_def style_narrative_prestitle
-| style_narrative_def style_narrative_bp
-| style_narrative_def styledef { set_style(ctx, "NARRATIVE"); }
+| style_narrative_def style_narrative_prestitle { set_stylesheet(n, &$2, "NARRATIVE.PRESTITLE"); }
+| style_narrative_def style_narrative_bp { set_stylesheet(n, &$2, "NARRATIVE.BP"); }
+| style_narrative_def styledefs { set_stylesheet(n, &$2, "NARRATIVE"); }
 ;
 
 style_narrative_prestitle:
-  PRESTITLE '{' styledefs '}' { set_style(ctx, "NARRATIVE.PRESTITLE"); }
+  PRESTITLE '{' styledefs '}' { $$ = $3; }
 ;
 
 style_narrative_bp:
-  BP '{' styledefs '}' { set_style(ctx, "NARRATIVE.BP"); }
-;
-
-style_slide:
-  SLIDE '{' style_slide_def '}' { }
+  BP '{' styledefs '}' { $$ = $3; }
 ;
 
 style_slide_def:
   %empty
-  /* Call set_style() immediately */
-| style_slide_def background            { set_style(ctx, "SLIDE"); }
-| style_slide_def slide_geom            { set_style(ctx, "SLIDE"); }
-  /* The ones below will call set_style() themselves */
-| style_slide_def style_slide_prestitle { }
-| style_slide_def style_slide_text      { }
-| style_slide_def style_slide_title     { }
-| style_slide_def style_slide_footer    { }
+| style_slide_def background            { set_stylesheet(n, &$2, "SLIDE"); }
+| style_slide_def slide_geom            { set_stylesheet(n, &$2, "SLIDE"); }
+| style_slide_def style_slide_prestitle { set_stylesheet(n, &$2, "SLIDE.PRESTITLE"); }
+| style_slide_def style_slide_text      { set_stylesheet(n, &$2, "SLIDE.TEXT"); }
+| style_slide_def style_slide_title     { set_stylesheet(n, &$2, "SLIDE.SLIDETITLE"); }
+| style_slide_def style_slide_footer    { set_stylesheet(n, &$2, "SLIDE.FOOTER"); }
 ;
 
 background:
-  BGCOL colour       { copy_col(&ctx->bgcol, $2);
-                       ctx->bggrad = GRAD_NONE;
-                       ctx->mask |= STYMASK_BGCOL; }
-| BGCOL gradtype colour colour  { copy_col(&ctx->bgcol, $3);
-                                  copy_col(&ctx->bgcol2, $4);
-                                  ctx->bggrad = $2;
-                                  ctx->mask |= STYMASK_BGCOL; }
+  BGCOL colour       { copy_col(&$$.bgcol, $2);
+                       $$.bggrad = GRAD_NONE;
+                       $$.mask = STYMASK_BGCOL; }
+| BGCOL gradtype colour colour  { copy_col(&$$.bgcol, $3);
+                                  copy_col(&$$.bgcol2, $4);
+                                  $$.bggrad = $2;
+                                  $$.mask = STYMASK_BGCOL; }
 ;
 
 slide_geom:
-  GEOMETRY geometry  { ctx->geom = $2;
-                       ctx->mask |= STYMASK_GEOM; }
+  GEOMETRY geometry  { $$.geom = $2; $$.mask = STYMASK_GEOM; }
 ;
 
 style_slide_prestitle:
-  PRESTITLE '{' styledefs '}' { set_style(ctx, "SLIDE.PRESTITLE"); }
+  PRESTITLE '{' styledefs '}' { $$ = $3; }
 ;
 
 style_slide_title:
-  SLIDETITLE '{' styledefs '}' { set_style(ctx, "SLIDE.SLIDETITLE"); }
+  SLIDETITLE '{' styledefs '}' { $$ = $3; }
 ;
 
 style_slide_text:
-  TEXTFRAME '{' styledefs '}' { set_style(ctx, "SLIDE.TEXT"); }
+  TEXTFRAME '{' styledefs '}' { $$ = $3; }
 ;
 
 style_slide_footer:
-  FOOTER '{' styledefs '}' { set_style(ctx, "SLIDE.FOOTER"); }
+  FOOTER '{' styledefs '}' { $$ = $3; }
 ;
 
-styledefs:
+styledefs: { $<style>$.mask = 0;  $<style>$.alignment = ALIGN_INHERIT; }
   %empty
-| styledefs styledef
+| styledefs styledef { merge_style(&$$, $2); }
 ;
 
 styledef:
-  FONT FONTNAME      { ctx->font = $2;
-                       ctx->mask |= STYMASK_FONT; }
-| GEOMETRY geometry  { ctx->geom = $2;
-                       ctx->mask |= STYMASK_GEOM; }
-| PAD lenquad        { for ( int i=0; i<4; i++ ) ctx->padding[i] = $2[i];
-                       ctx->mask |= STYMASK_PADDING; }
-| PARASPACE lenquad  { for ( int i=0; i<4; i++ ) ctx->paraspace[i] = $2[i];
-                       ctx->mask |= STYMASK_PARASPACE; }
-| FGCOL colour       { copy_col(&ctx->fgcol, $2);
-                       ctx->mask |= STYMASK_FGCOL; }
-| background         { /* Handled in rule 'background' */ }
-| ALIGN alignment    { ctx->alignment = $2;
-                       ctx->mask |= STYMASK_ALIGNMENT; }
+  FONT FONTNAME      { $$.font = $2; $$.mask = STYMASK_FONT; }
+| GEOMETRY geometry  { $$.geom = $2; $$.mask = STYMASK_GEOM; }
+| PAD lenquad        { for ( int i=0; i<4; i++ ) $$.padding[i] = $2[i];
+                       $$.mask = STYMASK_PADDING; }
+| PARASPACE lenquad  { for ( int i=0; i<4; i++ ) $$.paraspace[i] = $2[i];
+                       $$.mask = STYMASK_PARASPACE; }
+| FGCOL colour       { copy_col(&$$.fgcol, $2); $$.mask = STYMASK_FGCOL; }
+| background         { $$ = $1; }
+| ALIGN alignment    { $$.alignment = $2; $$.mask = STYMASK_ALIGNMENT; }
 ;
 
 %%
 
-void scerror(struct scpctx *ctx, const char *s) {
+void scerror(Narrative *n, const char *s) {
 	printf("Storycode parse error at line %i\n", lineno);
 }

@@ -37,7 +37,6 @@
 
 #include "storycode_parse.h"
 #include "storycode_lex.h"
-#include "scparse_priv.h"
 
 
 extern int scdebug;
@@ -46,15 +45,16 @@ extern int scdebug;
 Narrative *storycode_parse_presentation(const char *sc)
 {
 	YY_BUFFER_STATE b;
-	struct scpctx parse_ctx;
+	Narrative *n;
 
 	b = sc_scan_string(sc);
 	//scdebug = 1;
-	scparse(&parse_ctx);
+	n = narrative_new();
+	scparse(n);
 	sc_delete_buffer(b);
-	//narrative_debug(parse_ctx.n);
+	//narrative_debug(n);
 
-	return parse_ctx.n;
+	return n;
 }
 
 

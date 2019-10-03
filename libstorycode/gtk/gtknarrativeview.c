@@ -804,8 +804,9 @@ static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
 
 	pos = 0;
 	for ( run=0; run<item->n_runs; run++ ) {
-		pos += strlen(item->runs[run].text);
-		if ( pos > offs ) break;
+		size_t npos = pos + strlen(item->runs[run].text);
+		if ( npos >= offs ) break;
+		pos = npos;
 	}
 	offs -= pos;
 

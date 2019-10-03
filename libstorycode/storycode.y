@@ -521,18 +521,43 @@ gradtype:
 
 /* ------ Stylesheet ------ */
 
-stylesheet: { $<ss>$ = stylesheet_new(); }
-  STYLES '{'
-  NARRATIVE '{' style_narrative_def '}'
-  SLIDE '{' style_slide_def '}'
-  '}' {  }
+stylesheet:
+  STYLES '{' stylesheet_blocks '}' { }
+;
+
+stylesheet_blocks: { }
+  %empty
+| stylesheet_blocks stylesheet_block { }
+;
+
+stylesheet_block:
+  NARRATIVE '{' style_narrative_defs '}' { }
+| SLIDE '{' style_slide_defs '}' { }
+;
+
+style_narrative_defs:
+  %empty
+| style_narrative_defs style_narrative_def { }
+;
+
+style_slide_defs:
+  %empty
+| style_slide_defs style_slide_def { }
 ;
 
 style_narrative_def:
-  %empty
-| style_narrative_def style_narrative_prestitle { set_stylesheet(n, &$2, "NARRATIVE.PRESTITLE"); }
-| style_narrative_def style_narrative_bp { set_stylesheet(n, &$2, "NARRATIVE.BP"); }
-| style_narrative_def styledefs { set_stylesheet(n, &$2, "NARRATIVE"); }
+  style_narrative_prestitle { set_stylesheet(n, &$1, "NARRATIVE.PRESTITLE"); }
+| style_narrative_bp        { set_stylesheet(n, &$1, "NARRATIVE.BP"); }
+| styledef                  { set_stylesheet(n, &$1, "NARRATIVE"); }
+;
+
+style_slide_def:
+  background            { set_stylesheet(n, &$1, "SLIDE"); }
+| slide_geom            { set_stylesheet(n, &$1, "SLIDE"); }
+| style_slide_prestitle { set_stylesheet(n, &$1, "SLIDE.PRESTITLE"); }
+| style_slide_text      { set_stylesheet(n, &$1, "SLIDE.TEXT"); }
+| style_slide_title     { set_stylesheet(n, &$1, "SLIDE.SLIDETITLE"); }
+| style_slide_footer    { set_stylesheet(n, &$1, "SLIDE.FOOTER"); }
 ;
 
 style_narrative_prestitle:
@@ -541,16 +566,6 @@ style_narrative_prestitle:
 
 style_narrative_bp:
   BP '{' styledefs '}' { $$ = $3; }
-;
-
-style_slide_def:
-  %empty
-| style_slide_def background            { set_stylesheet(n, &$2, "SLIDE"); }
-| style_slide_def slide_geom            { set_stylesheet(n, &$2, "SLIDE"); }
-| style_slide_def style_slide_prestitle { set_stylesheet(n, &$2, "SLIDE.PRESTITLE"); }
-| style_slide_def style_slide_text      { set_stylesheet(n, &$2, "SLIDE.TEXT"); }
-| style_slide_def style_slide_title     { set_stylesheet(n, &$2, "SLIDE.SLIDETITLE"); }
-| style_slide_def style_slide_footer    { set_stylesheet(n, &$2, "SLIDE.FOOTER"); }
 ;
 
 background:

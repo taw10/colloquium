@@ -102,8 +102,8 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
 
 \n                { BEGIN(0); lineno++; }
 
-"["               { sqb_caller = YY_START; BEGIN(sqb); return SC_SQOPEN; }
-"]"               { BEGIN(sqb_caller); return SC_SQCLOSE; }
+"["               { sqb_caller = YY_START; BEGIN(sqb); return '['; }
+"]"               { BEGIN(sqb_caller); return ']'; }
 [{]               { return '{'; }
 [}]               { return '}'; }
 [. ]              {}

@@ -123,7 +123,6 @@
 %token VERT HORIZ
 %token LEFT CENTER RIGHT
 %token FONTNAME RUN_TEXT
-%token SQOPEN SQCLOSE
 %token UNIT VALUE HEXCOL
 %token TEXT_START
 
@@ -470,7 +469,7 @@ frame_options: { $<style>$.mask = 0;  $<style>$.alignment = ALIGN_INHERIT; }
 
 /* Each option is enclosed in square brackets */
 frame_option:
-  SQOPEN frameopt SQCLOSE { $$ = $2; }
+  '[' frameopt ']' { $$ = $2; }
 ;
 
 frameopt:

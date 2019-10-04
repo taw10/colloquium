@@ -97,9 +97,7 @@ struct _narrative
 	double space_b;
 };
 
-extern int text_index_to_layout(struct narrative_item *item, int idx);
-
-extern int layout_index_to_text(struct narrative_item *item, int idx);
+extern int which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs);
 
 
 #endif /* NARRATIVE_PRIV_H */

@@ -800,22 +800,16 @@ static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
 {
 	char *n;
 	int run;
-	size_t pos;
+	size_t run_offs;
 
-	pos = 0;
-	for ( run=0; run<item->n_runs; run++ ) {
-		size_t npos = pos + strlen(item->runs[run].text);
-		if ( npos >= offs ) break;
-		pos = npos;
-	}
-	offs -= pos;
+	run = which_run(item, offs, &run_offs);
 
 	n = malloc(strlen(t) + strlen(item->runs[run].text) + 1);
 	if ( n == NULL ) return;
-	strncpy(n, item->runs[run].text, offs);
-	n[offs] = '\0';
+	strncpy(n, item->runs[run].text, run_offs);
+	n[run_offs] = '\0';
 	strcat(n, t);
-	strcat(n, item->runs[run].text+offs);
+	strcat(n, item->runs[run].text+run_offs);
 	free(item->runs[run].text);
 	item->runs[run].text = n;
 }

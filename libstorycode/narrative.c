@@ -406,6 +406,23 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 }
 
 
+int which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs)
+{
+	int run;
+	size_t pos = 0;
+
+	for ( run=0; run<item->n_runs; run++ ) {
+		size_t npos = pos + strlen(item->runs[run].text);
+		if ( npos >= item_offs ) break;
+		pos = npos;
+	}
+	if ( run_offs != NULL ) {
+		*run_offs = item_offs - pos;
+	}
+	return run;
+}
+
+
 void narrative_split_item(Narrative *n, int i1, size_t o1)
 {
 	/* FIXME! */

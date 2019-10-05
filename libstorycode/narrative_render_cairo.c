@@ -206,7 +206,7 @@ size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int trail)
 	pos = 0;
 	for ( run=0; run<item->n_runs; run++ ) {
 		pos += strlen(item->runs[run].text);
-		if ( pos > offs ) {
+		if ( pos >= offs ) {
 			glong char_offs;
 			char *ptr;
 			char_offs = g_utf8_pointer_to_offset(item->runs[run].text,

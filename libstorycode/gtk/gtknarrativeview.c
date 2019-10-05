@@ -817,17 +817,14 @@ static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
 
 static void insert_text(char *t, GtkNarrativeView *e)
 {
-	struct narrative_item *item;
-
 	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 		do_backspace(e, 0);
 	}
 
-	item = &e->n->items[e->cpos.para];
-
 	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
 
-		size_t off = narrative_pos_trail_to_offset(e->n, e->cpos.para, e->cpos.pos, e->cpos.trail);
+		size_t off = narrative_pos_trail_to_offset(e->n, e->cpos.para,
+		                                           e->cpos.pos, e->cpos.trail);
 
 		if ( strcmp(t, "\n") == 0 ) {
 			narrative_split_item(e->n, e->cpos.para, off);
@@ -836,7 +833,7 @@ static void insert_text(char *t, GtkNarrativeView *e)
 			e->cpos.pos = 0;
 			e->cpos.trail = 0;
 		} else {
-			insert_text_in_paragraph(item, off, t);
+			insert_text_in_paragraph(&e->n->items[e->cpos.para], off, t);
 			rewrap_range(e, e->cpos.para, e->cpos.para);
 			cursor_moveh(e->n, &e->cpos, +1);
 		}

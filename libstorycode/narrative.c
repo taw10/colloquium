@@ -336,11 +336,58 @@ static void delete_item(Narrative *n, int del)
 }
 
 
+/* o2 = -1 means 'to the end' */
+static void delete_text(struct narrative_item *item, size_t o1, ssize_t o2)
+{
+	int r1, r2;
+	size_t roffs1, roffs2;
+
+	r1 = which_run(item, o1, &roffs1);
+
+	/* This means 'delete to end' */
+	if ( o2 == -1 ) {
+		int i;
+		o2 = 0;
+		for ( i=0; i<item->n_runs; i++ ) {
+			o2 += strlen(item->runs[i].text);
+		}
+	}
+
+	r2 = which_run(item, o2, &roffs2);
+
+	if ( r1 == r2 ) {
+
+		/* Easy case */
+		memmove(&item->runs[r1].text[roffs1],
+		        &item->runs[r2].text[roffs2],
+		        strlen(item->runs[r1].text)-roffs2+1);
+
+	} else {
+
+		int n_middle;
+
+		/* Truncate the first run */
+		item->runs[r1].text[roffs1] = '\0';
+
+		/* Delete any middle runs */
+		n_middle = r2 - r1 - 1;
+		if ( n_middle > 0 ) {
+			memmove(&item->runs[r1+1], &item->runs[r2],
+			        (item->n_runs-r2)*sizeof(struct text_run));
+			item->n_runs -= n_middle;
+			r2 -= n_middle;
+		}
+
+		/* Last run */
+		memmove(item->runs[r2].text, &item->runs[r2].text[roffs2],
+		        strlen(item->runs[r2].text) - roffs2+1);
+	}
+}
+
+
 /* Delete from item i1 offset o1 to item i2 offset o2, inclusive */
 void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 {
-	/* FIXME! */
-#if 0
 	int i;
 	int n_del = 0;
 	int merge = 1;
@@ -355,12 +402,11 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 		merge = 0;
 	} else {
 		if ( i1 == i2 ) {
-			memmove(&n->items[i1].text[o1],
-			        &n->items[i1].text[o2],
-			        strlen(n->items[i1].text)-o2+1);
+			delete_text(&n->items[i1], o1, o2);
 			return;  /* easy case */
 		} else {
-			n->items[i1].text[o1] = '\0';
+			/* Truncate i1 at o1 */
+			delete_text(&n->items[i1], o1, -1);
 			middle = i1+1;
 		}
 	}
@@ -381,28 +427,35 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	}
 
 	/* We end with a text item */
-	memmove(&n->items[i2].text[0],
-	        &n->items[i2].text[o2],
-	        strlen(&n->items[i2].text[o2])+1);
+	delete_text(&n->items[i2], 0, o2);
 
 	/* If the start and end points are in different paragraphs, and both
 	 * of them are text (any kind), merge them.  Note that at this point,
 	 * we know that i1 and i2 are different because otherwise we
 	 * would've returned earlier ("easy case"). */
 	if ( merge ) {
-		char *new_text;
-		size_t len = strlen(n->items[i1].text);
+
+		struct text_run *i1newruns;
+		struct narrative_item *item1;
+		struct narrative_item *item2;
+
 		assert(i1 != i2);
-		len += strlen(n->items[i2].text);
-		new_text = malloc(len+1);
-		if ( new_text == NULL ) return;
-		strcpy(new_text, n->items[i1].text);
-		strcat(new_text, n->items[i2].text);
-		free(n->items[i1].text);
-		n->items[i1].text = new_text;
+		item1 = &n->items[i1];
+		item2 = &n->items[i2];
+
+		i1newruns = realloc(item1->runs,
+		                    (item1->n_runs+item2->n_runs)*sizeof(struct text_run));
+		if ( i1newruns == NULL ) return;
+		item1->runs = i1newruns;
+
+		for ( i=0; i<item2->n_runs; i++ ) {
+			item1->runs[i+item1->n_runs].text = strdup(item2->runs[i].text);
+			item1->runs[i+item1->n_runs].type = item2->runs[i].type;
+		}
+		item1->n_runs += item2->n_runs;
+
 		delete_item(n, i2);
 	}
-#endif
 }
 
 

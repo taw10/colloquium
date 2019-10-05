@@ -198,27 +198,25 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *
 size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int trail)
 {
 	int run;
+	glong char_offs;
+	char *ptr;
+	size_t run_offs;
 	struct narrative_item *item = &n->items[i];
-	size_t pos;
+	int j;
+	size_t prev_len;
 
 	if ( !narrative_item_is_text(n, i) ) return offs;
 
-	pos = 0;
-	for ( run=0; run<item->n_runs; run++ ) {
-		pos += strlen(item->runs[run].text);
-		if ( pos >= offs ) {
-			glong char_offs;
-			char *ptr;
-			char_offs = g_utf8_pointer_to_offset(item->runs[run].text,
-			                                     item->runs[run].text+offs);
-			char_offs += trail;
-			ptr = g_utf8_offset_to_pointer(item->runs[run].text, char_offs);
-			return ptr - item->runs[run].text;
-		}
-	}
+	run = which_run(item, offs, &run_offs);
 
-	fprintf(stderr, "narrative_pos_trail_to_offset: Outside last run\n");
-	return 0;
+	char_offs = g_utf8_pointer_to_offset(item->runs[run].text,
+	                                     item->runs[run].text+run_offs);
+	char_offs += trail;
+	ptr = g_utf8_offset_to_pointer(item->runs[run].text, char_offs);
+
+	prev_len = 0;
+	for ( j=0; j<run; j++ ) prev_len += strlen(item->runs[j].text);
+	return prev_len + ptr - item->runs[run].text;
 }
 
 

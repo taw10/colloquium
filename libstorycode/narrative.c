@@ -422,26 +422,42 @@ int which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs)
 	return run;
 }
 
-
 void narrative_split_item(Narrative *n, int i1, size_t o1)
 {
-	/* FIXME! */
-#if 0
 	struct narrative_item *item1;
 	struct narrative_item *item2;
 
-	item1 = &n->items[i1];
 	item2 = insert_item(n, i1+1);
+	item1 = &n->items[i1];  /* NB n->items was realloced by insert_item */
+	item2->type = NARRATIVE_ITEM_TEXT;
 
 	if ( narrative_item_is_text(n, i1) ) {
-		item2->text = strdup(&item1->text[o1]);
-		item1->text[o1] = '\0';
-	} else {
-		item2->text = strdup("");
-	}
 
-	item2->type = NARRATIVE_ITEM_TEXT;
-#endif
+		size_t run_offs;
+		int run = which_run(item1, o1, &run_offs);
+		int j;
+
+		item2->n_runs = item1->n_runs - run;
+		item2->runs = malloc(item2->n_runs*sizeof(struct text_run));
+		for ( j=run; j<item1->n_runs; j++ ) {
+			item2->runs[j-run] = item1->runs[j];
+		}
+
+		/* Now break the run */
+		item2->runs[0].text = strdup(item1->runs[run].text+run_offs);
+		item1->runs[run].text[run_offs] = '\0';
+		item1->n_runs = run + 1;
+
+	} else {
+
+		/* Splitting a non-text run simply means creating a new
+		 * plain text item after it */
+		item2->runs = malloc(sizeof(struct text_run));
+		item2->n_runs = 1;
+		item2->runs[0].text = strdup("");
+		item2->runs[0].type = TEXT_RUN_NORMAL;;
+
+	}
 }
 
 

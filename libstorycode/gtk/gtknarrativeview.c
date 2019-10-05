@@ -832,13 +832,16 @@ static void insert_text(char *t, GtkNarrativeView *e)
 		if ( strcmp(t, "\n") == 0 ) {
 			narrative_split_item(e->n, e->cpos.para, off);
 			rewrap_range(e, e->cpos.para, e->cpos.para+1);
+			e->cpos.para += 1;
+			e->cpos.pos = 0;
+			e->cpos.trail = 0;
 		} else {
 			insert_text_in_paragraph(item, off, t);
 			rewrap_range(e, e->cpos.para, e->cpos.para);
+			cursor_moveh(e->n, &e->cpos, +1);
 		}
 
 		update_size(e);
-		cursor_moveh(e->n, &e->cpos, +1);
 
 	} /* else do nothing */
 

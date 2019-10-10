@@ -192,7 +192,7 @@ static int gtksv_get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
 	slide_item_get_padding(item, stylesheet, &padl, &padr, &padt, &padb,
 	                       slide_w, slide_h);
 
-	offs = slide_pos_trail_to_offset(item, cpos.para, cpos.run, cpos.pos, cpos.trail);
+	offs = slide_pos_trail_to_offset(item, cpos.para, cpos.pos, cpos.trail);
 	pango_layout_get_cursor_pos(item->paras[cpos.para].layout, offs, &rect, NULL);
 	*x = pango_units_to_double(rect.x) + padl;
 	*y = pango_units_to_double(rect.y) + gtksv_para_top(item, cpos.para) + padt;

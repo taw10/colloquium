@@ -268,10 +268,18 @@ struct text_run **combine_paras(struct parse_many_paragraphs mp, int **pn_runs)
     combined_paras = malloc(mp.n_paras * sizeof(struct text_run *));
     n_runs = malloc(mp.n_paras * sizeof(int));
     for ( i=0; i<mp.n_paras; i++ ) {
-        for ( int j=0; j<mp.paras[i].n_runs; j++ ) {
+        if ( mp.paras[i].n_runs > 0 ) {
+            combined_paras[i] = mp.paras[i].runs;
+            n_runs[i] = mp.paras[i].n_runs;
+        } else {
+            /* Create a single dummy run */
+            struct text_run *run;
+            run = malloc(sizeof(struct text_run));
+            run->text = strdup("");
+            run->type = TEXT_RUN_NORMAL;
+            combined_paras[i] = run;
+            n_runs[i] = 1;
         }
-        combined_paras[i] = mp.paras[i].runs;
-        n_runs[i] = mp.paras[i].n_runs;
     }
 
     *pn_runs = n_runs;

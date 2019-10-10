@@ -33,7 +33,6 @@
 struct slide_pos
 {
 	int para;    /* Paragraph number (corresponding to narrative items) */
-	int run;     /* Run number */
 	int pos;     /* Byte position within run (yes, really)  */
 	int trail;   /* 1 = end of character, 0 = before */
 };
@@ -45,6 +44,6 @@ extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet 
 
 extern int render_slides_to_pdf(Narrative *n, ImageStore *is, const char *filename);
 
-extern size_t slide_pos_trail_to_offset(SlideItem *item, int para_num, int run, size_t offs, int trail);
+extern size_t slide_pos_trail_to_offset(SlideItem *item, int para_num, size_t offs, int trail);
 
 #endif	/* RENDER_H */

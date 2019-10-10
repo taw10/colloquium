@@ -65,17 +65,66 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 }
 
 
-size_t slide_pos_trail_to_offset(SlideItem *item, int para, int run,
-                                        size_t offs, int trail)
+static int slide_which_run(struct slide_text_paragraph *para, size_t item_offs,
+                           size_t *run_offs)
+{
+	int run;
+	size_t pos = 0;
+
+	assert(para->n_runs > 0);
+
+	for ( run=0; run<para->n_runs; run++ ) {
+		size_t npos = pos + strlen(para->runs[run].text);
+		if ( npos >= item_offs ) break;
+		pos = npos;
+	}
+	if ( run_offs != NULL ) {
+		*run_offs = item_offs - pos;
+	}
+	return run;
+}
+
+
+static int slide_item_is_text(SlideItem *item)
+{
+	switch ( item->type ) {
+
+		case SLIDE_ITEM_TEXT : return 1;
+		case SLIDE_ITEM_IMAGE : return 0;
+		case SLIDE_ITEM_FOOTER : return 0;
+		case SLIDE_ITEM_SLIDETITLE : return 1;
+		case SLIDE_ITEM_PRESTITLE : return 1;
+
+		default :
+		fprintf(stderr, "Please update slide_item_is_text\n");
+		return 0;
+	}
+}
+
+
+size_t slide_pos_trail_to_offset(SlideItem *item, int para_num, size_t offs, int trail)
 {
 	glong char_offs;
 	char *ptr;
+	int run;
+	size_t run_offs;
+	size_t prev_len;
+	int j;
+	struct slide_text_paragraph *para;
 
-	char_offs = g_utf8_pointer_to_offset(item->paras[para].runs[run].text,
-	                                     item->paras[para].runs[run].text+offs);
+	if ( !slide_item_is_text(item) ) return offs;
+
+	para = &item->paras[para_num];
+	run = slide_which_run(para, offs, &run_offs);
+
+	char_offs = g_utf8_pointer_to_offset(para->runs[run].text,
+	                                     para->runs[run].text+run_offs);
 	char_offs += trail;
-	ptr = g_utf8_offset_to_pointer(item->paras[para].runs[run].text, char_offs);
-	return ptr - item->paras[para].runs[run].text;
+	ptr = g_utf8_offset_to_pointer(para->runs[run].text, char_offs);
+
+	prev_len = 0;
+	for ( j=0; j<run; j++ ) prev_len += strlen(para->runs[j].text);
+	return prev_len + ptr - para->runs[run].text;
 }
 
 
@@ -181,9 +230,9 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	}
 
 	if ( !slide_positions_equal(sel_start, sel_end) ) {
-		sel_s = slide_pos_trail_to_offset(item, sel_start.para, sel_start.run,
+		sel_s = slide_pos_trail_to_offset(item, sel_start.para,
 		                                  sel_start.pos, sel_start.trail);
-		sel_e = slide_pos_trail_to_offset(item, sel_end.para, sel_end.run,
+		sel_e = slide_pos_trail_to_offset(item, sel_end.para,
 		                                  sel_end.pos, sel_end.trail);
 	} else {
 		sel_s = 0;

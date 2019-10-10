@@ -31,7 +31,10 @@
   #include "slide.h"
   #include "stylesheet.h"
 
-  enum style_mask
+  /* NB These structures look very similar to ones in stylesheet.c.
+   * However, those structures are not exposed in the API, since there's no
+   * need other than re-using them for a slightly different purpose here. */
+  enum parse_style_mask
   {
     STYMASK_GEOM = 1<<0,
     STYMASK_FONT = 1<<1,
@@ -42,9 +45,9 @@
     STYMASK_BGCOL = 1<<6,
   };
 
-  struct style
+  struct parse_style
   {
-    enum style_mask mask;
+    enum parse_style_mask mask;
     struct frame_geom geom;
     char *font;
     enum alignment alignment;
@@ -56,14 +59,14 @@
     struct colour bgcol2;
   };
 
-  struct paragraph {
+  struct parse_paragraph {
     struct text_run *runs;
     int n_runs;
     int max_runs;
   };
 
-  struct many_paragraphs {
-    struct paragraph *paras;
+  struct parse_many_paragraphs {
+    struct parse_paragraph *paras;
     int n_paras;
     int max_paras;
   };
@@ -79,10 +82,10 @@
 
   char *str;
   struct text_run run;
-  struct paragraph para;
-  struct many_paragraphs many_paragraphs;
+  struct parse_paragraph para;
+  struct parse_many_paragraphs many_paragraphs;
 
-  struct style style;
+  struct parse_style style;
 
   struct length len;
   struct length lenquad[4];
@@ -174,15 +177,7 @@
 
 %{
 
-static void copy_col(struct colour *to, struct colour from)
-{
-    int i;
-    for ( i=0; i<4; i++ ) to->rgba[i] = from.rgba[i];
-    to->hexcode = from.hexcode;
-}
-
-
-static void merge_style(struct style *combined, struct style inp)
+static void merge_style(struct parse_style *combined, struct parse_style inp)
 {
     int i;
 
@@ -250,11 +245,11 @@ static int hex_to_double(const char *v, double *r)
 }
 
 
-void push_paragraph(struct many_paragraphs *mp, struct paragraph p)
+void push_paragraph(struct parse_many_paragraphs *mp, struct parse_paragraph p)
 {
     if ( mp->n_paras == mp->max_paras ) {
-        struct paragraph *nparas;
-        nparas = realloc(mp->paras, (mp->max_paras+8)*sizeof(struct paragraph));
+        struct parse_paragraph *nparas;
+        nparas = realloc(mp->paras, (mp->max_paras+8)*sizeof(struct parse_paragraph));
         if ( nparas == NULL ) return;
         mp->max_paras += 8;
         mp->paras = nparas;
@@ -264,7 +259,7 @@ void push_paragraph(struct many_paragraphs *mp, struct paragraph p)
 }
 
 
-struct text_run **combine_paras(struct many_paragraphs mp, int **pn_runs)
+struct text_run **combine_paras(struct parse_many_paragraphs mp, int **pn_runs)
 {
     struct text_run **combined_paras;
     int *n_runs;
@@ -284,7 +279,7 @@ struct text_run **combine_paras(struct many_paragraphs mp, int **pn_runs)
 }
 
 
-void set_stylesheet(Narrative *n, struct style *style, const char *element)
+void set_stylesheet(Narrative *n, struct parse_style *style, const char *element)
 {
     Stylesheet *ss = narrative_get_stylesheet(n);
     if ( style->mask & STYMASK_GEOM ) stylesheet_set_geometry(ss, element, style->geom);

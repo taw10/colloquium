@@ -342,7 +342,7 @@ static void delete_text(struct narrative_item *item, size_t o1, ssize_t o2)
 	int r1, r2;
 	size_t roffs1, roffs2;
 
-	r1 = which_run(item, o1, &roffs1);
+	r1 = narrative_which_run(item, o1, &roffs1);
 
 	/* This means 'delete to end' */
 	if ( o2 == -1 ) {
@@ -353,7 +353,7 @@ static void delete_text(struct narrative_item *item, size_t o1, ssize_t o2)
 		}
 	}
 
-	r2 = which_run(item, o2, &roffs2);
+	r2 = narrative_which_run(item, o2, &roffs2);
 
 	if ( r1 == r2 ) {
 
@@ -459,7 +459,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 }
 
 
-int which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs)
+int narrative_which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs)
 {
 	int run;
 	size_t pos = 0;
@@ -487,7 +487,7 @@ void narrative_split_item(Narrative *n, int i1, size_t o1)
 	if ( narrative_item_is_text(n, i1) ) {
 
 		size_t run_offs;
-		int run = which_run(item1, o1, &run_offs);
+		int run = narrative_which_run(item1, o1, &run_offs);
 		int j;
 
 		item2->n_runs = item1->n_runs - run;

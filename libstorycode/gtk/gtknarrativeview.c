@@ -60,7 +60,7 @@ G_DEFINE_TYPE_WITH_CODE(GtkNarrativeView, gtk_narrative_view,
                         G_IMPLEMENT_INTERFACE(GTK_TYPE_SCROLLABLE,
                                               scroll_interface_init))
 
-static void redraw(GtkNarrativeView *e)
+static void gtknv_redraw(GtkNarrativeView *e)
 {
 	gint w, h;
 	w = gtk_widget_get_allocated_width(GTK_WIDGET(e));
@@ -72,7 +72,7 @@ static void redraw(GtkNarrativeView *e)
 static void horizontal_adjust(GtkAdjustment *adj, GtkNarrativeView *e)
 {
 	e->h_scroll_pos = gtk_adjustment_get_value(adj);
-	redraw(e);
+	gtknv_redraw(e);
 }
 
 
@@ -87,7 +87,7 @@ static void set_horizontal_params(GtkNarrativeView *e)
 static void vertical_adjust(GtkAdjustment *adj, GtkNarrativeView *e)
 {
 	e->scroll_pos = gtk_adjustment_get_value(adj);
-	redraw(e);
+	gtknv_redraw(e);
 }
 
 
@@ -151,8 +151,8 @@ static void update_size(GtkNarrativeView *e)
 }
 
 
-static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
-                           GtkNarrativeView *e)
+static gboolean gtknv_resize_sig(GtkWidget *widget, GdkEventConfigure *event,
+                                 GtkNarrativeView *e)
 {
 	e->visible_height = event->height;
 	e->visible_width = event->width;
@@ -166,7 +166,7 @@ static gboolean resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 }
 
 
-static void emit_change_sig(GtkNarrativeView *e)
+static void gtknv_emit_change_sig(GtkNarrativeView *e)
 {
 	g_signal_emit_by_name(e, "changed");
 }
@@ -463,13 +463,13 @@ static void copy_selection(GtkNarrativeView *e)
 }
 
 
-static gint destroy_sig(GtkWidget *window, GtkNarrativeView *e)
+static gint gtknv_destroy_sig(GtkWidget *window, GtkNarrativeView *e)
 {
 	return 0;
 }
 
 
-static double para_top(Narrative *n, int pnum)
+static double gtknv_para_top(Narrative *n, int pnum)
 {
 	int i;
 	double py = 0.0;
@@ -486,7 +486,7 @@ static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para,
 
 	item = &n->items[cursor_para];
 	cx = item->space_l;
-	cy = para_top(n, cursor_para) + item->space_t;
+	cy = gtknv_para_top(n, cursor_para) + item->space_t;
 
 	cairo_new_path(cr);
 	cairo_rectangle(cr, cx-5.0, cy-5.0, item->obj_w+10.0, item->obj_h+10.0);
@@ -496,8 +496,8 @@ static void draw_para_highlight(cairo_t *cr, Narrative *n, int cursor_para,
 }
 
 
-static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
-                           double *x, double *y, double *h)
+static void gtknv_get_cursor_pos(Narrative *n, struct edit_pos cpos,
+                                 double *x, double *y, double *h)
 {
 	size_t offs;
 	PangoRectangle rect;
@@ -506,7 +506,7 @@ static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
 	item = &n->items[cpos.para];
 	if ( !narrative_item_is_text(n, cpos.para) ) {
 		*x = item->space_l;
-		*y = para_top(n, cpos.para) + item->space_t;
+		*y = gtknv_para_top(n, cpos.para) + item->space_t;
 		*h = item->obj_h + item->space_t + item->space_b;
 		return;
 	}
@@ -519,12 +519,12 @@ static void get_cursor_pos(Narrative *n, struct edit_pos cpos,
 	offs = narrative_pos_trail_to_offset(n, cpos.para, cpos.pos, cpos.trail);
 	pango_layout_get_cursor_pos(item->layout, offs, &rect, NULL);
 	*x = pango_units_to_double(rect.x) + item->space_l;
-	*y = pango_units_to_double(rect.y) + para_top(n, cpos.para) + item->space_t;
+	*y = pango_units_to_double(rect.y) + gtknv_para_top(n, cpos.para) + item->space_t;
 	*h = pango_units_to_double(rect.height);
 }
 
 
-static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos, double ww)
+static void gtknv_draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos, double ww)
 {
 	assert(n != NULL);
 
@@ -535,7 +535,7 @@ static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos, double w
 		double cx, clow, chigh, h;
 		const double t = 1.8;
 
-		get_cursor_pos(n, cpos, &cx, &clow, &h);
+		gtknv_get_cursor_pos(n, cpos, &cx, &clow, &h);
 
 		chigh = clow+h;
 
@@ -566,7 +566,7 @@ static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos, double w
 		item = &n->items[cpos.para];
 
 		cx = item->space_l - 5.5;
-		cy = para_top(n, cpos.para) + item->space_t - 5.5;
+		cy = gtknv_para_top(n, cpos.para) + item->space_t - 5.5;
 		cw = item->obj_w + 11.0;
 		ch = item->obj_h + 11.0;
 
@@ -580,17 +580,17 @@ static void draw_caret(cairo_t *cr, Narrative *n, struct edit_pos cpos, double w
 }
 
 
-static void draw_overlay(cairo_t *cr, GtkNarrativeView *e)
+static void gtknv_draw_overlay(cairo_t *cr, GtkNarrativeView *e)
 {
 	if ( e->para_highlight ) {
 		draw_para_highlight(cr, e->n, e->cpos.para, e->w);
 	} else {
-		draw_caret(cr, e->n, e->cpos, e->w);
+		gtknv_draw_caret(cr, e->n, e->cpos, e->w);
 	}
 }
 
 
-static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
+static gboolean gtknv_draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 {
 	if ( e->rewrap_needed ) {
 		rewrap_range(e, 0, e->n->n_items);
@@ -613,7 +613,7 @@ static gboolean draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 
 	/* Editing overlay */
 	cairo_translate(cr, e->n->space_l, e->n->space_t);
-	draw_overlay(cr, e);
+	gtknv_draw_overlay(cr, e);
 
 	return FALSE;
 }
@@ -623,7 +623,7 @@ static void check_cursor_visible(GtkNarrativeView *e)
 {
 	double x, y, h;
 
-	get_cursor_pos(e->n, e->cpos, &x, &y, &h);
+	gtknv_get_cursor_pos(e->n, e->cpos, &x, &y, &h);
 
 	/* Off the bottom? */
 	if ( y - e->scroll_pos + h > e->visible_height ) {
@@ -638,7 +638,7 @@ static void check_cursor_visible(GtkNarrativeView *e)
 }
 
 
-static size_t end_offset_of_para(Narrative *n, int pnum)
+static size_t gtknv_end_offset_of_para(Narrative *n, int pnum)
 {
 	int i;
 	size_t len;
@@ -671,7 +671,7 @@ static void sort_positions(struct edit_pos *a, struct edit_pos *b)
 }
 
 
-static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
+static void gtknv_cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 {
 	struct narrative_item *item = &n->items[cp->para];
 	int np = cp->pos;
@@ -696,7 +696,7 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 		if ( cp->para > 0 ) {
 			size_t end_offs;
 			cp->para--;
-			end_offs = end_offset_of_para(n, cp->para);
+			end_offs = gtknv_end_offset_of_para(n, cp->para);
 			if ( end_offs > 0 ) {
 				cp->pos = end_offs - 1;
 				cp->trail = 1;
@@ -729,7 +729,7 @@ static void cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 }
 
 
-static void unset_selection(GtkNarrativeView *e)
+static void gtknv_unset_selection(GtkNarrativeView *e)
 {
 	int a, b;
 
@@ -758,7 +758,7 @@ static int positions_equal(struct edit_pos a, struct edit_pos b)
 }
 
 
-static void do_backspace(GtkNarrativeView *e, signed int dir)
+static void gtknv_do_backspace(GtkNarrativeView *e, signed int dir)
 {
 	struct edit_pos p1, p2;
 	size_t o1, o2;
@@ -774,7 +774,7 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 		/* Delete one character, as represented visually */
 		p2 = e->cpos;
 		p1 = p2;
-		cursor_moveh(e->n, &p1, dir);
+		gtknv_cursor_moveh(e->n, &p1, dir);
 	}
 
 	sort_positions(&p1, &p2);
@@ -782,7 +782,7 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 	o2 = narrative_pos_trail_to_offset(e->n, p2.para, p2.pos, p2.trail);
 	narrative_delete_block(e->n, p1.para, o1, p2.para, o2);
 	e->cpos = p1;
-	unset_selection(e);
+	gtknv_unset_selection(e);
 
 	/* The only paragraphs which still exist and might have been
 	 * affected by the deletion are sel_start.para and the one
@@ -790,19 +790,19 @@ static void do_backspace(GtkNarrativeView *e, signed int dir)
 	rewrap_range(e, p1.para, p1.para+1);
 	update_size(e);
 	check_cursor_visible(e);
-	emit_change_sig(e);
-	redraw(e);
+	gtknv_emit_change_sig(e);
+	gtknv_redraw(e);
 }
 
 
-static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
-                                     char *t)
+static void gtknv_insert_text_in_paragraph(struct narrative_item *item, size_t offs,
+                                           char *t)
 {
 	char *n;
 	int run;
 	size_t run_offs;
 
-	run = which_run(item, offs, &run_offs);
+	run = narrative_which_run(item, offs, &run_offs);
 
 	n = malloc(strlen(t) + strlen(item->runs[run].text) + 1);
 	if ( n == NULL ) return;
@@ -815,10 +815,10 @@ static void insert_text_in_paragraph(struct narrative_item *item, size_t offs,
 }
 
 
-static void insert_text(char *t, GtkNarrativeView *e)
+static void gtknv_insert_text(char *t, GtkNarrativeView *e)
 {
 	if ( !positions_equal(e->sel_start, e->sel_end) ) {
-		do_backspace(e, 0);
+		gtknv_do_backspace(e, 0);
 	}
 
 	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
@@ -833,30 +833,30 @@ static void insert_text(char *t, GtkNarrativeView *e)
 			e->cpos.pos = 0;
 			e->cpos.trail = 0;
 		} else {
-			insert_text_in_paragraph(&e->n->items[e->cpos.para], off, t);
+			gtknv_insert_text_in_paragraph(&e->n->items[e->cpos.para], off, t);
 			rewrap_range(e, e->cpos.para, e->cpos.para);
-			cursor_moveh(e->n, &e->cpos, +1);
+			gtknv_cursor_moveh(e->n, &e->cpos, +1);
 		}
 
 		update_size(e);
 
 	} /* else do nothing */
 
-	emit_change_sig(e);
+	gtknv_emit_change_sig(e);
 	check_cursor_visible(e);
-	redraw(e);
+	gtknv_redraw(e);
 }
 
 
-static gboolean im_commit_sig(GtkIMContext *im, gchar *str,
-                              GtkNarrativeView *e)
+static gboolean gtknv_im_commit_sig(GtkIMContext *im, gchar *str,
+                                    GtkNarrativeView *e)
 {
-	insert_text(str, e);
+	gtknv_insert_text(str, e);
 	return FALSE;
 }
 
 
-static int find_cursor(Narrative *n, double x, double y, struct edit_pos *pos)
+static int gtknv_find_cursor(Narrative *n, double x, double y, struct edit_pos *pos)
 {
 	double cur_y;
 	struct narrative_item *item;
@@ -877,15 +877,15 @@ static int find_cursor(Narrative *n, double x, double y, struct edit_pos *pos)
 
 	pango_layout_xy_to_index(item->layout,
 	                         pango_units_from_double(x - n->space_l - item->space_l),
-	                         pango_units_from_double(y - n->space_t - para_top(n, pos->para)),
+	                         pango_units_from_double(y - n->space_t - gtknv_para_top(n, pos->para)),
 	                         &pos->pos, &pos->trail);
 
 	return 0;
 }
 
 
-static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
-                                 GtkNarrativeView *e)
+static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
+                                       GtkNarrativeView *e)
 {
 	gdouble x, y;
 
@@ -893,9 +893,9 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	y = event->y + e->scroll_pos;
 
 	/* Clicked an existing frame, no immediate dragging */
-	e->drag_status = DRAG_STATUS_COULD_DRAG;
-	unset_selection(e);
-	find_cursor(e->n, x, y, &e->sel_start);
+	e->drag_status = NARRATIVE_DRAG_STATUS_COULD_DRAG;
+	gtknv_unset_selection(e);
+	gtknv_find_cursor(e->n, x, y, &e->sel_start);
 	e->sel_end = e->sel_start;
 	e->cpos = e->sel_start;
 
@@ -908,7 +908,7 @@ static gboolean button_press_sig(GtkWidget *da, GdkEventButton *event,
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(da));
-	redraw(e);
+	gtknv_redraw(e);
 	return FALSE;
 }
 
@@ -923,8 +923,8 @@ static void sorti(int *a, int *b)
 }
 
 
-static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
-                           GtkNarrativeView *e)
+static gboolean gtknv_motion_sig(GtkWidget *da, GdkEventMotion *event,
+                                 GtkNarrativeView *e)
 {
 	gdouble x, y;
 	struct edit_pos old_sel_end;
@@ -933,14 +933,14 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 	x = event->x;
 	y = event->y + e->scroll_pos;
 
-	if ( e->drag_status == DRAG_STATUS_COULD_DRAG ) {
+	if ( e->drag_status == NARRATIVE_DRAG_STATUS_COULD_DRAG ) {
 		/* We just got a motion signal, and the status was "could drag",
 		 * therefore the drag has started. */
-		e->drag_status = DRAG_STATUS_DRAGGING;
+		e->drag_status = NARRATIVE_DRAG_STATUS_DRAGGING;
 	}
 
 	old_sel_end = e->sel_end;
-	find_cursor(e->n, x, y, &e->sel_end);
+	gtknv_find_cursor(e->n, x, y, &e->sel_end);
 
 	minp = e->sel_start.para;
 	maxp = e->sel_end.para;
@@ -951,16 +951,16 @@ static gboolean motion_sig(GtkWidget *da, GdkEventMotion *event,
 	}
 
 	rewrap_range(e, minp, maxp);
-	find_cursor(e->n, x, y, &e->cpos);
-	redraw(e);
+	gtknv_find_cursor(e->n, x, y, &e->cpos);
+	gtknv_redraw(e);
 
 	gdk_event_request_motions(event);
 	return FALSE;
 }
 
 
-static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
-                              GtkNarrativeView *e)
+static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
+                                    GtkNarrativeView *e)
 {
 	gboolean r;
 	int claim = 0;
@@ -973,45 +973,45 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 	switch ( event->keyval ) {
 
 		case GDK_KEY_Left :
-		cursor_moveh(e->n, &e->cpos, -1);
+		gtknv_cursor_moveh(e->n, &e->cpos, -1);
 		check_cursor_visible(e);
-		redraw(e);
+		gtknv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Right :
-		cursor_moveh(e->n, &e->cpos, +1);
+		gtknv_cursor_moveh(e->n, &e->cpos, +1);
 		check_cursor_visible(e);
-		redraw(e);
+		gtknv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Up :
-		cursor_moveh(e->n, &e->cpos, -1);
+		gtknv_cursor_moveh(e->n, &e->cpos, -1);
 		check_cursor_visible(e);
-		redraw(e);
+		gtknv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Down :
-		cursor_moveh(e->n, &e->cpos, +1);
+		gtknv_cursor_moveh(e->n, &e->cpos, +1);
 		check_cursor_visible(e);
-		redraw(e);
+		gtknv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Return :
-		im_commit_sig(NULL, "\n", e);
+		gtknv_im_commit_sig(NULL, "\n", e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_BackSpace :
-		do_backspace(e, -1);
+		gtknv_do_backspace(e, -1);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Delete :
-		do_backspace(e, +1);
+		gtknv_do_backspace(e, +1);
 		claim = 1;
 		break;
 
@@ -1037,15 +1037,15 @@ static gboolean key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
-static gboolean dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
-                           gint x, gint y, guint time, GtkNarrativeView *e)
+static gboolean gtknv_dnd_motion(GtkWidget *widget, GdkDragContext *drag_context,
+                                 gint x, gint y, guint time, GtkNarrativeView *e)
 {
 	return TRUE;
 }
 
 
-static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
-                         gint x, gint y, guint time, GtkNarrativeView *e)
+static gboolean gtknv_dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
+                               gint x, gint y, guint time, GtkNarrativeView *e)
 {
 	GdkAtom target;
 
@@ -1061,21 +1061,21 @@ static gboolean dnd_drop(GtkWidget *widget, GdkDragContext *drag_context,
 }
 
 
-static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
-                        gint x, gint y, GtkSelectionData *seldata,
-                        guint info, guint time, GtkNarrativeView *e)
+static void gtknv_dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
+                              gint x, gint y, GtkSelectionData *seldata,
+                              guint info, guint time, GtkNarrativeView *e)
 {
 }
 
 
-static void dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
-                      guint time, GtkNarrativeView *nview)
+static void gtknv_dnd_leave(GtkWidget *widget, GdkDragContext *drag_context,
+                            guint time, GtkNarrativeView *nview)
 {
-	nview->drag_status = DRAG_STATUS_NONE;
+	nview->drag_status = NARRATIVE_DRAG_STATUS_NONE;
 }
 
 
-static gint realise_sig(GtkWidget *da, GtkNarrativeView *e)
+static gint gtknv_realise_sig(GtkWidget *da, GtkNarrativeView *e)
 {
 	GdkWindow *win;
 
@@ -1084,8 +1084,8 @@ static gint realise_sig(GtkWidget *da, GtkNarrativeView *e)
 	win = gtk_widget_get_window(GTK_WIDGET(e));
 	gtk_im_context_set_client_window(GTK_IM_CONTEXT(e->im_context), win);
 	gdk_window_set_accept_focus(win, TRUE);
-	g_signal_connect(G_OBJECT(e->im_context), "commit", G_CALLBACK(im_commit_sig), e);
-	g_signal_connect(G_OBJECT(e), "key-press-event", G_CALLBACK(key_press_sig), e);
+	g_signal_connect(G_OBJECT(e->im_context), "commit", G_CALLBACK(gtknv_im_commit_sig), e);
+	g_signal_connect(G_OBJECT(e), "key-press-event", G_CALLBACK(gtknv_key_press_sig), e);
 
 	return FALSE;
 }
@@ -1109,15 +1109,15 @@ GtkWidget *gtk_narrative_view_new(Narrative *n)
 	                            nview->w, nview->h);
 
 	g_signal_connect(G_OBJECT(nview), "destroy",
-	                 G_CALLBACK(destroy_sig), nview);
+	                 G_CALLBACK(gtknv_destroy_sig), nview);
 	g_signal_connect(G_OBJECT(nview), "realize",
-	                 G_CALLBACK(realise_sig), nview);
+	                 G_CALLBACK(gtknv_realise_sig), nview);
 	g_signal_connect(G_OBJECT(nview), "button-press-event",
-	                 G_CALLBACK(button_press_sig), nview);
+	                 G_CALLBACK(gtknv_button_press_sig), nview);
 	g_signal_connect(G_OBJECT(nview), "motion-notify-event",
-	                 G_CALLBACK(motion_sig), nview);
+	                 G_CALLBACK(gtknv_motion_sig), nview);
 	g_signal_connect(G_OBJECT(nview), "configure-event",
-	                 G_CALLBACK(resize_sig), nview);
+	                 G_CALLBACK(gtknv_resize_sig), nview);
 
 	/* Drag and drop */
 	targets[0].target = "text/uri-list";
@@ -1126,13 +1126,13 @@ GtkWidget *gtk_narrative_view_new(Narrative *n)
 	gtk_drag_dest_set(GTK_WIDGET(nview), 0, targets, 1,
 	                  GDK_ACTION_PRIVATE);
 	g_signal_connect(nview, "drag-data-received",
-	                 G_CALLBACK(dnd_receive), nview);
+	                 G_CALLBACK(gtknv_dnd_receive), nview);
 	g_signal_connect(nview, "drag-motion",
-	                 G_CALLBACK(dnd_motion), nview);
+	                 G_CALLBACK(gtknv_dnd_motion), nview);
 	g_signal_connect(nview, "drag-drop",
-	                 G_CALLBACK(dnd_drop), nview);
+	                 G_CALLBACK(gtknv_dnd_drop), nview);
 	g_signal_connect(nview, "drag-leave",
-	                 G_CALLBACK(dnd_leave), nview);
+	                 G_CALLBACK(gtknv_dnd_leave), nview);
 
 	gtk_widget_set_can_focus(GTK_WIDGET(nview), TRUE);
 	gtk_widget_add_events(GTK_WIDGET(nview),
@@ -1143,7 +1143,7 @@ GtkWidget *gtk_narrative_view_new(Narrative *n)
 	                       | GDK_SCROLL_MASK);
 
 	g_signal_connect(G_OBJECT(nview), "draw",
-			 G_CALLBACK(draw_sig), nview);
+			 G_CALLBACK(gtknv_draw_sig), nview);
 
 	gtk_widget_grab_focus(GTK_WIDGET(nview));
 
@@ -1156,7 +1156,7 @@ GtkWidget *gtk_narrative_view_new(Narrative *n)
 void gtk_narrative_view_set_para_highlight(GtkNarrativeView *e, int para_highlight)
 {
 	e->para_highlight = para_highlight;
-	redraw(e);
+	gtknv_redraw(e);
 }
 
 
@@ -1184,7 +1184,7 @@ void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos)
 	e->scroll_pos = h - (e->visible_height/2);
 	set_vertical_params(e);
 
-	redraw(e);
+	gtknv_redraw(e);
 }
 
 
@@ -1198,7 +1198,7 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
 		size_t off = narrative_pos_trail_to_offset(e->n, e->cpos.para,
 		                                           e->cpos.pos, e->cpos.trail);
-		if ( (off > 0) && (off < end_offset_of_para(e->n, e->cpos.para)) ) {
+		if ( (off > 0) && (off < gtknv_end_offset_of_para(e->n, e->cpos.para)) ) {
 			narrative_split_item(e->n, e->cpos.para, off);
 			narrative_insert_slide(e->n, s, e->cpos.para+1);
 		} else if ( off == 0 ) {
@@ -1216,14 +1216,14 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	e->cpos.trail = 0;
 	update_size(e);
 	check_cursor_visible(e);
-	emit_change_sig(e);
-	redraw(e);
+	gtknv_emit_change_sig(e);
+	gtknv_redraw(e);
 }
 
 
 extern void gtk_narrative_view_redraw(GtkNarrativeView *e)
 {
 	e->rewrap_needed = 1;
-	emit_change_sig(e);
-	redraw(e);
+	gtknv_emit_change_sig(e);
+	gtknv_redraw(e);
 }

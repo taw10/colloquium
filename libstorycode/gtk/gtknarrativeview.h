@@ -52,11 +52,11 @@
 #define GTK_NARRATIVE_VIEW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
                                            GTK_TYPE_NARRATIVE_VIEW, GtkNarrativeViewClass))
 
-enum drag_status
+enum narrative_drag_status
 {
-	DRAG_STATUS_NONE,
-	DRAG_STATUS_COULD_DRAG,
-	DRAG_STATUS_DRAGGING,
+	NARRATIVE_DRAG_STATUS_NONE,
+	NARRATIVE_DRAG_STATUS_COULD_DRAG,
+	NARRATIVE_DRAG_STATUS_DRAGGING,
 };
 
 
@@ -87,7 +87,7 @@ struct _gtknarrativeview
 	struct edit_pos      cpos;
 
 	/* Rubber band boxes and related stuff */
-	enum drag_status     drag_status;
+	enum narrative_drag_status     drag_status;
 	struct edit_pos      sel_start; /* Where the user dragged from */
 	struct edit_pos      sel_end;
 };

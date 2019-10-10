@@ -45,4 +45,6 @@ extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet 
 
 extern int render_slides_to_pdf(Narrative *n, ImageStore *is, const char *filename);
 
+extern size_t slide_pos_trail_to_offset(SlideItem *item, int para_num, int run, size_t offs, int trail);
+
 #endif	/* RENDER_H */

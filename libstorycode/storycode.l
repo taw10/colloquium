@@ -35,19 +35,19 @@
 
 %option prefix="sc"
 %option noyywrap nounput noinput
-%s geom
-%s font
-%s filename
-%s paraspace
-%s pad
-%s align
-%s col
-%s sqb
-%x stringesc
-%x runtext
-%x prerun
-%s image
-%s image_filename
+%s cond_geom
+%s cond_font
+%s cond_filename
+%s cond_paraspace
+%s cond_pad
+%s cond_align
+%s cond_col
+%s cond_sqb
+%x cond_stringesc
+%x cond_runtext
+%x cond_prerun
+%s cond_image
+%s cond_image_filename
 
 %%
 
@@ -58,51 +58,51 @@ NARRATIVE         { return SC_NARRATIVE; }
 SLIDE             { return SC_SLIDE; }
 ENDOFPRESENTATION { return SC_EOP; }
 BP                { return SC_BP; }
-GEOMETRY          { BEGIN(geom); return SC_GEOMETRY; }
+GEOMETRY          { BEGIN(cond_geom); return SC_GEOMETRY; }
 TEXT              { return SC_TEXTFRAME; }
 FOOTER            { return SC_FOOTER; }
-FONT[ ]           { BEGIN(font); return SC_FONT; }
-PAD               { BEGIN(pad); return SC_PAD; }
-PARASPACE         { BEGIN(paraspace); return SC_PARASPACE; }
-ALIGN             { BEGIN(align); return SC_ALIGN; }
-FGCOL             { BEGIN(col); return SC_FGCOL; }
-BGCOL             { BEGIN(col); return SC_BGCOL; }
-<col>VERT         { return SC_VERT; }
-<col>VERTICAL     { return SC_VERT; }
-<col>HORIZ        { return SC_HORIZ; }
-<col>HORIZONTAL   { return SC_HORIZ; }
-<align,sqb>(?i:left)   { return SC_LEFT; }
-<align,sqb>(?i:center) { return SC_CENTER; }
-<align,sqb>(?i:right)  { return SC_RIGHT; }
+FONT[ ]           { BEGIN(cond_font); return SC_FONT; }
+PAD               { BEGIN(cond_pad); return SC_PAD; }
+PARASPACE         { BEGIN(cond_paraspace); return SC_PARASPACE; }
+ALIGN             { BEGIN(cond_align); return SC_ALIGN; }
+FGCOL             { BEGIN(cond_col); return SC_FGCOL; }
+BGCOL             { BEGIN(cond_col); return SC_BGCOL; }
+<cond_col>VERT         { return SC_VERT; }
+<cond_col>VERTICAL     { return SC_VERT; }
+<cond_col>HORIZ        { return SC_HORIZ; }
+<cond_col>HORIZONTAL   { return SC_HORIZ; }
+<cond_align,cond_sqb>(?i:left)   { return SC_LEFT; }
+<cond_align,cond_sqb>(?i:center) { return SC_CENTER; }
+<cond_align,cond_sqb>(?i:right)  { return SC_RIGHT; }
 
-<font>.*\n        { sclval.str = strdup(yytext);
+<cond_font>.*\n        { sclval.str = strdup(yytext);
                     sclval.str[yyleng-1] = '\0';
                     BEGIN(0);
                     lineno++;
                     return SC_FONTNAME; }
 
-<INITIAL>IMAGE    { BEGIN(image); return SC_IMAGEFRAME; }
-<image>:[ ]       { BEGIN(image_filename); return SC_TEXT_START; }
-<image_filename>[^\n]*  { sclval.str = strdup(yytext);
+<INITIAL>IMAGE    { BEGIN(cond_image); return SC_IMAGEFRAME; }
+<cond_image>:[ ]       { BEGIN(cond_image_filename); return SC_TEXT_START; }
+<cond_image_filename>[^\n]*  { sclval.str = strdup(yytext);
                           lineno++;
                           return SC_FILENAME; }
 
-<INITIAL>:        { BEGIN(prerun); return SC_TEXT_START; }
-<prerun>[ ]       { BEGIN(runtext); }
-<runtext>[\\]     { BEGIN(stringesc); }
-<stringesc>.      { sclval.str = strdup(yytext); BEGIN(runtext);  return SC_RUN_TEXT; }
-<runtext>[\*]     { return '*'; }
-<runtext>[/]      { return '/'; }
-<runtext>[_]      { return '_'; }
-<runtext>[^\\\*/_\n]* { sclval.str = strdup(yytext);
+<INITIAL>:        { BEGIN(cond_prerun); return SC_TEXT_START; }
+<cond_prerun>[ ]       { BEGIN(cond_runtext); }
+<cond_runtext>[\\]     { BEGIN(cond_stringesc); }
+<cond_stringesc>.      { sclval.str = strdup(yytext); BEGIN(cond_runtext);  return SC_RUN_TEXT; }
+<cond_runtext>[\*]     { return '*'; }
+<cond_runtext>[/]      { return '/'; }
+<cond_runtext>[_]      { return '_'; }
+<cond_runtext>[^\\\*/_\n]* { sclval.str = strdup(yytext);
                         sclval.str[yyleng] = '\0';
                         return SC_RUN_TEXT; }
-<runtext>\n       { BEGIN(0); lineno++; }
-<prerun>\n        { BEGIN(0); lineno++; }
+<cond_runtext>\n       { BEGIN(0); lineno++; }
+<cond_prerun>\n        { BEGIN(0); lineno++; }
 
 \n                { BEGIN(0); lineno++; }
 
-"["               { sqb_caller = YY_START; BEGIN(sqb); return '['; }
+"["               { sqb_caller = YY_START; BEGIN(cond_sqb); return '['; }
 "]"               { BEGIN(sqb_caller); return ']'; }
 [{]               { return '{'; }
 [}]               { return '}'; }
@@ -112,7 +112,7 @@ BGCOL             { BEGIN(col); return SC_BGCOL; }
 [+]               { return '+'; }
 [x]               { return 'x'; }
 [,]               { return ','; }
-<col>#[[:xdigit:]]{6}    { sclval.str = strdup(yytext); return SC_HEXCOL; }
+<cond_col>#[[:xdigit:]]{6}    { sclval.str = strdup(yytext); return SC_HEXCOL; }
 
 
 %%

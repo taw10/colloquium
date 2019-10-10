@@ -211,7 +211,7 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+static void nw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
 	open_about_dialog(nw->window);
@@ -666,7 +666,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 
 GActionEntry nw_entries[] = {
 
-	{ "about", about_sig, NULL, NULL, NULL },
+	{ "about", nw_about_sig, NULL, NULL, NULL },
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },

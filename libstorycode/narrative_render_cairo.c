@@ -49,23 +49,12 @@
 const double dummy_h_val = 1024.0;
 
 
-static double lcalc(struct length l, double pd)
+static double narrative_lcalc(struct length l, double pd)
 {
 	if ( l.unit == LENGTH_UNIT ) {
 		return l.len;
 	} else {
 		return l.len * pd;
-	}
-}
-
-
-static PangoAlignment to_pangoalignment(enum alignment align)
-{
-	switch ( align ) {
-		case ALIGN_LEFT : return PANGO_ALIGN_LEFT;
-		case ALIGN_RIGHT : return PANGO_ALIGN_RIGHT;
-		case ALIGN_CENTER : return PANGO_ALIGN_CENTER;
-		default: return PANGO_ALIGN_LEFT;
 	}
 }
 
@@ -207,7 +196,7 @@ size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int trail)
 
 	if ( !narrative_item_is_text(n, i) ) return offs;
 
-	run = which_run(item, offs, &run_offs);
+	run = narrative_which_run(item, offs, &run_offs);
 
 	char_offs = g_utf8_pointer_to_offset(item->runs[run].text,
 	                                     item->runs[run].text+run_offs);
@@ -270,10 +259,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	struct length paraspace[4];
 
 	if ( stylesheet_get_padding(stylesheet, "NARRATIVE", pad) ) return 1;
-	n->space_l = lcalc(pad[0], w);
-	n->space_r = lcalc(pad[1], w);
-	n->space_t = lcalc(pad[2], dummy_h_val);
-	n->space_b = lcalc(pad[3], dummy_h_val);
+	n->space_l = narrative_lcalc(pad[0], w);
+	n->space_r = narrative_lcalc(pad[1], w);
+	n->space_t = narrative_lcalc(pad[2], dummy_h_val);
+	n->space_b = narrative_lcalc(pad[3], dummy_h_val);
 
 	n->w = w;
 	w -= n->space_l + n->space_r;
@@ -345,10 +334,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 		}
 
 		if ( stylesheet_get_paraspace(stylesheet, stn, paraspace) == 0 ) {
-			n->items[i].space_l = lcalc(paraspace[0], w);
-			n->items[i].space_r = lcalc(paraspace[1], w);
-			n->items[i].space_t = lcalc(paraspace[2], dummy_h_val);
-			n->items[i].space_b = lcalc(paraspace[3], dummy_h_val);
+			n->items[i].space_l = narrative_lcalc(paraspace[0], w);
+			n->items[i].space_r = narrative_lcalc(paraspace[1], w);
+			n->items[i].space_t = narrative_lcalc(paraspace[2], dummy_h_val);
+			n->items[i].space_b = narrative_lcalc(paraspace[3], dummy_h_val);
 		}
 
 		switch ( n->items[i].type ) {

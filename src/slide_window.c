@@ -285,7 +285,7 @@ static gboolean sw_key_press_sig(GtkWidget *da, GdkEventKey *event,
 }
 
 
-static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	SlideWindow *sw = vp;
 	open_about_dialog(sw->window);
@@ -294,7 +294,7 @@ static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 
 GActionEntry sw_entries[] = {
 
-	{ "about", about_sig, NULL, NULL, NULL },
+	{ "about", sw_about_sig, NULL, NULL, NULL },
 	{ "paste", paste_sig, NULL, NULL, NULL },
 	{ "copyframe", copy_frame_sig, NULL, NULL, NULL },
 	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },

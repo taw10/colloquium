@@ -111,4 +111,6 @@ extern char *stylesheet_serialise(Stylesheet *s);
 
 extern const char *stylesheet_get_friendly_name(const char *in);
 
+extern void copy_col(struct colour *to, struct colour from);
+
 #endif /* STYLESHEET_H */

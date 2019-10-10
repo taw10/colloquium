@@ -46,23 +46,12 @@
 #include "slide_priv.h"
 
 
-static double lcalc(struct length l, double pd)
+static double slide_lcalc(struct length l, double pd)
 {
 	if ( l.unit == LENGTH_UNIT ) {
 		return l.len;
 	} else {
 		return l.len * pd;
-	}
-}
-
-
-static PangoAlignment to_pangoalignment(enum alignment align)
-{
-	switch ( align ) {
-		case ALIGN_LEFT : return PANGO_ALIGN_LEFT;
-		case ALIGN_RIGHT : return PANGO_ALIGN_RIGHT;
-		case ALIGN_CENTER : return PANGO_ALIGN_CENTER;
-		default: return PANGO_ALIGN_LEFT;
 	}
 }
 
@@ -76,8 +65,8 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 }
 
 
-static size_t pos_trail_to_offset(SlideItem *item, int para, int run,
-                                  size_t offs, int trail)
+size_t slide_pos_trail_to_offset(SlideItem *item, int para, int run,
+                                        size_t offs, int trail)
 {
 	glong char_offs;
 	char *ptr;
@@ -168,15 +157,15 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	} else {
 		stylesheet_get_geometry(ss, stn, &geom);
 	}
-	x = lcalc(geom.x, parent_w);
-	y = lcalc(geom.y, parent_h);
-	w = lcalc(geom.w, parent_w);
-	h = lcalc(geom.h, parent_h);
+	x = slide_lcalc(geom.x, parent_w);
+	y = slide_lcalc(geom.y, parent_h);
+	w = slide_lcalc(geom.w, parent_w);
+	h = slide_lcalc(geom.h, parent_h);
 
 	if ( stylesheet_get_padding(ss, stn, pad) ) return;
-	pad_l = lcalc(pad[0], parent_w);
-	pad_r = lcalc(pad[1], parent_w);
-	pad_t = lcalc(pad[2], parent_h);
+	pad_l = slide_lcalc(pad[0], parent_w);
+	pad_r = slide_lcalc(pad[1], parent_w);
+	pad_t = slide_lcalc(pad[2], parent_h);
 
 	font = stylesheet_get_font(ss, stn, &fgcol, &align);
 	if ( font == NULL ) return;
@@ -192,10 +181,10 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	}
 
 	if ( !slide_positions_equal(sel_start, sel_end) ) {
-		sel_s = pos_trail_to_offset(item, sel_start.para, sel_start.run,
-		                            sel_start.pos, sel_start.trail);
-		sel_e = pos_trail_to_offset(item, sel_end.para, sel_end.run,
-		                            sel_end.pos, sel_end.trail);
+		sel_s = slide_pos_trail_to_offset(item, sel_start.para, sel_start.run,
+		                                  sel_start.pos, sel_start.trail);
+		sel_e = slide_pos_trail_to_offset(item, sel_end.para, sel_end.run,
+		                                  sel_end.pos, sel_end.trail);
 	} else {
 		sel_s = 0;
 		sel_e = 0;
@@ -204,10 +193,10 @@ static void render_text(SlideItem *item, cairo_t *cr, PangoContext *pc,
 	do_background(ss, stn, cr, x, y, w, h);
 
 	if ( stylesheet_get_paraspace(ss, stn, paraspacel) == 0 ) {
-		paraspace[0] = lcalc(paraspacel[0], w);
-		paraspace[1] = lcalc(paraspacel[1], w);
-		paraspace[2] = lcalc(paraspacel[2], h);
-		paraspace[3] = lcalc(paraspacel[3], h);
+		paraspace[0] = slide_lcalc(paraspacel[0], w);
+		paraspace[1] = slide_lcalc(paraspacel[1], w);
+		paraspace[2] = slide_lcalc(paraspacel[2], h);
+		paraspace[3] = slide_lcalc(paraspacel[3], h);
 	} else {
 		paraspace[0] = 0.0;
 		paraspace[1] = 0.0;
@@ -293,10 +282,10 @@ static void render_image(SlideItem *item, cairo_t *cr,
 	double wd, hd;
 	cairo_surface_t *surf;
 
-	x = lcalc(item->geom.x, parent_w);
-	y = lcalc(item->geom.y, parent_h);
-	w = lcalc(item->geom.w, parent_w);
-	h = lcalc(item->geom.h, parent_h);
+	x = slide_lcalc(item->geom.x, parent_w);
+	y = slide_lcalc(item->geom.y, parent_h);
+	w = slide_lcalc(item->geom.w, parent_w);
+	h = slide_lcalc(item->geom.h, parent_h);
 
 	wd = w;  hd = h;
 	cairo_user_to_device_distance(cr, &wd, &hd);

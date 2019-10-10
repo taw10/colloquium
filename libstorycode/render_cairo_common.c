@@ -95,3 +95,14 @@ int runs_to_pangolayout(PangoLayout *layout, struct text_run *runs, int n_runs)
 
 	return 0;
 }
+
+
+PangoAlignment to_pangoalignment(enum alignment align)
+{
+	switch ( align ) {
+		case ALIGN_LEFT : return PANGO_ALIGN_LEFT;
+		case ALIGN_RIGHT : return PANGO_ALIGN_RIGHT;
+		case ALIGN_CENTER : return PANGO_ALIGN_CENTER;
+		default: return PANGO_ALIGN_LEFT;
+	}
+}

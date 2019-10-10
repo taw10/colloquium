@@ -97,7 +97,7 @@ struct _narrative
 	double space_b;
 };
 
-extern int which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs);
+extern int narrative_which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs);
 
 
 #endif /* NARRATIVE_PRIV_H */

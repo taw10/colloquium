@@ -32,5 +32,6 @@
 #include "storycode.h"
 
 extern int runs_to_pangolayout(PangoLayout *layout, struct text_run *runs, int n_runs);
+extern PangoAlignment to_pangoalignment(enum alignment align);
 
 #endif	/* RENDER_CAIRO_COMMON_H */

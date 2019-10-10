@@ -588,3 +588,13 @@ int stylesheet_set_from_storycode(Stylesheet *ss, const char *sc)
 
 	return 0;
 }
+
+
+double lcalc(struct length l, double pd)
+{
+	if ( l.unit == LENGTH_UNIT ) {
+		return l.len;
+	} else {
+		return l.len * pd;
+	}
+}

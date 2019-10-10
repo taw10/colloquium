@@ -161,7 +161,7 @@ static void draw_resize_handle(cairo_t *cr, double x, double y)
 }
 
 
-static double gtksv_para_top(SlideItem *item, int pnum)
+static double gtksv_para_top(SlideItem *item, int pnum, double paraspace_t, double paraspace_b)
 {
 	int i;
 	double py = 0.0;
@@ -169,8 +169,37 @@ static double gtksv_para_top(SlideItem *item, int pnum)
 		PangoRectangle rect;
 		pango_layout_get_extents(item->paras[i].layout, NULL, &rect);
 		py += pango_units_to_double(rect.height);
+		py += paraspace_t;
+		py += paraspace_b;
 	}
-	return py;
+	return py + paraspace_t;
+}
+
+
+static void get_paraspace(SlideItem *item, Stylesheet *stylesheet,
+                          double paraspace[4], double slide_w, double slide_h)
+{
+	struct length paraspacel[4];
+	const char *stn;
+
+	switch ( item->type ) {
+		case SLIDE_ITEM_TEXT : stn = "SLIDE.TEXT"; break;
+		case SLIDE_ITEM_SLIDETITLE : stn = "SLIDE.SLIDETITLE"; break;
+		case SLIDE_ITEM_PRESTITLE : stn = "SLIDE.PRESTITLE"; break;
+		default : stn = NULL; break;
+	}
+
+	if ( stylesheet_get_paraspace(stylesheet, stn, paraspacel) == 0 ) {
+		paraspace[0] = lcalc(paraspacel[0], slide_w);
+		paraspace[1] = lcalc(paraspacel[1], slide_w);
+		paraspace[2] = lcalc(paraspacel[2], slide_h);
+		paraspace[3] = lcalc(paraspacel[3], slide_h);
+	} else {
+		paraspace[0] = 0.0;
+		paraspace[1] = 0.0;
+		paraspace[2] = 0.0;
+		paraspace[3] = 0.0;
+	}
 }
 
 
@@ -181,6 +210,7 @@ static int gtksv_get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
 	size_t offs;
 	PangoRectangle rect;
 	double padl, padr, padt, padb;
+	double paraspace[4];
 
 	if ( item->paras == NULL ) return 1;
 
@@ -191,11 +221,14 @@ static int gtksv_get_cursor_pos(SlideItem *item, Stylesheet *stylesheet,
 
 	slide_item_get_padding(item, stylesheet, &padl, &padr, &padt, &padb,
 	                       slide_w, slide_h);
+	get_paraspace(item, stylesheet, paraspace, slide_w, slide_h);
 
 	offs = slide_pos_trail_to_offset(item, cpos.para, cpos.pos, cpos.trail);
 	pango_layout_get_cursor_pos(item->paras[cpos.para].layout, offs, &rect, NULL);
-	*x = pango_units_to_double(rect.x) + padl;
-	*y = pango_units_to_double(rect.y) + gtksv_para_top(item, cpos.para) + padt;
+	*x = pango_units_to_double(rect.x) + padl + paraspace[0];
+	*y = pango_units_to_double(rect.y)
+	     + gtksv_para_top(item, cpos.para, paraspace[2], paraspace[3])
+	     + padt;
 	*h = pango_units_to_double(rect.height);
 	return 0;
 }
@@ -525,6 +558,7 @@ static int gtksv_find_cursor(SlideItem *item, Stylesheet *stylesheet,
 	double top;
 	int i = 0;
 	double padl, padr, padt, padb;
+	double paraspace[4];
 
 	if ( !is_text(item->type) ) {
 		pos->para = 0;
@@ -535,7 +569,9 @@ static int gtksv_find_cursor(SlideItem *item, Stylesheet *stylesheet,
 
 	slide_item_get_padding(item, stylesheet, &padl, &padr, &padt, &padb,
 	                       slide_w, slide_h);
+	get_paraspace(item, stylesheet, paraspace, slide_w, slide_h);
 	x -= padl;
+	x -= paraspace[0];
 	y -= padt;
 
 	if ( item->paras == NULL ) {
@@ -551,6 +587,8 @@ static int gtksv_find_cursor(SlideItem *item, Stylesheet *stylesheet,
 		pango_layout_get_extents(item->paras[i++].layout, NULL, &rect);
 		top = cur_y;
 		cur_y += pango_units_to_double(rect.height);
+		cur_y += paraspace[2];
+		cur_y += paraspace[3];
 	} while ( (cur_y < y) && (i<item->n_paras) );
 
 	pos->para = i-1;

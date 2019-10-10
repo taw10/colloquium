@@ -278,16 +278,6 @@ static const char *style_name_for_slideitem(enum slide_item_type t)
 }
 
 
-static double lcalc(struct length l, double pd)
-{
-	if ( l.unit == LENGTH_UNIT ) {
-		return l.len;
-	} else {
-		return l.len * pd;
-	}
-}
-
-
 void slide_item_get_geom(SlideItem *item, Stylesheet *ss,
                          double *x, double *y, double *w, double *h,
                          double slide_w, double slide_h)

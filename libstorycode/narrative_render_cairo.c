@@ -49,16 +49,6 @@
 const double dummy_h_val = 1024.0;
 
 
-static double narrative_lcalc(struct length l, double pd)
-{
-	if ( l.unit == LENGTH_UNIT ) {
-		return l.len;
-	} else {
-		return l.len * pd;
-	}
-}
-
-
 static void wrap_text(struct narrative_item *item, PangoContext *pc,
                       Stylesheet *ss, const char *stn, double w,
                       size_t sel_start, size_t sel_end)
@@ -259,10 +249,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	struct length paraspace[4];
 
 	if ( stylesheet_get_padding(stylesheet, "NARRATIVE", pad) ) return 1;
-	n->space_l = narrative_lcalc(pad[0], w);
-	n->space_r = narrative_lcalc(pad[1], w);
-	n->space_t = narrative_lcalc(pad[2], dummy_h_val);
-	n->space_b = narrative_lcalc(pad[3], dummy_h_val);
+	n->space_l = lcalc(pad[0], w);
+	n->space_r = lcalc(pad[1], w);
+	n->space_t = lcalc(pad[2], dummy_h_val);
+	n->space_b = lcalc(pad[3], dummy_h_val);
 
 	n->w = w;
 	w -= n->space_l + n->space_r;
@@ -334,10 +324,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 		}
 
 		if ( stylesheet_get_paraspace(stylesheet, stn, paraspace) == 0 ) {
-			n->items[i].space_l = narrative_lcalc(paraspace[0], w);
-			n->items[i].space_r = narrative_lcalc(paraspace[1], w);
-			n->items[i].space_t = narrative_lcalc(paraspace[2], dummy_h_val);
-			n->items[i].space_b = narrative_lcalc(paraspace[3], dummy_h_val);
+			n->items[i].space_l = lcalc(paraspace[0], w);
+			n->items[i].space_r = lcalc(paraspace[1], w);
+			n->items[i].space_t = lcalc(paraspace[2], dummy_h_val);
+			n->items[i].space_b = lcalc(paraspace[3], dummy_h_val);
 		}
 
 		switch ( n->items[i].type ) {

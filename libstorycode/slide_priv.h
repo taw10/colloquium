@@ -76,4 +76,7 @@ struct _slide
 	SlideItem *items;
 };
 
+extern int slide_which_run(struct slide_text_paragraph *para, size_t item_offs,
+                           size_t *run_offs);
+
 #endif /* SLIDE_PRIV_H */

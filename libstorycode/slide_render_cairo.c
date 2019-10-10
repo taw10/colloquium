@@ -55,8 +55,8 @@ static int slide_positions_equal(struct slide_pos a, struct slide_pos b)
 }
 
 
-static int slide_which_run(struct slide_text_paragraph *para, size_t item_offs,
-                           size_t *run_offs)
+int slide_which_run(struct slide_text_paragraph *para, size_t item_offs,
+                    size_t *run_offs)
 {
 	int run;
 	size_t pos = 0;

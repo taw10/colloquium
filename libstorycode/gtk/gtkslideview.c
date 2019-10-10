@@ -1104,27 +1104,31 @@ static void gtksv_do_backspace(GtkSlideView *e, signed int dir)
 }
 
 
-static void gtksv_insert_text_in_paragraph(SlideItem *item, int para,
+static void gtksv_insert_text_in_paragraph(SlideItem *item, int para_num,
                                            size_t offs, char *t)
 {
-	/* FIXME! */
-#if 0
-	char *n = malloc(strlen(t) + strlen(item->paras[para].text) + 1);
+	struct slide_text_paragraph *para;
+	int run;
+	size_t run_offs;
+	char *n;
+
+	para = &item->paras[para_num];
+	run = slide_which_run(para, offs, &run_offs);
+
+	n = malloc(strlen(t) + strlen(para->runs[run].text) + 1);
 	if ( n == NULL ) return;
-	strncpy(n, item->paras[para].text, offs);
-	n[offs] = '\0';
+
+	strncpy(n, para->runs[run].text, run_offs);
+	n[run_offs] = '\0';
 	strcat(n, t);
-	strcat(n, item->paras[para].text+offs);
-	free(item->paras[para].text);
-	item->paras[para].text = n;
-#endif
+	strcat(n, para->runs[run].text+run_offs);
+	free(para->runs[run].text);
+	para->runs[run].text = n;
 }
 
 
 static void gtksv_insert_text(char *t, GtkSlideView *e)
 {
-	/* FIXME! */
-#if 0
 	size_t off;
 
 	if ( e->cursor_frame == NULL ) return;
@@ -1135,27 +1139,20 @@ static void gtksv_insert_text(char *t, GtkSlideView *e)
 	}
 	gtksv_unset_selection(e);
 
+	off = slide_pos_trail_to_offset(e->cursor_frame, e->cpos.para,
+	                                e->cpos.pos, e->cpos.trail);
 	if ( strcmp(t, "\n") == 0 ) {
-		off = pos_trail_to_offset(e->cursor_frame, e->cpos.para,
-		                          e->cpos.pos, e->cpos.trail);
 		slide_item_split_text_paragraph(e->cursor_frame, e->cpos.para, off);
 		e->cpos.para++;
 		e->cpos.pos = 0;
 		e->cpos.trail = 0;
-		gtksv_emit_change_sig(e);
-		gtksv_redraw(e);
-		return;
+	} else {
+		gtksv_insert_text_in_paragraph(e->cursor_frame, e->cpos.para, off, t);
+		e->cpos.pos += strlen(t);
 	}
 
-	off = pos_trail_to_offset(e->cursor_frame, e->cpos.para,
-	                          e->cpos.pos, e->cpos.trail);
-	gtksv_insert_text_in_paragraph(e->cursor_frame, e->cpos.para, off, t);
-	pango_layout_set_text(e->cursor_frame->paras[e->cpos.para].layout,
-	                      e->cursor_frame->paras[e->cpos.para].text, -1);
-	gtksv_cursor_moveh(e, &e->cpos, +1);
 	gtksv_emit_change_sig(e);
 	gtksv_redraw(e);
-#endif
 }
 
 

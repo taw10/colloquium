@@ -475,6 +475,7 @@ int narrative_which_run(struct narrative_item *item, size_t item_offs, size_t *r
 	return run;
 }
 
+
 void narrative_split_item(Narrative *n, int i1, size_t o1)
 {
 	struct narrative_item *item1;

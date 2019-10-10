@@ -969,10 +969,18 @@ static gboolean gtksv_button_release_sig(GtkWidget *da, GdkEventButton *event,
 static size_t gtksv_end_offset_of_para(SlideItem *item, int pnum)
 {
 	struct slide_text_paragraph *para;
+	int i;
+	size_t offs;
+
 	assert(pnum >= 0);
 	if ( !is_text(item->type) ) return 0;
 	para = &item->paras[pnum];
-	return strlen(para->runs[para->n_runs-1].text);
+
+	offs = 0;
+	for ( i=0; i<para->n_runs; i++ ) {
+		offs += strlen(para->runs[i].text);
+	}
+	return offs;
 }
 
 

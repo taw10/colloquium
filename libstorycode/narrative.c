@@ -380,7 +380,7 @@ static void delete_text(struct narrative_item *item, size_t o1, ssize_t o2)
 
 		/* Last run */
 		memmove(item->runs[r2].text, &item->runs[r2].text[roffs2],
-		        strlen(item->runs[r2].text) - roffs2+1);
+		        strlen(&item->runs[r2].text[roffs2])+1);
 	}
 }
 

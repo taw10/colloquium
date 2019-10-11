@@ -324,88 +324,157 @@ void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
 }
 
 
-void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off)
+static struct slide_text_paragraph *insert_paragraph(SlideItem *item, int pos)
 {
-	/* FIXME */
-#if 0
-	struct slide_text_paragraph *np;
+	struct slide_text_paragraph *paras_new;
 
-	np = realloc(item->paras, (item->n_paras+1)*sizeof(struct slide_text_paragraph));
-	if ( np == NULL ) return;
+	paras_new = realloc(item->paras, (item->n_paras+1)*sizeof(struct slide_text_paragraph));
+	if ( paras_new == NULL ) return NULL;
 
-	item->paras = np;
+	item->paras = paras_new;
 	item->n_paras++;
 
-	memmove(&item->paras[para+1], &item->paras[para],
-	        (item->n_paras - para - 1)*sizeof(struct slide_text_paragraph));
+	memmove(&item->paras[pos+1], &item->paras[pos],
+	        (item->n_paras-pos-1)*sizeof(struct slide_text_paragraph));
 
-	item->paras[para+1].text = strdup(&item->paras[para].text[off]);
-	item->paras[para+1].layout = NULL;
-	item->paras[para].text[off] = '\0';
-#endif
+	item->paras[pos].runs = NULL;
+	item->paras[pos].layout = NULL;
+	item->paras[pos].n_runs = 0;
+	return &item->paras[pos];
 }
 
 
-static void delete_paragraph(SlideItem *item, int del)
+void slide_item_split_text_paragraph(SlideItem *item, int para_num, size_t off)
 {
-	/* FIXME */
-#if 0
+	size_t run_offs;
+	int j;
+	struct slide_text_paragraph *para1;
+	struct slide_text_paragraph *para2;
+	int run = slide_which_run(&item->paras[para_num], off, &run_offs);
+
+	para2 = insert_paragraph(item, para_num+1);
+	para1 = &item->paras[para_num];  /* NB n->items was realloced by insert_item */
+
+	para2->n_runs = para1->n_runs - run;
+	para2->runs = malloc(para2->n_runs*sizeof(struct text_run));
+	for ( j=run; j<para1->n_runs; j++ ) {
+		para2->runs[j-run] = para1->runs[j];
+	}
+
+	/* Now break the run */
+	para2->runs[0].text = strdup(para1->runs[run].text+run_offs);
+	para1->runs[run].text[run_offs] = '\0';
+	para1->n_runs = run + 1;
+}
+
+
+static void delete_paragraph(SlideItem *item, int del, int delete_runs)
+{
 	int i;
 
 #ifdef HAVE_PANGO
 	g_object_unref(item->paras[del].layout);
 #endif
-	free(item->paras[del].text);
+
+	if ( delete_runs ) {
+		for ( i=0; i<item->paras[del].n_runs; i++ ) {
+			free(item->paras[del].runs[i].text);
+		}
+	}
 
 	for ( i=del; i<item->n_paras-1; i++ ) {
 		item->paras[i] = item->paras[i+1];
 	}
 	item->n_paras--;
-#endif
 }
 
 
-void slide_item_delete_text(SlideItem *item, int i1, size_t o1, int i2, size_t o2)
+static void slide_paragraph_delete_text(struct slide_text_paragraph *para,
+                                        size_t o1, ssize_t o2)
 {
-	/* FIXME */
-#if 0
+	int r1, r2;
+	size_t roffs1, roffs2;
+
+	r1 = slide_which_run(para, o1, &roffs1);
+
+	/* This means 'delete to end' */
+	if ( o2 == -1 ) {
+		int i;
+		o2 = 0;
+		for ( i=0; i<para->n_runs; i++ ) {
+			o2 += strlen(para->runs[i].text);
+		}
+	}
+
+	r2 = slide_which_run(para, o2, &roffs2);
+
+	if ( r1 == r2 ) {
+
+		/* Easy case */
+		memmove(&para->runs[r1].text[roffs1],
+		        &para->runs[r2].text[roffs2],
+		        strlen(para->runs[r1].text)-roffs2+1);
+
+	} else {
+
+		int n_middle;
+
+		/* Truncate the first run */
+		para->runs[r1].text[roffs1] = '\0';
+
+		/* Delete any middle runs */
+		n_middle = r2 - r1 - 1;
+		if ( n_middle > 0 ) {
+			memmove(&para->runs[r1+1], &para->runs[r2],
+			        (para->n_runs-r2)*sizeof(struct text_run));
+			para->n_runs -= n_middle;
+			r2 -= n_middle;
+		}
+
+		/* Last run */
+		memmove(para->runs[r2].text, &para->runs[r2].text[roffs2],
+		        strlen(&para->runs[r2].text[roffs2])+1);
+	}
+}
+
+
+void slide_item_delete_text(SlideItem *item, int p1, size_t o1, int p2, size_t o2)
+{
 	int i;
+	struct text_run *new_runs;
 	int n_del = 0;
 
-	/* Starting item */
-	if ( i1 == i2 ) {
-		memmove(&item->paras[i1].text[o1],
-		        &item->paras[i1].text[o2],
-		        strlen(item->paras[i1].text)-o2+1);
+	/* Starting paragraph */
+	if ( p1 == p2 ) {
+		slide_paragraph_delete_text(&item->paras[p1], o1, o2);
 		return;  /* easy case */
 	} else {
-		item->paras[i1].text[o1] = '\0';
+		slide_paragraph_delete_text(&item->paras[p1], o1, -1);
 	}
 
 	/* Middle items */
-	for ( i=i1+1; i<i2; i++ ) {
+	for ( i=p1+1; i<p2; i++ ) {
 		/* Deleting the item moves all the subsequent items up, so the
 		 * index to be deleted doesn't change. */
-		delete_paragraph(item, i1+1);
+		delete_paragraph(item, p1+1, 1);
 		n_del++;
 	}
-	i2 -= n_del;
+	p2 -= n_del;
 
 	/* Last item */
-	memmove(&item->paras[i2].text[0],
-	        &item->paras[i2].text[o2],
-	        strlen(&item->paras[i2].text[o2])+1);
+	slide_paragraph_delete_text(&item->paras[p2], 0, o2);
 
-	assert(i1 != i2);
-	char *new_text;
-	size_t len = strlen(item->paras[i1].text);
-	len += strlen(item->paras[i2].text);
-	new_text = malloc(len+1);
-	if ( new_text == NULL ) return;
-	strcpy(new_text, item->paras[i1].text);
-	strcat(new_text, item->paras[i2].text);
-	free(item->paras[i1].text);
-	item->paras[i1].text = new_text;
-	delete_paragraph(item, i2);
-#endif
+	/* Move runs from p2 to p1, then delete p2 */
+	assert(p1 != p2);
+	new_runs = realloc(item->paras[p1].runs,
+	                   (item->paras[p1].n_runs+item->paras[p2].n_runs)*sizeof(struct text_run));
+	if ( new_runs == NULL ) return;
+
+	memcpy(&new_runs[item->paras[p1].n_runs], item->paras[p2].runs,
+	       item->paras[p2].n_runs*sizeof(struct text_run));
+	item->paras[p1].n_runs += item->paras[p2].n_runs;
+	item->paras[p1].runs = new_runs;
+
+	/* Delete the paragraph, but not the runs which we just copied */
+	delete_paragraph(item, p2, 0);
 }

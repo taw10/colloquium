@@ -1064,8 +1064,6 @@ static void sort_slide_positions(struct slide_pos *a, struct slide_pos *b)
 
 static void gtksv_do_backspace(GtkSlideView *e, signed int dir)
 {
-	/* FIXME! */
-#if 0
 	struct slide_pos p1, p2;
 	size_t o1, o2;
 
@@ -1089,18 +1087,14 @@ static void gtksv_do_backspace(GtkSlideView *e, signed int dir)
 	}
 
 	sort_slide_positions(&p1, &p2);
-	o1 = pos_trail_to_offset(e->cursor_frame, p1.para, p1.run, p1.pos, p1.trail);
-	o2 = pos_trail_to_offset(e->cursor_frame, p2.para, p1.run, p2.pos, p2.trail);
+	o1 = slide_pos_trail_to_offset(e->cursor_frame, p1.para, p1.pos, p1.trail);
+	o2 = slide_pos_trail_to_offset(e->cursor_frame, p2.para, p2.pos, p2.trail);
 	slide_item_delete_text(e->cursor_frame, p1.para, o1, p2.para, o2);
 	e->cpos = p1;
+
 	gtksv_unset_selection(e);
-
-	pango_layout_set_text(e->cursor_frame->paras[e->cpos.para].layout,
-	                      e->cursor_frame->paras[e->cpos.para].text, -1);
-
 	gtksv_emit_change_sig(e);
 	gtksv_redraw(e);
-#endif
 }
 
 

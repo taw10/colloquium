@@ -641,7 +641,7 @@ static void check_cursor_visible(GtkNarrativeView *e)
 static size_t gtknv_end_offset_of_para(Narrative *n, int pnum)
 {
 	int i;
-	size_t len;
+	size_t len = 0;
 	assert(pnum >= 0);
 	if ( !narrative_item_is_text(n, pnum) ) return 0;
 	for ( i=0; i<n->items[pnum].n_runs; i++ ) {

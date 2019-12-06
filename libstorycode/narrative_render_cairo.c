@@ -456,12 +456,10 @@ static void draw_text(struct narrative_item *item, cairo_t *cr)
 	cairo_save(cr);
 	cairo_translate(cr, item->space_l, item->space_t);
 
-	//if ( (hpos + cur_h > min_y) && (hpos < max_y) ) {
-		cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
-		pango_cairo_update_layout(cr, item->layout);
-		pango_cairo_show_layout(cr, item->layout);
-		cairo_fill(cr);
-	//} /* else paragraph is not visible */
+	cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+	pango_cairo_update_layout(cr, item->layout);
+	pango_cairo_show_layout(cr, item->layout);
+	cairo_fill(cr);
 
 	cairo_restore(cr);
 }
@@ -495,9 +493,11 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 
 
 /* NB You must first call narrative_wrap() */
-int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
+int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
+                           double min_y, double max_y)
 {
 	int i, r;
+	double hpos = 0.0;
 	enum gradient bg;
 	struct colour bgcol;
 	struct colour bgcol2;
@@ -539,8 +539,15 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet)
 	cairo_translate(cr, n->space_l, n->space_t);
 
 	for ( i=0; i<n->n_items; i++ ) {
-		narrative_render_item_cairo(n, cr, i);
-		cairo_translate(cr, 0.0, narrative_item_get_height(n, i));
+
+		double cur_h = narrative_item_get_height(n, i);
+
+		if ( (hpos + cur_h > min_y) && (hpos < max_y) ) {
+			narrative_render_item_cairo(n, cr, i);
+		} /* else paragraph is not visible */
+
+		cairo_translate(cr, 0.0, cur_h);
+		hpos += cur_h;
 	}
 
 	cairo_restore(cr);

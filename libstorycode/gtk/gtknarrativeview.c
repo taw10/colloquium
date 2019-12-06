@@ -609,7 +609,8 @@ static gboolean gtknv_draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 	cairo_fill(cr);
 
 	/* Contents */
-	narrative_render_cairo(e->n, cr, narrative_get_stylesheet(e->n));
+	narrative_render_cairo(e->n, cr, narrative_get_stylesheet(e->n),
+	                       e->scroll_pos, e->scroll_pos+e->visible_height);
 
 	/* Editing overlay */
 	cairo_translate(cr, e->n->space_l, e->n->space_t);

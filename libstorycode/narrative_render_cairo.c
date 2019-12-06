@@ -157,7 +157,7 @@ static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *i
 }
 
 
-static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *is, int sel_block)
+static void wrap_slide(struct narrative_item *item, Stylesheet *ss, int sel_block)
 {
 	double w, h;
 
@@ -168,8 +168,7 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, ImageStore *
 	if ( item->slide_thumbnail != NULL ) {
 		cairo_surface_destroy(item->slide_thumbnail);
 	}
-	item->slide_thumbnail = render_thumbnail(item->slide, ss, is,
-	                                         item->obj_w, item->obj_h);
+	item->slide_thumbnail = NULL;
 	item->selected = sel_block;
 }
 
@@ -340,7 +339,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :
-			wrap_slide(&n->items[i], stylesheet, is, sel_block);
+			wrap_slide(&n->items[i], stylesheet, sel_block);
 			break;
 
 			case NARRATIVE_ITEM_EOP :
@@ -493,7 +492,7 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 
 
 /* NB You must first call narrative_wrap() */
-int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
+int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet, ImageStore *is,
                            double min_y, double max_y)
 {
 	int i, r;
@@ -543,7 +542,18 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
 		double cur_h = narrative_item_get_height(n, i);
 
 		if ( (hpos + cur_h > min_y) && (hpos < max_y) ) {
+			struct narrative_item *item = &n->items[i];
+
+			/* If this is a slide, make sure the thumbnail has been rendered */
+			if ( (item->type == NARRATIVE_ITEM_SLIDE)
+			  && (item->slide_thumbnail == NULL) )
+			{
+				item->slide_thumbnail = render_thumbnail(item->slide, stylesheet, is,
+				                                         item->obj_w, item->obj_h);
+			}
+
 			narrative_render_item_cairo(n, cr, i);
+
 		} /* else paragraph is not visible */
 
 		cairo_translate(cr, 0.0, cur_h);

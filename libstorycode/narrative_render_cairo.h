@@ -50,7 +50,7 @@ extern size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int t
 
 extern int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i);
 
-extern int narrative_render_cairo(Narrative *n, cairo_t *cr,
-                                  Stylesheet *stylesheet, double min_y, double max_y);
+extern int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet, ImageStore *is,
+                                  double min_y, double max_y);
 
 #endif	/* NARRATIVE_RENDER_CAIRO_H */

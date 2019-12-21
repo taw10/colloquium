@@ -85,6 +85,7 @@ struct _gtknarrativeview
 
 	/* Location of the cursor */
 	struct edit_pos      cpos;
+	double               cursor_h_pos;  /* Place the cursor is trying to be */
 
 	/* Rubber band boxes and related stuff */
 	enum narrative_drag_status     drag_status;

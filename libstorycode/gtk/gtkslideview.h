@@ -106,6 +106,8 @@ struct _gtkslideview
 	/* Location of the cursor */
 	SlideItem           *cursor_frame;
 	struct slide_pos     cpos;
+	double               cursor_h_pos;  /* Horizontal position the cursor would have,
+	                                     * if the current line were long enough. */
 
 	/* Border surrounding actual slide within drawingarea */
 	double               border_offs_x;

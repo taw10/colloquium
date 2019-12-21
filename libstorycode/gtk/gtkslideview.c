@@ -662,6 +662,24 @@ static void do_resize(GtkSlideView *e, double x, double y, double w, double h)
 }
 
 
+static void set_sv_cursor_h_pos(GtkSlideView *e)
+{
+	double x, y, h;
+	double slide_w, slide_h;
+	double pad_l, pad_r, pad_t, pad_b;
+	Stylesheet *stylesheet;
+
+	stylesheet = narrative_get_stylesheet(e->n);
+	slide_get_logical_size(e->slide, stylesheet, &slide_w, &slide_h);
+	slide_item_get_padding(e->cursor_frame, stylesheet, &pad_l, &pad_r, &pad_t, &pad_b,
+	                       slide_w, slide_h);
+
+	gtksv_get_cursor_pos(e->cursor_frame, stylesheet, e->cpos,
+	                     slide_w, slide_h, &x, &y, &h);
+	e->cursor_h_pos = x - pad_l;
+}
+
+
 static gboolean gtksv_button_press_sig(GtkWidget *da, GdkEventButton *event,
                                        GtkSlideView *e)
 {
@@ -720,6 +738,7 @@ static gboolean gtksv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 			e->cursor_frame = clicked;
 			gtksv_find_cursor(clicked, stylesheet, x-frx, y-fry, &e->cpos,
 			                  slide_w, slide_h);
+			set_sv_cursor_h_pos(e);
 
 			e->start_corner_x = x;
 			e->start_corner_y = y;
@@ -732,6 +751,7 @@ static gboolean gtksv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 				e->drag_reason = DRAG_REASON_TEXTSEL;
 				gtksv_find_cursor(clicked, stylesheet, x-frx, y-fry,
 				                  &e->sel_start, slide_w, slide_h);
+				set_sv_cursor_h_pos(e);
 				e->sel_end = e->sel_start;
 			}
 
@@ -767,6 +787,7 @@ static gboolean gtksv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 		e->cursor_frame = clicked;
 		gtksv_find_cursor(clicked, stylesheet, x-frx, y-fry, &e->cpos,
 		                  slide_w, slide_h);
+		set_sv_cursor_h_pos(e);
 
 	}
 
@@ -838,6 +859,7 @@ static gboolean gtksv_motion_sig(GtkWidget *da, GdkEventMotion *event, GtkSlideV
 		gtksv_find_cursor(e->cursor_frame, stylesheet, x-frx, y-fry,
 		                  &e->sel_end, slide_w, slide_h);
 		e->cpos = e->sel_end;
+		set_sv_cursor_h_pos(e);
 		gtksv_redraw(e);
 		break;
 
@@ -981,6 +1003,56 @@ static size_t gtksv_end_offset_of_para(SlideItem *item, int pnum)
 		offs += strlen(para->runs[i].text);
 	}
 	return offs;
+}
+
+
+static void gtksv_cursor_movev(GtkSlideView *e, signed int dir)
+{
+	int lineno;
+	PangoLayout *layout;
+	PangoLayoutLine *line;
+
+	assert(dir != 0);
+	if ( !is_text(e->cursor_frame->type) ) return;
+	if ( e->cursor_frame->paras[e->cpos.para].layout == NULL ) return;
+	gtksv_unset_selection(e);
+
+	layout = e->cursor_frame->paras[e->cpos.para].layout;
+	pango_layout_index_to_line_x(layout, e->cpos.pos, e->cpos.trail,
+	                             &lineno, NULL);
+
+	if ( dir > 0 ) {
+		if ( lineno == pango_layout_get_line_count(layout)-1 ) {
+			/* Move to next paragraph */
+			if ( e->cpos.para == e->cursor_frame->n_paras-1 ) {
+				/* No next paragraph to move to */
+			} else {
+				e->cpos.para++;
+				layout = e->cursor_frame->paras[e->cpos.para].layout;
+				lineno = 0;
+			}
+		} else {
+			lineno++;
+		}
+	} else {
+		if ( lineno == 0 ) {
+			/* Move to previous paragraph */
+			if ( e->cpos.para == 0 ) {
+				/* No previous paragraph to move to */
+			} else {
+				e->cpos.para--;
+				layout = e->cursor_frame->paras[e->cpos.para].layout;
+				lineno = pango_layout_get_line_count(layout)-1;
+			}
+		} else {
+			lineno--;
+		}
+	}
+
+	/* Now, use the "virtual" x-position to place the cursor in this line */
+	line = pango_layout_get_line_readonly(layout, lineno);
+	pango_layout_line_x_to_index(line, pango_units_from_double(e->cursor_h_pos),
+	                             &e->cpos.pos, &e->cpos.trail);
 }
 
 
@@ -1175,24 +1247,26 @@ static gboolean gtksv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Left :
 		gtksv_cursor_moveh(e, &e->cpos, -1);
+		set_sv_cursor_h_pos(e);
 		gtksv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Right :
 		gtksv_cursor_moveh(e, &e->cpos, +1);
+		set_sv_cursor_h_pos(e);
 		gtksv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Up :
-		gtksv_cursor_moveh(e, &e->cpos, -1);
+		gtksv_cursor_movev(e, -1);
 		gtksv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Down :
-		gtksv_cursor_moveh(e, &e->cpos, +1);
+		gtksv_cursor_movev(e, +1);
 		gtksv_redraw(e);
 		claim = 1;
 		break;

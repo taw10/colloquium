@@ -673,6 +673,14 @@ static void sort_positions(struct edit_pos *a, struct edit_pos *b)
 }
 
 
+static void set_cursor_h_pos(GtkNarrativeView *e)
+{
+	double x, y, h;
+	gtknv_get_cursor_pos(e->n, e->cpos, &x, &y, &h);
+	e->cursor_h_pos = x;  /* Real position, not relative to PangoLayout */
+}
+
+
 static void gtknv_cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir)
 {
 	struct narrative_item *item = &n->items[cp->para];
@@ -777,6 +785,7 @@ static void gtknv_do_backspace(GtkNarrativeView *e, signed int dir)
 		p2 = e->cpos;
 		p1 = p2;
 		gtknv_cursor_moveh(e->n, &p1, dir);
+		set_cursor_h_pos(e);
 	}
 
 	sort_positions(&p1, &p2);
@@ -838,6 +847,7 @@ static void gtknv_insert_text(char *t, GtkNarrativeView *e)
 			gtknv_insert_text_in_paragraph(&e->n->items[e->cpos.para], off, t);
 			rewrap_range(e, e->cpos.para, e->cpos.para);
 			gtknv_cursor_moveh(e->n, &e->cpos, +1);
+			set_cursor_h_pos(e);
 		}
 
 		update_size(e);
@@ -886,6 +896,89 @@ static int gtknv_find_cursor(Narrative *n, double x, double y, struct edit_pos *
 }
 
 
+static void gtknv_cursor_movev(GtkNarrativeView *e, signed int dir)
+{
+	int lineno;
+
+	assert(dir != 0);
+
+	gtknv_unset_selection(e);
+
+	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
+
+		/* Starting in text */
+		PangoLayout *layout = e->n->items[e->cpos.para].layout;
+
+		if ( layout == NULL ) return;
+		pango_layout_index_to_line_x(layout, e->cpos.pos, e->cpos.trail,
+		                             &lineno, NULL);
+		if ( dir > 0 ) {
+			if ( lineno == pango_layout_get_line_count(layout)-1 ) {
+				/* Move to next item */
+				if ( e->cpos.para == e->n->n_items-1 ) {
+					/* No next paragraph to move to */
+				} else {
+					e->cpos.para++;
+					lineno = 0;
+				}
+			} else {
+				lineno++;
+			}
+		} else {
+			if ( lineno == 0 ) {
+				/* Move to previous paragraph */
+				if ( e->cpos.para == 0 ) {
+					/* No previous paragraph to move to */
+				} else {
+					e->cpos.para--;
+					if ( narrative_item_is_text(e->n, e->cpos.para) ) {
+						layout = e->n->items[e->cpos.para].layout;
+						lineno = pango_layout_get_line_count(layout)-1;
+					}
+				}
+			} else {
+				lineno--;
+			}
+		}
+
+	} else {
+
+		/* Starting in non-text */
+		if ( dir > 0 ) {
+			/* Move to next item */
+			if ( e->cpos.para == e->n->n_items-1 ) {
+				/* No next paragraph to move to */
+			} else  {
+				e->cpos.para++;
+				lineno = 0;
+			}
+		} else {
+			/* Move to previous paragraph */
+			if ( e->cpos.para == 0 ) {
+				/* No previous paragraph to move to */
+			} else {
+				e->cpos.para--;
+				if ( narrative_item_is_text(e->n, e->cpos.para) ) {
+					PangoLayout *layout = e->n->items[e->cpos.para].layout;
+					lineno = pango_layout_get_line_count(layout)-1;
+				}
+			}
+		}
+	}
+
+	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
+		/* Use the "virtual" x-position to place the cursor in this line */
+		PangoLayoutLine *line;
+		double x;
+		line = pango_layout_get_line_readonly(e->n->items[e->cpos.para].layout, lineno);
+		/* Subtract offset to PangoLayout */
+		x = e->cursor_h_pos - e->n->items[e->cpos.para].space_l;
+		pango_layout_line_x_to_index(line, pango_units_from_double(x),
+		                             &e->cpos.pos, &e->cpos.trail);
+	} /* else do nothing */
+}
+
+
 static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
                                        GtkNarrativeView *e)
 {
@@ -900,6 +993,7 @@ static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 	gtknv_find_cursor(e->n, x, y, &e->sel_start);
 	e->sel_end = e->sel_start;
 	e->cpos = e->sel_start;
+	set_cursor_h_pos(e);
 
 	if ( event->type == GDK_2BUTTON_PRESS ) {
 		struct narrative_item *item = &e->n->items[e->cpos.para];
@@ -977,6 +1071,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_Left :
 		gtknv_cursor_moveh(e->n, &e->cpos, -1);
 		check_cursor_visible(e);
+		set_cursor_h_pos(e);
 		gtknv_redraw(e);
 		claim = 1;
 		break;
@@ -984,19 +1079,20 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_Right :
 		gtknv_cursor_moveh(e->n, &e->cpos, +1);
 		check_cursor_visible(e);
+		set_cursor_h_pos(e);
 		gtknv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Up :
-		gtknv_cursor_moveh(e->n, &e->cpos, -1);
+		gtknv_cursor_movev(e, -1);
 		check_cursor_visible(e);
 		gtknv_redraw(e);
 		claim = 1;
 		break;
 
 		case GDK_KEY_Down :
-		gtknv_cursor_moveh(e->n, &e->cpos, +1);
+		gtknv_cursor_movev(e, +1);
 		check_cursor_visible(e);
 		gtknv_redraw(e);
 		claim = 1;

@@ -409,15 +409,18 @@ void sc_editor_paste(GtkNarrativeView *e)
 static void clipboard_get(GtkClipboard *cb, GtkSelectionData *seldata,
                           guint info, gpointer data)
 {
-	char *t = data;
+	char **clipboard_data = data;
 
 	printf("clipboard get\n");
 
 	if ( info == 0 ) {
-		printf("sending SC frame\n");
-		gtk_selection_data_set(seldata,
-		                       gtk_selection_data_get_target(seldata),
-		                       8, (const guchar *)t, strlen(t)+1);
+		printf("sending text\n");
+		gtk_selection_data_set_text(seldata, clipboard_data[0], -1);
+
+	} else if ( info == 1 ) {
+		printf("sending SC\n");
+		gtk_selection_data_set_text(seldata, clipboard_data[1], -1);
+
 	} else {
 		GdkAtom target;
 		gchar *name;
@@ -431,35 +434,52 @@ static void clipboard_get(GtkClipboard *cb, GtkSelectionData *seldata,
 
 static void clipboard_clear(GtkClipboard *cb, gpointer data)
 {
-	free(data);
+	char **clipboard_data = data;
+	printf("freeing clipboard data\n");
+	free(clipboard_data[0]);
+	free(clipboard_data[1]);
+	free(clipboard_data);
 }
 
 
 static void copy_selection(GtkNarrativeView *e)
 {
-//	char *t;
-//	GtkClipboard *cb;
-//	GdkAtom atom;
-//	GtkTargetEntry targets[1];
-//
-//	atom = gdk_atom_intern("CLIPBOARD", FALSE);
-//	if ( atom == GDK_NONE ) return;
-//
-//	cb = gtk_clipboard_get(atom);
-//
-//	targets[0].target = "text/x-storycode";
-//	targets[0].flags = 0;
-//	targets[0].info = 0;
-//
-//	printf("copying selection\n");
-//
-//	bl = block_at_cursor(e->cursor_frame, e->cpos.para, 0);
-//	if ( bl == NULL ) return;
-//
-//	t = serialise_sc_block(bl);
-//
-//	gtk_clipboard_set_with_data(cb, targets, 1,
-//	                            clipboard_get, clipboard_clear, t);
+	GtkClipboard *cb;
+	GtkTargetEntry targets[2];
+	char **clipboard_data;
+	size_t start_offs, end_offs;
+
+	clipboard_data = malloc(2*sizeof(char *));
+	if ( clipboard_data == NULL ) return;
+
+	cb = gtk_clipboard_get_default(gtk_widget_get_display(GTK_WIDGET(e)));
+
+	start_offs = narrative_pos_trail_to_offset(e->n, e->sel_start.para,
+	                                           e->sel_start.pos, e->sel_start.trail);
+	end_offs = narrative_pos_trail_to_offset(e->n, e->sel_end.para,
+	                                         e->sel_end.pos, e->sel_end.trail);
+
+	targets[0].target = "text/plain";
+	targets[0].flags = 0;
+	targets[0].info = 0;
+	clipboard_data[0] = narrative_range_as_text(e->n, e->sel_start.para, start_offs,
+	                                                  e->sel_end.para, end_offs);
+
+	targets[1].target = "text/x-storycode";
+	targets[1].flags = 0;
+	targets[1].info = 1;
+	clipboard_data[1] = narrative_range_as_storycode(e->n, e->sel_start.para, start_offs,
+	                                                       e->sel_end.para, end_offs);
+
+	/* Data is prepared for all the possible MIME types right now, not later
+	 * when the data is represented.  This avoids having to convert
+	 * everything to a new, intermediate format, or saving a copy of the
+	 * entire GtkNarrativeView's state (which might change before the data
+	 * gets requested.
+	 * Perhaps I missed something and there is an easier way.
+	 */
+	gtk_clipboard_set_with_data(cb, targets, 2, clipboard_get, clipboard_clear,
+	                            clipboard_data);
 }
 
 
@@ -1117,6 +1137,14 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_c :
 		if ( event->state == GDK_CONTROL_MASK ) {
 			copy_selection(e);
+		}
+		break;
+
+		case GDK_KEY_X :
+		case GDK_KEY_x :
+		if ( event->state == GDK_CONTROL_MASK ) {
+			copy_selection(e);
+			gtknv_do_backspace(e, 0);
 		}
 		break;
 

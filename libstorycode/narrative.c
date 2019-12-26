@@ -589,6 +589,92 @@ Slide *narrative_get_slide_by_number(Narrative *n, int pos)
 }
 
 
+/* Return the text between item p1/offset o1 and p2/o2 */
+char *narrative_range_as_storycode(Narrative *n, int p1, size_t o1, int p2, size_t o2)
+{
+	return strdup(": Text");
+}
+
+
+/* Return the text between item p1/offset o1 and p2/o2 */
+char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2)
+{
+	int i;
+	char *t;
+	int r1, r2;
+	size_t r1offs, r2offs;
+	size_t len = 0;
+	size_t size = 256;
+
+	t = malloc(size);
+	if ( t == NULL ) return NULL;
+	t[0] = '\0';
+
+	r1 = narrative_which_run(&n->items[p1], o1, &r1offs);
+	r2 = narrative_which_run(&n->items[p2], o2, &r2offs);
+
+	for ( i=p1; i<=p2; i++ ) {
+
+		int r;
+
+		/* Skip non-text runs straight away */
+		if ( !narrative_item_is_text(n, i) ) continue;
+
+		for ( r=0; r<n->items[i].n_runs; r++ ) {
+
+			size_t run_text_len, len_to_add, start_run_offs;
+
+			/* Is this run within the range? */
+			if ( (i==p1) && (r<r1) ) continue;
+			if ( (i==p2) && (r>r2) ) continue;
+
+			run_text_len = strlen(n->items[i].runs[r].text);
+
+			if ( (p1==p2) && (r1==r2) && (r==r1) ) {
+				start_run_offs = r1offs;
+				len_to_add = r2offs - r1offs;
+			} else if ( (i==p1) && (r==r1) ) {
+				start_run_offs = r1offs;
+				len_to_add = run_text_len - r1offs;
+			} else if ( (i==p2) && (r==r2) ) {
+				start_run_offs = 0;
+				len_to_add = r2offs;
+			} else {
+				start_run_offs = 0;
+				len_to_add = run_text_len;
+			}
+
+			if ( len_to_add == 0 ) continue;
+
+			/* Ensure space */
+			if ( len + len_to_add + 2 > size ) {
+				char *nt;
+				size += 256 + len_to_add;
+				nt = realloc(t, size);
+				if ( nt == NULL ) {
+					fprintf(stderr, "Failed to allocate\n");
+					return NULL;
+				}
+				t = nt;
+			}
+
+			memcpy(&t[len], n->items[i].runs[r].text+start_run_offs,
+			       len_to_add);
+			len += len_to_add;
+			t[len] = '\0';
+		}
+
+		if ( i < p2 ) {
+			t[len++] = '\n';
+			t[len] = '\0';
+		}
+
+	}
+
+	return t;
+}
+
+
 static void debug_runs(struct narrative_item *item)
 {
 	int j;
@@ -596,6 +682,7 @@ static void debug_runs(struct narrative_item *item)
 		printf("Run %i: '%s'\n", j, item->runs[j].text);
 	}
 }
+
 
 void narrative_debug(Narrative *n)
 {

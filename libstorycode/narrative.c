@@ -592,7 +592,49 @@ Slide *narrative_get_slide_by_number(Narrative *n, int pos)
 /* Return the text between item p1/offset o1 and p2/o2 */
 char *narrative_range_as_storycode(Narrative *n, int p1, size_t o1, int p2, size_t o2)
 {
-	return strdup(": Text");
+	GOutputStream *fh;
+	char *text;
+	int i;
+
+	fh = g_memory_output_stream_new_resizable();
+	if ( fh == NULL ) return NULL;
+
+	for ( i=p1; i<=p2; i++ ) {
+
+		if ( ((i>p1) && (i<p2)) || !narrative_item_is_text(n, i) ) {
+
+			narrative_write_item(n, i, fh);
+
+		} else {
+
+			size_t start_offs, end_offs;
+			GError *error = NULL;
+
+			if ( i==p1 ) {
+				start_offs = o1;
+			} else {
+				start_offs = 0;
+			}
+
+			if ( i==p2 ) {
+				end_offs = o2;
+			} else {
+				end_offs = -1;
+			}
+
+			narrative_write_partial_item(n, i, start_offs, end_offs, fh);
+			if ( i < p2 ) g_output_stream_write(fh, "\n", 1, NULL, &error);
+
+		}
+
+	}
+
+	g_output_stream_close(fh, NULL, NULL);
+	text = g_memory_output_stream_steal_data(G_MEMORY_OUTPUT_STREAM(fh));
+	g_object_unref(fh);
+
+	printf("SC '%s'\n", text);
+	return text;
 }
 
 

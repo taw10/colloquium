@@ -115,17 +115,15 @@ static void write_run_border(GOutputStream *fh, enum text_run_type t)
 }
 
 
-static char *escape_text(const char *in)
+static char *escape_text(const char *in, size_t len)
 {
 	int i, j;
-	size_t len;
 	size_t nl = 0;
 	size_t np = 0;
 	const char *esc = "*/_";
 	size_t n_esc = 3;
 	char *out;
 
-	len = strlen(in);
 	for ( i=0; i<len; i++ ) {
 		for ( j=0; j<n_esc; j++ ) {
 			if ( in[i] == esc[j] ) {
@@ -139,7 +137,7 @@ static char *escape_text(const char *in)
 	if ( out == NULL ) return NULL;
 
 	np = 0;
-	for ( i=0; i<=len; i++ ) {
+	for ( i=0; i<len; i++ ) {
 		for ( j=0; j<n_esc; j++ ) {
 			if ( in[i] == esc[j] ) {
 				out[np++] = '\\';
@@ -148,8 +146,20 @@ static char *escape_text(const char *in)
 		}
 		out[np++] = in[i];
 	}
+	out[np] = '\0';
 
 	return out;
+}
+
+
+static void write_partial_run(GOutputStream *fh, struct text_run *run, size_t start, size_t len)
+{
+	char *escaped_str;
+	write_run_border(fh, run->type);
+	escaped_str = escape_text(run->text+start, len);
+	write_string(fh, escaped_str);
+	free(escaped_str);
+	write_run_border(fh, run->type);
 }
 
 
@@ -157,12 +167,7 @@ static void write_para(GOutputStream *fh, struct text_run *runs, int n_runs)
 {
 	int i;
 	for ( i=0; i<n_runs; i++ ) {
-		char *escaped_str;
-		write_run_border(fh, runs[i].type);
-		escaped_str = escape_text(runs[i].text);
-		write_string(fh, escaped_str);
-		free(escaped_str);
-		write_run_border(fh, runs[i].type);
+		write_partial_run(fh, &runs[i], 0, strlen(runs[i].text));
 	}
 }
 
@@ -252,43 +257,115 @@ static int write_slide(GOutputStream *fh, Slide *s)
 }
 
 
-static int write_item(GOutputStream *fh, struct narrative_item *item)
+static int write_starter(GOutputStream *fh, struct narrative_item *item)
 {
 	switch ( item->type ) {
 
 		case NARRATIVE_ITEM_TEXT:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, ": ") ) return 1;
-		write_para(fh, item->runs, item->n_runs);
-		if ( write_string(fh, "\n") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_PRESTITLE:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, "PRESTITLE: ") ) return 1;
-		write_para(fh, item->runs, item->n_runs);
-		if ( write_string(fh, "\n") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_BP:
 		/* FIXME: separate alignment */
 		if ( write_string(fh, "BP: ") ) return 1;
-		write_para(fh, item->runs, item->n_runs);
-		if ( write_string(fh, "\n") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_SLIDE:
 		/* FIXME: separate slide size */
-		if ( write_string(fh, "SLIDE {\n") ) return 1;
-		if ( write_slide(fh, item->slide) ) return 1;
-		if ( write_string(fh, "}\n") ) return 1;
+		if ( write_string(fh, "SLIDE ") ) return 1;
 		break;
 
 		case NARRATIVE_ITEM_EOP:
-		if ( write_string(fh, "ENDOFPRESENTATION\n") ) return 1;
+		if ( write_string(fh, "ENDOFPRESENTATION") ) return 1;
 		break;
 
 	}
+	return 0;
+}
+
+
+static int write_item(GOutputStream *fh, struct narrative_item *item)
+{
+	if ( write_starter(fh, item) ) return 1;
+	switch ( item->type ) {
+
+		case NARRATIVE_ITEM_TEXT:
+		write_para(fh, item->runs, item->n_runs);
+		break;
+
+		case NARRATIVE_ITEM_PRESTITLE:
+		write_para(fh, item->runs, item->n_runs);
+		break;
+
+		case NARRATIVE_ITEM_BP:
+		write_para(fh, item->runs, item->n_runs);
+		break;
+
+		case NARRATIVE_ITEM_SLIDE:
+		if ( write_string(fh, "{\n") ) return 1;
+		if ( write_slide(fh, item->slide) ) return 1;
+		if ( write_string(fh, "}") ) return 1;
+		break;
+
+		case NARRATIVE_ITEM_EOP:
+		break;
+
+	}
+	return 0;
+}
+
+
+int narrative_write_item(Narrative *n, int item, GOutputStream *fh)
+{
+	return write_item(fh, &n->items[item]);
+}
+
+
+int narrative_write_partial_item(Narrative *n, int inum, size_t start, ssize_t end,
+                                 GOutputStream *fh)
+{
+	struct narrative_item *item;
+	int r1, r2;
+	size_t r1offs, r2offs;
+	size_t r1len, r2len;
+	int r;
+
+	if ( !narrative_item_is_text(n, inum) ) return narrative_write_item(n, inum, fh);
+
+	item = &n->items[inum];
+	r1 = narrative_which_run(item, start, &r1offs);
+
+	if ( end >= 0 ) {
+		r2 = narrative_which_run(item, end, &r2offs);
+	} else {
+		r2 = item->n_runs - 1;
+	}
+
+	r1len = strlen(item->runs[r1].text);
+	r2len = strlen(item->runs[r2].text);
+
+	if ( end < 0 ) r2offs = r2len;
+
+	if ( write_starter(fh, item) ) return 1;
+
+	for ( r=r1; r<=r2; r++ ) {
+		if ( (r1==r2) && (r==r1) ) {
+			write_partial_run(fh, &item->runs[r], r1offs, r2offs - r1offs);
+		} else if ( r == r1 ) {
+			write_partial_run(fh, &item->runs[r], r1offs, r1len - r1offs);
+		} else if ( r == r2 ) {
+			write_partial_run(fh, &item->runs[r], 0, r2offs);
+		} else {
+			write_partial_run(fh, &item->runs[r], 0, strlen(item->runs[r].text));
+		}
+	}
+
 	return 0;
 }
 
@@ -307,6 +384,7 @@ int storycode_write_presentation(Narrative *n, GOutputStream *fh)
 
 	for ( i=0; i<n->n_items; i++ ) {
 		if ( write_item(fh, &n->items[i]) ) return 1;
+		if ( write_string(fh, "\n") ) return 1;
 	}
 
 	return 0;

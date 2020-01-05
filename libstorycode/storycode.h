@@ -50,6 +50,8 @@ extern char unitc(enum length_unit unit);
 
 extern Narrative *storycode_parse_presentation(const char *sc);
 extern int storycode_write_presentation(Narrative *n, GOutputStream *fh);
-
+extern int narrative_write_item(Narrative *n, int item, GOutputStream *fh);
+extern int narrative_write_partial_item(Narrative *n, int inum, size_t start, ssize_t end,
+                                        GOutputStream *fh);
 
 #endif /* STORYCODE_H */

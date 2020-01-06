@@ -207,7 +207,7 @@ static int positions_equal(struct edit_pos a, struct edit_pos b)
 }
 
 
-static void sort_positions(struct edit_pos *a, struct edit_pos *b)
+void narrative_sort_positions(struct edit_pos *a, struct edit_pos *b)
 {
 	if ( a->para > b->para ) {
 		size_t tpos;
@@ -256,7 +256,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 	n->w = w;
 	w -= n->space_l + n->space_r;
 
-	sort_positions(&sel_start, &sel_end);
+	narrative_sort_positions(&sel_start, &sel_end);
 	if ( min < 0 ) min = 0;
 	if ( max >= n->n_items ) max = n->n_items-1;
 

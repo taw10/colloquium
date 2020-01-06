@@ -633,7 +633,6 @@ char *narrative_range_as_storycode(Narrative *n, int p1, size_t o1, int p2, size
 	text = g_memory_output_stream_steal_data(G_MEMORY_OUTPUT_STREAM(fh));
 	g_object_unref(fh);
 
-	printf("SC '%s'\n", text);
 	return text;
 }
 

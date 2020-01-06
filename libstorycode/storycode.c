@@ -47,8 +47,9 @@ Narrative *storycode_parse_presentation(const char *sc)
 	YY_BUFFER_STATE b;
 	Narrative *n;
 
+	//BEGIN(0);
 	b = sc_scan_string(sc);
-	//scdebug = 1;
+	scdebug = 1;
 	n = narrative_new();
 	scparse(n);
 	sc_delete_buffer(b);

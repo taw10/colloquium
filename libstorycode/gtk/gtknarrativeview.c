@@ -1116,14 +1116,14 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_C :
 		case GDK_KEY_c :
-		if ( event->state == GDK_CONTROL_MASK ) {
+		if ( event->state & GDK_CONTROL_MASK ) {
 			copy_selection(e);
 		}
 		break;
 
 		case GDK_KEY_X :
 		case GDK_KEY_x :
-		if ( event->state == GDK_CONTROL_MASK ) {
+		if ( event->state & GDK_CONTROL_MASK ) {
 			copy_selection(e);
 			gtknv_do_backspace(e, 0);
 		}
@@ -1131,11 +1131,10 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_V :
 		case GDK_KEY_v :
-		if ( event->state == GDK_CONTROL_MASK ) {
-			sc_editor_paste(e);
+		if ( event->state & GDK_CONTROL_MASK ) {
+			gtknv_do_paste(e);
 		}
 		break;
-
 
 	}
 

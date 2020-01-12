@@ -168,6 +168,7 @@ static struct style *lookup_style(struct style *sty, const char *path)
 	const char *nxt = path;
 
 	assert(sty != NULL);
+	if ( path == NULL ) return NULL;
 	if ( path[0] == '\0' ) return sty;
 
 	for ( i=0; i<sty->n_substyles; i++ ) {

@@ -400,7 +400,8 @@ static void draw_slide(struct narrative_item *item, cairo_t *cr)
 }
 
 
-static void draw_marker(struct narrative_item *item, cairo_t *cr)
+static void draw_marker(struct narrative_item *item, cairo_t *cr,
+                        double r, double g, double b, char *text)
 {
 	double x, y;
 	PangoLayout *layout;
@@ -421,11 +422,11 @@ static void draw_marker(struct narrative_item *item, cairo_t *cr)
 	}
 
 	cairo_rectangle(cr, x, y, item->obj_w, item->obj_h);
-	cairo_set_source_rgb(cr, 0.8, 0.0, 0.0);
+	cairo_set_source_rgb(cr, r, g, b);
 	cairo_fill(cr);
 
 	layout = pango_cairo_create_layout(cr);
-	pango_layout_set_text(layout, _("End of presentation"), -1);
+	pango_layout_set_text(layout, text, -1);
 
 	fontdesc = pango_font_description_new();
 	pango_font_description_set_family_static(fontdesc, "Sans");
@@ -482,7 +483,8 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 		break;
 
 		case NARRATIVE_ITEM_EOP :
-		draw_marker(&n->items[i], cr);
+		draw_marker(&n->items[i], cr, 0.8, 0.0, 0.0,
+		            _("End of presentation"));
 		break;
 
 	}

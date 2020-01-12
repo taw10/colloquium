@@ -313,6 +313,10 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			stn = "NARRATIVE.SLIDE";
 			break;
 
+			case NARRATIVE_ITEM_SEGSTART :
+			stn = "NARRATIVE.SEGSTART";
+			break;
+
 			case NARRATIVE_ITEM_EOP :
 			stn = "NARRATIVE.EOP";
 			break;
@@ -334,6 +338,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			case NARRATIVE_ITEM_TEXT :
 			case NARRATIVE_ITEM_BP :
 			case NARRATIVE_ITEM_PRESTITLE :
+			case NARRATIVE_ITEM_SEGSTART :
 			wrap_text(&n->items[i], pc, stylesheet,
 			          stn, w, srt, end);
 			break;
@@ -343,6 +348,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			break;
 
 			case NARRATIVE_ITEM_EOP :
+			case NARRATIVE_ITEM_SEGEND :
 			wrap_marker(&n->items[i], pc, w, sel_block);
 			break;
 		}
@@ -471,6 +477,7 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 
 		case NARRATIVE_ITEM_TEXT :
 		case NARRATIVE_ITEM_PRESTITLE :
+		case NARRATIVE_ITEM_SEGSTART :
 		draw_text(&n->items[i], cr);
 		break;
 
@@ -485,6 +492,11 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 		case NARRATIVE_ITEM_EOP :
 		draw_marker(&n->items[i], cr, 0.8, 0.0, 0.0,
 		            _("End of presentation"));
+		break;
+
+		case NARRATIVE_ITEM_SEGEND :
+		draw_marker(&n->items[i], cr, 0.3, 0.3, 0.3,
+		            _("Segment end"));
 		break;
 
 	}

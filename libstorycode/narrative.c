@@ -186,8 +186,15 @@ int narrative_get_unsaved(Narrative *n)
 
 int narrative_item_is_text(Narrative *n, int item)
 {
-	if ( n->items[item].type == NARRATIVE_ITEM_SLIDE ) return 0;
-	if ( n->items[item].type == NARRATIVE_ITEM_EOP ) return 0;
+	switch ( n->items[item].type ) {
+		case NARRATIVE_ITEM_SLIDE : return 0;
+		case NARRATIVE_ITEM_EOP : return 0;
+		case NARRATIVE_ITEM_TEXT : return 1;
+		case NARRATIVE_ITEM_BP : return 1;
+		case NARRATIVE_ITEM_PRESTITLE : return 1;
+		case NARRATIVE_ITEM_SEGSTART : return 1;
+		case NARRATIVE_ITEM_SEGEND : return 0;
+	}
 	return 1;
 }
 
@@ -289,6 +296,20 @@ void narrative_add_prestitle(Narrative *n, struct text_run *runs, int n_runs)
 void narrative_add_bp(Narrative *n, struct text_run *runs, int n_runs)
 {
 	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_BP);
+}
+
+
+void narrative_add_segstart(Narrative *n, struct text_run *runs, int n_runs)
+{
+	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_SEGSTART);
+}
+
+
+void narrative_add_segend(Narrative *n)
+{
+	struct narrative_item * item = add_item(n);
+	if ( item == NULL ) return;
+	item->type = NARRATIVE_ITEM_SEGEND;
 }
 
 
@@ -752,6 +773,15 @@ void narrative_debug(Narrative *n)
 
 			case NARRATIVE_ITEM_EOP :
 			printf("(EOP marker)\n");
+			break;
+
+			case NARRATIVE_ITEM_SEGSTART :
+			printf("(start of segment):\n");
+			debug_runs(item);
+			break;
+
+			case NARRATIVE_ITEM_SEGEND :
+			printf("(end of segment)\n");
 			break;
 
 			case NARRATIVE_ITEM_SLIDE :

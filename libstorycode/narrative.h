@@ -56,8 +56,9 @@ extern int narrative_item_is_text(Narrative *n, int item);
 extern void narrative_add_text(Narrative *n, struct text_run *runs, int n_runs);
 
 extern void narrative_add_bp(Narrative *n, struct text_run *runs, int n_runs);
-
+extern void narrative_add_segstart(Narrative *n, struct text_run *runs, int n_runs);
 extern void narrative_add_prestitle(Narrative *n, struct text_run *runs, int n_runs);
+extern void narrative_add_segend(Narrative *n);
 
 extern void narrative_add_slide(Narrative *n, Slide *slide);
 extern void narrative_add_eop(Narrative *n);

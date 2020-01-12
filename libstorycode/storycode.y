@@ -126,6 +126,7 @@
 %token IMAGEFRAME
 %token FILENAME
 %token BP
+%token SEG_START SEG_END
 %token FONT GEOMETRY PAD ALIGN FGCOL BGCOL PARASPACE
 %token VERT HORIZ
 %token LEFT CENTER RIGHT
@@ -324,6 +325,8 @@ narrative:
 narrative_el:
   PRESTITLE TEXT_START text_line  { narrative_add_prestitle(n, $3.runs, $3.n_runs); }
 | BP TEXT_START text_line         { narrative_add_bp(n, $3.runs, $3.n_runs); }
+| SEG_START TEXT_START text_line  { narrative_add_segstart(n, $3.runs, $3.n_runs); }
+| SEG_END                         { narrative_add_segend(n); }
 | TEXT_START text_line            { narrative_add_text(n, $2.runs, $2.n_runs); }
 | slide                           { narrative_add_slide(n, $1); }
 | EOP                             { narrative_add_eop(n); }

@@ -69,12 +69,14 @@ SLIDE {
                                    : Change their shape and size by shift-dragging the handles at the corners.
 }
 : You can add a new slide from the "Insert" menu or using the toolbar at the top of the narrative window.  Try it now: click to place the cursor at the end of this paragraph, then add a new slide.
+SEGMENT_START: The narrative window
 : What is the narrative window for?  Well, it's up to you!  Here are some suggestions:
 BP: Use it just to help plan a smooth flow for your talk, reading it through to spot awkward transitions.
 BP: Write your talk word for word.  Deliver your talk precisely as you planned it, no matter how nervous you get.
 BP: Write bullet-pointed notes to structure your talk.
 BP: Create a written version of your talk to print out and give to your audience as a handout.
 BP: Use it as a journal, adding slides whenever you have an illustration.  You'll have a ready-made presentation on your activity, with no extra effort!
+SEGMENT_END
 : Besides this, Colloquium has some features which will help you when you come to give your presentation.  In the "Tools" menu, you'll find the presentation clock and the test card.
 : Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
 : Now, a short warning:

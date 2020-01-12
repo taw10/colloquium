@@ -287,6 +287,15 @@ static int write_starter(GOutputStream *fh, struct narrative_item *item)
 		if ( write_string(fh, "ENDOFPRESENTATION") ) return 1;
 		break;
 
+		case NARRATIVE_ITEM_SEGSTART:
+		if ( write_string(fh, "SEGMENT_START: ") ) return 1;
+		break;
+
+		case NARRATIVE_ITEM_SEGEND:
+		if ( write_string(fh, "SEGMENT_END") ) return 1;
+		break;
+
+
 	}
 	return 0;
 }
@@ -316,6 +325,13 @@ static int write_item(GOutputStream *fh, struct narrative_item *item)
 		break;
 
 		case NARRATIVE_ITEM_EOP:
+		break;
+
+		case NARRATIVE_ITEM_SEGSTART:
+		write_para(fh, item->runs, item->n_runs);
+		break;
+
+		case NARRATIVE_ITEM_SEGEND:
 		break;
 
 	}

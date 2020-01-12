@@ -59,6 +59,8 @@ SLIDETITLE        { return SC_SLIDETITLE; }
 NARRATIVE         { return SC_NARRATIVE; }
 SLIDE             { return SC_SLIDE; }
 ENDOFPRESENTATION { return SC_EOP; }
+SEGMENT_START     { return SC_SEG_START; }
+SEGMENT_END       { return SC_SEG_END; }
 BP                { return SC_BP; }
 GEOMETRY          { BEGIN(cond_geom); return SC_GEOMETRY; }
 TEXT              { return SC_TEXTFRAME; }

@@ -33,8 +33,10 @@
   int sqb_caller = 0;
 %}
 
-%option prefix="sc"
-%option noyywrap nounput noinput
+%option noyywrap nounput noinput never-interactive nounistd
+%option reentrant
+%option bison-bridge bison-locations
+
 %s cond_geom
 %s cond_font
 %s cond_filename
@@ -75,27 +77,27 @@ BGCOL             { BEGIN(cond_col); return SC_BGCOL; }
 <cond_align,cond_sqb>(?i:center) { return SC_CENTER; }
 <cond_align,cond_sqb>(?i:right)  { return SC_RIGHT; }
 
-<cond_font>.*\n        { sclval.str = strdup(yytext);
-                    sclval.str[yyleng-1] = '\0';
+<cond_font>.*\n   { yylval->str = strdup(yytext);
+                    yylval->str[yyleng-1] = '\0';
                     BEGIN(0);
                     lineno++;
                     return SC_FONTNAME; }
 
 <INITIAL>IMAGE    { BEGIN(cond_image); return SC_IMAGEFRAME; }
 <cond_image>:[ ]       { BEGIN(cond_image_filename); return SC_TEXT_START; }
-<cond_image_filename>[^\n]*  { sclval.str = strdup(yytext);
+<cond_image_filename>[^\n]*  { yylval->str = strdup(yytext);
                           lineno++;
                           return SC_FILENAME; }
 
 <INITIAL>:        { BEGIN(cond_prerun); return SC_TEXT_START; }
 <cond_prerun>[ ]       { BEGIN(cond_runtext); }
 <cond_runtext>[\\]     { BEGIN(cond_stringesc); }
-<cond_stringesc>.      { sclval.str = strdup(yytext); BEGIN(cond_runtext);  return SC_RUN_TEXT; }
+<cond_stringesc>.      { yylval->str = strdup(yytext); BEGIN(cond_runtext);  return SC_RUN_TEXT; }
 <cond_runtext>[\*]     { return '*'; }
 <cond_runtext>[/]      { return '/'; }
 <cond_runtext>[_]      { return '_'; }
-<cond_runtext>[^\\\*/_\n]* { sclval.str = strdup(yytext);
-                        sclval.str[yyleng] = '\0';
+<cond_runtext>[^\\\*/_\n]* { yylval->str = strdup(yytext);
+                        yylval->str[yyleng] = '\0';
                         return SC_RUN_TEXT; }
 <cond_runtext>\n       { BEGIN(0); lineno++; }
 <cond_prerun>\n        { BEGIN(0); lineno++; }
@@ -107,12 +109,12 @@ BGCOL             { BEGIN(cond_col); return SC_BGCOL; }
 [{]               { return '{'; }
 [}]               { return '}'; }
 [. ]              {}
-[0-9\.]+          { sclval.val = atof(yytext); return SC_VALUE; }
-[uf]              { sclval.character = yytext[0]; return SC_UNIT; }
+[0-9\.]+          { yylval->val = atof(yytext); return SC_VALUE; }
+[uf]              { yylval->character = yytext[0]; return SC_UNIT; }
 [+]               { return '+'; }
 [x]               { return 'x'; }
 [,]               { return ','; }
-<cond_col>#[[:xdigit:]]{6}    { sclval.str = strdup(yytext); return SC_HEXCOL; }
+<cond_col>#[[:xdigit:]]{6}    { yylval->str = strdup(yytext); return SC_HEXCOL; }
 
 
 %%

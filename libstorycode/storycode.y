@@ -21,8 +21,11 @@
  */
 
 %define api.token.prefix {SC_}
-%define api.prefix {sc}
+%define api.pure full
 %locations
+%lex-param {yscan_t scanner}
+%parse-param {Narrative *n};
+%parse-param {yyscan_t scanner};
 
 %code requires {
 
@@ -71,6 +74,8 @@
     int max_paras;
   };
 
+  typedef void *yyscan_t;
+
 }
 
 %union {
@@ -103,9 +108,8 @@
   #include <stdlib.h>
   #include <string.h>
 
-  extern int sclex();
-  extern int scparse();
-  void scerror(Narrative *n, const char *s);
+  extern int yylex();
+  void yyerror(YYLTYPE *locp, Narrative *n, yyscan_t scanner, const char *s);
   extern int lineno;
 %}
 
@@ -172,8 +176,6 @@
 %type <character> UNIT
 %type <val> VALUE
 %type <grad> gradtype
-
-%parse-param { Narrative *n };
 
 %{
 
@@ -620,6 +622,6 @@ styledef:
 
 %%
 
-void scerror(Narrative *n, const char *s) {
+void yyerror(YYLTYPE *locp, Narrative *n, yyscan_t scanner, const char *s) {
 	printf("Storycode parse error at line %i\n", lineno);
 }

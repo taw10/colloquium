@@ -46,14 +46,15 @@ Narrative *storycode_parse_presentation(const char *sc)
 {
 	YY_BUFFER_STATE b;
 	Narrative *n;
+	yyscan_t scanner;
 
-	//BEGIN(0);
-	b = sc_scan_string(sc);
-	scdebug = 1;
+	yylex_init(&scanner);
+	b = yy_scan_string(sc, scanner);
+	yydebug = 0;
 	n = narrative_new();
-	scparse(n);
-	sc_delete_buffer(b);
-	//narrative_debug(n);
+	yyparse(n, scanner);
+	yy_delete_buffer(b, scanner);
+	yylex_destroy(scanner);
 
 	return n;
 }

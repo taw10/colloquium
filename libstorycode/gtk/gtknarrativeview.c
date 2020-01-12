@@ -982,7 +982,7 @@ static void paste_storycode_received(GtkClipboard *cb, GtkSelectionData *seldata
 	}
 
 	printf("got SC '%s'\n", t);
-	Narrative *nnew = storycode_parse_presentation(t);
+	Narrative *nnew = storycode_parse_presentation((char *)t);
 	narrative_debug(nnew);
 
 	gtknv_emit_change_sig(e);

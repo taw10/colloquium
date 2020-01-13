@@ -153,6 +153,7 @@
 %type <ss> stylesheet
 %type <style> style_narrative_bp
 %type <style> style_narrative_prestitle
+%type <style> style_narrative_segstart
 %type <style> styledefs
 %type <style> styledef
 %type <style> slide_geom
@@ -556,6 +557,7 @@ style_slide_defs:
 style_narrative_def:
   style_narrative_prestitle { set_stylesheet(n, &$1, "NARRATIVE.PRESTITLE"); }
 | style_narrative_bp        { set_stylesheet(n, &$1, "NARRATIVE.BP"); }
+| style_narrative_segstart  { set_stylesheet(n, &$1, "NARRATIVE.SEGMENT_START"); }
 | styledef                  { set_stylesheet(n, &$1, "NARRATIVE"); }
 ;
 
@@ -574,6 +576,10 @@ style_narrative_prestitle:
 
 style_narrative_bp:
   BP '{' styledefs '}' { $$ = $3; }
+;
+
+style_narrative_segstart:
+  SEG_START '{' styledefs '}' { $$ = $3; }
 ;
 
 background:

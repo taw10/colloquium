@@ -314,7 +314,7 @@ int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *la
 			break;
 
 			case NARRATIVE_ITEM_SEGSTART :
-			stn = "NARRATIVE.SEGSTART";
+			stn = "NARRATIVE.SEGMENT_START";
 			break;
 
 			case NARRATIVE_ITEM_EOP :

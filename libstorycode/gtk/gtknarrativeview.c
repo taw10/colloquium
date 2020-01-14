@@ -40,6 +40,7 @@
 
 #include "gtknarrativeview.h"
 #include "narrative_priv.h"
+#include "timing_ruler.h"
 
 
 static void scroll_interface_init(GtkScrollable *iface)
@@ -145,7 +146,7 @@ static void rewrap_range(GtkNarrativeView *e, int min, int max)
 
 static void update_size(GtkNarrativeView *e)
 {
-	e->w = e->visible_width;
+	e->w = e->visible_width - e->ruler_width;
 	e->h = narrative_get_height(e->n);
 
 	set_vertical_params(e);
@@ -158,7 +159,7 @@ static gboolean gtknv_resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 {
 	e->visible_height = event->height;
 	e->visible_width = event->width;
-	e->w = e->visible_width;
+	e->w = e->visible_width - e->ruler_width;
 
 	rewrap_range(e, 0, e->n->n_items-1);
 
@@ -518,6 +519,10 @@ static gboolean gtknv_draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 
 	cairo_translate(cr, -e->h_scroll_pos, -e->scroll_pos);
 
+	/* Space for ruler */
+	cairo_save(cr);
+	cairo_translate(cr, e->ruler_width, 0.0);
+
 	/* Rendering background */
 	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
 	cairo_rectangle(cr, 0.0, 0.0, e->w, e->h);
@@ -531,6 +536,10 @@ static gboolean gtknv_draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 	/* Editing overlay */
 	cairo_translate(cr, e->n->space_l, e->n->space_t);
 	gtknv_draw_overlay(cr, e);
+
+	/* Timing ruler */
+	cairo_restore(cr);
+	draw_ruler(cr, e);
 
 	return FALSE;
 }
@@ -899,7 +908,7 @@ static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 {
 	gdouble x, y;
 
-	x = event->x;
+	x = event->x - e->ruler_width;
 	y = event->y + e->scroll_pos;
 
 	/* Clicked an existing frame, no immediate dragging */
@@ -941,7 +950,7 @@ static gboolean gtknv_motion_sig(GtkWidget *da, GdkEventMotion *event,
 	struct edit_pos old_sel_end;
 	int minp, maxp;
 
-	x = event->x;
+	x = event->x - e->ruler_width;
 	y = event->y + e->scroll_pos;
 
 	if ( e->drag_status == NARRATIVE_DRAG_STATUS_COULD_DRAG ) {
@@ -1210,6 +1219,7 @@ GtkWidget *gtk_narrative_view_new(Narrative *n)
 	nview->n = n;
 	nview->rewrap_needed = 0;
 	nview->para_highlight = 0;
+	nview->ruler_width = 100.0;
 
 	gtk_widget_set_size_request(GTK_WIDGET(nview),
 	                            nview->w, nview->h);

@@ -82,6 +82,7 @@ struct _gtknarrativeview
 	int                  visible_height;
 	int                  visible_width;
 	int                  rewrap_needed;
+	double               ruler_width;
 
 	/* Location of the cursor */
 	struct edit_pos      cpos;

@@ -88,6 +88,7 @@ libgtkstorycode_includes = include_directories('libstorycode/gtk')
 
 libgtkstorycode = library('gtkstorycode',
                    ['libstorycode/gtk/gtknarrativeview.c',
+                    'libstorycode/gtk/timing_ruler.c',
                     'libstorycode/gtk/gtkslideview.c'],
                    include_directories : libgtkstorycode_includes,
                    dependencies : [gtk_dep, libstorycode_dep, mdep],

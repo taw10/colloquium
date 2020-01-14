@@ -55,4 +55,7 @@ extern int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesh
 
 extern void narrative_sort_positions(struct edit_pos *a, struct edit_pos *b);
 
+extern void narrative_get_item_range(Narrative *n, double min_y, double max_y,
+                                     int *start_item, int *end_item);
+
 #endif	/* NARRATIVE_RENDER_CAIRO_H */

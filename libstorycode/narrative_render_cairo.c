@@ -505,6 +505,38 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 }
 
 
+/* Given a y-coordinate range, works out which range of items (inclusive)
+ * are at least partially within the range */
+void narrative_get_item_range(Narrative *n, double min_y, double max_y,
+                              int *start_item, int *end_item)
+{
+	int i;
+	double hpos = 0.0;
+
+	*start_item = n->n_items;
+	for ( i=0; i<n->n_items; i++ ) {
+
+		double cur_h = narrative_item_get_height(n, i);
+
+		if ( hpos + cur_h < min_y ) goto next;
+
+		if ( *start_item == n->n_items ) {
+			*start_item = i;
+		}
+
+		if ( hpos > max_y ) {
+			*end_item = i -1;
+			return;
+		}
+next:
+		hpos += cur_h;
+
+	}
+
+	*end_item = n->n_items - 1;
+}
+
+
 /* NB You must first call narrative_wrap() */
 int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet, ImageStore *is,
                            double min_y, double max_y)

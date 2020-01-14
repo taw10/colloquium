@@ -236,6 +236,7 @@ static void init_item(struct narrative_item *item)
 	item->n_runs = 0;
 	item->slide = NULL;
 	item->slide_thumbnail = NULL;
+	item->estd_duration = 0.0;
 }
 
 
@@ -278,6 +279,8 @@ extern void add_text_item(Narrative *n, struct text_run *runs, int n_runs,
 
 	item->runs = runs;
 	item->n_runs = n_runs;
+
+	update_timing(item);
 }
 
 
@@ -323,6 +326,7 @@ void narrative_add_slide(Narrative *n, Slide *slide)
 	item->type = NARRATIVE_ITEM_SLIDE;
 	item->slide = slide;
 	item->slide_thumbnail = NULL;
+	update_timing(item);
 }
 
 
@@ -403,6 +407,8 @@ static void delete_text(struct narrative_item *item, size_t o1, ssize_t o2)
 		memmove(item->runs[r2].text, &item->runs[r2].text[roffs2],
 		        strlen(&item->runs[r2].text[roffs2])+1);
 	}
+
+	update_timing(item);
 }
 
 
@@ -424,6 +430,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	} else {
 		if ( i1 == i2 ) {
 			delete_text(&n->items[i1], o1, o2);
+			update_timing(&n->items[i1]);
 			return;  /* easy case */
 		} else {
 			/* Truncate i1 at o1 */
@@ -476,6 +483,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 		item1->n_runs += item2->n_runs;
 
 		delete_item(n, i2);
+		update_timing(item1);
 	}
 }
 
@@ -533,6 +541,9 @@ void narrative_split_item(Narrative *n, int i1, size_t o1)
 		item2->runs[0].type = TEXT_RUN_NORMAL;;
 
 	}
+
+	update_timing(item1);
+	update_timing(item2);
 }
 
 
@@ -734,6 +745,47 @@ char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2
 	}
 
 	return t;
+}
+
+
+static double timing_from_wordcount(struct narrative_item *item)
+{
+	int i;
+	int words = 0;
+
+	for ( i=0; i<item->n_runs; i++ ) {
+		char *text = item->runs[i].text;
+		int j;
+		size_t len = strlen(text);
+		for ( j=0; j<len; j++ ) {
+			if ( text[j] == ' ' ) words++;
+		}
+	}
+
+	return words / 100.0;
+}
+
+
+void update_timing(struct narrative_item *item)
+{
+	switch ( item->type ) {
+
+		case NARRATIVE_ITEM_TEXT :
+		case NARRATIVE_ITEM_BP :
+		item->estd_duration = timing_from_wordcount(item);
+		break;
+
+		case NARRATIVE_ITEM_PRESTITLE :
+		case NARRATIVE_ITEM_EOP :
+		case NARRATIVE_ITEM_SEGSTART :
+		case NARRATIVE_ITEM_SEGEND :
+		item->estd_duration = 0.0;
+		break;
+
+		case NARRATIVE_ITEM_SLIDE :
+		item->estd_duration = 1.0;
+		break;
+	}
 }
 
 

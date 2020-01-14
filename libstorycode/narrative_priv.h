@@ -79,6 +79,8 @@ struct narrative_item
 	void *slide_thumbnail;
 #endif
 	int selected;  /* Whether or not this item should be given a "selected" highlight */
+
+	double estd_duration;  /* Estimated duration in minutes, based on word count */
 };
 
 
@@ -100,6 +102,8 @@ struct _narrative
 };
 
 extern int narrative_which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs);
+
+extern void update_timing(struct narrative_item *item);
 
 
 #endif /* NARRATIVE_PRIV_H */

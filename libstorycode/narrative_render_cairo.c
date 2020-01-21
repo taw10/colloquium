@@ -504,6 +504,19 @@ int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i)
 	return 0;
 }
 
+double narrative_get_item_y(Narrative *n, int item)
+{
+	int i;
+	double y = 0.0;
+
+	if ( item >= n->n_items ) return +INFINITY;
+
+	for ( i=0; i<item; i++ ) {
+		y += narrative_item_get_height(n, i);
+	}
+	return y;
+}
+
 
 /* Given a y-coordinate range, works out which range of items (inclusive)
  * are at least partially within the range */

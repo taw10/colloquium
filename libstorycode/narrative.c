@@ -766,6 +766,26 @@ static double timing_from_wordcount(struct narrative_item *item)
 }
 
 
+/* Find the position (in units of narrative items) of time 'minutes' */
+double narrative_find_time_pos(Narrative *n, double minutes)
+{
+	int i;
+	double t = 0.0;
+
+	if ( minutes == 0.0 ) return 0.0;
+
+	for ( i=0; i<n->n_items; i++ ) {
+		double idur = n->items[i].estd_duration;
+		if ( t + idur > minutes ) {
+			/* It's in this item */
+			return (double)i + (minutes - t)/idur;
+		}
+		t += n->items[i].estd_duration;
+	}
+	return n->n_items;
+}
+
+
 void update_timing(struct narrative_item *item)
 {
 	switch ( item->type ) {

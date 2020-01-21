@@ -74,6 +74,8 @@ extern Slide *narrative_get_slide_by_number(Narrative *n, int pos);
 extern int narrative_get_slide_number_for_para(Narrative *n, int para);
 extern int narrative_get_slide_number_for_slide(Narrative *n, Slide *s);
 
+extern double narrative_find_time_pos(Narrative *n, double minutes);
+
 extern char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2);
 extern char *narrative_range_as_storycode(Narrative *n, int p1, size_t o1, int p2, size_t o2);
 

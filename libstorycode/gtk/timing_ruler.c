@@ -44,7 +44,9 @@ void draw_ruler(cairo_t *cr, GtkNarrativeView *e)
 	int start_item, end_item;
 	int i;
 	double start_item_time = 0.0;
+	double end_item_time = 0.0;
 	double t;
+	double old_y;
 
 	/* Background */
 	cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 1.0);
@@ -60,7 +62,24 @@ void draw_ruler(cairo_t *cr, GtkNarrativeView *e)
 	}
 	t = start_item_time;
 	for ( i=start_item; i<=end_item; i++ ) {
-		//printf("%4i: %.2f mins\n", i, t);
 		t += e->n->items[i].estd_duration;
+	}
+	end_item_time = t;
+
+	old_y = 0.0;
+	for ( i=start_item_time; i<=end_item_time+1; i++ ) {
+		double y0, y1, y;
+		double yitem = narrative_find_time_pos(e->n, i);
+		y0 = narrative_get_item_y(e->n, yitem);
+		y1 = narrative_get_item_y(e->n, yitem+1);
+		y = y0 + (y1 - y0)*(yitem-trunc(yitem));
+		cairo_rectangle(cr, 0.0, old_y, 100.0, y-old_y);
+		old_y = y;
+		if ( i % 2 ) {
+			cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
+		} else {
+			cairo_set_source_rgb(cr, 0.8, 0.8, 0.8);
+		}
+		cairo_fill(cr);
 	}
 }

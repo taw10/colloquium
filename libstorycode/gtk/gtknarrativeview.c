@@ -1337,7 +1337,7 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 }
 
 
-extern void gtk_narrative_view_redraw(GtkNarrativeView *e)
+void gtk_narrative_view_redraw(GtkNarrativeView *e)
 {
 	e->rewrap_needed = 1;
 	gtknv_emit_change_sig(e);

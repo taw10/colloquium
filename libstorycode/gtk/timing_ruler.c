@@ -46,7 +46,8 @@ void draw_ruler(cairo_t *cr, GtkNarrativeView *e)
 	double start_item_time = 0.0;
 	double end_item_time = 0.0;
 	double t;
-	double old_y;
+	PangoLayout *layout;
+	PangoFontDescription *fontdesc;
 
 	/* Background */
 	cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 1.0);
@@ -66,20 +67,34 @@ void draw_ruler(cairo_t *cr, GtkNarrativeView *e)
 	}
 	end_item_time = t;
 
-	old_y = 0.0;
-	for ( i=start_item_time; i<=end_item_time+1; i++ ) {
+	layout = pango_layout_new(gtk_widget_get_pango_context(GTK_WIDGET(e)));
+	fontdesc = pango_font_description_from_string("Sans 12");
+	pango_layout_set_font_description(layout, fontdesc);
+
+	for ( i=start_item_time; i<=end_item_time; i++ ) {
+
+		char tmp[64];
 		double y0, y1, y;
 		double yitem = narrative_find_time_pos(e->n, i);
 		y0 = narrative_get_item_y(e->n, yitem);
 		y1 = narrative_get_item_y(e->n, yitem+1);
+		if ( isinf(y1) ) break;  /* End of narrative is visible */
 		y = y0 + (y1 - y0)*(yitem-trunc(yitem));
-		cairo_rectangle(cr, 0.0, old_y, 100.0, y-old_y);
-		old_y = y;
-		if ( i % 2 ) {
-			cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
-		} else {
-			cairo_set_source_rgb(cr, 0.8, 0.8, 0.8);
-		}
+		cairo_move_to(cr, 0.0, y);
+		cairo_line_to(cr, 20.0, y);
+		cairo_set_line_width(cr, 1.0);
+		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+		cairo_stroke(cr);
+
+		snprintf(tmp, 63, _("%i min"), i);
+		cairo_move_to(cr, 5.0, y+2.0);
+		pango_layout_set_text(layout, tmp, -1);
+		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+		pango_cairo_update_layout(cr, layout);
+		pango_cairo_show_layout(cr, layout);
 		cairo_fill(cr);
 	}
+
+	g_object_unref(layout);
+	pango_font_description_free(fontdesc);
 }

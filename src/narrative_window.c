@@ -326,11 +326,51 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 	update_titlebar(nw);
 }
 
+static void add_prestitle_sig(GSimpleAction *action, GVariant *parameter,
+                              gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	gtk_narrative_view_add_prestitle_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
+	narrative_set_unsaved(nw->n);
+	update_titlebar(nw);
+}
+
+
 static void add_bp_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
 	NarrativeWindow *nw = vp;
 	gtk_narrative_view_add_bp_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
+	narrative_set_unsaved(nw->n);
+	update_titlebar(nw);
+}
+
+
+static void add_segstart_sig(GSimpleAction *action, GVariant *parameter,
+                             gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	gtk_narrative_view_add_segstart_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
+	narrative_set_unsaved(nw->n);
+	update_titlebar(nw);
+}
+
+
+static void add_segend_sig(GSimpleAction *action, GVariant *parameter,
+                           gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	gtk_narrative_view_add_segend_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
+	narrative_set_unsaved(nw->n);
+	update_titlebar(nw);
+}
+
+
+static void add_eop_sig(GSimpleAction *action, GVariant *parameter,
+                        gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	gtk_narrative_view_add_eop_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
 	narrative_set_unsaved(nw->n);
 	update_titlebar(nw);
 }
@@ -680,6 +720,10 @@ GActionEntry nw_entries[] = {
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
 	{ "bp", add_bp_sig, NULL, NULL, NULL },
+	{ "eop", add_eop_sig, NULL, NULL, NULL },
+	{ "prestitle", add_prestitle_sig, NULL, NULL, NULL },
+	{ "segstart", add_segstart_sig, NULL, NULL, NULL },
+	{ "segend", add_segend_sig, NULL, NULL, NULL },
 	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
 	{ "stylesheet", edit_ss_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },

@@ -1323,17 +1323,8 @@ int maybe_split_para(GtkNarrativeView *e)
 }
 
 
-void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
+static void post_add_stuff(GtkNarrativeView *e)
 {
-	Slide *s;
-	int insert_pos;
-
-	s = slide_new();
-	if ( s == NULL ) return;
-
-	insert_pos = maybe_split_para(e);
-	narrative_insert_slide(e->n, insert_pos, s);
-
 	rewrap_range(e, e->cpos.para, e->cpos.para+2);
 	e->cpos.para++;
 	e->cpos.pos = 0;
@@ -1342,36 +1333,87 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	check_cursor_visible(e);
 	gtknv_emit_change_sig(e);
 	gtknv_redraw(e);
+}
+
+
+void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
+{
+	int insert_pos;
+	Slide *s = slide_new();
+	if ( s == NULL ) return;
+	insert_pos = maybe_split_para(e);
+	narrative_insert_slide(e->n, insert_pos, s);
+	post_add_stuff(e);
+}
+
+
+static struct text_run *blank_run()
+{
+	struct text_run *runs;
+
+	runs = malloc(sizeof(struct text_run));
+	if ( runs == NULL ) return NULL;
+
+	runs[0].text = strdup("");
+	runs[0].type = TEXT_RUN_NORMAL;
+	if ( runs[0].text == NULL ) {
+		free(runs);
+		return NULL;
+	}
+
+	return runs;
+}
+
+
+void gtk_narrative_view_add_prestitle_at_cursor(GtkNarrativeView *e)
+{
+	int insert_pos;
+	struct text_run *runs = blank_run();
+	if ( runs == NULL ) return;
+	insert_pos = maybe_split_para(e);
+	narrative_insert_prestitle(e->n, insert_pos, runs, 1);
+	post_add_stuff(e);
+}
+
+
+void gtk_narrative_view_add_segstart_at_cursor(GtkNarrativeView *e)
+{
+	int insert_pos;
+	struct text_run *runs = blank_run();
+	if ( runs == NULL ) return;
+	insert_pos = maybe_split_para(e);
+	narrative_insert_segstart(e->n, insert_pos, runs, 1);
+	post_add_stuff(e);
+}
+
+
+void gtk_narrative_view_add_segend_at_cursor(GtkNarrativeView *e)
+{
+	int insert_pos;
+	insert_pos = maybe_split_para(e);
+	narrative_insert_segend(e->n, insert_pos);
+	post_add_stuff(e);
 }
 
 
 void gtk_narrative_view_add_bp_at_cursor(GtkNarrativeView *e)
 {
 	int insert_pos;
-	struct text_run *runs;
-
-	runs = malloc(sizeof(struct text_run));
+	struct text_run *runs = blank_run();
 	if ( runs == NULL ) return;
-
-	runs[0].text = strdup("");
-	runs[0].type = TEXT_RUN_NORMAL;
-	if ( runs[0].text == NULL ) {
-		free(runs);
-		return;
-	}
-
 	insert_pos = maybe_split_para(e);
 	narrative_insert_bp(e->n, insert_pos, runs, 1);
-
-	rewrap_range(e, e->cpos.para, e->cpos.para+2);
-	e->cpos.para++;
-	e->cpos.pos = 0;
-	e->cpos.trail = 0;
-	update_size(e);
-	check_cursor_visible(e);
-	gtknv_emit_change_sig(e);
-	gtknv_redraw(e);
+	post_add_stuff(e);
 }
+
+
+void gtk_narrative_view_add_eop_at_cursor(GtkNarrativeView *e)
+{
+	int insert_pos = maybe_split_para(e);
+	narrative_insert_eop(e->n, insert_pos);
+	post_add_stuff(e);
+}
+
 
 void gtk_narrative_view_redraw(GtkNarrativeView *e)
 {

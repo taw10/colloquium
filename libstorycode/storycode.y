@@ -324,13 +324,13 @@ narrative:
 ;
 
 narrative_el:
-  PRESTITLE TEXT_START text_line  { narrative_add_prestitle(n, $3.runs, $3.n_runs); }
-| BP TEXT_START text_line         { narrative_add_bp(n, $3.runs, $3.n_runs); }
-| SEG_START TEXT_START text_line  { narrative_add_segstart(n, $3.runs, $3.n_runs); }
-| SEG_END                         { narrative_add_segend(n); }
-| TEXT_START text_line            { narrative_add_text(n, $2.runs, $2.n_runs); }
-| slide                           { narrative_add_slide(n, $1); }
-| EOP                             { narrative_add_eop(n); }
+  PRESTITLE TEXT_START text_line  { narrative_insert_prestitle(n, n->n_items, $3.runs, $3.n_runs); }
+| BP TEXT_START text_line         { narrative_insert_bp(n, n->n_items, $3.runs, $3.n_runs); }
+| SEG_START TEXT_START text_line  { narrative_insert_segstart(n, n->n_items, $3.runs, $3.n_runs); }
+| SEG_END                         { narrative_insert_segend(n, n->n_items); }
+| TEXT_START text_line            { narrative_insert_text(n, n->n_items, $2.runs, $2.n_runs); }
+| slide                           { narrative_insert_slide(n, n->n_items, $1); }
+| EOP                             { narrative_insert_eop(n, n->n_items); }
 ;
 
 text_line: { $<para>$.n_runs = 0;

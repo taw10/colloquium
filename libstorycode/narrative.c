@@ -114,7 +114,7 @@ void narrative_add_empty_item(Narrative *n)
 		return;
 	}
 
-	narrative_add_text(n, runs, 1);
+	narrative_insert_text(n, n->n_items, runs, 1);
 }
 
 
@@ -248,7 +248,6 @@ static struct narrative_item *add_item(Narrative *n)
 	if ( new_items == NULL ) return NULL;
 	n->items = new_items;
 	item = &n->items[n->n_items++];
-	init_item(item);
 	return item;
 }
 
@@ -256,21 +255,23 @@ static struct narrative_item *add_item(Narrative *n)
 /* New item will have index 'pos' */
 static struct narrative_item *insert_item(Narrative *n, int pos)
 {
+	int at_end = (pos == n->n_items);
 	add_item(n);
-	memmove(&n->items[pos+1], &n->items[pos],
-	        (n->n_items-pos-1)*sizeof(struct narrative_item));
+	if ( !at_end ) {
+		memmove(&n->items[pos+1], &n->items[pos],
+		        (n->n_items-pos-1)*sizeof(struct narrative_item));
+	}
 	init_item(&n->items[pos]);
 	return &n->items[pos];
 }
 
 
 /* The new text item takes ownership of the array of runs */
-extern void add_text_item(Narrative *n, struct text_run *runs, int n_runs,
-                          enum narrative_item_type type)
+static void insert_text_item(Narrative *n, int pos, struct text_run *runs, int n_runs,
+                             enum narrative_item_type type)
 {
-	struct narrative_item *item;
+	struct narrative_item *item = insert_item(n, pos);
 
-	item = add_item(n);
 	if ( item == NULL ) return;
 
 	item->type = type;
@@ -284,69 +285,54 @@ extern void add_text_item(Narrative *n, struct text_run *runs, int n_runs,
 }
 
 
-void narrative_add_text(Narrative *n, struct text_run *runs, int n_runs)
+void narrative_insert_text(Narrative *n, int pos, struct text_run *runs, int n_runs)
 {
-	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_TEXT);
+	insert_text_item(n, pos, runs, n_runs, NARRATIVE_ITEM_TEXT);
 }
 
 
-void narrative_add_prestitle(Narrative *n, struct text_run *runs, int n_runs)
+void narrative_insert_prestitle(Narrative *n, int pos, struct text_run *runs, int n_runs)
 {
-	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_PRESTITLE);
+	insert_text_item(n, pos, runs, n_runs, NARRATIVE_ITEM_PRESTITLE);
 }
 
 
-void narrative_add_bp(Narrative *n, struct text_run *runs, int n_runs)
+void narrative_insert_bp(Narrative *n, int pos, struct text_run *runs, int n_runs)
 {
-	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_BP);
+	insert_text_item(n, pos, runs, n_runs, NARRATIVE_ITEM_BP);
 }
 
 
-void narrative_add_segstart(Narrative *n, struct text_run *runs, int n_runs)
+void narrative_insert_segstart(Narrative *n, int pos, struct text_run *runs, int n_runs)
 {
-	add_text_item(n, runs, n_runs, NARRATIVE_ITEM_SEGSTART);
+	insert_text_item(n, pos, runs, n_runs, NARRATIVE_ITEM_SEGSTART);
 }
 
 
-void narrative_add_segend(Narrative *n)
+void narrative_insert_segend(Narrative *n, int pos)
 {
-	struct narrative_item * item = add_item(n);
+	struct narrative_item *item = insert_item(n, pos);
 	if ( item == NULL ) return;
 	item->type = NARRATIVE_ITEM_SEGEND;
 }
 
 
-void narrative_add_slide(Narrative *n, Slide *slide)
+void narrative_insert_eop(Narrative *n, int pos)
 {
-	struct narrative_item *item;
-
-	item = add_item(n);
+	struct narrative_item *item = insert_item(n, pos);
 	if ( item == NULL ) return;
-
-	item->type = NARRATIVE_ITEM_SLIDE;
-	item->slide = slide;
-	item->slide_thumbnail = NULL;
-	update_timing(item);
-}
-
-
-void narrative_add_eop(Narrative *n)
-{
-	struct narrative_item *item;
-
-	item = add_item(n);
-	if ( item == NULL ) return;
-
 	item->type = NARRATIVE_ITEM_EOP;
 }
 
 
-void narrative_insert_slide(Narrative *n, Slide *slide, int pos)
+void narrative_insert_slide(Narrative *n, int pos, Slide *slide)
 {
 	struct narrative_item *item = insert_item(n, pos);
+	if ( item == NULL ) return;
 	item->type = NARRATIVE_ITEM_SLIDE;
 	item->slide = slide;
 	item->slide_thumbnail = NULL;
+	update_timing(item);
 }
 
 

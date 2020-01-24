@@ -53,16 +53,14 @@ extern int narrative_get_unsaved(Narrative *n);
 
 extern int narrative_item_is_text(Narrative *n, int item);
 
-extern void narrative_add_text(Narrative *n, struct text_run *runs, int n_runs);
+extern void narrative_insert_text(Narrative *n, int pos, struct text_run *runs, int n_runs);
+extern void narrative_insert_bp(Narrative *n, int pos, struct text_run *runs, int n_runs);
+extern void narrative_insert_segstart(Narrative *n, int pos, struct text_run *runs, int n_runs);
+extern void narrative_insert_prestitle(Narrative *n, int pos, struct text_run *runs, int n_runs);
+extern void narrative_insert_segend(Narrative *n, int pos);
+extern void narrative_insert_slide(Narrative *n, int pos, Slide *slide);
+extern void narrative_insert_eop(Narrative *n, int pos);
 
-extern void narrative_add_bp(Narrative *n, struct text_run *runs, int n_runs);
-extern void narrative_add_segstart(Narrative *n, struct text_run *runs, int n_runs);
-extern void narrative_add_prestitle(Narrative *n, struct text_run *runs, int n_runs);
-extern void narrative_add_segend(Narrative *n);
-
-extern void narrative_add_slide(Narrative *n, Slide *slide);
-extern void narrative_add_eop(Narrative *n);
-extern void narrative_insert_slide(Narrative *n, Slide *slide, int pos);
 extern void narrative_delete_block(Narrative *n, int i1, size_t o1,
                                                  int i2, size_t o2);
 extern void narrative_split_item(Narrative *n, int i1, size_t o1);

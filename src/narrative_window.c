@@ -326,6 +326,15 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 	update_titlebar(nw);
 }
 
+static void add_bp_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	gtk_narrative_view_add_bp_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
+	narrative_set_unsaved(nw->n);
+	update_titlebar(nw);
+}
+
 
 static void set_clock_pos(NarrativeWindow *nw)
 {
@@ -670,6 +679,7 @@ GActionEntry nw_entries[] = {
 	{ "save", save_sig, NULL, NULL, NULL },
 	{ "saveas", saveas_sig, NULL, NULL, NULL },
 	{ "slide", add_slide_sig, NULL, NULL, NULL },
+	{ "bp", add_bp_sig, NULL, NULL, NULL },
 	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
 	{ "stylesheet", edit_ss_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },

@@ -117,6 +117,22 @@
           <attribute name='label' translatable='yes'>Slide</attribute>
           <attribute name='action'>win.slide</attribute>
         </item>
+        <item>
+          <attribute name='label' translatable='yes'>Bullet point</attribute>
+          <attribute name='action'>win.bp</attribute>
+        </item>
+        <item>
+          <attribute name='label' translatable='yes'>Presentation title</attribute>
+          <attribute name='action'>win.prestitle</attribute>
+        </item>
+        <item>
+          <attribute name='label' translatable='yes'>Start of segment</attribute>
+          <attribute name='action'>win.segstart</attribute>
+        </item>
+        <item>
+          <attribute name='label' translatable='yes'>End of segment</attribute>
+          <attribute name='action'>win.segend</attribute>
+        </item>
       </section>
       <section>
         <item>

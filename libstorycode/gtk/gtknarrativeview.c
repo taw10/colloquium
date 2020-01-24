@@ -1304,27 +1304,35 @@ void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos)
 }
 
 
-void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
+int maybe_split_para(GtkNarrativeView *e)
 {
-	Slide *s;
-
-	s = slide_new();
-	if ( s == NULL ) return;
-
 	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
 		size_t off = narrative_pos_trail_to_offset(e->n, e->cpos.para,
 		                                           e->cpos.pos, e->cpos.trail);
 		if ( (off > 0) && (off < gtknv_end_offset_of_para(e->n, e->cpos.para)) ) {
 			narrative_split_item(e->n, e->cpos.para, off);
-			narrative_insert_slide(e->n, s, e->cpos.para+1);
+			return e->cpos.para+1;
 		} else if ( off == 0 ) {
-			narrative_insert_slide(e->n, s, e->cpos.para);
+			return e->cpos.para;
 		} else {
-			narrative_insert_slide(e->n, s, e->cpos.para+1);
+			return e->cpos.para+1;
 		}
 	} else {
-		narrative_insert_slide(e->n, s, e->cpos.para+1);
+		return e->cpos.para+1;
 	}
+}
+
+
+void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
+{
+	Slide *s;
+	int insert_pos;
+
+	s = slide_new();
+	if ( s == NULL ) return;
+
+	insert_pos = maybe_split_para(e);
+	narrative_insert_slide(e->n, insert_pos, s);
 
 	rewrap_range(e, e->cpos.para, e->cpos.para+2);
 	e->cpos.para++;
@@ -1336,6 +1344,34 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	gtknv_redraw(e);
 }
 
+
+void gtk_narrative_view_add_bp_at_cursor(GtkNarrativeView *e)
+{
+	int insert_pos;
+	struct text_run *runs;
+
+	runs = malloc(sizeof(struct text_run));
+	if ( runs == NULL ) return;
+
+	runs[0].text = strdup("");
+	runs[0].type = TEXT_RUN_NORMAL;
+	if ( runs[0].text == NULL ) {
+		free(runs);
+		return;
+	}
+
+	insert_pos = maybe_split_para(e);
+	narrative_insert_bp(e->n, insert_pos, runs, 1);
+
+	rewrap_range(e, e->cpos.para, e->cpos.para+2);
+	e->cpos.para++;
+	e->cpos.pos = 0;
+	e->cpos.trail = 0;
+	update_size(e);
+	check_cursor_visible(e);
+	gtknv_emit_change_sig(e);
+	gtknv_redraw(e);
+}
 
 void gtk_narrative_view_redraw(GtkNarrativeView *e)
 {

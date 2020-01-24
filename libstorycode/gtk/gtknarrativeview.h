@@ -113,6 +113,7 @@ extern void gtk_narrative_view_set_para_highlight(GtkNarrativeView *e, int para_
 extern int gtk_narrative_view_get_cursor_para(GtkNarrativeView *e);
 extern void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos);
 extern void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e);
+extern void gtk_narrative_view_add_bp_at_cursor(GtkNarrativeView *e);
 
 extern void gtk_narrative_view_redraw(GtkNarrativeView *e);
 

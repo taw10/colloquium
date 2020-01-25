@@ -899,7 +899,7 @@ static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
 	runs = malloc(sizeof(struct text_run));
 	if ( runs == NULL ) return NULL;
 	runs[0].type = TEXT_RUN_NORMAL;
-	runs[0].text = strdup("Slide title");
+	runs[0].text = strdup("");
 	if ( runs[0].text == NULL ) return NULL;
 
 	if ( w < 0.0 ) {

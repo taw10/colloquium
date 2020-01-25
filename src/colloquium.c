@@ -62,8 +62,11 @@ static void colloquium_activate(GApplication *papp)
 	Colloquium *app = COLLOQUIUM(papp);
 	if ( !app->first_run ) {
 		Narrative *n = narrative_new();
+		GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
+		stylesheet_set_from_file(narrative_get_stylesheet(n), file);
 		narrative_add_empty_item(n);
 		narrative_window_new(n, NULL, papp);
+		g_object_unref(file);
 	}
 }
 

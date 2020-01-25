@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <gio/gio.h>
 
 #include <libintl.h>
 #define _(x) gettext(x)
@@ -237,32 +238,26 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 static gint load_ss_response_sig(GtkWidget *d, gint response,
                                  NarrativeWindow *nw)
 {
-//	if ( response == GTK_RESPONSE_ACCEPT ) {
-//
-//		GFile *file;
-//		Stylesheet *new_ss;
-//
-//		file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
-//
-//		new_ss = stylesheet_load(file);
-//		if ( new_ss != NULL ) {
-//
-//			stylesheet_free(nw->p->stylesheet);
-//			nw->n->stylesheet = new_ss;
-//			sc_editor_set_stylesheet(nw->nv, new_ss);
-//
-//			/* Full rerender */
-//			sc_editor_set_scblock(nw->nv, nw->dummy_top);
-//
-//		} else {
-//			fprintf(stderr, _("Failed to load stylesheet\n"));
-//		}
-//
-//		g_object_unref(file);
-//
-//	}
-//
-//	gtk_widget_destroy(d);
+	if ( response == GTK_RESPONSE_ACCEPT ) {
+
+		GFile *file;
+
+		file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
+
+		if ( stylesheet_set_from_file(narrative_get_stylesheet(nw->n), file) ) {
+
+			fprintf(stderr, _("Failed to load stylesheet\n"));
+
+		} else {
+
+			gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
+		}
+
+		g_object_unref(file);
+
+	}
+
+	gtk_widget_destroy(d);
 
 	return 0;
 }
@@ -298,22 +293,20 @@ static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
 static void load_ss_sig(GSimpleAction *action, GVariant *parameter,
                         gpointer vp)
 {
-//	//SCBlock *nsblock;
-//	//SCBlock *templ;
-//	NarrativeWindow *nw = vp;
-//	GtkWidget *d;
-//
-//	d = gtk_file_chooser_dialog_new(_("Load stylesheet"),
-//	                                GTK_WINDOW(nw->window),
-//	                                GTK_FILE_CHOOSER_ACTION_OPEN,
-//	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
-//	                                _("_Open"), GTK_RESPONSE_ACCEPT,
-//	                                NULL);
-//
-//	g_signal_connect(G_OBJECT(d), "response",
-//	                 G_CALLBACK(load_ss_response_sig), nw);
-//
-//	gtk_widget_show_all(d);
+	NarrativeWindow *nw = vp;
+	GtkWidget *d;
+
+	d = gtk_file_chooser_dialog_new(_("Load stylesheet"),
+	                                GTK_WINDOW(nw->window),
+	                                GTK_FILE_CHOOSER_ACTION_OPEN,
+	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
+	                                _("_Open"), GTK_RESPONSE_ACCEPT,
+	                                NULL);
+
+	g_signal_connect(G_OBJECT(d), "response",
+	                 G_CALLBACK(load_ss_response_sig), nw);
+
+	gtk_widget_show_all(d);
 }
 
 
@@ -724,7 +717,7 @@ GActionEntry nw_entries[] = {
 	{ "prestitle", add_prestitle_sig, NULL, NULL, NULL },
 	{ "segstart", add_segstart_sig, NULL, NULL, NULL },
 	{ "segend", add_segend_sig, NULL, NULL, NULL },
-	{ "loadstylesheet", load_ss_sig, NULL, NULL, NULL },
+	{ "loadstyle", load_ss_sig, NULL, NULL, NULL },
 	{ "stylesheet", edit_ss_sig, NULL, NULL, NULL },
 	{ "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
 	{ "startslideshowhere", start_slideshow_here_sig, NULL, NULL, NULL },

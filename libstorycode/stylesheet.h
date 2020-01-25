@@ -27,6 +27,8 @@
 #include <config.h>
 #endif
 
+#include <gio/gio.h>
+
 typedef struct _stylesheet Stylesheet;
 
 enum alignment
@@ -80,6 +82,7 @@ enum gradient
 extern Stylesheet *stylesheet_new(void);
 extern void stylesheet_free(Stylesheet *s);
 extern int stylesheet_set_from_storycode(Stylesheet *ss, const char *sc);
+extern int stylesheet_set_from_file(Stylesheet *ss, GFile *file);
 
 extern int stylesheet_get_slide_default_size(Stylesheet *s, double *w, double *h);
 

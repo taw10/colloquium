@@ -169,6 +169,7 @@ static void write_para(GOutputStream *fh, struct text_run *runs, int n_runs)
 {
 	int i;
 	for ( i=0; i<n_runs; i++ ) {
+		if ( strlen(runs[i].text) == 0 ) continue;
 		write_partial_run(fh, &runs[i], 0, strlen(runs[i].text));
 	}
 }

@@ -2,16 +2,19 @@ STYLES {
   NARRATIVE {
     FONT Sans 14
     BGCOL 1.00,1.00,1.00,1.00
+    PARASPACE 0u,0u,4u,4u
     BP {
       FONT Sans 14
-      PARASPACE 10u,0u,0u,0u
+      PARASPACE 10u,0u,4u,4u
     }
     PRESTITLE {
       FONT Sans Bold 20
+      PARASPACE 0u,0u,8u,11u
       ALIGN left
     }
     SEGMENT_START {
       FONT Sans Bold 16
+      PARASPACE 0u,0u,4u,4u
     }
   }
   SLIDE {

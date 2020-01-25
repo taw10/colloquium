@@ -74,6 +74,25 @@ static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void insert_prestitle_sig(GSimpleAction *action, GVariant *parameter,
+                                 gpointer vp)
+{
+	SlideItem *item;
+	SlideWindow *sw = vp;
+	struct text_run *runs;
+	int nruns = 1;
+
+	/* Ownership of this struct will be taken over by the Slide. */
+	runs = malloc(sizeof(struct text_run));
+	runs[0].type = TEXT_RUN_NORMAL;
+	runs[0].text = strdup("Presentation title");
+
+	item = slide_item_prestitle(&runs, &nruns, 1);
+	item = slide_add_item(sw->slide, item);
+	gtk_slide_view_set_slide(sw->sv, sw->slide);
+}
+
+
 static gint insert_image_response_sig(GtkWidget *d, gint response, SlideWindow *sw)
 {
 	GtkWidget *cb;
@@ -303,6 +322,7 @@ GActionEntry sw_entries[] = {
 	{ "next", next_slide_sig, NULL, NULL, NULL },
 	{ "last", last_slide_sig, NULL, NULL, NULL },
 	{ "slidetitle", insert_slidetitle_sig, NULL, NULL, NULL },
+	{ "prestitle", insert_prestitle_sig, NULL, NULL, NULL },
 	{ "image", insert_image_sig, NULL, NULL, NULL },
 };
 

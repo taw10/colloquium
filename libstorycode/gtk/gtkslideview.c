@@ -882,7 +882,7 @@ static SlideItem *create_image(GtkSlideView *e, const char *filename,
 	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;
 	geom.h.len = h;   geom.h.unit = LENGTH_UNIT;
 	item = slide_item_image(fn, geom);
-	slide_add_item(e->slide, item);
+	item = slide_add_item(e->slide, item);
 	return item;
 }
 
@@ -917,7 +917,7 @@ static SlideItem *create_frame(GtkSlideView *e, double cx, double cy,
 	geom.w.len = w;   geom.w.unit = LENGTH_UNIT;
 	geom.h.len = h;   geom.h.unit = LENGTH_UNIT;
 	item = slide_item_text(&runs, &nruns, 1, geom, ALIGN_INHERIT);
-	slide_add_item(e->slide, item);
+	item = slide_add_item(e->slide, item);
 	return item;
 }
 

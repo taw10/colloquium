@@ -69,7 +69,7 @@ static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
 	runs[0].text = strdup("Slide title");
 
 	item = slide_item_slidetitle(&runs, &nruns, 1);
-	slide_add_item(sw->slide, item);
+	item = slide_add_item(sw->slide, item);
 	gtk_slide_view_set_slide(sw->sv, sw->slide);
 }
 
@@ -120,7 +120,7 @@ static gint insert_image_response_sig(GtkWidget *d, gint response, SlideWindow *
 		}
 
 		item = slide_item_image(fn, geom);
-		slide_add_item(sw->slide, item);
+		item = slide_add_item(sw->slide, item);
 	}
 
 	gtk_widget_destroy(d);

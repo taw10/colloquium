@@ -38,7 +38,7 @@ typedef struct _slideitem SlideItem;
 extern Slide *slide_new(void);
 extern void slide_free(Slide *s);
 
-extern void slide_add_item(Slide *s, SlideItem *item);
+extern SlideItem *slide_add_item(Slide *s, SlideItem *item);
 extern void slide_delete_item(Slide *s, SlideItem *item);
 
 extern int slide_set_logical_size(Slide *s, double w, double h);

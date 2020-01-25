@@ -82,17 +82,18 @@ static SlideItem *slide_item_new()
 }
 
 
-void slide_add_item(Slide *s, SlideItem *item)
+SlideItem *slide_add_item(Slide *s, SlideItem *item)
 {
 	SlideItem *new_items;
 
 	new_items = realloc(s->items, (s->n_items+1)*sizeof(SlideItem));
-	if ( new_items == NULL ) return;
+	if ( new_items == NULL ) return NULL;
 	s->items = new_items;
 
 	/* Copy contents and free top-level */
 	s->items[s->n_items++] = *item;
 	free(item);
+	return &s->items[s->n_items-1];
 }
 
 

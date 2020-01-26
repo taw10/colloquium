@@ -594,8 +594,8 @@ static int gtksv_find_cursor(SlideItem *item, Stylesheet *stylesheet,
 	pos->para = i-1;
 
 	pango_layout_xy_to_index(item->paras[i-1].layout,
-	                         pango_units_from_double(x - padl),
-	                         pango_units_from_double(y - top - padt),
+	                         pango_units_from_double(x),
+	                         pango_units_from_double(y - top),
 	                         &pos->pos, &pos->trail);
 	return 0;
 }

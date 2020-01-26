@@ -903,6 +903,37 @@ static void gtknv_cursor_movev(GtkNarrativeView *e, signed int dir)
 }
 
 
+static struct text_run *blank_run()
+{
+	struct text_run *runs;
+
+	runs = malloc(sizeof(struct text_run));
+	if ( runs == NULL ) return NULL;
+
+	runs[0].text = strdup("");
+	runs[0].type = TEXT_RUN_NORMAL;
+	if ( runs[0].text == NULL ) {
+		free(runs);
+		return NULL;
+	}
+
+	return runs;
+}
+
+
+static void ensure_run(GtkNarrativeView *e)
+{
+	int i = e->cpos.para;
+	if ( !narrative_item_is_text(e->n, i) ) return;
+	if ( e->n->items[i].n_runs == 0 ) {
+		printf("No run - adding one\n");
+		struct text_run *runs = blank_run();
+		e->n->items[i].runs = runs;
+		e->n->items[i].n_runs = 1;
+	}
+}
+
+
 static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
                                        GtkNarrativeView *e)
 {
@@ -917,6 +948,7 @@ static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 	gtknv_find_cursor(e->n, x, y, &e->sel_start);
 	e->sel_end = e->sel_start;
 	e->cpos = e->sel_start;
+	ensure_run(e);
 	set_cursor_h_pos(e);
 
 	if ( event->type == GDK_2BUTTON_PRESS ) {
@@ -1080,6 +1112,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Left :
 		gtknv_cursor_moveh(e->n, &e->cpos, -1);
+		ensure_run(e);
 		check_cursor_visible(e);
 		set_cursor_h_pos(e);
 		gtknv_redraw(e);
@@ -1088,6 +1121,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Right :
 		gtknv_cursor_moveh(e->n, &e->cpos, +1);
+		ensure_run(e);
 		check_cursor_visible(e);
 		set_cursor_h_pos(e);
 		gtknv_redraw(e);
@@ -1096,6 +1130,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Up :
 		gtknv_cursor_movev(e, -1);
+		ensure_run(e);
 		check_cursor_visible(e);
 		gtknv_redraw(e);
 		claim = 1;
@@ -1103,6 +1138,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Down :
 		gtknv_cursor_movev(e, +1);
+		ensure_run(e);
 		check_cursor_visible(e);
 		gtknv_redraw(e);
 		claim = 1;
@@ -1344,24 +1380,6 @@ void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e)
 	insert_pos = maybe_split_para(e);
 	narrative_insert_slide(e->n, insert_pos, s);
 	post_add_stuff(e, insert_pos);
-}
-
-
-static struct text_run *blank_run()
-{
-	struct text_run *runs;
-
-	runs = malloc(sizeof(struct text_run));
-	if ( runs == NULL ) return NULL;
-
-	runs[0].text = strdup("");
-	runs[0].type = TEXT_RUN_NORMAL;
-	if ( runs[0].text == NULL ) {
-		free(runs);
-		return NULL;
-	}
-
-	return runs;
 }
 
 

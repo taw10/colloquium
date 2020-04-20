@@ -553,8 +553,7 @@ static void stylesheet_editor_finalize(GObject *obj)
 
 static void stylesheet_editor_init(StylesheetEditor *se)
 {
-	se->priv = G_TYPE_INSTANCE_GET_PRIVATE(se, COLLOQUIUM_TYPE_STYLESHEET_EDITOR,
-	                                       StylesheetEditorPrivate);
+	se->priv = stylesheet_editor_get_instance_private(se);
 	gtk_widget_init_template(GTK_WIDGET(se));
 }
 

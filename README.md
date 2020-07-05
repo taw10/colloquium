@@ -1,33 +1,38 @@
 Colloquium: Narrative-based presentation system
 ===============================================
 
-Copyright © 2017-2019 Thomas White
+Colloquium is a new approach to presentation tools which centres on _narrative_, not _slides_.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+In Colloquium, rather than acting as the framework for your words, slides are embedded into the "narrative" of your presentation and only come into play when there's a need for a visual aid.  Concentrating on the narrative makes it much easier to give a clear presentation which flows naturally.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+You can use the narrative in whatever way you like, which could range from short bullet-pointed notes all the way up to writing your talk word-for-word.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+![Narrative](screenshots/narrative.png)
 
-Author: Thomas White <taw@bitwiz.me.uk>
+---
 
-See the COPYING file for full licence conditions.
+Within the narrative, you can double-click a slide to open it in a familiar kind of editor.  Drag and drop images, shift-drag to create text boxes, and so on.  A stylesheet system helps to enforce design consistency.
 
-Summary
--------
+![Editor](screenshots/editor.png)
 
-Colloquium is a presentation program that is more than just "slideware".
-Instead of concentrating on slides, Colloquium makes the "narrative" of your
-presentation the most important thing.  Slides are embedded in your narrative,
-forming part of the flow of your talk.
+---
 
+Colloquium's presentation clock shows the passage of time and your progress through the talk on a bar chart.  When you're running fast, the difference is coloured green.  If you're running slow, it's red.  You can see at a glance how you're doing, even though all slides do not take an equal amount of time.
+
+![Timer](screenshots/timer.png)
+
+---
+
+Colloquium stores your presentations in a transparent, plain text format.  Files behave well with all version control systems for easy tracking and merging of changes.  You can easily edit files by hand if you need to, or even generate them programmatically.
+
+Here's how it looks, in case you were wondering:
+
+    : This is an example file.  This line is normal narrative text
+    SLIDE {
+        SLIDETITLE: Here is the title of the slide
+        IMAGE[1fx1f+0+0]: /home/user/image.png
+    }
+    : Here is some more narrative text
 
 Installation instructions
 -------------------------
@@ -89,11 +94,33 @@ you get started.
 Contributing
 ------------
 
+Comments and suggestions welcome. Feel free to email me (taw@bitwiz.me.uk)!
+
+More information, including presentation tips, on my website: https://www.bitwiz.me.uk/colloquium
+
+File bug reports and feature requests here:  https://github.com/taw10/colloquium/issues
+
 Clone from either GitHub or my private repository:
 
     $ git clone git://git.bitwiz.me.uk/colloquium.git
     $ git clone https://github.com/taw10/colloquium.git
 
-Browse the repository:  https://git.bitwiz.me.uk/?p=colloquium.git or https://github.com/taw10/colloquium
+Browse the repositories:  https://git.bitwiz.me.uk/?p=colloquium.git or https://github.com/taw10/colloquium
 
-Issue tracker:  https://github.com/taw10/colloquium/issues
+Licence
+-------
+
+Copyright © 2017-2020 Thomas White <taw@bitwiz.me.uk>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

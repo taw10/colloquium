@@ -199,6 +199,16 @@ int narrative_item_is_text(Narrative *n, int item)
 }
 
 
+int narrative_item_is_empty_text(Narrative *n, int item)
+{
+	struct narrative_item *i = &n->items[item];
+
+	return (narrative_item_is_text(n, item)
+	     && (i->n_runs == 1)
+	     && (strlen(i->runs[0].text)==0));
+}
+
+
 void narrative_add_stylesheet(Narrative *n, Stylesheet *ss)
 {
 	assert(n->stylesheet == NULL);
@@ -336,7 +346,7 @@ void narrative_insert_slide(Narrative *n, int pos, Slide *slide)
 }
 
 
-static void delete_item(Narrative *n, int del)
+void narrative_delete_item(Narrative *n, int del)
 {
 	int i;
 	narrative_item_destroy(&n->items[del]);
@@ -408,7 +418,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 
 	/* Starting item */
 	if ( !narrative_item_is_text(n, i1) ) {
-		delete_item(n, i1);
+		narrative_delete_item(n, i1);
 		if ( i1 == i2 ) return;  /* only one slide to delete */
 		middle = i1; /* ... which is now the item just after the slide */
 		i2--;
@@ -429,14 +439,14 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 	for ( i=middle; i<i2; i++ ) {
 		/* Deleting the item moves all the subsequent items up, so the
 		 * index to be deleted doesn't change. */
-		delete_item(n, middle);
+		narrative_delete_item(n, middle);
 		n_del++;
 	}
 	i2 -= n_del;
 
 	/* Last item */
 	if ( !narrative_item_is_text(n, i2) ) {
-		delete_item(n, i2);
+		narrative_delete_item(n, i2);
 		return;
 	}
 
@@ -468,7 +478,7 @@ void narrative_delete_block(Narrative *n, int i1, size_t o1, int i2, size_t o2)
 		}
 		item1->n_runs += item2->n_runs;
 
-		delete_item(n, i2);
+		narrative_delete_item(n, i2);
 		update_timing(item1);
 	}
 }

@@ -703,20 +703,36 @@ static void gtknv_do_backspace(GtkNarrativeView *e, signed int dir)
 		p1 = e->sel_start;
 		p2 = e->sel_end;
 
+		sort_positions(&p1, &p2);
+		o1 = narrative_pos_trail_to_offset(e->n, p1.para, p1.pos, p1.trail);
+		o2 = narrative_pos_trail_to_offset(e->n, p2.para, p2.pos, p2.trail);
+		narrative_delete_block(e->n, p1.para, o1, p2.para, o2);
+		e->cpos = p1;
+
 	} else {
 
 		/* Delete one character, as represented visually */
-		p2 = e->cpos;
-		p1 = p2;
-		gtknv_cursor_moveh(e->n, &p1, dir);
-		set_cursor_h_pos(e);
+
+		if ( narrative_item_is_empty_text(e->n, e->cpos.para) ) {
+			narrative_delete_item(e->n, e->cpos.para);
+			if ( dir == -1 ) {
+				e->cpos.para--;
+			} /* else we are already on the right item */
+		} else {
+
+			p2 = e->cpos;
+			p1 = p2;
+			gtknv_cursor_moveh(e->n, &p1, dir);
+			set_cursor_h_pos(e);
+			sort_positions(&p1, &p2);
+			o1 = narrative_pos_trail_to_offset(e->n, p1.para, p1.pos, p1.trail);
+			o2 = narrative_pos_trail_to_offset(e->n, p2.para, p2.pos, p2.trail);
+			narrative_delete_block(e->n, p1.para, o1, p2.para, o2);
+			e->cpos = p1;
+
+		}
 	}
 
-	sort_positions(&p1, &p2);
-	o1 = narrative_pos_trail_to_offset(e->n, p1.para, p1.pos, p1.trail);
-	o2 = narrative_pos_trail_to_offset(e->n, p2.para, p2.pos, p2.trail);
-	narrative_delete_block(e->n, p1.para, o1, p2.para, o2);
-	e->cpos = p1;
 	gtknv_unset_selection(e);
 
 	/* The only paragraphs which still exist and might have been

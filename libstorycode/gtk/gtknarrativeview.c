@@ -1308,7 +1308,7 @@ GtkWidget *gtk_narrative_view_new(Narrative *n)
 	                       | GDK_BUTTON1_MOTION_MASK
 	                       | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
 	                       | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK
-	                       | GDK_SCROLL_MASK);
+	                       | GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK);
 
 	g_signal_connect(G_OBJECT(nview), "draw",
 			 G_CALLBACK(gtknv_draw_sig), nview);

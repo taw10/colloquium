@@ -187,6 +187,9 @@ size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int trail)
 
 	run = narrative_which_run(item, offs, &run_offs);
 
+	assert(item != NULL);
+	assert(run < item->n_runs);
+	assert(item->runs[run].text != NULL);
 	char_offs = g_utf8_pointer_to_offset(item->runs[run].text,
 	                                     item->runs[run].text+run_offs);
 	char_offs += trail;

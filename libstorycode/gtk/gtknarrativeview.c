@@ -123,6 +123,34 @@ static void set_vertical_params(GtkNarrativeView *e)
 	                         e->visible_height, page);
 }
 
+static struct text_run *blank_run()
+{
+	struct text_run *runs;
+
+	runs = malloc(sizeof(struct text_run));
+	if ( runs == NULL ) return NULL;
+
+	runs[0].text = strdup("");
+	runs[0].type = TEXT_RUN_NORMAL;
+	if ( runs[0].text == NULL ) {
+		free(runs);
+		return NULL;
+	}
+
+	return runs;
+}
+
+
+static void ensure_run(GtkNarrativeView *e, int para)
+{
+	if ( !narrative_item_is_text(e->n, para) ) return;
+	if ( e->n->items[para].n_runs == 0 ) {
+		printf("No run - adding one\n");
+		struct text_run *runs = blank_run();
+		e->n->items[para].runs = runs;
+		e->n->items[para].n_runs = 1;
+	}
+}
 
 static void rewrap_range(GtkNarrativeView *e, int min, int max)
 {
@@ -725,6 +753,8 @@ static void gtknv_do_backspace(GtkNarrativeView *e, signed int dir)
 			gtknv_cursor_moveh(e->n, &p1, dir);
 			set_cursor_h_pos(e);
 			sort_positions(&p1, &p2);
+			ensure_run(e, p1.para);
+			ensure_run(e, p2.para);
 			o1 = narrative_pos_trail_to_offset(e->n, p1.para, p1.pos, p1.trail);
 			o2 = narrative_pos_trail_to_offset(e->n, p2.para, p2.pos, p2.trail);
 			narrative_delete_block(e->n, p1.para, o1, p2.para, o2);
@@ -732,6 +762,8 @@ static void gtknv_do_backspace(GtkNarrativeView *e, signed int dir)
 
 		}
 	}
+
+	ensure_run(e, e->cpos.para);
 
 	gtknv_unset_selection(e);
 
@@ -919,37 +951,6 @@ static void gtknv_cursor_movev(GtkNarrativeView *e, signed int dir)
 }
 
 
-static struct text_run *blank_run()
-{
-	struct text_run *runs;
-
-	runs = malloc(sizeof(struct text_run));
-	if ( runs == NULL ) return NULL;
-
-	runs[0].text = strdup("");
-	runs[0].type = TEXT_RUN_NORMAL;
-	if ( runs[0].text == NULL ) {
-		free(runs);
-		return NULL;
-	}
-
-	return runs;
-}
-
-
-static void ensure_run(GtkNarrativeView *e)
-{
-	int i = e->cpos.para;
-	if ( !narrative_item_is_text(e->n, i) ) return;
-	if ( e->n->items[i].n_runs == 0 ) {
-		printf("No run - adding one\n");
-		struct text_run *runs = blank_run();
-		e->n->items[i].runs = runs;
-		e->n->items[i].n_runs = 1;
-	}
-}
-
-
 static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
                                        GtkNarrativeView *e)
 {
@@ -964,7 +965,7 @@ static gboolean gtknv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 	gtknv_find_cursor(e->n, x, y, &e->sel_start);
 	e->sel_end = e->sel_start;
 	e->cpos = e->sel_start;
-	ensure_run(e);
+	ensure_run(e, e->cpos.para);
 	set_cursor_h_pos(e);
 
 	if ( event->type == GDK_2BUTTON_PRESS ) {
@@ -1009,6 +1010,7 @@ static gboolean gtknv_motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 	old_sel_end = e->sel_end;
 	gtknv_find_cursor(e->n, x, y, &e->sel_end);
+	ensure_run(e, e->sel_end.para);
 
 	minp = e->sel_start.para;
 	maxp = e->sel_end.para;
@@ -1020,6 +1022,7 @@ static gboolean gtknv_motion_sig(GtkWidget *da, GdkEventMotion *event,
 
 	rewrap_range(e, minp, maxp);
 	gtknv_find_cursor(e->n, x, y, &e->cpos);
+	ensure_run(e, e->cpos.para);
 	gtknv_redraw(e);
 
 	gdk_event_request_motions(event);
@@ -1128,7 +1131,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Left :
 		gtknv_cursor_moveh(e->n, &e->cpos, -1);
-		ensure_run(e);
+		ensure_run(e, e->cpos.para);
 		check_cursor_visible(e);
 		set_cursor_h_pos(e);
 		gtknv_redraw(e);
@@ -1137,7 +1140,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Right :
 		gtknv_cursor_moveh(e->n, &e->cpos, +1);
-		ensure_run(e);
+		ensure_run(e, e->cpos.para);
 		check_cursor_visible(e);
 		set_cursor_h_pos(e);
 		gtknv_redraw(e);
@@ -1146,7 +1149,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Up :
 		gtknv_cursor_movev(e, -1);
-		ensure_run(e);
+		ensure_run(e, e->cpos.para);
 		check_cursor_visible(e);
 		gtknv_redraw(e);
 		claim = 1;
@@ -1154,7 +1157,7 @@ static gboolean gtknv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
 		case GDK_KEY_Down :
 		gtknv_cursor_movev(e, +1);
-		ensure_run(e);
+		ensure_run(e, e->cpos.para);
 		check_cursor_visible(e);
 		gtknv_redraw(e);
 		claim = 1;

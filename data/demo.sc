@@ -2,7 +2,7 @@ STYLES {
   NARRATIVE {
     FONT Cantarell Regular 16
     FGCOL #222222
-    BGCOL #FFFFFF
+    BGCOL 1.00,1.00,1.00,1.00
     PARASPACE 0u,0u,10u,10u
     PAD 10u,10u,10u,10u
     BP {
@@ -11,6 +11,10 @@ STYLES {
     }
     PRESTITLE {
       FONT Cantarell Bold 20
+    }
+    SEGMENT_START {
+      FONT Sans Bold 16
+      PARASPACE 0u,0u,16u,0u
     }
   }
   SLIDE {
@@ -76,7 +80,7 @@ BP: Write your talk word for word.  Deliver your talk precisely as you planned i
 BP: Write bullet-pointed notes to structure your talk.
 BP: Create a written version of your talk to print out and give to your audience as a handout.
 BP: Use it as a journal, adding slides whenever you have an illustration.  You'll have a ready-made presentation on your activity, with no extra effort!
-SEGMENT_END
+SEGMENT_START: Bonus features
 : Besides this, Colloquium has some features which will help you when you come to give your presentation.  In the "Tools" menu, you'll find the presentation clock and the test card.
 : Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
 : Now, a short warning:
@@ -100,4 +104,7 @@ ENDOFPRESENTATION
 : ... by the way, anything after the "End of presentation" marker will not be included in your presentation's timing.  This is where you should put "bonus material", perhaps to be referred to when answering questions after your talk.
 SLIDE {
   SLIDETITLE: Bonus slide #1
+  TEXT[734.9ux465.1u+122.3u+194.3u]: This bonus slide answers all of the questions:
+                                   : 1. Why we are here
+                                   : 2. The meaning of existence is .....
 }

@@ -46,6 +46,7 @@
 #include "slide.h"
 #include "narrative.h"
 #include "narrative_priv.h"
+#include "slide_priv.h"
 #include "imagestore.h"
 #include "storycode.h"
 
@@ -143,6 +144,32 @@ Narrative *narrative_load(GFile *file)
 }
 
 
+static void make_references_relative(Narrative *n, GFile *file)
+{
+	int i;
+	GFile *parent = g_file_get_parent(file);
+
+	for ( i=0; i<n->n_items; i++ ) {
+		int j;
+		Slide *s;
+		if ( n->items[i].type != NARRATIVE_ITEM_SLIDE ) continue;
+		s = n->items[i].slide;
+		for ( j=0; j<s->n_items; j++ ) {
+			if ( s->items[j].type != SLIDE_ITEM_IMAGE ) continue;
+			GFile *image = g_file_new_for_path(s->items[j].filename);
+			char *rel = g_file_get_relative_path(parent, image);
+			if ( rel != NULL ) {
+				free(s->items[j].filename);
+				s->items[j].filename = rel;
+			} else {
+				fprintf(stderr, _("Could not determine relative path for '%s'\n"),
+				        s->items[j].filename);
+			}
+		}
+	}
+}
+
+
 int narrative_save(Narrative *n, GFile *file)
 {
 	GFileOutputStream *fh;
@@ -153,6 +180,8 @@ int narrative_save(Narrative *n, GFile *file)
 		fprintf(stderr, "Saving to NULL!\n");
 		return 1;
 	}
+
+	make_references_relative(n, file);
 
 	fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
 	if ( fh == NULL ) {

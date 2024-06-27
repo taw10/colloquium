@@ -686,7 +686,7 @@ static gboolean gtksv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 	enum drag_corner c;
 	gdouble x, y;
 	Stylesheet *stylesheet;
-	SlideItem *clicked;
+	SlideItem *clicked = NULL;
 	int shift;
 	double slide_w, slide_h;
 	double frx, fry, frw, frh;
@@ -700,8 +700,17 @@ static gboolean gtksv_button_press_sig(GtkWidget *da, GdkEventButton *event,
 	y /= e->view_scale;
 	shift = event->state & GDK_SHIFT_MASK;
 
-	clicked = find_frame_at_position(e->slide, stylesheet,
-	                                 slide_w, slide_h, x, y);
+	if ( e->cursor_frame != NULL ) {
+		if ( within_frame(e->cursor_frame, stylesheet,
+		                  slide_w, slide_h, x, y) ) {
+			clicked = e->cursor_frame;
+		}
+	}
+
+	if ( clicked == NULL ) {
+		clicked = find_frame_at_position(e->slide, stylesheet,
+		                                 slide_w, slide_h, x, y);
+	}
 
 	if ( clicked != NULL ) {
 		slide_item_get_geom(clicked, stylesheet, &frx, &fry, &frw, &frh,

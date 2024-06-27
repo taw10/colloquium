@@ -1286,6 +1286,12 @@ static gboolean gtksv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		claim = 1;
 		break;
 
+		case GDK_KEY_Escape :
+		e->cursor_frame = NULL;
+		gtksv_redraw(e);
+		claim = 1;
+		break;
+
 	}
 
 	if ( claim ) return TRUE;

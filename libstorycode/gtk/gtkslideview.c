@@ -658,6 +658,7 @@ static void do_resize(GtkSlideView *e, double x, double y, double w, double h)
 		e->cursor_frame->geom.h.len = h;
 	}
 
+	gtksv_emit_change_sig(e);
 	gtksv_redraw(e);
 }
 
@@ -966,6 +967,7 @@ static gboolean gtksv_button_release_sig(GtkWidget *da, GdkEventButton *event,
 			e->cpos.pos = 0;
 			e->cpos.trail = 0;
 			gtksv_unset_selection(e);
+			gtksv_emit_change_sig(e);
 		} else {
 			fprintf(stderr, _("Failed to create frame!\n"));
 		}
@@ -1304,6 +1306,7 @@ static gboolean gtksv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_Home :
 		slide_item_to_top(e->slide, e->cursor_frame);
 		e->cursor_frame = &e->slide->items[e->slide->n_items-1];
+		gtksv_emit_change_sig(e);
 		gtksv_redraw(e);
 		claim = 1;
 		break;
@@ -1311,6 +1314,7 @@ static gboolean gtksv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		case GDK_KEY_End :
 		slide_item_to_bottom(e->slide, e->cursor_frame);
 		e->cursor_frame = &e->slide->items[0];
+		gtksv_emit_change_sig(e);
 		gtksv_redraw(e);
 		claim = 1;
 		break;
@@ -1521,6 +1525,7 @@ static void dnd_receive(GtkWidget *widget, GdkDragContext *drag_context,
 			                               e->start_corner_x, e->start_corner_y,
 			                               w, h);
 			free(filename);
+			gtksv_emit_change_sig(e);
 			gtksv_redraw(e);
 
 		} else {

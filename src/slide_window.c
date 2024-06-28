@@ -319,8 +319,16 @@ GActionEntry sw_entries[] = {
 };
 
 
+static void sw_emit_change_sig(GtkWidget *sv, SlideWindow *sw)
+{
+	g_signal_emit_by_name(sw, "changed");
+}
+
+
 static void gtk_slide_window_class_init(SlideWindowClass *klass)
 {
+	g_signal_new("changed", GTK_TYPE_SLIDE_WINDOW, G_SIGNAL_RUN_LAST, 0,
+	             NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
 
@@ -355,6 +363,9 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
 	g_signal_connect(G_OBJECT(sw->sv), "key-press-event",
 			 G_CALLBACK(sw_key_press_sig), sw);
+
+	g_signal_connect(G_OBJECT(sw->sv), "changed",
+			 G_CALLBACK(sw_emit_change_sig), sw);
 
 	slide_get_logical_size(slide, narrative_get_stylesheet(n), &w, &h);
 	gtk_window_set_default_size(GTK_WINDOW(sw), w, h);

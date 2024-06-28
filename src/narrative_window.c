@@ -597,6 +597,8 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
 		if ( nw->n_slidewindows < 16 ) {
 			SlideWindow *sw = slide_window_new(nw->n, slide, nw, nw->app);
 			nw->slidewindows[nw->n_slidewindows++] = sw;
+			g_signal_connect(G_OBJECT(sw), "changed",
+					G_CALLBACK(changed_sig), nw);
 			gtk_widget_show_all(GTK_WIDGET(sw));
 		} else {
 			fprintf(stderr, _("Too many slide windows\n"));

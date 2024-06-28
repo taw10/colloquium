@@ -582,7 +582,7 @@ static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
 	if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
 	while ( nw->n_slidewindows > 0 ) {
-		slide_window_destroy(nw->slidewindows[nw->n_slidewindows-1]);
+		gtk_widget_destroy(GTK_WIDGET(nw->slidewindows[nw->n_slidewindows-1]));
 	}
 	g_application_release(nw->app);
 	return FALSE;
@@ -595,8 +595,9 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
 	Slide *slide = (Slide *)pslide;
 	if ( nw->show == NULL ) {
 		if ( nw->n_slidewindows < 16 ) {
-			nw->slidewindows[nw->n_slidewindows++] = slide_window_open(nw->n, slide,
-			                                                           nw, nw->app);
+			SlideWindow *sw = slide_window_new(nw->n, slide, nw, nw->app);
+			nw->slidewindows[nw->n_slidewindows++] = sw;
+			gtk_widget_show_all(GTK_WIDGET(sw));
 		} else {
 			fprintf(stderr, _("Too many slide windows\n"));
 		}

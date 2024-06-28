@@ -27,18 +27,52 @@
 #include <config.h>
 #endif
 
-typedef struct _slidewindow SlideWindow;
+typedef struct _gtkslidewindow SlideWindow;
+typedef struct _gtkslidewindowclass SlideWindowClass;
 
 #include "narrative_window.h"
 
-extern SlideWindow *slide_window_open(Narrative *n, Slide *slide,
-                                      NarrativeWindow *parent,
-                                      GApplication *papp);
+#define GTK_TYPE_SLIDE_WINDOW (gtk_slide_window_get_type())
+
+#define GTK_SLIDE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                 GTK_TYPE_SLIDE_WINDOW, SlideWindow))
+
+#define GTK_IS_SLIDE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
+                                    GTK_TYPE_SLIDE_WINDOW))
+
+#define GTK_SLIDE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((obj), \
+                                         GTK_TYPE_SLIDE_WINDOW, SlideWindowClass))
+
+#define GTK_IS_SLIDE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
+                                            GTK_TYPE_SLIDE_WINDOW))
+
+#define GTK_SLIDE_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
+                                           GTK_TYPE_SLIDE_WINDOW, SlideWindowClass))
+
+struct _gtkslidewindow
+{
+	GtkApplicationWindow parent_instance;
+
+	/*< private >*/
+	Narrative           *n;
+	Slide               *slide;
+	GtkWidget           *sv;
+	NarrativeWindow     *parent;
+};
+
+struct _gtkslidewindowclass
+{
+	GtkApplicationWindowClass parent_class;
+};
+
+extern GType gtk_slide_window_get_type(void);
+
+extern SlideWindow *slide_window_new(Narrative *n,
+                                     Slide *slide,
+                                     NarrativeWindow *parent,
+                                     GApplication *papp);
 
 extern void slide_window_update(SlideWindow *sw);
-
-extern void slide_window_destroy(SlideWindow *sw);
-
 extern void slide_window_update_titlebar(SlideWindow *sw);
 
 #endif	/* SLIDEWINDOW_H */

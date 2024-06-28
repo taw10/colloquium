@@ -45,15 +45,7 @@
 #include "narrative_window.h"
 
 
-struct _slidewindow
-{
-	GtkWidget           *window;
-	Narrative           *n;
-	Slide               *slide;
-	GtkWidget           *sv;
-	NarrativeWindow     *parent;
-};
-
+G_DEFINE_TYPE_WITH_CODE(SlideWindow, gtk_slide_window, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
 static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
                                   gpointer vp)
@@ -307,7 +299,7 @@ static gboolean sw_key_press_sig(GtkWidget *da, GdkEventKey *event,
 static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	SlideWindow *sw = vp;
-	open_about_dialog(sw->window);
+	open_about_dialog(GTK_WIDGET(sw));
 }
 
 
@@ -327,30 +319,36 @@ GActionEntry sw_entries[] = {
 };
 
 
-SlideWindow *slide_window_open(Narrative *n, Slide *slide,
-                               NarrativeWindow *nw, GApplication *papp)
+static void gtk_slide_window_class_init(SlideWindowClass *klass)
 {
-	GtkWidget *window;
+}
+
+
+static void gtk_slide_window_init(SlideWindow *sw)
+{
+}
+
+
+SlideWindow *slide_window_new(Narrative *n, Slide *slide,
+                              NarrativeWindow *nw, GApplication *papp)
+{
 	SlideWindow *sw;
 	double w, h;
 	Colloquium *app = COLLOQUIUM(papp);
 
-	sw = calloc(1, sizeof(SlideWindow));
-	if ( sw == NULL ) return NULL;
+	sw = g_object_new(GTK_TYPE_SLIDE_WINDOW, "application", app, NULL);
+	gtk_window_set_role(GTK_WINDOW(sw), "slide");
 
-	window = gtk_application_window_new(GTK_APPLICATION(app));
-	gtk_window_set_role(GTK_WINDOW(window), "slide");
-	sw->window = window;
 	sw->n = n;
 	sw->slide = slide;
 	sw->parent = nw;
 
 	slide_window_update_titlebar(sw);
 
-	g_action_map_add_action_entries(G_ACTION_MAP(window), sw_entries,
+	g_action_map_add_action_entries(G_ACTION_MAP(sw), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);
 
-	g_signal_connect(G_OBJECT(window), "destroy",
+	g_signal_connect(G_OBJECT(sw), "destroy",
 	                 G_CALLBACK(sw_close_sig), sw);
 
 	sw->sv = gtk_slide_view_new(n, slide);
@@ -359,13 +357,11 @@ SlideWindow *slide_window_open(Narrative *n, Slide *slide,
 			 G_CALLBACK(sw_key_press_sig), sw);
 
 	slide_get_logical_size(slide, narrative_get_stylesheet(n), &w, &h);
-	gtk_window_set_default_size(GTK_WINDOW(window), w, h);
+	gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
 
-	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(sw->sv));
+	gtk_container_add(GTK_CONTAINER(sw), GTK_WIDGET(sw->sv));
 
-	gtk_window_set_resizable(GTK_WINDOW(sw->window), TRUE);
-
-	gtk_widget_show_all(window);
+	gtk_window_set_resizable(GTK_WINDOW(sw), TRUE);
 
 	return sw;
 }
@@ -390,11 +386,5 @@ void slide_window_update_titlebar(SlideWindow *sw)
 	         1+narrative_get_slide_number_for_slide(sw->n, sw->slide));
 	if ( narrative_get_unsaved(sw->n) ) strcat(title, " *");
 
-	gtk_window_set_title(GTK_WINDOW(sw->window), title);
-}
-
-
-void slide_window_destroy(SlideWindow *sw)
-{
-	gtk_widget_destroy(sw->window);
+	gtk_window_set_title(GTK_WINDOW(sw), title);
 }

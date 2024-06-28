@@ -459,6 +459,36 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void set_text_type(NarrativeWindow *nw, enum text_run_type t)
+{
+	printf("%i\n", t);
+}
+
+
+static void bold_sig(GSimpleAction *action, GVariant *parameter,
+                     gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	set_text_type(nw, TEXT_RUN_BOLD);
+}
+
+
+static void italic_sig(GSimpleAction *action, GVariant *parameter,
+                       gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	set_text_type(nw, TEXT_RUN_ITALIC);
+}
+
+
+static void underline_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+	NarrativeWindow *nw = vp;
+	set_text_type(nw, TEXT_RUN_UNDERLINE);
+}
+
+
 static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
@@ -728,6 +758,9 @@ GActionEntry nw_entries[] = {
 	{ "prev", prev_para_sig, NULL, NULL, NULL },
 	{ "next", next_para_sig, NULL, NULL, NULL },
 	{ "last", last_para_sig, NULL, NULL, NULL },
+	{ "bold", bold_sig, NULL, NULL, NULL },
+	{ "italic", italic_sig, NULL, NULL, NULL },
+	{ "underline", underline_sig, NULL, NULL, NULL },
 	{ "print", print_sig, NULL, NULL, NULL  },
 	{ "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 };
@@ -816,6 +849,30 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *p
 	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->blast));
 	gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
 	                               "win.last");
+
+	button = gtk_separator_tool_item_new();
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+
+	image = gtk_image_new_from_icon_name("format-text-bold",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	button = gtk_tool_button_new(image, _("Bold"));
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.bold");
+
+	image = gtk_image_new_from_icon_name("format-text-italic",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	button = gtk_tool_button_new(image, _("Italic"));
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.italic");
+
+	image = gtk_image_new_from_icon_name("format-text-underline",
+	                                     GTK_ICON_SIZE_LARGE_TOOLBAR);
+	button = gtk_tool_button_new(image, _("Underline"));
+	gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+	                               "win.underline");
 
 	gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
 	gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);

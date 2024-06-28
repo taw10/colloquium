@@ -1301,6 +1301,20 @@ static gboolean gtksv_key_press_sig(GtkWidget *da, GdkEventKey *event,
 		claim = 1;
 		break;
 
+		case GDK_KEY_Home :
+		slide_item_to_top(e->slide, e->cursor_frame);
+		e->cursor_frame = &e->slide->items[e->slide->n_items-1];
+		gtksv_redraw(e);
+		claim = 1;
+		break;
+
+		case GDK_KEY_End :
+		slide_item_to_bottom(e->slide, e->cursor_frame);
+		e->cursor_frame = &e->slide->items[0];
+		gtksv_redraw(e);
+		claim = 1;
+		break;
+
 	}
 
 	if ( claim ) return TRUE;

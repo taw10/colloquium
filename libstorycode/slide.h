@@ -66,6 +66,9 @@ extern void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
 extern void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off);
 extern void slide_item_delete_text(SlideItem *item, int p1, size_t o1, int p2, size_t o2);
 
+extern void slide_item_to_top(Slide *s, SlideItem *item);
+extern void slide_item_to_bottom(Slide *s, SlideItem *item);
+
 /* For debugging, not really part of API */
 extern void describe_slide(Slide *s);
 

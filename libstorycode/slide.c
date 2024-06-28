@@ -72,6 +72,50 @@ void slide_delete_item(Slide *s, SlideItem *item)
 }
 
 
+void slide_item_to_top(Slide *s, SlideItem *item)
+{
+	int i;
+	int idx = s->n_items;
+	SlideItem scratch;
+
+	if ( item == NULL ) return;
+	for ( i=0; i<s->n_items; i++ ) {
+		if ( &s->items[i] == item ) {
+			idx = i;
+			break;
+		}
+	}
+	if ( idx == s->n_items ) return;
+	if ( idx == s->n_items-1 ) return;  /* Already at top */
+
+	scratch = s->items[idx];
+	memmove(&s->items[idx], &s->items[idx+1], (s->n_items-idx)*sizeof(SlideItem));
+	s->items[s->n_items-1] = scratch;
+}
+
+
+void slide_item_to_bottom(Slide *s, SlideItem *item)
+{
+	int i;
+	int idx = s->n_items;
+	SlideItem scratch;
+
+	if ( item == NULL ) return;
+	for ( i=0; i<s->n_items; i++ ) {
+		if ( &s->items[i] == item ) {
+			idx = i;
+			break;
+		}
+	}
+	if ( idx == s->n_items ) return;
+	if ( idx == 0 ) return;  /* Already at top */
+
+	scratch = s->items[idx];
+	memmove(&s->items[1], &s->items[0], idx*sizeof(SlideItem));
+	s->items[0] = scratch;
+}
+
+
 static SlideItem *slide_item_new()
 {
 	SlideItem *item;

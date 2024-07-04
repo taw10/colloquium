@@ -295,10 +295,17 @@ static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp
 	open_about_dialog(GTK_WIDGET(sw));
 }
 
+static void sw_save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+	SlideWindow *sw = vp;
+	g_action_group_activate_action(G_ACTION_GROUP(sw->parent), "save", parameter);
+}
+
 
 GActionEntry sw_entries[] = {
 
 	{ "about", sw_about_sig, NULL, NULL, NULL },
+	{ "save", sw_save_sig, NULL, NULL, NULL },
 	{ "paste", paste_sig, NULL, NULL, NULL },
 	{ "copyframe", copy_frame_sig, NULL, NULL, NULL },
 	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },

@@ -563,11 +563,11 @@ static void scroll_down(NarrativeWindow *nw)
 
 static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
+	int i;
 	if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
-	while ( nw->n_slidewindows > 0 ) {
-		gtk_widget_destroy(GTK_WIDGET(nw->slidewindows[nw->n_slidewindows-1]));
+	for ( i=0; i<nw->n_slidewindows; i++ ) {
+		gtk_widget_destroy(GTK_WIDGET(nw->slidewindows[i]));
 	}
-	g_application_release(nw->app);
 	return FALSE;
 }
 
@@ -895,8 +895,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
 	gtk_container_set_focus_child(GTK_CONTAINER(nw),
 	                              GTK_WIDGET(nw->nv));
-
-	g_application_hold(app);
 
 	return nw;
 }

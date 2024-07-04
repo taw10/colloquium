@@ -34,7 +34,6 @@ typedef struct _narrative_window NarrativeWindow;
 extern NarrativeWindow *narrative_window_new(Narrative *n, GFile *file,
                                              GApplication *papp);
 
-extern void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw);
 
 extern char *narrative_window_get_filename(NarrativeWindow *nw);
 

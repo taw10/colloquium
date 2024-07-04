@@ -270,13 +270,6 @@ static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static gboolean sw_close_sig(GtkWidget *w, SlideWindow *sw)
-{
-	narrative_window_sw_closed(sw->parent, sw);
-	return FALSE;
-}
-
-
 static gboolean sw_key_press_sig(GtkWidget *da, GdkEventKey *event,
                                  SlideWindow *sw)
 {
@@ -355,9 +348,6 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
 	g_action_map_add_action_entries(G_ACTION_MAP(sw), sw_entries,
 	                                G_N_ELEMENTS(sw_entries), sw);
-
-	g_signal_connect(G_OBJECT(sw), "destroy",
-	                 G_CALLBACK(sw_close_sig), sw);
 
 	sw->sv = gtk_slide_view_new(n, slide);
 

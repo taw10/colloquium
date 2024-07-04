@@ -113,13 +113,13 @@ static void update_titlebar(NarrativeWindow *nw)
 }
 
 
-void narrative_window_sw_closed(NarrativeWindow *nw, SlideWindow *sw)
+void slide_window_closed_sig(GtkWidget *sw, GdkEvent *event, NarrativeWindow *nw)
 {
 	int i;
 	int found = 0;
 
 	for ( i=0; i<nw->n_slidewindows; i++ ) {
-		if ( nw->slidewindows[i] == sw ) {
+		if ( nw->slidewindows[i] == GTK_SLIDE_WINDOW(sw) ) {
 			int j;
 			for ( j=i; j<nw->n_slidewindows-1; j++ ) {
 				nw->slidewindows[j] = nw->slidewindows[j+1];
@@ -599,6 +599,8 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
 			nw->slidewindows[nw->n_slidewindows++] = sw;
 			g_signal_connect(G_OBJECT(sw), "changed",
 					G_CALLBACK(changed_sig), nw);
+			g_signal_connect(G_OBJECT(sw), "delete-event",
+			                 G_CALLBACK(slide_window_closed_sig), nw);
 			gtk_widget_show_all(GTK_WIDGET(sw));
 		} else {
 			fprintf(stderr, _("Too many slide windows\n"));

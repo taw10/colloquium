@@ -27,13 +27,62 @@
 #include <config.h>
 #endif
 
-typedef struct _narrative_window NarrativeWindow;
+typedef struct _narrativewindow NarrativeWindow;
+typedef struct _narrativewindowclass NarrativeWindowClass;
 
+#define GTK_TYPE_NARRATIVE_WINDOW (narrativewindow_get_type())
+
+#define GTK_NARRATIVE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                 GTK_TYPE_NARRATIVE_WINDOW, NarrativeWindow))
+
+#define GTK_IS_NARRATIVE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
+                                    GTK_TYPE_NARRATIVE_WINDOW))
+
+#define GTK_NARRATIVE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((obj), \
+                                         GTK_TYPE_NARRATIVE_WINDOW, NarrativeWindowClass))
+
+#define GTK_IS_NARRATIVE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
+                                            GTK_TYPE_NARRATIVE_WINDOW))
+
+#define GTK_NARRATIVE_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
+                                           GTK_TYPE_NARRATIVE_WINDOW, NarrativeWindowClass))
+
+#include "pr_clock.h"
+#include "slideshow.h"
 #include "slide_window.h"
 
-extern NarrativeWindow *narrative_window_new(Narrative *n, GFile *file,
-                                             GApplication *papp);
+struct _narrativewindow
+{
+	GtkApplicationWindow parent_instance;
 
+	/*< private >*/
+	GtkToolItem         *bfirst;
+	GtkToolItem         *bprev;
+	GtkToolItem         *bnext;
+	GtkToolItem         *blast;
+	GtkWidget           *nv;
+	GApplication        *app;
+	Narrative           *n;
+	GFile               *file;
+	SCSlideshow         *show;
+	int                  show_no_slides;
+	PRClock             *pr_clock;
+	SlideWindow         *slidewindows[16];
+	int                  n_slidewindows;
+};
+
+
+struct _narrativewindowclass
+{
+	GtkApplicationWindowClass parent_class;
+};
+
+
+extern GType narrativewindow_get_type(void);
+
+extern NarrativeWindow *narrative_window_new(Narrative *n,
+                                             GFile *file,
+                                             GApplication *app);
 
 extern char *narrative_window_get_filename(NarrativeWindow *nw);
 

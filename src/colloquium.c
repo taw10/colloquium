@@ -61,11 +61,13 @@ static void colloquium_activate(GApplication *papp)
 {
 	Colloquium *app = COLLOQUIUM(papp);
 	if ( !app->first_run ) {
+		NarrativeWindow *nw;
 		Narrative *n = narrative_new();
 		GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
 		stylesheet_set_from_file(narrative_get_stylesheet(n), file);
 		narrative_add_empty_item(n);
-		narrative_window_new(n, NULL, papp);
+		nw = narrative_window_new(n, NULL, papp);
+		gtk_widget_show_all(GTK_WIDGET(nw));
 		g_object_unref(file);
 	}
 }
@@ -230,7 +232,9 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 		Narrative *n;
 		n = narrative_load(files[i]);
 		if ( n != NULL ) {
-			narrative_window_new(n, files[i], papp);
+			NarrativeWindow *nw;
+			nw = narrative_window_new(n, files[i], papp);
+			gtk_widget_show_all(GTK_WIDGET(nw));
 		} else {
 			char *uri = g_file_get_uri(files[i]);
 			fprintf(stderr, _("Failed to load presentation '%s'\n"),

@@ -47,30 +47,13 @@
 #include "print.h"
 #include "stylesheet_editor.h"
 
-struct _narrative_window
-{
-	GtkWidget           *window;
-	GtkToolItem         *bfirst;
-	GtkToolItem         *bprev;
-	GtkToolItem         *bnext;
-	GtkToolItem         *blast;
-	GtkWidget           *nv;
-	GApplication        *app;
-	Narrative           *n;
-	GFile               *file;
-	SCSlideshow         *show;
-	int                  show_no_slides;
-	PRClock             *pr_clock;
-	SlideWindow         *slidewindows[16];
-	int                  n_slidewindows;
-};
-
+G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
 static void show_error(NarrativeWindow *nw, const char *err)
 {
 	GtkWidget *mw;
 
-	mw = gtk_message_dialog_new(GTK_WINDOW(nw->window),
+	mw = gtk_message_dialog_new(GTK_WINDOW(nw),
 	                            GTK_DIALOG_DESTROY_WITH_PARENT,
 	                            GTK_MESSAGE_ERROR,
 	                            GTK_BUTTONS_CLOSE, "%s", err);
@@ -105,7 +88,7 @@ static void update_titlebar(NarrativeWindow *nw)
 	if ( narrative_get_unsaved(nw->n) ) strcat(title, " *");
 	free(filename);
 
-	gtk_window_set_title(GTK_WINDOW(nw->window), title);
+	gtk_window_set_title(GTK_WINDOW(nw), title);
 
 	for ( i=0; i<nw->n_slidewindows; i++ ) {
 		slide_window_update_titlebar(nw->slidewindows[i]);
@@ -194,7 +177,7 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 	NarrativeWindow *nw = vp;
 
 	d = gtk_file_chooser_dialog_new(_("Save presentation"),
-	                                GTK_WINDOW(nw->window),
+	                                GTK_WINDOW(nw),
 	                                GTK_FILE_CHOOSER_ACTION_SAVE,
 	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
 	                                _("_Save"), GTK_RESPONSE_ACCEPT,
@@ -215,7 +198,7 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 static void nw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	open_about_dialog(nw->window);
+	open_about_dialog(GTK_WIDGET(nw));
 }
 
 
@@ -297,7 +280,7 @@ static void load_ss_sig(GSimpleAction *action, GVariant *parameter,
 	GtkWidget *d;
 
 	d = gtk_file_chooser_dialog_new(_("Load stylesheet"),
-	                                GTK_WINDOW(nw->window),
+	                                GTK_WINDOW(nw),
 	                                GTK_FILE_CHOOSER_ACTION_OPEN,
 	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
 	                                _("_Open"), GTK_RESPONSE_ACCEPT,
@@ -524,7 +507,7 @@ static gint export_pdf_response_sig(GtkWidget *d, gint response,
 static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
 	NarrativeWindow *nw = vp;
-	run_printing(nw->n, nw->window);
+	run_printing(nw->n, GTK_WIDGET(nw));
 	gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
 }
 
@@ -771,7 +754,17 @@ GActionEntry nw_entries[] = {
 };
 
 
-NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *papp)
+static void narrativewindow_class_init(NarrativeWindowClass *klass)
+{
+}
+
+
+static void narrativewindow_init(NarrativeWindow *sw)
+{
+}
+
+
+NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *app)
 {
 	NarrativeWindow *nw;
 	GtkWidget *vbox;
@@ -779,25 +772,23 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *p
 	GtkWidget *toolbar;
 	GtkToolItem *button;
 	GtkWidget *image;
-	Colloquium *app = COLLOQUIUM(papp);
 
-	nw = calloc(1, sizeof(NarrativeWindow));
-	if ( nw == NULL ) return NULL;
+	nw = g_object_new(GTK_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
+	gtk_window_set_role(GTK_WINDOW(nw), "narrative");
 
-	nw->app = papp;
+	nw->app = app;
 	nw->n = n;
 	nw->n_slidewindows = 0;
 	nw->file = file;
 	if ( file != NULL ) g_object_ref(file);
 
-	nw->window = gtk_application_window_new(GTK_APPLICATION(app));
 	update_titlebar(nw);
 
-	g_action_map_add_action_entries(G_ACTION_MAP(nw->window), nw_entries,
+	g_action_map_add_action_entries(G_ACTION_MAP(nw), nw_entries,
 	                                G_N_ELEMENTS(nw_entries), nw);
 
 	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_container_add(GTK_CONTAINER(nw->window), vbox);
+	gtk_container_add(GTK_CONTAINER(nw), vbox);
 
 	nw->nv = gtk_narrative_view_new(n);
 
@@ -895,18 +886,17 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *p
 	                 G_CALLBACK(changed_sig), nw);
 	g_signal_connect(G_OBJECT(nw->nv), "key-press-event",
 			 G_CALLBACK(nw_key_press_sig), nw);
-	g_signal_connect(G_OBJECT(nw->window), "destroy",
+	g_signal_connect(G_OBJECT(nw), "destroy",
 			 G_CALLBACK(nw_destroy_sig), nw);
 	g_signal_connect(G_OBJECT(nw->nv), "slide-double-clicked",
 			 G_CALLBACK(nw_double_click_sig), nw);
 
-	gtk_window_set_default_size(GTK_WINDOW(nw->window), 768, 768);
+	gtk_window_set_default_size(GTK_WINDOW(nw), 768, 768);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
-	gtk_container_set_focus_child(GTK_CONTAINER(nw->window),
+	gtk_container_set_focus_child(GTK_CONTAINER(nw),
 	                              GTK_WIDGET(nw->nv));
 
-	gtk_widget_show_all(nw->window);
-	g_application_hold(papp);
+	g_application_hold(app);
 
 	return nw;
 }

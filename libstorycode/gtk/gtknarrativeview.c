@@ -800,31 +800,35 @@ static void gtknv_insert_text_in_paragraph(struct narrative_item *item, size_t o
 
 static void gtknv_insert_text(char *t, GtkNarrativeView *e)
 {
+	size_t off = narrative_pos_trail_to_offset(e->n, e->cpos.para,
+	                                           e->cpos.pos, e->cpos.trail);
+
 	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 		gtknv_do_backspace(e, 0);
 	}
 
-	if ( narrative_item_is_text(e->n, e->cpos.para) ) {
+	if ( !narrative_item_is_text(e->n, e->cpos.para) ) {
+		narrative_split_item(e->n, e->cpos.para, off);
+		e->cpos.para += 1;
+		e->cpos.pos = 0;
+		e->cpos.trail = 0;
+		off = 0;
+	}
 
-		size_t off = narrative_pos_trail_to_offset(e->n, e->cpos.para,
-		                                           e->cpos.pos, e->cpos.trail);
+	if ( strcmp(t, "\n") == 0 ) {
+		narrative_split_item(e->n, e->cpos.para, off);
+		rewrap_range(e, e->cpos.para, e->cpos.para+1);
+		e->cpos.para += 1;
+		e->cpos.pos = 0;
+		e->cpos.trail = 0;
+	} else {
+		gtknv_insert_text_in_paragraph(&e->n->items[e->cpos.para], off, t);
+		rewrap_range(e, e->cpos.para, e->cpos.para);
+		gtknv_cursor_moveh(e->n, &e->cpos, +1);
+		set_cursor_h_pos(e);
+	}
 
-		if ( strcmp(t, "\n") == 0 ) {
-			narrative_split_item(e->n, e->cpos.para, off);
-			rewrap_range(e, e->cpos.para, e->cpos.para+1);
-			e->cpos.para += 1;
-			e->cpos.pos = 0;
-			e->cpos.trail = 0;
-		} else {
-			gtknv_insert_text_in_paragraph(&e->n->items[e->cpos.para], off, t);
-			rewrap_range(e, e->cpos.para, e->cpos.para);
-			gtknv_cursor_moveh(e->n, &e->cpos, +1);
-			set_cursor_h_pos(e);
-		}
-
-		update_size(e);
-
-	} /* else do nothing */
+	update_size(e);
 
 	gtknv_emit_change_sig(e);
 	check_cursor_visible(e);

@@ -110,6 +110,7 @@ static gboolean slide_window_closed_sig(GtkWidget *sw, GdkEvent *event,
 			}
 			nw->n_slidewindows--;
 			found = 1;
+			break;
 		}
 	}
 

@@ -800,15 +800,17 @@ static void gtknv_insert_text_in_paragraph(struct narrative_item *item, size_t o
 
 static void gtknv_insert_text(char *t, GtkNarrativeView *e)
 {
-	size_t off = narrative_pos_trail_to_offset(e->n, e->cpos.para,
-	                                           e->cpos.pos, e->cpos.trail);
+	size_t off;
 
 	if ( !positions_equal(e->sel_start, e->sel_end) ) {
 		gtknv_do_backspace(e, 0);
 	}
 
+	off = narrative_pos_trail_to_offset(e->n, e->cpos.para,
+	                                    e->cpos.pos, e->cpos.trail);
+
 	if ( !narrative_item_is_text(e->n, e->cpos.para) ) {
-		narrative_split_item(e->n, e->cpos.para, off);
+		narrative_split_item(e->n, e->cpos.para, 0);
 		e->cpos.para += 1;
 		e->cpos.pos = 0;
 		e->cpos.trail = 0;

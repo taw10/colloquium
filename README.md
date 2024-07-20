@@ -91,6 +91,12 @@ The first time Colloquium runs, it will show an introduction document to help
 you get started.
 
 
+Presentation tips
+-----------------
+
+[Look here](docs/presentation-tips.md) for a collection of useful presentation tips.
+
+
 Contributing
 ------------
 

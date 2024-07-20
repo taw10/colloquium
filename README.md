@@ -94,7 +94,7 @@ you get started.
 Presentation tips
 -----------------
 
-[Look here](docs/presentation-tips.md) for a collection of useful presentation tips.
+[Look here](doc/presentation-tips.md) for a collection of useful presentation tips.
 
 
 Contributing

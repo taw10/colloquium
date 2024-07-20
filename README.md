@@ -7,19 +7,19 @@ In Colloquium, rather than acting as the framework for your words, slides are em
 
 You can use the narrative in whatever way you like, which could range from short bullet-pointed notes all the way up to writing your talk word-for-word.
 
-![Narrative](screenshots/narrative.png)
+![Narrative](doc/screenshots/narrative.png)
 
 ---
 
 Within the narrative, you can double-click a slide to open it in a familiar kind of editor.  Drag and drop images, shift-drag to create text boxes, and so on.  A stylesheet system helps to enforce design consistency.
 
-![Editor](screenshots/editor.png)
+![Editor](doc/screenshots/editor.png)
 
 ---
 
 Colloquium's presentation clock shows the passage of time and your progress through the talk on a bar chart.  When you're running fast, the difference is coloured green.  If you're running slow, it's red.  You can see at a glance how you're doing, even though all slides do not take an equal amount of time.
 
-![Timer](screenshots/timer.png)
+![Timer](doc/screenshots/timer.png)
 
 ---
 

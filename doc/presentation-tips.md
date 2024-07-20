@@ -43,6 +43,6 @@ Delivering the talk
 
 * Face the audience!  It's incredible how many people face the screen instead, back to the audience, sometimes even placing themselves out in the audience area.  It seems to be because it makes it more comfortable to zap all the works with the laser pointer.  Don't do that.  There shouldn't be so much material on each slide that the audience needs to be "guided" through, anyway.
 
-* If you're running short of time, don't make matters worse by talking about how you're running out of time.  Don't skip through slides either - use random access functionality instead.   [Colloquium][https://github.com/taw10/colloquium)'s presentation clock can help you accurately keep to time.
+* If you're running short of time, don't make matters worse by talking about how you're running out of time.  Don't skip through slides either - use random access functionality instead.   [Colloquium](https://github.com/taw10/colloquium)'s presentation clock can help you accurately keep to time.
 
 * Don't invite questions if there's a session chair - that's their job!  There's a certain tension in the audience which needs to be released by applause.  Inviting questions confuses the audience about when to clap, and could be considered somewhat disrespectful to the session chair.

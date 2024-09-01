@@ -605,6 +605,35 @@ static size_t gtknv_end_offset_of_para(Narrative *n, int pnum)
 }
 
 
+static int has_nonempty_run(Narrative *n, int pnum)
+{
+	assert(pnum >= 0);
+	if ( !narrative_item_is_text(n, pnum) ) return 0;
+	if ( n->items[pnum].n_runs == 0 ) return 0;
+	return strlen(n->items[pnum].runs[0].text) > 0;
+}
+
+
+static int last_char_pos(struct narrative_item *p)
+{
+	gchar *end_char;
+	int i;
+	size_t len = 0;
+	int l;
+	gchar *txt;
+
+	if ( p->n_runs == 0 ) return 0;
+
+	l = p->n_runs-1;
+	for ( i=0; i<l; i++ ) {
+		len += strlen(p->runs[i].text);
+	}
+	txt = p->runs[l].text;
+	end_char = g_utf8_find_prev_char(txt, &txt[strlen(txt)]);
+	return len + end_char - txt;
+}
+
+
 static void sort_positions(struct edit_pos *a, struct edit_pos *b)
 {
 	if ( a->para > b->para ) {
@@ -656,11 +685,9 @@ static void gtknv_cursor_moveh(Narrative *n, struct edit_pos *cp, signed int dir
 
 	if ( np == -1 ) {
 		if ( cp->para > 0 ) {
-			size_t end_offs;
 			cp->para--;
-			end_offs = gtknv_end_offset_of_para(n, cp->para);
-			if ( end_offs > 0 ) {
-				cp->pos = end_offs - 1;
+			if ( has_nonempty_run(n, cp->para) ) {
+				cp->pos = last_char_pos(&n->items[cp->para]);
 				cp->trail = 1;
 			} else {
 				/* Jumping into an empty paragraph */

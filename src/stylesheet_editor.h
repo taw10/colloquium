@@ -56,35 +56,35 @@ typedef struct _sspriv StylesheetEditorPrivate;
 
 struct _stylesheeteditor
 {
-	GtkDialog parent_instance;
-	GtkWidget *selector;
-	GtkTreeStore *element_tree;
-	GtkWidget *paraspace_l;
-	GtkWidget *paraspace_r;
-	GtkWidget *paraspace_t;
-	GtkWidget *paraspace_b;
-	GtkWidget *padding_l;
-	GtkWidget *padding_r;
-	GtkWidget *padding_t;
-	GtkWidget *padding_b;
-	GtkWidget *font;
-	GtkWidget *fgcol;
-	GtkWidget *bgcol;
-	GtkWidget *bgcol2;
-	GtkWidget *bggrad;
-	GtkWidget *alignment;
-	GtkWidget *w;
-	GtkWidget *h;
-	GtkWidget *x;
-	GtkWidget *y;
-	GtkWidget *w_units;
-	GtkWidget *h_units;
-	StylesheetEditorPrivate *priv;
+    GtkDialog parent_instance;
+    GtkWidget *selector;
+    GtkTreeStore *element_tree;
+    GtkWidget *paraspace_l;
+    GtkWidget *paraspace_r;
+    GtkWidget *paraspace_t;
+    GtkWidget *paraspace_b;
+    GtkWidget *padding_l;
+    GtkWidget *padding_r;
+    GtkWidget *padding_t;
+    GtkWidget *padding_b;
+    GtkWidget *font;
+    GtkWidget *fgcol;
+    GtkWidget *bgcol;
+    GtkWidget *bgcol2;
+    GtkWidget *bggrad;
+    GtkWidget *alignment;
+    GtkWidget *w;
+    GtkWidget *h;
+    GtkWidget *x;
+    GtkWidget *y;
+    GtkWidget *w_units;
+    GtkWidget *h_units;
+    StylesheetEditorPrivate *priv;
 };
 
 struct _stylesheeteditorclass
 {
-	GtkDialogClass parent_class;
+    GtkDialogClass parent_class;
 };
 
 typedef struct _stylesheeteditor StylesheetEditor;

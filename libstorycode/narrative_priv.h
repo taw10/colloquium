@@ -34,71 +34,71 @@
 
 enum narrative_item_type
 {
-	NARRATIVE_ITEM_TEXT,
-	NARRATIVE_ITEM_SEGSTART,
-	NARRATIVE_ITEM_SEGEND,
-	NARRATIVE_ITEM_PRESTITLE,
-	NARRATIVE_ITEM_SLIDE,
-	NARRATIVE_ITEM_BP,
-	NARRATIVE_ITEM_EOP,
+    NARRATIVE_ITEM_TEXT,
+    NARRATIVE_ITEM_SEGSTART,
+    NARRATIVE_ITEM_SEGEND,
+    NARRATIVE_ITEM_PRESTITLE,
+    NARRATIVE_ITEM_SLIDE,
+    NARRATIVE_ITEM_BP,
+    NARRATIVE_ITEM_EOP,
 };
 
 
 struct narrative_item
 {
-	enum narrative_item_type type;
+    enum narrative_item_type type;
 
-	/* Space around the thing (PangoLayout, slide, marker etc) */
-	double space_l;
-	double space_r;
-	double space_t;
-	double space_b;
+    /* Space around the thing (PangoLayout, slide, marker etc) */
+    double space_l;
+    double space_r;
+    double space_t;
+    double space_b;
 
-	/* Size of the thing (PangoLayout, slide, marker etc) */
-	double obj_w;
-	double obj_h;
+    /* Size of the thing (PangoLayout, slide, marker etc) */
+    double obj_w;
+    double obj_h;
 
-	/* Total height is obj_h + space_t + space_b.
-	 * obj_w + space_l + space_r might be less than width of rendering surface */
+    /* Total height is obj_h + space_t + space_b.
+     * obj_w + space_l + space_r might be less than width of rendering surface */
 
-	/* For TEXT, BP, PRESTITLE */
-	int n_runs;
-	struct text_run *runs;
-	enum alignment align;
+    /* For TEXT, BP, PRESTITLE */
+    int n_runs;
+    struct text_run *runs;
+    enum alignment align;
 #ifdef HAVE_PANGO
-	PangoLayout *layout;
+    PangoLayout *layout;
 #else
-	void *layout;
+    void *layout;
 #endif
 
-	/* For SLIDE */
-	Slide *slide;
+    /* For SLIDE */
+    Slide *slide;
 #ifdef HAVE_CAIRO
-	cairo_surface_t *slide_thumbnail;
+    cairo_surface_t *slide_thumbnail;
 #else
-	void *slide_thumbnail;
+    void *slide_thumbnail;
 #endif
-	int selected;  /* Whether or not this item should be given a "selected" highlight */
+    int selected;  /* Whether or not this item should be given a "selected" highlight */
 
-	double estd_duration;  /* Estimated duration in minutes, based on word count */
+    double estd_duration;  /* Estimated duration in minutes, based on word count */
 };
 
 
 struct _narrative
 {
-	Stylesheet *stylesheet;
-	ImageStore *imagestore;
-	int saved;
-	const char *language;
+    Stylesheet *stylesheet;
+    ImageStore *imagestore;
+    int saved;
+    const char *language;
 
-	int n_items;
-	struct narrative_item *items;
+    int n_items;
+    struct narrative_item *items;
 
-	double w;
-	double space_l;
-	double space_r;
-	double space_t;
-	double space_b;
+    double w;
+    double space_l;
+    double space_r;
+    double space_t;
+    double space_b;
 };
 
 extern int narrative_which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs);

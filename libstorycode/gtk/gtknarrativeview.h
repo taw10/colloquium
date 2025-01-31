@@ -54,49 +54,49 @@
 
 enum narrative_drag_status
 {
-	NARRATIVE_DRAG_STATUS_NONE,
-	NARRATIVE_DRAG_STATUS_COULD_DRAG,
-	NARRATIVE_DRAG_STATUS_DRAGGING,
+    NARRATIVE_DRAG_STATUS_NONE,
+    NARRATIVE_DRAG_STATUS_COULD_DRAG,
+    NARRATIVE_DRAG_STATUS_DRAGGING,
 };
 
 
 struct _gtknarrativeview
 {
-	GtkDrawingArea       parent_instance;
+    GtkDrawingArea       parent_instance;
 
-	/*< private >*/
-	Narrative           *n;
-	GtkIMContext        *im_context;
+    /*< private >*/
+    Narrative           *n;
+    GtkIMContext        *im_context;
 
-	int                  w;   /* Surface size in pixels */
-	int                  h;
-	int                  para_highlight;
+    int                  w;   /* Surface size in pixels */
+    int                  h;
+    int                  para_highlight;
 
-	/* Redraw/scroll stuff */
-	GtkScrollablePolicy  hpol;
-	GtkScrollablePolicy  vpol;
-	GtkAdjustment       *hadj;
-	GtkAdjustment       *vadj;
-	double               scroll_pos;
-	double               h_scroll_pos;
-	int                  visible_height;
-	int                  visible_width;
-	int                  rewrap_needed;
-	double               ruler_width;
+    /* Redraw/scroll stuff */
+    GtkScrollablePolicy  hpol;
+    GtkScrollablePolicy  vpol;
+    GtkAdjustment       *hadj;
+    GtkAdjustment       *vadj;
+    double               scroll_pos;
+    double               h_scroll_pos;
+    int                  visible_height;
+    int                  visible_width;
+    int                  rewrap_needed;
+    double               ruler_width;
 
-	/* Location of the cursor */
-	struct edit_pos      cpos;
-	double               cursor_h_pos;  /* Place the cursor is trying to be */
+    /* Location of the cursor */
+    struct edit_pos      cpos;
+    double               cursor_h_pos;  /* Place the cursor is trying to be */
 
-	/* Rubber band boxes and related stuff */
-	enum narrative_drag_status     drag_status;
-	struct edit_pos      sel_start; /* Where the user dragged from */
-	struct edit_pos      sel_end;
+    /* Rubber band boxes and related stuff */
+    enum narrative_drag_status     drag_status;
+    struct edit_pos      sel_start; /* Where the user dragged from */
+    struct edit_pos      sel_end;
 };
 
 struct _gtknarrativeviewclass
 {
-	GtkDrawingAreaClass parent_class;
+    GtkDrawingAreaClass parent_class;
 };
 
 typedef struct _gtknarrativeview GtkNarrativeView;

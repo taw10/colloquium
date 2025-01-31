@@ -50,285 +50,285 @@ G_DEFINE_TYPE_WITH_CODE(SlideWindow, gtk_slide_window, GTK_TYPE_APPLICATION_WIND
 static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
                                   gpointer vp)
 {
-	SlideItem *item;
-	SlideWindow *sw = vp;
-	struct text_run *runs;
-	int nruns = 1;
+    SlideItem *item;
+    SlideWindow *sw = vp;
+    struct text_run *runs;
+    int nruns = 1;
 
-	/* Ownership of this struct will be taken over by the Slide. */
-	runs = malloc(sizeof(struct text_run));
-	runs[0].type = TEXT_RUN_NORMAL;
-	runs[0].text = strdup("Slide title");
+    /* Ownership of this struct will be taken over by the Slide. */
+    runs = malloc(sizeof(struct text_run));
+    runs[0].type = TEXT_RUN_NORMAL;
+    runs[0].text = strdup("Slide title");
 
-	item = slide_item_slidetitle(&runs, &nruns, 1);
-	item = slide_add_item(sw->slide, item);
-	gtk_slide_view_set_slide(sw->sv, sw->slide);
+    item = slide_item_slidetitle(&runs, &nruns, 1);
+    item = slide_add_item(sw->slide, item);
+    gtk_slide_view_set_slide(sw->sv, sw->slide);
 }
 
 
 static void insert_prestitle_sig(GSimpleAction *action, GVariant *parameter,
                                  gpointer vp)
 {
-	SlideItem *item;
-	SlideWindow *sw = vp;
-	struct text_run *runs;
-	int nruns = 1;
+    SlideItem *item;
+    SlideWindow *sw = vp;
+    struct text_run *runs;
+    int nruns = 1;
 
-	/* Ownership of this struct will be taken over by the Slide. */
-	runs = malloc(sizeof(struct text_run));
-	runs[0].type = TEXT_RUN_NORMAL;
-	runs[0].text = strdup("Presentation title");
+    /* Ownership of this struct will be taken over by the Slide. */
+    runs = malloc(sizeof(struct text_run));
+    runs[0].type = TEXT_RUN_NORMAL;
+    runs[0].text = strdup("Presentation title");
 
-	item = slide_item_prestitle(&runs, &nruns, 1);
-	item = slide_add_item(sw->slide, item);
-	gtk_slide_view_set_slide(sw->sv, sw->slide);
+    item = slide_item_prestitle(&runs, &nruns, 1);
+    item = slide_add_item(sw->slide, item);
+    gtk_slide_view_set_slide(sw->sv, sw->slide);
 }
 
 
 static gint insert_image_response_sig(GtkWidget *d, gint response, SlideWindow *sw)
 {
-	GtkWidget *cb;
-	const char *size_str;
+    GtkWidget *cb;
+    const char *size_str;
 
-	cb = gtk_file_chooser_get_extra_widget(GTK_FILE_CHOOSER(d));
-	size_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(cb));
+    cb = gtk_file_chooser_get_extra_widget(GTK_FILE_CHOOSER(d));
+    size_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(cb));
 
-	if ( response == GTK_RESPONSE_ACCEPT ) {
+    if ( response == GTK_RESPONSE_ACCEPT ) {
 
-		char *filename;
-		SlideItem *item;
-		struct frame_geom geom;
-		char *fn;
-		double slide_w, slide_h;
-		gint image_w, image_h;
-		double aspect;
-		GdkPixbufFormat *f;
+        char *filename;
+        SlideItem *item;
+        struct frame_geom geom;
+        char *fn;
+        double slide_w, slide_h;
+        gint image_w, image_h;
+        double aspect;
+        GdkPixbufFormat *f;
 
-		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-		fn = strdup(filename);
-		if ( fn == NULL ) return 0;
+        filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
+        fn = strdup(filename);
+        if ( fn == NULL ) return 0;
 
-		if ( slide_get_logical_size(sw->slide, narrative_get_stylesheet(sw->n),
-		                            &slide_w, &slide_h) ) return 0;
+        if ( slide_get_logical_size(sw->slide, narrative_get_stylesheet(sw->n),
+                                    &slide_w, &slide_h) ) return 0;
 
-		f = gdk_pixbuf_get_file_info(filename, &image_w, &image_h);
-		if ( f == NULL ) return 0;
-		aspect = (double)image_h / image_w;
-		g_free(filename);
+        f = gdk_pixbuf_get_file_info(filename, &image_w, &image_h);
+        if ( f == NULL ) return 0;
+        aspect = (double)image_h / image_w;
+        g_free(filename);
 
-		if ( strcmp(size_str, "normal") == 0 ) {
-			geom.x.len = slide_w/4.0;  geom.x.unit = LENGTH_UNIT;
-			geom.y.len = slide_h/4.0;  geom.y.unit = LENGTH_UNIT;
-			geom.w.len = slide_w/2.0;  geom.w.unit = LENGTH_UNIT;
-			geom.h.len = geom.w.len*aspect;  geom.h.unit = LENGTH_UNIT;
-		}
+        if ( strcmp(size_str, "normal") == 0 ) {
+            geom.x.len = slide_w/4.0;  geom.x.unit = LENGTH_UNIT;
+            geom.y.len = slide_h/4.0;  geom.y.unit = LENGTH_UNIT;
+            geom.w.len = slide_w/2.0;  geom.w.unit = LENGTH_UNIT;
+            geom.h.len = geom.w.len*aspect;  geom.h.unit = LENGTH_UNIT;
+        }
 
-		if ( strcmp(size_str, "fillentire") == 0 ) {
-			geom.x.len = 0.0;  geom.x.unit = LENGTH_UNIT;
-			geom.y.len = 0.0;  geom.y.unit = LENGTH_UNIT;
-			geom.w.len = 1.0;  geom.w.unit = LENGTH_FRAC;
-			geom.h.len = 1.0;  geom.h.unit = LENGTH_FRAC;
-		}
+        if ( strcmp(size_str, "fillentire") == 0 ) {
+            geom.x.len = 0.0;  geom.x.unit = LENGTH_UNIT;
+            geom.y.len = 0.0;  geom.y.unit = LENGTH_UNIT;
+            geom.w.len = 1.0;  geom.w.unit = LENGTH_FRAC;
+            geom.h.len = 1.0;  geom.h.unit = LENGTH_FRAC;
+        }
 
-		item = slide_item_image(fn, geom);
-		item = slide_add_item(sw->slide, item);
-	}
+        item = slide_item_image(fn, geom);
+        item = slide_add_item(sw->slide, item);
+    }
 
-	gtk_widget_destroy(d);
+    gtk_widget_destroy(d);
 
-	return 0;
+    return 0;
 }
 
 
 static void insert_image_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
-	SlideWindow *sw = vp;
-	GtkWidget *d;
-	GtkWidget *cb;
+    SlideWindow *sw = vp;
+    GtkWidget *d;
+    GtkWidget *cb;
 
-	d = gtk_file_chooser_dialog_new(_("Insert image"),
-	                                NULL,
-	                                GTK_FILE_CHOOSER_ACTION_OPEN,
-	                                _("_Cancel"), GTK_RESPONSE_CANCEL,
-	                                _("_Insert"), GTK_RESPONSE_ACCEPT,
-	                                NULL);
+    d = gtk_file_chooser_dialog_new(_("Insert image"),
+                                    NULL,
+                                    GTK_FILE_CHOOSER_ACTION_OPEN,
+                                    _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                    _("_Insert"), GTK_RESPONSE_ACCEPT,
+                                    NULL);
 
-	cb = gtk_combo_box_text_new();
+    cb = gtk_combo_box_text_new();
 
-	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "normal",
-	                          _("Make the image about half the width of the slide"));
-	gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "fillentire",
-	                          _("Fill the entire slide, even the title and footer regions"));
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "normal",
+                              _("Make the image about half the width of the slide"));
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "fillentire",
+                              _("Fill the entire slide, even the title and footer regions"));
 
-	gtk_combo_box_set_active_id(GTK_COMBO_BOX(cb), "normal");
+    gtk_combo_box_set_active_id(GTK_COMBO_BOX(cb), "normal");
 
-	gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(d), cb);
+    gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(d), cb);
 
-	g_signal_connect(G_OBJECT(d), "response",
-	                 G_CALLBACK(insert_image_response_sig), sw);
+    g_signal_connect(G_OBJECT(d), "response",
+                     G_CALLBACK(insert_image_response_sig), sw);
 
-	gtk_widget_show_all(d);
+    gtk_widget_show_all(d);
 }
 
 
 static void paste_sig(GSimpleAction *action, GVariant *parameter,
                       gpointer vp)
 {
-	//SlideWindow *sw = vp;
-	//sc_editor_paste(sw->sceditor);
+    //SlideWindow *sw = vp;
+    //sc_editor_paste(sw->sceditor);
 }
 
 
 static void copy_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
-	//SlideWindow *sw = vp;
-	//sc_editor_copy_selected_frame(sw->sceditor);
+    //SlideWindow *sw = vp;
+    //sc_editor_copy_selected_frame(sw->sceditor);
 }
 
 
 static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
-	SlideWindow *sw = vp;
-	gtk_slide_view_delete_selected_frame(GTK_SLIDE_VIEW(sw->sv));
+    SlideWindow *sw = vp;
+    gtk_slide_view_delete_selected_frame(GTK_SLIDE_VIEW(sw->sv));
 }
 
 
 /* Change the editor's slide to "np" */
 static void change_edit_slide(SlideWindow *sw, Slide *np)
 {
-	gtk_slide_view_set_slide(sw->sv, np);
-	sw->slide = np;
-	slide_window_update_titlebar(sw);
+    gtk_slide_view_set_slide(sw->sv, np);
+    sw->slide = np;
+    slide_window_update_titlebar(sw);
 }
 
 
 static void change_slide_first(SlideWindow *sw)
 {
-	Slide *s = narrative_get_slide_by_number(sw->n, 0);
-	if ( s != NULL ) change_edit_slide(sw, s);
+    Slide *s = narrative_get_slide_by_number(sw->n, 0);
+    if ( s != NULL ) change_edit_slide(sw, s);
 }
 
 
 static void change_slide_backwards(SlideWindow *sw)
 {
-	int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
-	if ( slide_n > 0 ) {
-		Slide *s = narrative_get_slide_by_number(sw->n, slide_n-1);
-		change_edit_slide(sw, s);
-	}
+    int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
+    if ( slide_n > 0 ) {
+        Slide *s = narrative_get_slide_by_number(sw->n, slide_n-1);
+        change_edit_slide(sw, s);
+    }
 }
 
 
 static void change_slide_forwards(SlideWindow *sw)
 {
-	int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
-	Slide *s = narrative_get_slide_by_number(sw->n, slide_n+1);
-	if ( s != NULL ) change_edit_slide(sw, s);
+    int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
+    Slide *s = narrative_get_slide_by_number(sw->n, slide_n+1);
+    if ( s != NULL ) change_edit_slide(sw, s);
 }
 
 
 static void change_slide_last(SlideWindow *sw)
 {
-	int slide_n = narrative_get_num_slides(sw->n);
-	Slide *s = narrative_get_slide_by_number(sw->n, slide_n);
-	if ( s != NULL ) change_edit_slide(sw, s);
+    int slide_n = narrative_get_num_slides(sw->n);
+    Slide *s = narrative_get_slide_by_number(sw->n, slide_n);
+    if ( s != NULL ) change_edit_slide(sw, s);
 }
 
 
 static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	SlideWindow *sw = vp;
-	change_slide_first(sw);
+    SlideWindow *sw = vp;
+    change_slide_first(sw);
 }
 
 
 static void prev_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	SlideWindow *sw = vp;
-	change_slide_backwards(sw);
+    SlideWindow *sw = vp;
+    change_slide_backwards(sw);
 }
 
 
 static void next_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	SlideWindow *sw = vp;
-	change_slide_forwards(sw);
+    SlideWindow *sw = vp;
+    change_slide_forwards(sw);
 }
 
 
 static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-	SlideWindow *sw = vp;
-	change_slide_last(sw);
+    SlideWindow *sw = vp;
+    change_slide_last(sw);
 }
 
 
 static gboolean sw_key_press_sig(GtkWidget *da, GdkEventKey *event,
                                  SlideWindow *sw)
 {
-	switch ( event->keyval ) {
+    switch ( event->keyval ) {
 
-		case GDK_KEY_Page_Up :
-		change_slide_backwards(sw);
-		break;
+        case GDK_KEY_Page_Up :
+        change_slide_backwards(sw);
+        break;
 
-		case GDK_KEY_Page_Down :
-		change_slide_forwards(sw);
-		break;
+        case GDK_KEY_Page_Down :
+        change_slide_forwards(sw);
+        break;
 
-	}
+    }
 
-	return FALSE;
+    return FALSE;
 }
 
 
 static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-	SlideWindow *sw = vp;
-	open_about_dialog(GTK_WIDGET(sw));
+    SlideWindow *sw = vp;
+    open_about_dialog(GTK_WIDGET(sw));
 }
 
 static void sw_save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-	SlideWindow *sw = vp;
-	g_action_group_activate_action(G_ACTION_GROUP(sw->parent), "save", parameter);
+    SlideWindow *sw = vp;
+    g_action_group_activate_action(G_ACTION_GROUP(sw->parent), "save", parameter);
 }
 
 
 GActionEntry sw_entries[] = {
 
-	{ "about", sw_about_sig, NULL, NULL, NULL },
-	{ "save", sw_save_sig, NULL, NULL, NULL },
-	{ "paste", paste_sig, NULL, NULL, NULL },
-	{ "copyframe", copy_frame_sig, NULL, NULL, NULL },
-	{ "deleteframe", delete_frame_sig, NULL, NULL, NULL },
-	{ "first", first_slide_sig, NULL, NULL, NULL },
-	{ "prev", prev_slide_sig, NULL, NULL, NULL },
-	{ "next", next_slide_sig, NULL, NULL, NULL },
-	{ "last", last_slide_sig, NULL, NULL, NULL },
-	{ "slidetitle", insert_slidetitle_sig, NULL, NULL, NULL },
-	{ "prestitle", insert_prestitle_sig, NULL, NULL, NULL },
-	{ "image", insert_image_sig, NULL, NULL, NULL },
+    { "about", sw_about_sig, NULL, NULL, NULL },
+    { "save", sw_save_sig, NULL, NULL, NULL },
+    { "paste", paste_sig, NULL, NULL, NULL },
+    { "copyframe", copy_frame_sig, NULL, NULL, NULL },
+    { "deleteframe", delete_frame_sig, NULL, NULL, NULL },
+    { "first", first_slide_sig, NULL, NULL, NULL },
+    { "prev", prev_slide_sig, NULL, NULL, NULL },
+    { "next", next_slide_sig, NULL, NULL, NULL },
+    { "last", last_slide_sig, NULL, NULL, NULL },
+    { "slidetitle", insert_slidetitle_sig, NULL, NULL, NULL },
+    { "prestitle", insert_prestitle_sig, NULL, NULL, NULL },
+    { "image", insert_image_sig, NULL, NULL, NULL },
 };
 
 
 static void sw_emit_change_sig(GtkWidget *sv, SlideWindow *sw)
 {
-	g_signal_emit_by_name(sw, "changed");
+    g_signal_emit_by_name(sw, "changed");
 }
 
 
 static void gtk_slide_window_class_init(SlideWindowClass *klass)
 {
-	g_signal_new("changed", GTK_TYPE_SLIDE_WINDOW, G_SIGNAL_RUN_LAST, 0,
-	             NULL, NULL, NULL, G_TYPE_NONE, 0);
+    g_signal_new("changed", GTK_TYPE_SLIDE_WINDOW, G_SIGNAL_RUN_LAST, 0,
+                 NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
 
@@ -340,59 +340,59 @@ static void gtk_slide_window_init(SlideWindow *sw)
 SlideWindow *slide_window_new(Narrative *n, Slide *slide,
                               NarrativeWindow *nw, GApplication *papp)
 {
-	SlideWindow *sw;
-	double w, h;
-	Colloquium *app = COLLOQUIUM(papp);
+    SlideWindow *sw;
+    double w, h;
+    Colloquium *app = COLLOQUIUM(papp);
 
-	sw = g_object_new(GTK_TYPE_SLIDE_WINDOW, "application", app, NULL);
-	gtk_window_set_role(GTK_WINDOW(sw), "slide");
+    sw = g_object_new(GTK_TYPE_SLIDE_WINDOW, "application", app, NULL);
+    gtk_window_set_role(GTK_WINDOW(sw), "slide");
 
-	sw->n = n;
-	sw->slide = slide;
-	sw->parent = nw;
+    sw->n = n;
+    sw->slide = slide;
+    sw->parent = nw;
 
-	slide_window_update_titlebar(sw);
+    slide_window_update_titlebar(sw);
 
-	g_action_map_add_action_entries(G_ACTION_MAP(sw), sw_entries,
-	                                G_N_ELEMENTS(sw_entries), sw);
+    g_action_map_add_action_entries(G_ACTION_MAP(sw), sw_entries,
+                                    G_N_ELEMENTS(sw_entries), sw);
 
-	sw->sv = gtk_slide_view_new(n, slide);
+    sw->sv = gtk_slide_view_new(n, slide);
 
-	g_signal_connect(G_OBJECT(sw->sv), "key-press-event",
-			 G_CALLBACK(sw_key_press_sig), sw);
+    g_signal_connect(G_OBJECT(sw->sv), "key-press-event",
+             G_CALLBACK(sw_key_press_sig), sw);
 
-	g_signal_connect(G_OBJECT(sw->sv), "changed",
-			 G_CALLBACK(sw_emit_change_sig), sw);
+    g_signal_connect(G_OBJECT(sw->sv), "changed",
+             G_CALLBACK(sw_emit_change_sig), sw);
 
-	slide_get_logical_size(slide, narrative_get_stylesheet(n), &w, &h);
-	gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
+    slide_get_logical_size(slide, narrative_get_stylesheet(n), &w, &h);
+    gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
 
-	gtk_container_add(GTK_CONTAINER(sw), GTK_WIDGET(sw->sv));
+    gtk_container_add(GTK_CONTAINER(sw), GTK_WIDGET(sw->sv));
 
-	gtk_window_set_resizable(GTK_WINDOW(sw), TRUE);
+    gtk_window_set_resizable(GTK_WINDOW(sw), TRUE);
 
-	return sw;
+    return sw;
 }
 
 
 void slide_window_update(SlideWindow *sw)
 {
-	gint w, h;
-	w = gtk_widget_get_allocated_width(GTK_WIDGET(sw->sv));
-	h = gtk_widget_get_allocated_height(GTK_WIDGET(sw->sv));
-	gtk_widget_queue_draw_area(GTK_WIDGET(sw->sv), 0, 0, w, h);
+    gint w, h;
+    w = gtk_widget_get_allocated_width(GTK_WIDGET(sw->sv));
+    h = gtk_widget_get_allocated_height(GTK_WIDGET(sw->sv));
+    gtk_widget_queue_draw_area(GTK_WIDGET(sw->sv), 0, 0, w, h);
 }
 
 
 void slide_window_update_titlebar(SlideWindow *sw)
 {
-	char title[1026];
-	char *filename;
+    char title[1026];
+    char *filename;
 
-	filename = narrative_window_get_filename(sw->parent);
-	snprintf(title, 1024, "%s (slide %i) - Colloquium", filename,
-	         1+narrative_get_slide_number_for_slide(sw->n, sw->slide));
-	if ( narrative_get_unsaved(sw->n) ) strcat(title, " *");
+    filename = narrative_window_get_filename(sw->parent);
+    snprintf(title, 1024, "%s (slide %i) - Colloquium", filename,
+             1+narrative_get_slide_number_for_slide(sw->n, sw->slide));
+    if ( narrative_get_unsaved(sw->n) ) strcat(title, " *");
 
-	gtk_window_set_title(GTK_WINDOW(sw), title);
+    gtk_window_set_title(GTK_WINDOW(sw), title);
 }

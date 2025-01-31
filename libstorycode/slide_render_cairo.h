@@ -32,9 +32,9 @@
 
 struct slide_pos
 {
-	int para;    /* Paragraph number (corresponding to narrative items) */
-	int pos;     /* Byte position within run (yes, really)  */
-	int trail;   /* 1 = end of character, 0 = before */
+    int para;    /* Paragraph number (corresponding to narrative items) */
+    int pos;     /* Byte position within run (yes, really)  */
+    int trail;   /* 1 = end of character, 0 = before */
 };
 
 extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,

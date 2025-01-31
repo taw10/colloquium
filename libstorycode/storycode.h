@@ -29,16 +29,16 @@
 
 enum text_run_type
 {
-	TEXT_RUN_NORMAL,
-	TEXT_RUN_BOLD,
-	TEXT_RUN_ITALIC,
-	TEXT_RUN_UNDERLINE,
+    TEXT_RUN_NORMAL,
+    TEXT_RUN_BOLD,
+    TEXT_RUN_ITALIC,
+    TEXT_RUN_UNDERLINE,
 };
 
 struct text_run
 {
-	enum text_run_type type;
-	char *text;
+    enum text_run_type type;
+    char *text;
 };
 
 

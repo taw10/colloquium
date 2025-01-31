@@ -53,28 +53,28 @@ typedef struct _narrativewindowclass NarrativeWindowClass;
 
 struct _narrativewindow
 {
-	GtkApplicationWindow parent_instance;
+    GtkApplicationWindow parent_instance;
 
-	/*< private >*/
-	GtkToolItem         *bfirst;
-	GtkToolItem         *bprev;
-	GtkToolItem         *bnext;
-	GtkToolItem         *blast;
-	GtkWidget           *nv;
-	GApplication        *app;
-	Narrative           *n;
-	GFile               *file;
-	SCSlideshow         *show;
-	int                  show_no_slides;
-	PRClock             *pr_clock;
-	SlideWindow         *slidewindows[16];
-	int                  n_slidewindows;
+    /*< private >*/
+    GtkToolItem         *bfirst;
+    GtkToolItem         *bprev;
+    GtkToolItem         *bnext;
+    GtkToolItem         *blast;
+    GtkWidget           *nv;
+    GApplication        *app;
+    Narrative           *n;
+    GFile               *file;
+    SCSlideshow         *show;
+    int                  show_no_slides;
+    PRClock             *pr_clock;
+    SlideWindow         *slidewindows[16];
+    int                  n_slidewindows;
 };
 
 
 struct _narrativewindowclass
 {
-	GtkApplicationWindowClass parent_class;
+    GtkApplicationWindowClass parent_class;
 };
 
 

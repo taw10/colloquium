@@ -51,18 +51,18 @@ typedef struct _gtkslidewindowclass SlideWindowClass;
 
 struct _gtkslidewindow
 {
-	GtkApplicationWindow parent_instance;
+    GtkApplicationWindow parent_instance;
 
-	/*< private >*/
-	Narrative           *n;
-	Slide               *slide;
-	GtkWidget           *sv;
-	NarrativeWindow     *parent;
+    /*< private >*/
+    Narrative           *n;
+    Slide               *slide;
+    GtkWidget           *sv;
+    NarrativeWindow     *parent;
 };
 
 struct _gtkslidewindowclass
 {
-	GtkApplicationWindowClass parent_class;
+    GtkApplicationWindowClass parent_class;
 };
 
 extern GType gtk_slide_window_get_type(void);

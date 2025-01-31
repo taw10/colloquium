@@ -48,25 +48,25 @@
 
 struct _scslideshow
 {
-	GtkWindow parent_instance;
+    GtkWindow parent_instance;
 
-	/* <private> */
-	Narrative           *n;
-	Slide               *cur_slide;
-	GtkWidget           *drawingarea;
-	GdkCursor           *blank_cursor;
-	int                  blank;
-	int                  xoff;
-	int                  yoff;
-	int                  single_monitor;
-	GtkApplication      *app;
-	gint                 inhibit_cookie;
+    /* <private> */
+    Narrative           *n;
+    Slide               *cur_slide;
+    GtkWidget           *drawingarea;
+    GdkCursor           *blank_cursor;
+    int                  blank;
+    int                  xoff;
+    int                  yoff;
+    int                  single_monitor;
+    GtkApplication      *app;
+    gint                 inhibit_cookie;
 };
 
 
 struct _scslideshowclass
 {
-	GtkWindowClass parent_class;
+    GtkWindowClass parent_class;
 };
 
 typedef struct _scslideshow SCSlideshow;

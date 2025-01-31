@@ -32,9 +32,9 @@
 
 struct edit_pos
 {
-	int para;    /* Paragraph number (corresponding to narrative items) */
-	int pos;     /* Byte position within paragraph (yes, really)  */
-	int trail;   /* 1 = end of character, 0 = before */
+    int para;    /* Paragraph number (corresponding to narrative items) */
+    int pos;     /* Byte position within paragraph (yes, really)  */
+    int trail;   /* 1 = end of character, 0 = before */
 };
 
 extern int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet,

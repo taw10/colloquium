@@ -31,49 +31,49 @@
 
 enum slide_item_type
 {
-	SLIDE_ITEM_TEXT,
-	SLIDE_ITEM_IMAGE,
-	SLIDE_ITEM_FOOTER,
-	SLIDE_ITEM_SLIDETITLE,
-	SLIDE_ITEM_PRESTITLE,
+    SLIDE_ITEM_TEXT,
+    SLIDE_ITEM_IMAGE,
+    SLIDE_ITEM_FOOTER,
+    SLIDE_ITEM_SLIDETITLE,
+    SLIDE_ITEM_PRESTITLE,
 };
 
 
 struct slide_text_paragraph
 {
-	struct text_run *runs;
-	int n_runs;
+    struct text_run *runs;
+    int n_runs;
 #ifdef HAVE_PANGO
-	PangoLayout *layout;
+    PangoLayout *layout;
 #else
-	void *layout;
+    void *layout;
 #endif
 };
 
 
 struct _slideitem
 {
-	enum slide_item_type type;
+    enum slide_item_type type;
 
-	/* For TEXT, SLIDETITLE, PRESTITLE */
-	int n_paras;
-	struct slide_text_paragraph *paras;
-	enum alignment align;
+    /* For TEXT, SLIDETITLE, PRESTITLE */
+    int n_paras;
+    struct slide_text_paragraph *paras;
+    enum alignment align;
 
-	/* For IMAGE */
-	char *filename;
+    /* For IMAGE */
+    char *filename;
 
-	/* For TEXT and IMAGE */
-	struct frame_geom geom;
+    /* For TEXT and IMAGE */
+    struct frame_geom geom;
 };
 
 
 struct _slide
 {
-	double logical_w;
-	double logical_h;
-	int n_items;
-	SlideItem *items;
+    double logical_w;
+    double logical_h;
+    int n_items;
+    SlideItem *items;
 };
 
 extern int slide_which_run(struct slide_text_paragraph *para, size_t item_offs,

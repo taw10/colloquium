@@ -33,49 +33,49 @@ typedef struct _stylesheet Stylesheet;
 
 enum alignment
 {
-	ALIGN_INHERIT,  /* use whatever the stylesheet says */
-	ALIGN_LEFT,
-	ALIGN_RIGHT,
-	ALIGN_CENTER
+    ALIGN_INHERIT,  /* use whatever the stylesheet says */
+    ALIGN_LEFT,
+    ALIGN_RIGHT,
+    ALIGN_CENTER
 };
 
 
 enum length_unit
 {
-	LENGTH_FRAC,
-	LENGTH_UNIT
+    LENGTH_FRAC,
+    LENGTH_UNIT
 };
 
 
 struct colour
 {
-	double rgba[4];
-	int hexcode;      /* If true, colour came from a hexcode
-	                   * (and should be written back as one) */
+    double rgba[4];
+    int hexcode;      /* If true, colour came from a hexcode
+                       * (and should be written back as one) */
 };
 
 
 struct length
 {
-	double len;
-	enum length_unit unit;
+    double len;
+    enum length_unit unit;
 };
 
 
 struct frame_geom
 {
-	struct length x;
-	struct length y;
-	struct length w;
-	struct length h;
+    struct length x;
+    struct length y;
+    struct length w;
+    struct length h;
 };
 
 
 enum gradient
 {
-	GRAD_NONE,
-	GRAD_HORIZ,
-	GRAD_VERT
+    GRAD_NONE,
+    GRAD_HORIZ,
+    GRAD_VERT
 };
 
 

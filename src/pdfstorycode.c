@@ -46,24 +46,24 @@
 
 int main(int argc, char *argv[])
 {
-	GFile *file;
-	GBytes *bytes;
-	const char *text;
-	size_t len;
-	Narrative *n;
-	ImageStore *is;
+    GFile *file;
+    GBytes *bytes;
+    const char *text;
+    size_t len;
+    Narrative *n;
+    ImageStore *is;
 
-	file = g_file_new_for_commandline_arg(argv[1]);
-	bytes = g_file_load_bytes(file, NULL, NULL, NULL);
-	text = g_bytes_get_data(bytes, &len);
-	n = storycode_parse_presentation(text);
-	g_bytes_unref(bytes);
+    file = g_file_new_for_commandline_arg(argv[1]);
+    bytes = g_file_load_bytes(file, NULL, NULL, NULL);
+    text = g_bytes_get_data(bytes, &len);
+    n = storycode_parse_presentation(text);
+    g_bytes_unref(bytes);
 
-	is = imagestore_new(".");
-	imagestore_set_parent(is, g_file_get_parent(file));
+    is = imagestore_new(".");
+    imagestore_set_parent(is, g_file_get_parent(file));
 
-	/* Render each slide to PDF */
-	render_slides_to_pdf(n, is, "slides.pdf");
+    /* Render each slide to PDF */
+    render_slides_to_pdf(n, is, "slides.pdf");
 
-	return 0;
+    return 0;
 }

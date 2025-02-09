@@ -47,6 +47,7 @@ Slide *slide_new()
     s->items = NULL;
     s->logical_w = -1.0;
     s->logical_h = -1.0;
+    s->ext_filename = NULL;
     return s;
 }
 
@@ -123,6 +124,19 @@ static SlideItem *slide_item_new()
     if ( item == NULL ) return NULL;
     item->paras = NULL;
     return item;
+}
+
+
+
+void slide_set_ext_filename(Slide *s, char *filename)
+{
+    s->ext_filename = filename;
+}
+
+
+void slide_set_ext_number(Slide *s, int num)
+{
+    s->ext_slidenumber = num;
 }
 
 

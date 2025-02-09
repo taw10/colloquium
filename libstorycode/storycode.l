@@ -58,6 +58,7 @@ PRESTITLE         { return SC_PRESTITLE; }
 SLIDETITLE        { return SC_SLIDETITLE; }
 NARRATIVE         { return SC_NARRATIVE; }
 SLIDE             { return SC_SLIDE; }
+EXTSLIDE          { return SC_EXTSLIDE; }
 ENDOFPRESENTATION { return SC_EOP; }
 SEGMENT_START     { return SC_SEG_START; }
 SEGMENT_END       { return SC_SEG_END; }
@@ -71,6 +72,8 @@ PARASPACE         { BEGIN(cond_paraspace); return SC_PARASPACE; }
 ALIGN             { BEGIN(cond_align); return SC_ALIGN; }
 FGCOL             { BEGIN(cond_col); return SC_FGCOL; }
 BGCOL             { BEGIN(cond_col); return SC_BGCOL; }
+FILENAME:[ ]      { BEGIN(cond_filename); return SC_FILENAME_LABEL; }
+SLIDENUMBER:[ ]   { return SC_SLIDENUMBER_LABEL; }
 <cond_col>VERT         { return SC_VERT; }
 <cond_col>VERTICAL     { return SC_VERT; }
 <cond_col>HORIZ        { return SC_HORIZ; }
@@ -84,6 +87,8 @@ BGCOL             { BEGIN(cond_col); return SC_BGCOL; }
                     BEGIN(0);
                     lineno++;
                     return SC_FONTNAME; }
+
+<cond_filename>[^\n]*  { yylval->str = strdup(yytext); return SC_FILENAME; }
 
 <INITIAL>IMAGE    { BEGIN(cond_image); return SC_IMAGEFRAME; }
 <cond_image>:[ ]       { BEGIN(cond_image_filename); return SC_TEXT_START; }

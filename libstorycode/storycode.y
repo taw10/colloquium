@@ -101,6 +101,7 @@
   enum alignment align;
   enum gradient grad;
 
+  int num;
 }
 
 %{
@@ -117,6 +118,7 @@
 
 %token STYLES
 %token SLIDE
+%token EXTSLIDE
 %token EOP
 %token NARRATIVE
 %token PRESTITLE
@@ -125,6 +127,8 @@
 %token TEXTFRAME
 %token IMAGEFRAME
 %token FILENAME
+%token FILENAME_LABEL
+%token SLIDENUMBER_LABEL
 %token BP
 %token SEG_START SEG_END
 %token FONT GEOMETRY PAD ALIGN FGCOL BGCOL PARASPACE
@@ -168,6 +172,11 @@
 
 %type <str> FONTNAME
 %type <str> FILENAME
+
+%type <slide> extslide
+
+%type <str> filename
+%type <num> slidenumber
 
 %type <geom> geometry
 %type <lenquad> lenquad
@@ -330,6 +339,7 @@ narrative_el:
 | SEG_END                         { narrative_insert_segend(n, n->n_items); }
 | TEXT_START text_line            { narrative_insert_text(n, n->n_items, $2.runs, $2.n_runs); }
 | slide                           { narrative_insert_slide(n, n->n_items, $1); }
+| extslide                        { narrative_insert_slide(n, n->n_items, $1); }
 | EOP                             { narrative_insert_eop(n, n->n_items); }
 ;
 
@@ -383,6 +393,24 @@ one_or_more_runs:
                               }
                             }
 ;
+
+
+/* -------- External slide -------- */
+
+extslide:
+  EXTSLIDE '{' filename slidenumber '}'  { $$ = slide_new();
+                                           slide_set_ext_filename($$, $3);
+                                           slide_set_ext_number($$, $4); }
+;
+
+slidenumber:
+  SLIDENUMBER_LABEL VALUE { $$ = $2; }
+;
+
+filename:
+  FILENAME_LABEL FILENAME { $$ = $2; }
+;
+
 
 /* -------- Slide -------- */
 

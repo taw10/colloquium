@@ -41,6 +41,9 @@ extern void slide_free(Slide *s);
 extern SlideItem *slide_add_item(Slide *s, SlideItem *item);
 extern void slide_delete_item(Slide *s, SlideItem *item);
 
+extern void slide_set_ext_filename(Slide *s, char *filename);
+extern void slide_set_ext_number(Slide *s, int num);
+
 extern int slide_set_logical_size(Slide *s, double w, double h);
 extern int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h);
 

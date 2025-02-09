@@ -74,6 +74,9 @@ struct _slide
     double logical_h;
     int n_items;
     SlideItem *items;
+
+    char *ext_filename;
+    int ext_slidenumber;
 };
 
 extern int slide_which_run(struct slide_text_paragraph *para, size_t item_offs,

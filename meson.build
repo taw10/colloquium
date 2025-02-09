@@ -27,6 +27,7 @@ cairo_dep = dependency('cairo', required : true)
 pango_dep = dependency('pango', required : true)
 pangocairo_dep = dependency('pangocairo', required : true)
 gdkpixbuf_dep = dependency('gdk-pixbuf-2.0', required : true)
+poppler_dep = dependency('poppler-glib', required : true)
 cc = meson.get_compiler('c')
 mdep = cc.find_library('m', required : false)
 
@@ -76,7 +77,8 @@ libstorycode = library('storycode',
                    ],
                    include_directories : libstorycode_includes,
                    dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
-                                   pangocairo_dep, mdep, gdk_dep, gio_dep],
+                                   pangocairo_dep, mdep, gdk_dep, gio_dep,
+                                   poppler_dep],
                    install : true)
 
 libstorycode_dep = declare_dependency(include_directories : libstorycode_includes,

@@ -230,6 +230,17 @@ static int write_slide(GOutputStream *fh, Slide *s)
 {
     int i;
 
+    if ( s->ext_filename != NULL ) {
+        char tmp[64];
+        write_string(fh, "  FILENAME: ");
+        write_string(fh, s->ext_filename);
+        write_string(fh, "\n");
+        write_string(fh, "  SLIDENUMBER: ");
+        snprintf(tmp, 64, "%i", s->ext_slidenumber);
+        write_string(fh, tmp);
+        write_string(fh, "\n");
+    }
+
     for ( i=0; i<s->n_items; i++ ) {
         switch ( s->items[i].type ) {
 
@@ -281,7 +292,11 @@ static int write_starter(GOutputStream *fh, struct narrative_item *item)
 
         case NARRATIVE_ITEM_SLIDE:
         /* FIXME: separate slide size */
-        if ( write_string(fh, "SLIDE ") ) return 1;
+        if ( item->slide->ext_filename != NULL ) {
+            if ( write_string(fh, "EXTSLIDE ") ) return 1;
+        } else {
+            if ( write_string(fh, "SLIDE ") ) return 1;
+        }
         break;
 
         case NARRATIVE_ITEM_EOP:

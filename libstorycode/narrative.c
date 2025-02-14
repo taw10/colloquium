@@ -42,6 +42,10 @@
 #include <cairo.h>
 #endif
 
+#ifdef HAVE_MD4C
+#include <md4c.h>
+#endif
+
 #include "stylesheet.h"
 #include "slide.h"
 #include "narrative.h"
@@ -116,31 +120,6 @@ void narrative_add_empty_item(Narrative *n)
     }
 
     narrative_insert_text(n, n->n_items, runs, 1);
-}
-
-
-Narrative *narrative_load(GFile *file)
-{
-    GBytes *bytes;
-    const char *text;
-    size_t len;
-    Narrative *n;
-
-    bytes = g_file_load_bytes(file, NULL, NULL, NULL);
-    if ( bytes == NULL ) return NULL;
-
-    text = g_bytes_get_data(bytes, &len);
-    n = storycode_parse_presentation(text);
-    g_bytes_unref(bytes);
-    if ( n == NULL ) return NULL;
-
-    if ( n->n_items == 0 ) {
-        /* Presentation is empty.  Add a dummy to start things off */
-        narrative_add_empty_item(n);
-    }
-
-    imagestore_set_parent(n->imagestore, g_file_get_parent(file));
-    return n;
 }
 
 
@@ -889,4 +868,194 @@ void narrative_debug(Narrative *n)
         }
 
     }
+}
+
+
+#ifdef HAVE_MD4C
+
+struct md_parse_ctx {
+    Narrative *n;
+    enum narrative_item_type type;
+    int heading;
+    int bold;
+    int italic;
+    int underline;
+    int block_open;
+};
+
+
+static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    MD_BLOCK_H_DETAIL *d;
+
+    switch ( type ) {
+
+        case MD_BLOCK_H:
+        d = detail;
+        if ( d->level == 1 ) {
+            ps->type = NARRATIVE_ITEM_PRESTITLE;
+        } else {
+            ps->type = NARRATIVE_ITEM_SEGSTART;
+        }
+        break;
+
+        case MD_BLOCK_LI:
+        ps->type = NARRATIVE_ITEM_BP;
+        break;
+
+        default :
+        ps->type = NARRATIVE_ITEM_TEXT;
+        break;
+
+    }
+
+    return 0;
+}
+
+
+static int md_leave_block(MD_BLOCKTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    ps->block_open = 0;
+    update_timing(&ps->n->items[ps->n->n_items-1]);
+    return 0;
+}
+
+
+static enum text_run_type run_type(struct md_parse_ctx *ps)
+{
+    if ( ps->bold ) return TEXT_RUN_BOLD;
+    if ( ps->italic ) return TEXT_RUN_ITALIC;
+    if ( ps->underline ) return TEXT_RUN_UNDERLINE;
+    return TEXT_RUN_NORMAL;
+}
+
+
+static int md_enter_span(MD_SPANTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    if ( type == MD_SPAN_STRONG ) { ps->bold++; }
+    if ( type == MD_SPAN_EM ) { ps->italic++; }
+    if ( type == MD_SPAN_U ) { ps->underline++; }
+    return 0;
+}
+
+
+static int md_leave_span(MD_SPANTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    if ( type == MD_SPAN_STRONG ) { ps->bold--; }
+    if ( type == MD_SPAN_EM ) { ps->italic--; }
+    if ( type == MD_SPAN_U ) { ps->underline--; }
+    return 0;
+}
+
+
+static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    struct narrative_item *item;
+
+    if ( !ps->block_open ) {
+        item = add_item(ps->n);
+        if ( item == NULL ) return 1;
+        init_item(item);
+        item->type = ps->type;
+        item->align = ALIGN_INHERIT;
+        item->layout = NULL;
+        item->runs = NULL;
+        item->n_runs = 0;
+        ps->block_open = 1;
+    } else {
+        item = &ps->n->items[ps->n->n_items-1];
+    }
+
+    item->runs = realloc(item->runs, (item->n_runs+1)*sizeof(struct text_run));
+    item->runs[item->n_runs].text = strndup(text, len);
+    item->runs[item->n_runs].type = run_type(ps);
+    item->n_runs++;
+
+    return 0;
+}
+
+
+static void md_debug_log(const char *msg, void *vp)
+{
+    printf("%s\n", msg);
+}
+
+
+const struct MD_PARSER md_parser =
+{
+    .abi_version = 0,
+    .flags = MD_FLAG_UNDERLINE,
+    .enter_block = md_enter_block,
+    .leave_block = md_leave_block,
+    .enter_span = md_enter_span,
+    .leave_span = md_leave_span,
+    .text = md_text,
+    .debug_log = md_debug_log,
+    .syntax = NULL
+};
+
+
+static Narrative *parse_md_narrative(const char *text, size_t len)
+{
+    struct md_parse_ctx pstate;
+
+    pstate.n = narrative_new();
+    pstate.heading = 0;
+    pstate.bold = 0;
+    pstate.italic = 0;
+    pstate.underline = 0;
+    pstate.block_open = 0;
+    pstate.type = NARRATIVE_ITEM_TEXT;
+
+    GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
+    stylesheet_set_from_file(narrative_get_stylesheet(pstate.n), file);
+    g_object_unref(file);
+
+    md_parse(text, len, &md_parser, &pstate);
+
+    return pstate.n;
+}
+
+#else  // HAVE_MD4C
+
+static Narrative *parse_md_narrative(const char *text, size_t len)
+{
+    return NULL;
+}
+
+#endif
+
+
+Narrative *narrative_load(GFile *file)
+{
+    GBytes *bytes;
+    const char *text;
+    size_t len;
+    Narrative *n;
+
+    bytes = g_file_load_bytes(file, NULL, NULL, NULL);
+    if ( bytes == NULL ) return NULL;
+
+    text = g_bytes_get_data(bytes, &len);
+
+    if ( strncmp(text, "STYLES", 6) == 0 ) {
+        n = storycode_parse_presentation(text);
+    } else {
+        n = parse_md_narrative(text, len);
+    }
+    g_bytes_unref(bytes);
+    if ( n == NULL ) return NULL;
+
+    if ( n->n_items == 0 ) {
+        /* Presentation is empty.  Add a dummy to start things off */
+        narrative_add_empty_item(n);
+    }
+
+    imagestore_set_parent(n->imagestore, g_file_get_parent(file));
+    return n;
 }

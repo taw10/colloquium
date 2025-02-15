@@ -3,6 +3,7 @@ STYLES {
     FONT Sans 14
     BGCOL 1.00,1.00,1.00,1.00
     PARASPACE 0u,0u,4u,4u
+    PADDING 10u,10u,10u,10u
     BP {
       FONT Sans 14
       PARASPACE 10u,0u,4u,4u

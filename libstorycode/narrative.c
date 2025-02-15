@@ -884,6 +884,13 @@ struct md_parse_ctx {
 };
 
 
+static void close_block(struct md_parse_ctx *ps)
+{
+    ps->block_open = 0;
+    update_timing(&ps->n->items[ps->n->n_items-1]);
+}
+
+
 static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
 {
     struct md_parse_ctx *ps = vp;
@@ -895,6 +902,9 @@ static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
         d = detail;
         if ( d->level == 1 ) {
             ps->type = NARRATIVE_ITEM_PRESTITLE;
+        } else if ( d->level == 6 ) {
+            ps->type = NARRATIVE_ITEM_SLIDE;
+            close_block(ps);
         } else {
             ps->type = NARRATIVE_ITEM_SEGSTART;
         }
@@ -917,8 +927,7 @@ static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
 static int md_leave_block(MD_BLOCKTYPE type, void *detail, void *vp)
 {
     struct md_parse_ctx *ps = vp;
-    ps->block_open = 0;
-    update_timing(&ps->n->items[ps->n->n_items-1]);
+    close_block(ps);
     return 0;
 }
 
@@ -971,10 +980,27 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         item = &ps->n->items[ps->n->n_items-1];
     }
 
-    item->runs = realloc(item->runs, (item->n_runs+1)*sizeof(struct text_run));
-    item->runs[item->n_runs].text = strndup(text, len);
-    item->runs[item->n_runs].type = run_type(ps);
-    item->n_runs++;
+    if ( ps->type == NARRATIVE_ITEM_SLIDE ) {
+
+        item->slide = slide_new();
+
+        if ( strncmp(text, "Slide ", 6) != 0 ) return 1;
+        char *tx = strndup(text+6, len-6);
+        const char *sc = strchr(tx, ';');
+        if ( sc == NULL ) return 1;
+        if ( strlen(sc) < 3 ) return 1;
+
+        slide_set_ext_filename(item->slide, strdup(sc+2));
+        slide_set_ext_number(item->slide, atoi(tx));
+        free(tx);
+        close_block(ps);
+
+    } else {
+        item->runs = realloc(item->runs, (item->n_runs+1)*sizeof(struct text_run));
+        item->runs[item->n_runs].text = strndup(text, len);
+        item->runs[item->n_runs].type = run_type(ps);
+        item->n_runs++;
+    }
 
     return 0;
 }

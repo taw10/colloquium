@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <gio/gio.h>
+#include <poppler.h>
 
 #include <libintl.h>
 #define _(x) gettext(x)
@@ -961,6 +962,27 @@ static int md_leave_span(MD_SPANTYPE type, void *detail, void *vp)
 }
 
 
+static int get_ext_slide_size(Slide *s, double *pw, double *ph)
+{
+    GFile *file;
+    PopplerDocument *doc;
+    PopplerPage *page;
+
+    file = g_file_new_for_path(s->ext_filename);
+    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+    if ( doc == NULL ) return 1;
+
+    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
+    if ( page == NULL ) return 1;
+
+    poppler_page_get_size(page, pw, ph);
+
+    g_object_unref(G_OBJECT(page));
+    g_object_unref(G_OBJECT(doc));
+
+    return 0;
+}
+
 static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 {
     struct md_parse_ctx *ps = vp;
@@ -982,6 +1004,8 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 
     if ( ps->type == NARRATIVE_ITEM_SLIDE ) {
 
+        double w, h;
+
         item->slide = slide_new();
 
         if ( strncmp(text, "Slide ", 6) != 0 ) return 1;
@@ -992,6 +1016,8 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 
         slide_set_ext_filename(item->slide, strdup(sc+2));
         slide_set_ext_number(item->slide, atoi(tx));
+        get_ext_slide_size(item->slide, &w, &h);
+        slide_set_logical_size(item->slide, w, h);
         free(tx);
         close_block(ps);
 

@@ -115,21 +115,6 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 }
 
 
-static cairo_surface_t *dummy_thumbnail(int w, int h)
-{
-    cairo_surface_t *surf;
-    cairo_t *cr;
-
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-    cr = cairo_create(surf);
-    cairo_set_source_rgb(cr, 0.5, 0.1, 0.0);
-    cairo_paint(cr);
-    cairo_destroy(cr);
-
-    return surf;
-}
-
-
 /* Render a thumbnail of the slide */
 static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *is,
                                          int w, int h)

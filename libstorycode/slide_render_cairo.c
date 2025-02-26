@@ -32,6 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <poppler.h>
 
 #include <libintl.h>
 #define _(x) gettext(x)
@@ -369,6 +370,31 @@ static void sort_slide_positions(struct slide_pos *a, struct slide_pos *b)
 }
 
 
+static int render_ext_slide(Slide *s, cairo_t *cr, double w, double h)
+{
+    GFile *file;
+    PopplerDocument *doc;
+    PopplerPage *page;
+    double pw, ph;
+
+    file = g_file_new_for_path(s->ext_filename);
+    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+    if ( doc == NULL ) return 1;
+
+    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
+    if ( page == NULL ) return 1;
+
+    poppler_page_get_size(page, &pw, &ph);
+    cairo_scale(cr, (double)w/pw, (double)h/ph);
+    poppler_page_render(page, cr);
+
+    g_object_unref(G_OBJECT(page));
+    g_object_unref(G_OBJECT(doc));
+
+    return 0;
+}
+
+
 int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
                        int slide_number, PangoLanguage *lang, PangoContext *pc,
                        SlideItem *sel_item, struct slide_pos sel_start, struct slide_pos sel_end)
@@ -377,6 +403,11 @@ int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *styles
     double w, h;
 
     slide_get_logical_size(s, stylesheet, &w, &h);
+
+    if ( s->ext_filename != NULL ) {
+        return render_ext_slide(s, cr, w, h);
+    }
+
     sort_slide_positions(&sel_start, &sel_end);
 
     /* Overall background */

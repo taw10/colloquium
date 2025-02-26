@@ -32,7 +32,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <poppler.h>
 
 #include <libintl.h>
 #define _(x) gettext(x)
@@ -131,37 +130,6 @@ static cairo_surface_t *dummy_thumbnail(int w, int h)
 }
 
 
-static cairo_surface_t *render_ext_thumbnail(Slide *s, int w, int h)
-{
-    GFile *file;
-    PopplerDocument *doc;
-    PopplerPage *page;
-    cairo_surface_t *surf;
-    cairo_t *cr;
-    double pw, ph;
-
-    file = g_file_new_for_path(s->ext_filename);
-    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
-    if ( doc == NULL ) return dummy_thumbnail(w, h);
-
-    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
-    if ( page == NULL ) return dummy_thumbnail(w, h);
-
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-
-    cr = cairo_create(surf);
-    poppler_page_get_size(page, &pw, &ph);
-    cairo_scale(cr, (double)w/pw, (double)h/ph);
-    poppler_page_render(page, cr);
-    cairo_destroy(cr);
-
-    g_object_unref(G_OBJECT(page));
-    g_object_unref(G_OBJECT(doc));
-
-    return surf;
-}
-
-
 /* Render a thumbnail of the slide */
 static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *is,
                                          int w, int h)
@@ -174,10 +142,6 @@ static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *i
     const int rh = 1024; /* "reasonably big" height for slide */
     int rw;
     struct slide_pos sel;
-
-    if ( s->ext_filename != NULL ) {
-        return render_ext_thumbnail(s, w, h);
-    }
 
     slide_get_logical_size(s, ss, &logical_w, &logical_h);
     rw = rh*(logical_w/logical_h);

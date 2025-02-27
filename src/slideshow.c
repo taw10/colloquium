@@ -89,8 +89,7 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
     cairo_fill(cr);
 
-    slide_get_logical_size(ss->cur_slide,
-                           narrative_get_stylesheet(ss->n), &lw, &lh);
+    slide_get_logical_size(ss->cur_slide, &lw, &lh);
 
     if ( lw/lh > (double)dw/dh ) {
         /* Slide is too wide.  Letterboxing top/bottom */
@@ -106,28 +105,11 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
     yoff = (dh - sh)/2.0;
 
     if ( !ss->blank ) {
-
-        PangoContext *pc;
-        int n;
-        struct slide_pos sel;
-
         cairo_save(cr);
         cairo_translate(cr, xoff, yoff);
         cairo_scale(cr, sw/lw, sh/lh);
-
-        sel.para = 0;  sel.pos = 0;  sel.trail = 0;
-        n = narrative_get_slide_number_for_slide(ss->n, ss->cur_slide);
-        pc = pango_cairo_create_context(cr);
-
-        slide_render_cairo(ss->cur_slide, cr,
-                           narrative_get_imagestore(ss->n),
-                           narrative_get_stylesheet(ss->n),
-                           n, pango_language_get_default(), pc,
-                           NULL, sel, sel);
-
-        g_object_unref(pc);
+        slide_render_cairo(ss->cur_slide, cr);
         cairo_restore(cr);
-
     }
 
     return FALSE;

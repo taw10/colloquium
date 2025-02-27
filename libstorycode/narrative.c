@@ -52,8 +52,6 @@
 #include "narrative.h"
 #include "narrative_priv.h"
 #include "slide_priv.h"
-#include "imagestore.h"
-#include "storycode.h"
 
 Narrative *narrative_new()
 {
@@ -63,7 +61,6 @@ Narrative *narrative_new()
     n->n_items = 0;
     n->items = NULL;
     n->stylesheet = stylesheet_new();
-    n->imagestore = imagestore_new("."); /* FIXME: From app config */
     n->saved = 1;
 #ifdef HAVE_PANGO
     n->language = pango_language_to_string(pango_language_get_default());
@@ -124,32 +121,6 @@ void narrative_add_empty_item(Narrative *n)
 }
 
 
-static void make_references_relative(Narrative *n, GFile *file)
-{
-    int i;
-    GFile *parent = g_file_get_parent(file);
-
-    for ( i=0; i<n->n_items; i++ ) {
-        int j;
-        Slide *s;
-        if ( n->items[i].type != NARRATIVE_ITEM_SLIDE ) continue;
-        s = n->items[i].slide;
-        for ( j=0; j<s->n_items; j++ ) {
-            if ( s->items[j].type != SLIDE_ITEM_IMAGE ) continue;
-            GFile *image = g_file_new_for_path(s->items[j].filename);
-            char *rel = g_file_get_relative_path(parent, image);
-            if ( rel != NULL ) {
-                free(s->items[j].filename);
-                s->items[j].filename = rel;
-            } else {
-                fprintf(stderr, _("Could not determine relative path for '%s'\n"),
-                        s->items[j].filename);
-            }
-        }
-    }
-}
-
-
 int narrative_save(Narrative *n, GFile *file)
 {
     GFileOutputStream *fh;
@@ -161,20 +132,16 @@ int narrative_save(Narrative *n, GFile *file)
         return 1;
     }
 
-    make_references_relative(n, file);
-
     fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
     if ( fh == NULL ) {
         fprintf(stderr, _("Open failed: %s\n"), error->message);
         return 1;
     }
-    r = storycode_write_presentation(n, G_OUTPUT_STREAM(fh));
+    r = 1; // FIXME: Write as MD storycode_write_presentation(n, G_OUTPUT_STREAM(fh));
     if ( r ) {
         fprintf(stderr, _("Couldn't save presentation\n"));
     }
     g_object_unref(fh);
-
-    imagestore_set_parent(n->imagestore, g_file_get_parent(file));
 
     n->saved = 1;
     return 0;
@@ -236,13 +203,6 @@ const char *narrative_get_language(Narrative *n)
 {
     if ( n == NULL ) return NULL;
     return n->language;
-}
-
-
-ImageStore *narrative_get_imagestore(Narrative *n)
-{
-    if ( n == NULL ) return NULL;
-    return n->imagestore;
 }
 
 
@@ -579,101 +539,6 @@ int narrative_get_num_slides(Narrative *n)
 }
 
 
-Slide *narrative_get_slide(Narrative *n, int para)
-{
-    if ( para >= n->n_items ) return NULL;
-    if ( n->items[para].type != NARRATIVE_ITEM_SLIDE ) return NULL;
-    return n->items[para].slide;
-}
-
-
-int narrative_get_slide_number_for_para(Narrative *n, int para)
-{
-    int i;
-    int ns = 0;
-    for ( i=0; i<para; i++ ) {
-        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) ns++;
-    }
-    return ns;
-}
-
-
-int narrative_get_slide_number_for_slide(Narrative *n, Slide *s)
-{
-    int i;
-    int ns = 0;
-    for ( i=0; i<n->n_items; i++ ) {
-        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) {
-            if ( n->items[i].slide == s ) return ns;
-            ns++;
-        }
-    }
-    return n->n_items;
-}
-
-
-Slide *narrative_get_slide_by_number(Narrative *n, int pos)
-{
-    int i;
-    int ns = 0;
-    for ( i=0; i<n->n_items; i++ ) {
-        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) {
-            if ( ns == pos ) return n->items[i].slide;
-            ns++;
-        }
-    }
-    return NULL;
-}
-
-
-/* Return the text between item p1/offset o1 and p2/o2 */
-char *narrative_range_as_storycode(Narrative *n, int p1, size_t o1, int p2, size_t o2)
-{
-    GOutputStream *fh;
-    char *text;
-    int i;
-
-    fh = g_memory_output_stream_new_resizable();
-    if ( fh == NULL ) return NULL;
-
-    for ( i=p1; i<=p2; i++ ) {
-
-        if ( ((i>p1) && (i<p2)) || !narrative_item_is_text(n, i) ) {
-
-            narrative_write_item(n, i, fh);
-
-        } else {
-
-            size_t start_offs, end_offs;
-            GError *error = NULL;
-
-            if ( i==p1 ) {
-                start_offs = o1;
-            } else {
-                start_offs = 0;
-            }
-
-            if ( i==p2 ) {
-                end_offs = o2;
-            } else {
-                end_offs = -1;
-            }
-
-            narrative_write_partial_item(n, i, start_offs, end_offs, fh);
-            if ( i < p2 ) g_output_stream_write(fh, "\n", 1, NULL, &error);
-
-        }
-
-    }
-
-    g_output_stream_close(fh, NULL, NULL);
-    text = g_memory_output_stream_steal_data(G_MEMORY_OUTPUT_STREAM(fh));
-    g_object_unref(fh);
-
-    return text;
-}
-
-
 /* Return the text between item p1/offset o1 and p2/o2 */
 char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2)
 {
@@ -750,6 +615,53 @@ char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2
     }
 
     return t;
+}
+
+
+Slide *narrative_get_slide(Narrative *n, int para)
+{
+    if ( para >= n->n_items ) return NULL;
+    if ( n->items[para].type != NARRATIVE_ITEM_SLIDE ) return NULL;
+    return n->items[para].slide;
+}
+
+
+int narrative_get_slide_number_for_para(Narrative *n, int para)
+{
+    int i;
+    int ns = 0;
+    for ( i=0; i<para; i++ ) {
+        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) ns++;
+    }
+    return ns;
+}
+
+
+int narrative_get_slide_number_for_slide(Narrative *n, Slide *s)
+{
+    int i;
+    int ns = 0;
+    for ( i=0; i<n->n_items; i++ ) {
+        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) {
+            if ( n->items[i].slide == s ) return ns;
+            ns++;
+        }
+    }
+    return n->n_items;
+}
+
+
+Slide *narrative_get_slide_by_number(Narrative *n, int pos)
+{
+    int i;
+    int ns = 0;
+    for ( i=0; i<n->n_items; i++ ) {
+        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) {
+            if ( ns == pos ) return n->items[i].slide;
+            ns++;
+        }
+    }
+    return NULL;
 }
 
 
@@ -862,8 +774,7 @@ void narrative_debug(Narrative *n)
             break;
 
             case NARRATIVE_ITEM_SLIDE :
-            printf("Slide:\n");
-            describe_slide(item->slide);
+            printf("Slide\n");
             break;
 
         }
@@ -1094,12 +1005,7 @@ Narrative *narrative_load(GFile *file)
     if ( bytes == NULL ) return NULL;
 
     text = g_bytes_get_data(bytes, &len);
-
-    if ( strncmp(text, "STYLES", 6) == 0 ) {
-        n = storycode_parse_presentation(text);
-    } else {
-        n = parse_md_narrative(text, len);
-    }
+    n = parse_md_narrative(text, len);
     g_bytes_unref(bytes);
     if ( n == NULL ) return NULL;
 
@@ -1108,6 +1014,5 @@ Narrative *narrative_load(GFile *file)
         narrative_add_empty_item(n);
     }
 
-    imagestore_set_parent(n->imagestore, g_file_get_parent(file));
     return n;
 }

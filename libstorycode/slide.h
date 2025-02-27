@@ -30,49 +30,14 @@
 #include <stddef.h>
 
 typedef struct _slide Slide;
-typedef struct _slideitem SlideItem;
-
-#include "stylesheet.h"
-#include "storycode.h"
 
 extern Slide *slide_new(void);
 extern void slide_free(Slide *s);
-
-extern SlideItem *slide_add_item(Slide *s, SlideItem *item);
-extern void slide_delete_item(Slide *s, SlideItem *item);
 
 extern void slide_set_ext_filename(Slide *s, char *filename);
 extern void slide_set_ext_number(Slide *s, int num);
 
 extern int slide_set_logical_size(Slide *s, double w, double h);
-extern int slide_get_logical_size(Slide *s, Stylesheet *ss, double *w, double *h);
-
-
-/* Constructors for slide items */
-extern SlideItem *slide_item_image(char *filename, struct frame_geom geom);
-extern SlideItem *slide_item_text(struct text_run **paras, int *n_runs, int n_paras,
-                                 struct frame_geom geom, enum alignment alignment);
-extern SlideItem *slide_item_footer(void);
-extern SlideItem *slide_item_slidetitle(struct text_run **paras, int *n_runs, int n_paras);
-extern SlideItem *slide_item_prestitle(struct text_run **paras, int *n_runs, int n_paras);
-
-
-/* Slide items */
-extern void slide_item_get_geom(SlideItem *item, Stylesheet *ss,
-                                double *x, double *y, double *w, double *h,
-                                double slide_w, double slide_h);
-
-extern void slide_item_get_padding(SlideItem *item, Stylesheet *ss,
-                                   double *l, double *r, double *t, double *b,
-                                   double slide_w, double slide_h);
-
-extern void slide_item_split_text_paragraph(SlideItem *item, int para, size_t off);
-extern void slide_item_delete_text(SlideItem *item, int p1, size_t o1, int p2, size_t o2);
-
-extern void slide_item_to_top(Slide *s, SlideItem *item);
-extern void slide_item_to_bottom(Slide *s, SlideItem *item);
-
-/* For debugging, not really part of API */
-extern void describe_slide(Slide *s);
+extern int slide_get_logical_size(Slide *s, double *w, double *h);
 
 #endif /* SLIDE_H */

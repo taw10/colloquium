@@ -47,155 +47,6 @@
 
 G_DEFINE_TYPE_WITH_CODE(SlideWindow, gtk_slide_window, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
-static void insert_slidetitle_sig(GSimpleAction *action, GVariant *parameter,
-                                  gpointer vp)
-{
-    SlideItem *item;
-    SlideWindow *sw = vp;
-    struct text_run *runs;
-    int nruns = 1;
-
-    /* Ownership of this struct will be taken over by the Slide. */
-    runs = malloc(sizeof(struct text_run));
-    runs[0].type = TEXT_RUN_NORMAL;
-    runs[0].text = strdup("Slide title");
-
-    item = slide_item_slidetitle(&runs, &nruns, 1);
-    item = slide_add_item(sw->slide, item);
-    gtk_slide_view_set_slide(sw->sv, sw->slide);
-}
-
-
-static void insert_prestitle_sig(GSimpleAction *action, GVariant *parameter,
-                                 gpointer vp)
-{
-    SlideItem *item;
-    SlideWindow *sw = vp;
-    struct text_run *runs;
-    int nruns = 1;
-
-    /* Ownership of this struct will be taken over by the Slide. */
-    runs = malloc(sizeof(struct text_run));
-    runs[0].type = TEXT_RUN_NORMAL;
-    runs[0].text = strdup("Presentation title");
-
-    item = slide_item_prestitle(&runs, &nruns, 1);
-    item = slide_add_item(sw->slide, item);
-    gtk_slide_view_set_slide(sw->sv, sw->slide);
-}
-
-
-static gint insert_image_response_sig(GtkWidget *d, gint response, SlideWindow *sw)
-{
-    GtkWidget *cb;
-    const char *size_str;
-
-    cb = gtk_file_chooser_get_extra_widget(GTK_FILE_CHOOSER(d));
-    size_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(cb));
-
-    if ( response == GTK_RESPONSE_ACCEPT ) {
-
-        char *filename;
-        SlideItem *item;
-        struct frame_geom geom;
-        char *fn;
-        double slide_w, slide_h;
-        gint image_w, image_h;
-        double aspect;
-        GdkPixbufFormat *f;
-
-        filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-        fn = strdup(filename);
-        if ( fn == NULL ) return 0;
-
-        if ( slide_get_logical_size(sw->slide, narrative_get_stylesheet(sw->n),
-                                    &slide_w, &slide_h) ) return 0;
-
-        f = gdk_pixbuf_get_file_info(filename, &image_w, &image_h);
-        if ( f == NULL ) return 0;
-        aspect = (double)image_h / image_w;
-        g_free(filename);
-
-        if ( strcmp(size_str, "normal") == 0 ) {
-            geom.x.len = slide_w/4.0;  geom.x.unit = LENGTH_UNIT;
-            geom.y.len = slide_h/4.0;  geom.y.unit = LENGTH_UNIT;
-            geom.w.len = slide_w/2.0;  geom.w.unit = LENGTH_UNIT;
-            geom.h.len = geom.w.len*aspect;  geom.h.unit = LENGTH_UNIT;
-        }
-
-        if ( strcmp(size_str, "fillentire") == 0 ) {
-            geom.x.len = 0.0;  geom.x.unit = LENGTH_UNIT;
-            geom.y.len = 0.0;  geom.y.unit = LENGTH_UNIT;
-            geom.w.len = 1.0;  geom.w.unit = LENGTH_FRAC;
-            geom.h.len = 1.0;  geom.h.unit = LENGTH_FRAC;
-        }
-
-        item = slide_item_image(fn, geom);
-        item = slide_add_item(sw->slide, item);
-    }
-
-    gtk_widget_destroy(d);
-
-    return 0;
-}
-
-
-static void insert_image_sig(GSimpleAction *action, GVariant *parameter,
-                             gpointer vp)
-{
-    SlideWindow *sw = vp;
-    GtkWidget *d;
-    GtkWidget *cb;
-
-    d = gtk_file_chooser_dialog_new(_("Insert image"),
-                                    NULL,
-                                    GTK_FILE_CHOOSER_ACTION_OPEN,
-                                    _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                    _("_Insert"), GTK_RESPONSE_ACCEPT,
-                                    NULL);
-
-    cb = gtk_combo_box_text_new();
-
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "normal",
-                              _("Make the image about half the width of the slide"));
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cb), "fillentire",
-                              _("Fill the entire slide, even the title and footer regions"));
-
-    gtk_combo_box_set_active_id(GTK_COMBO_BOX(cb), "normal");
-
-    gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(d), cb);
-
-    g_signal_connect(G_OBJECT(d), "response",
-                     G_CALLBACK(insert_image_response_sig), sw);
-
-    gtk_widget_show_all(d);
-}
-
-
-static void paste_sig(GSimpleAction *action, GVariant *parameter,
-                      gpointer vp)
-{
-    //SlideWindow *sw = vp;
-    //sc_editor_paste(sw->sceditor);
-}
-
-
-static void copy_frame_sig(GSimpleAction *action, GVariant *parameter,
-                             gpointer vp)
-{
-    //SlideWindow *sw = vp;
-    //sc_editor_copy_selected_frame(sw->sceditor);
-}
-
-
-static void delete_frame_sig(GSimpleAction *action, GVariant *parameter,
-                             gpointer vp)
-{
-    SlideWindow *sw = vp;
-    gtk_slide_view_delete_selected_frame(GTK_SLIDE_VIEW(sw->sv));
-}
-
-
 /* Change the editor's slide to "np" */
 static void change_edit_slide(SlideWindow *sw, Slide *np)
 {
@@ -295,40 +146,18 @@ static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp
     open_about_dialog(GTK_WIDGET(sw));
 }
 
-static void sw_save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-    SlideWindow *sw = vp;
-    g_action_group_activate_action(G_ACTION_GROUP(sw->parent), "save", parameter);
-}
-
-
 GActionEntry sw_entries[] = {
 
     { "about", sw_about_sig, NULL, NULL, NULL },
-    { "save", sw_save_sig, NULL, NULL, NULL },
-    { "paste", paste_sig, NULL, NULL, NULL },
-    { "copyframe", copy_frame_sig, NULL, NULL, NULL },
-    { "deleteframe", delete_frame_sig, NULL, NULL, NULL },
     { "first", first_slide_sig, NULL, NULL, NULL },
     { "prev", prev_slide_sig, NULL, NULL, NULL },
     { "next", next_slide_sig, NULL, NULL, NULL },
     { "last", last_slide_sig, NULL, NULL, NULL },
-    { "slidetitle", insert_slidetitle_sig, NULL, NULL, NULL },
-    { "prestitle", insert_prestitle_sig, NULL, NULL, NULL },
-    { "image", insert_image_sig, NULL, NULL, NULL },
 };
-
-
-static void sw_emit_change_sig(GtkWidget *sv, SlideWindow *sw)
-{
-    g_signal_emit_by_name(sw, "changed");
-}
 
 
 static void gtk_slide_window_class_init(SlideWindowClass *klass)
 {
-    g_signal_new("changed", GTK_TYPE_SLIDE_WINDOW, G_SIGNAL_RUN_LAST, 0,
-                 NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
 
@@ -361,10 +190,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
     g_signal_connect(G_OBJECT(sw->sv), "key-press-event",
              G_CALLBACK(sw_key_press_sig), sw);
 
-    g_signal_connect(G_OBJECT(sw->sv), "changed",
-             G_CALLBACK(sw_emit_change_sig), sw);
-
-    slide_get_logical_size(slide, narrative_get_stylesheet(n), &w, &h);
+    slide_get_logical_size(slide, &w, &h);
     gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
 
     gtk_container_add(GTK_CONTAINER(sw), GTK_WIDGET(sw->sv));

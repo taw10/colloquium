@@ -32,7 +32,6 @@
 
 #include <stylesheet.h>
 #include <narrative.h>
-#include <imagestore.h>
 #include <narrative_render_cairo.h>
 
 #define GTK_TYPE_NARRATIVE_VIEW (gtk_narrative_view_get_type())

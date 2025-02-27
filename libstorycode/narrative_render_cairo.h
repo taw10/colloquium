@@ -28,7 +28,6 @@
 #endif
 
 #include "narrative.h"
-#include "imagestore.h"
 
 struct edit_pos
 {
@@ -39,7 +38,7 @@ struct edit_pos
 
 extern int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet,
                                 PangoLanguage *lang, PangoContext *pc, double w,
-                                ImageStore *is, int min, int max,
+                                int min, int max,
                                 struct edit_pos sel_start, struct edit_pos sel_end);
 
 extern double narrative_get_height(Narrative *n);
@@ -50,7 +49,7 @@ extern size_t narrative_pos_trail_to_offset(Narrative *n, int i, int offs, int t
 
 extern int narrative_render_item_cairo(Narrative*n, cairo_t *cr, int i);
 
-extern int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet, ImageStore *is,
+extern int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
                                   double min_y, double max_y);
 
 extern void narrative_sort_positions(struct edit_pos *a, struct edit_pos *b);

@@ -49,36 +49,12 @@ gresources = gnome.compile_resources('colloquium-resources',
 # libstorycode
 libstorycode_includes = include_directories('libstorycode')
 
-flex = find_program('flex')
-bison = find_program('bison')
-
-flex_gen = generator(flex,
-                     output : ['@BASENAME@_lex.c', '@BASENAME@_lex.h'],
-                     arguments : ['--outfile=@OUTPUT0@',
-                                  '--header-file=@OUTPUT1@',
-                                  '@INPUT@'])
-
-bison_gen = generator(bison,
-                      output : ['@BASENAME@_parse.c', '@BASENAME@_parse.h'],
-                      arguments : ['--output=@OUTPUT0@',
-                                   '--defines=@OUTPUT1@',
-                                   '--report=all',
-                                   '@INPUT@'])
-
-storycode_parse_ch = bison_gen.process('libstorycode/storycode.y')
-storycode_lex_ch = flex_gen.process('libstorycode/storycode.l')
-
 libstorycode = library('storycode',
                    ['libstorycode/narrative.c',
                     'libstorycode/slide.c',
                     'libstorycode/stylesheet.c',
-                    'libstorycode/storycode.c',
                     'libstorycode/slide_render_cairo.c',
                     'libstorycode/narrative_render_cairo.c',
-                    'libstorycode/render_cairo_common.c',
-                    'libstorycode/imagestore.c',
-                    storycode_lex_ch,
-                    storycode_parse_ch,
                    ],
                    include_directories : libstorycode_includes,
                    dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
@@ -103,15 +79,6 @@ libgtkstorycode = library('gtkstorycode',
 
 libgtkstorycode_dep = declare_dependency(include_directories : libgtkstorycode_includes,
                                          link_with : libgtkstorycode)
-
-
-# pdfstorycode
-executable('pdfstorycode',
-           ['src/pdfstorycode.c',
-           ],
-           gresources,
-           dependencies : [glib_dep, gio_dep, cairo_dep, pango_dep,
-                           pangocairo_dep, libstorycode_dep])
 
 
 # Main program

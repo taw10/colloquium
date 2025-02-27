@@ -36,7 +36,6 @@ typedef struct _colloquium Colloquium;
                                    GTK_TYPE_APPLICATION, Colloquium))
 
 
-extern const char *colloquium_get_imagestore(Colloquium *app);
 extern int colloquium_get_hidepointer(Colloquium *app);
 
 extern void open_about_dialog(GtkWidget *parent);

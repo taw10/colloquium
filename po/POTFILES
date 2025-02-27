@@ -1,7 +1,6 @@
 src/colloquium.c
 src/debugger.c
 src/frame.c
-src/imagestore.c
 src/narrative_window.c
 src/pr_clock.c
 src/presentation.c

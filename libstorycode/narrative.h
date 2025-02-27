@@ -31,9 +31,24 @@
 
 typedef struct _narrative Narrative;
 
+enum text_run_type
+{
+    TEXT_RUN_NORMAL,
+    TEXT_RUN_BOLD,
+    TEXT_RUN_ITALIC,
+    TEXT_RUN_UNDERLINE,
+};
+
+
+struct text_run
+{
+    enum text_run_type type;
+    char *text;
+};
+
+
+#include "stylesheet.h"
 #include "slide.h"
-#include "storycode.h"
-#include "imagestore.h"
 
 extern Narrative *narrative_new(void);
 extern void narrative_free(Narrative *n);
@@ -43,7 +58,6 @@ extern void narrative_add_stylesheet(Narrative *n, Stylesheet *ss);
 extern Stylesheet *narrative_get_stylesheet(Narrative *n);
 
 extern const char *narrative_get_language(Narrative *n);
-extern ImageStore *narrative_get_imagestore(Narrative *n);
 
 extern Narrative *narrative_load(GFile *file);
 extern int narrative_save(Narrative *n, GFile *file);
@@ -77,7 +91,6 @@ extern int narrative_get_slide_number_for_slide(Narrative *n, Slide *s);
 extern double narrative_find_time_pos(Narrative *n, double minutes);
 
 extern char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2);
-extern char *narrative_range_as_storycode(Narrative *n, int p1, size_t o1, int p2, size_t o2);
 
 extern void narrative_debug(Narrative *n);
 

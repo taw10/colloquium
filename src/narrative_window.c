@@ -498,7 +498,7 @@ static gint export_pdf_response_sig(GtkWidget *d, gint response,
     if ( response == GTK_RESPONSE_ACCEPT ) {
         char *filename;
         filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-        render_slides_to_pdf(n, narrative_get_imagestore(n), filename);
+        render_slides_to_pdf(n, filename);
         g_free(filename);
     }
 

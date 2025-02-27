@@ -38,8 +38,8 @@
 #include <narrative.h>
 #include <narrative_render_cairo.h>
 
-#include "gtknarrativeview.h"
 #include "narrative_priv.h"
+#include "gtknarrativeview.h"
 #include "timing_ruler.h"
 
 
@@ -167,7 +167,6 @@ static void rewrap_range(GtkNarrativeView *e, int min, int max)
     narrative_wrap_range(e->n,
                          narrative_get_stylesheet(e->n),
                          lang, pc, e->w,
-                         narrative_get_imagestore(e->n),
                          min, max, e->sel_start, e->sel_end);
 }
 
@@ -396,13 +395,7 @@ static void copy_selection(GtkNarrativeView *e)
     clipboard_data[0] = narrative_range_as_text(e->n, start.para, start_offs,
                                                       end.para, end_offs);
 
-    targets[1].target = "text/x-storycode";
-    targets[1].flags = 0;
-    targets[1].info = 1;
-    clipboard_data[1] = narrative_range_as_storycode(e->n, start.para, start_offs,
-                                                           end.para, end_offs);
-
-    gtk_clipboard_set_with_data(cb, targets, 2, clipboard_get, clipboard_clear,
+    gtk_clipboard_set_with_data(cb, targets, 1, clipboard_get, clipboard_clear,
                                 clipboard_data);
 }
 
@@ -558,7 +551,6 @@ static gboolean gtknv_draw_sig(GtkWidget *da, cairo_t *cr, GtkNarrativeView *e)
 
     /* Contents */
     narrative_render_cairo(e->n, cr, narrative_get_stylesheet(e->n),
-                           narrative_get_imagestore(e->n),
                            e->scroll_pos, e->scroll_pos+e->visible_height);
 
     /* Editing overlay */
@@ -1062,28 +1054,6 @@ static gboolean gtknv_motion_sig(GtkWidget *da, GdkEventMotion *event,
     return FALSE;
 }
 
-static void paste_storycode_received(GtkClipboard *cb, GtkSelectionData *seldata,
-                                     gpointer vp)
-{
-    GtkNarrativeView *e = vp;
-    const guchar *t;
-
-    t = gtk_selection_data_get_data(seldata);
-    if ( t == NULL ) {
-        printf("NULL!\n");
-        return;
-    }
-
-    printf("got SC '%s'\n", t);
-    Narrative *nnew = storycode_parse_presentation((char *)t);
-    narrative_debug(nnew);
-
-    gtknv_emit_change_sig(e);
-    check_cursor_visible(e);
-    gtknv_redraw(e);
-}
-
-
 static void paste_text_received(GtkClipboard *cb, GtkSelectionData *seldata,
                                 gpointer vp)
 {
@@ -1107,8 +1077,7 @@ static void paste_targets_received(GtkClipboard *cb, GdkAtom *targets,
 {
     GtkNarrativeView *e = vp;
     int i;
-    int have_sc = 0;
-    int index_sc, index_text;
+    int index_text;
     int have_text = 0;
 
     if ( targets == NULL ) {
@@ -1118,10 +1087,6 @@ static void paste_targets_received(GtkClipboard *cb, GdkAtom *targets,
 
     for ( i=0; i<n_targets; i++ ) {
         gchar *name = gdk_atom_name(targets[i]);
-        if ( g_strcmp0(name, "text/x-storycode") == 0 ) {
-            have_sc = 1;
-            index_sc = i;
-        }
         if ( g_strcmp0(name, "text/plain") == 0 ) {
             have_text = 1;
             index_text = i;
@@ -1129,10 +1094,7 @@ static void paste_targets_received(GtkClipboard *cb, GdkAtom *targets,
         g_free(name);
     }
 
-    if ( have_sc ) {
-        gtk_clipboard_request_contents(cb, targets[index_sc],
-                                       paste_storycode_received, e);
-    } else if ( have_text ) {
+    if ( have_text ) {
         gtk_clipboard_request_contents(cb, targets[index_text],
                                        paste_text_received, e);
     } else {

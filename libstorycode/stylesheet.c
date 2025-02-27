@@ -31,7 +31,6 @@
 #include <stdio.h>
 
 #include "stylesheet.h"
-#include "storycode.h"
 
 enum style_mask
 {
@@ -43,6 +42,31 @@ enum style_mask
     SM_PADDING    = 1<<5,
     SM_ALIGNMENT  = 1<<6,
 };
+
+char unitc(enum length_unit unit)
+{
+    if ( unit == LENGTH_FRAC ) return 'f';
+    if ( unit == LENGTH_UNIT ) return 'u';
+    return '?';
+}
+
+
+const char *bgcolc(enum gradient bggrad)
+{
+    if ( bggrad == GRAD_NONE ) return "";
+    if ( bggrad == GRAD_HORIZ ) return "HORIZONTAL ";
+    if ( bggrad == GRAD_VERT ) return "VERTICAL ";
+    return "?";
+}
+
+
+const char *alignc(enum alignment ali)
+{
+    if ( ali == ALIGN_LEFT ) return "left";
+    if ( ali == ALIGN_CENTER ) return "center";
+    if ( ali == ALIGN_RIGHT ) return "right";
+    return "?";
+}
 
 
 struct style
@@ -573,26 +597,6 @@ const char *stylesheet_get_friendly_name(const char *in)
 }
 
 
-int stylesheet_set_from_storycode(Stylesheet *ss, const char *sc)
-{
-    Stylesheet *ssnew;
-    Narrative *n;
-
-    n = storycode_parse_presentation(sc);
-    if ( n == NULL ) return 1;
-
-    ssnew = narrative_get_stylesheet(n);
-    if ( ssnew == NULL ) return 1;
-
-    narrative_free(n);
-
-    free_style_contents(&ss->top);
-    ss->top = ssnew->top;
-
-    return 0;
-}
-
-
 int stylesheet_set_from_file(Stylesheet *ss, GFile *file)
 {
     GBytes *bytes;
@@ -604,7 +608,9 @@ int stylesheet_set_from_file(Stylesheet *ss, GFile *file)
     if ( bytes == NULL ) return 0;
 
     text = g_bytes_get_data(bytes, &len);
-    r = stylesheet_set_from_storycode(ss, text);
+    Stylesheet *ssnew = NULL;  /* FIXME: Load properly */
+    free_style_contents(&ss->top);
+    ss->top = ssnew->top;
     g_bytes_unref(bytes);
     return r;
 }

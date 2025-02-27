@@ -46,7 +46,6 @@ struct _colloquium
     GtkBuilder *builder;
     char *mydir;
     int first_run;
-    char *imagestore;
     int hidepointer;
 };
 
@@ -261,8 +260,6 @@ static void create_config(const char *filename)
         return;
     }
 
-    fprintf(fh, "imagestore: %s\n",
-            g_get_user_special_dir(G_USER_DIRECTORY_PICTURES));
     fprintf(fh, "hidepointer: no\n");
 
     fclose(fh);
@@ -317,22 +314,12 @@ static void read_config(const char *filename, Colloquium *app)
         if ( fgets(line, 1024, fh) == NULL ) break;
         chomp(line);
 
-        if ( strncmp(line, "imagestore: ", 11) == 0 ) {
-            app->imagestore = strdup(line+12);
-        }
-
         if ( strncmp(line, "hidepointer: ", 12) == 0 ) {
             app->hidepointer = yesno(line+13);
         }
     } while ( !feof(fh) );
 
     fclose(fh);
-}
-
-
-const char *colloquium_get_imagestore(Colloquium *app)
-{
-    return app->imagestore;
 }
 
 
@@ -424,7 +411,6 @@ static void colloquium_class_init(ColloquiumClass *class)
 
 static void colloquium_init(Colloquium *app)
 {
-    app->imagestore = NULL;
     app->hidepointer = 0;
 }
 

@@ -27,8 +27,6 @@
 #include <pango/pangocairo.h>
 #endif
 
-#include "imagestore.h"
-#include "storycode.h"
 #include "slide.h"
 
 
@@ -87,7 +85,6 @@ struct narrative_item
 struct _narrative
 {
     Stylesheet *stylesheet;
-    ImageStore *imagestore;
     int saved;
     const char *language;
 

@@ -23,63 +23,12 @@
 #ifndef SLIDE_PRIV_H
 #define SLIDE_PRIV_H
 
-#ifdef HAVE_PANGO
-#include <pango/pangocairo.h>
-#endif
-
-#include "storycode.h"
-
-enum slide_item_type
-{
-    SLIDE_ITEM_TEXT,
-    SLIDE_ITEM_IMAGE,
-    SLIDE_ITEM_FOOTER,
-    SLIDE_ITEM_SLIDETITLE,
-    SLIDE_ITEM_PRESTITLE,
-};
-
-
-struct slide_text_paragraph
-{
-    struct text_run *runs;
-    int n_runs;
-#ifdef HAVE_PANGO
-    PangoLayout *layout;
-#else
-    void *layout;
-#endif
-};
-
-
-struct _slideitem
-{
-    enum slide_item_type type;
-
-    /* For TEXT, SLIDETITLE, PRESTITLE */
-    int n_paras;
-    struct slide_text_paragraph *paras;
-    enum alignment align;
-
-    /* For IMAGE */
-    char *filename;
-
-    /* For TEXT and IMAGE */
-    struct frame_geom geom;
-};
-
-
 struct _slide
 {
     double logical_w;
     double logical_h;
-    int n_items;
-    SlideItem *items;
-
     char *ext_filename;
     int ext_slidenumber;
 };
-
-extern int slide_which_run(struct slide_text_paragraph *para, size_t item_offs,
-                           size_t *run_offs);
 
 #endif /* SLIDE_PRIV_H */

@@ -380,7 +380,8 @@ static void element_changed(GtkTreeSelection *sel, StylesheetEditor *se)
 
 static void revert_sig(GtkButton *button, StylesheetEditor *se)
 {
-    stylesheet_set_from_storycode(se->priv->stylesheet, se->priv->orig_ss);
+    // FIXME: From file (not SC)
+    //stylesheet_set_from_storycode(se->priv->stylesheet, se->priv->orig_ss);
     set_values_from_presentation(se);
     g_signal_emit_by_name(se, "changed");
 }

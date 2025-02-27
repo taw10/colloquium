@@ -28,22 +28,8 @@
 #endif
 
 #include "slide.h"
-#include "imagestore.h"
 
-struct slide_pos
-{
-    int para;    /* Paragraph number (corresponding to narrative items) */
-    int pos;     /* Byte position within run (yes, really)  */
-    int trail;   /* 1 = end of character, 0 = before */
-};
-
-extern int slide_render_cairo(Slide *s, cairo_t *cr, ImageStore *is, Stylesheet *stylesheet,
-                              int slide_number, PangoLanguage *lang, PangoContext *pc,
-                              SlideItem *sel_item, struct slide_pos sel_start,
-                              struct slide_pos sel_end);
-
-extern int render_slides_to_pdf(Narrative *n, ImageStore *is, const char *filename);
-
-extern size_t slide_pos_trail_to_offset(SlideItem *item, int para_num, size_t offs, int trail);
+extern int slide_render_cairo(Slide *s, cairo_t *cr);
+extern int render_slides_to_pdf(Narrative *n, const char *filename);
 
 #endif	/* RENDER_H */

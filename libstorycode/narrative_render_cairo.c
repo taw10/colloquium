@@ -39,15 +39,90 @@
 #include "slide.h"
 #include "narrative.h"
 #include "stylesheet.h"
-#include "imagestore.h"
 #include "slide_render_cairo.h"
 #include "narrative_render_cairo.h"
-#include "render_cairo_common.h"
 
 #include "narrative_priv.h"
 #include "slide_priv.h"
 
 const double dummy_h_val = 1024.0;
+
+
+static int runs_to_pangolayout(PangoLayout *layout, struct text_run *runs, int n_runs)
+{
+    size_t total_len = 0;
+    int i;
+    char *text;
+    PangoAttrList *attrs;
+
+    attrs = pango_layout_get_attributes(layout);
+
+    /* Work out length of all text in item (paragraph) */
+    for ( i=0; i<n_runs; i++ ) {
+        total_len += strlen(runs[i].text);
+    }
+
+    /* Allocate the complete text */
+    text = malloc(total_len+1);
+    if ( text == NULL ) {
+        fprintf(stderr, "Couldn't allocate combined text (%lli)\n",
+               (long long int)total_len);
+        return 1;
+    }
+
+    /* Put all of the text together */
+    text[0] = '\0';
+    size_t pos = 0;
+    for ( i=0; i<n_runs; i++ ) {
+
+        PangoAttribute *attr = NULL;
+        size_t run_len = strlen(runs[i].text);
+
+        switch ( runs[i].type ) {
+
+            case TEXT_RUN_NORMAL :
+            break;
+
+            case TEXT_RUN_BOLD:
+            attr = pango_attr_weight_new(PANGO_WEIGHT_BOLD);
+            break;
+
+            case TEXT_RUN_ITALIC:
+            attr = pango_attr_style_new(PANGO_STYLE_ITALIC);
+            break;
+
+            case TEXT_RUN_UNDERLINE:
+            attr = pango_attr_underline_new(PANGO_UNDERLINE_SINGLE);
+            break;
+
+        }
+
+        if ( attr != NULL ) {
+            attr->start_index = pos;
+            attr->end_index = pos + run_len;
+            pango_attr_list_insert(attrs, attr);
+        }
+
+        /* FIXME: Should check that each bit of text finishes on a character boundary */
+        pos += run_len;
+        strcat(text, runs[i].text);
+
+    }
+    pango_layout_set_text(layout, text, -1);
+
+    return 0;
+}
+
+
+static PangoAlignment to_pangoalignment(enum alignment align)
+{
+    switch ( align ) {
+        case ALIGN_LEFT : return PANGO_ALIGN_LEFT;
+        case ALIGN_RIGHT : return PANGO_ALIGN_RIGHT;
+        case ALIGN_CENTER : return PANGO_ALIGN_CENTER;
+        default: return PANGO_ALIGN_LEFT;
+    }
+}
 
 
 static void wrap_text(struct narrative_item *item, PangoContext *pc,
@@ -116,22 +191,17 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 
 
 /* Render a thumbnail of the slide */
-static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *is,
-                                         int w, int h)
+static cairo_surface_t *render_thumbnail(Slide *s, int w, int h)
 {
     cairo_surface_t *surf;
     cairo_surface_t *full_surf;
     cairo_t *cr;
     double logical_w, logical_h;
-    PangoContext *pc;
     const int rh = 1024; /* "reasonably big" height for slide */
     int rw;
-    struct slide_pos sel;
 
-    slide_get_logical_size(s, ss, &logical_w, &logical_h);
+    slide_get_logical_size(s, &logical_w, &logical_h);
     rw = rh*(logical_w/logical_h);
-
-    sel.para = 0;  sel.pos = 0;  sel.trail = 0;
 
     /* Render at a reasonably big size.  Rendering to a small surface makes
      * rounding of text positions (due to font hinting) cause significant
@@ -139,10 +209,7 @@ static cairo_surface_t *render_thumbnail(Slide *s, Stylesheet *ss, ImageStore *i
     full_surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, rw, rh);
     cr = cairo_create(full_surf);
     cairo_scale(cr, (double)rw/logical_w, (double)rh/logical_h);
-    pc = pango_cairo_create_context(cr);
-    slide_render_cairo(s, cr, is, ss, 0, pango_language_get_default(), pc,
-                       NULL, sel, sel);
-    g_object_unref(pc);
+    slide_render_cairo(s, cr);
     cairo_destroy(cr);
 
     /* Scale down to the actual size of the thumbnail */
@@ -162,7 +229,7 @@ static void wrap_slide(struct narrative_item *item, Stylesheet *ss, int sel_bloc
 {
     double w, h;
 
-    slide_get_logical_size(item->slide, ss, &w, &h);
+    slide_get_logical_size(item->slide, &w, &h);
     item->obj_h = 320.0;  /* Actual height of thumbnail */
     item->obj_w = rint(item->obj_h*w/h);
 
@@ -241,7 +308,7 @@ static void wrap_marker(struct narrative_item *item, PangoContext *pc, double w,
 
 
 int narrative_wrap_range(Narrative *n, Stylesheet *stylesheet, PangoLanguage *lang,
-                         PangoContext *pc, double w, ImageStore *is,
+                         PangoContext *pc, double w,
                          int min, int max,
                          struct edit_pos sel_start, struct edit_pos sel_end)
 {
@@ -555,7 +622,7 @@ next:
 
 
 /* NB You must first call narrative_wrap() */
-int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet, ImageStore *is,
+int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet,
                            double min_y, double max_y)
 {
     int i, r;
@@ -611,7 +678,7 @@ int narrative_render_cairo(Narrative *n, cairo_t *cr, Stylesheet *stylesheet, Im
             if ( (item->type == NARRATIVE_ITEM_SLIDE)
               && (item->slide_thumbnail == NULL) )
             {
-                item->slide_thumbnail = render_thumbnail(item->slide, stylesheet, is,
+                item->slide_thumbnail = render_thumbnail(item->slide,
                                                          item->obj_w, item->obj_h);
             }
 

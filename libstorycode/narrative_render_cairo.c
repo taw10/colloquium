@@ -194,33 +194,17 @@ static void wrap_text(struct narrative_item *item, PangoContext *pc,
 static cairo_surface_t *render_thumbnail(Slide *s, int w, int h)
 {
     cairo_surface_t *surf;
-    cairo_surface_t *full_surf;
     cairo_t *cr;
     double logical_w, logical_h;
-    const int rh = 1024; /* "reasonably big" height for slide */
-    int rw;
 
     slide_get_logical_size(s, &logical_w, &logical_h);
-    rw = rh*(logical_w/logical_h);
 
-    /* Render at a reasonably big size.  Rendering to a small surface makes
-     * rounding of text positions (due to font hinting) cause significant
-     * differences between the thumbnail and "normal" rendering. */
-    full_surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, rw, rh);
-    cr = cairo_create(full_surf);
-    cairo_scale(cr, (double)rw/logical_w, (double)rh/logical_h);
+    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+    cr = cairo_create(surf);
+    cairo_scale(cr, (double)w/logical_w, (double)h/logical_h);
     slide_render_cairo(s, cr);
     cairo_destroy(cr);
 
-    /* Scale down to the actual size of the thumbnail */
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-    cr = cairo_create(surf);
-    cairo_scale(cr, (double)w/rw, (double)h/rh);
-    cairo_set_source_surface(cr, full_surf, 0.0, 0.0);
-    cairo_paint(cr);
-    cairo_destroy(cr);
-
-    cairo_surface_destroy(full_surf);
     return surf;
 }
 

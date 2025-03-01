@@ -590,25 +590,6 @@ const char *stylesheet_get_friendly_name(const char *in)
 }
 
 
-int stylesheet_set_from_file(Stylesheet *ss, GFile *file)
-{
-    GBytes *bytes;
-    const char *text;
-    size_t len;
-    int r = 0;
-
-    bytes = g_file_load_bytes(file, NULL, NULL, NULL);
-    if ( bytes == NULL ) return 0;
-
-    text = g_bytes_get_data(bytes, &len);
-    Stylesheet *ssnew = NULL;  /* FIXME: Load properly */
-    free_style_contents(&ss->top);
-    ss->top = ssnew->top;
-    g_bytes_unref(bytes);
-    return r;
-}
-
-
 double lcalc(struct length l, double pd)
 {
     if ( l.unit == LENGTH_UNIT ) {

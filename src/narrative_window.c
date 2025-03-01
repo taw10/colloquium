@@ -222,81 +222,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static gint load_ss_response_sig(GtkWidget *d, gint response,
-                                 NarrativeWindow *nw)
-{
-    if ( response == GTK_RESPONSE_ACCEPT ) {
-
-        GFile *file;
-
-        file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
-
-        if ( stylesheet_set_from_file(narrative_get_stylesheet(nw->n), file) ) {
-
-            fprintf(stderr, _("Failed to load stylesheet\n"));
-
-        } else {
-
-            gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
-        }
-
-        g_object_unref(file);
-
-    }
-
-    gtk_widget_destroy(d);
-
-    return 0;
-}
-
-
-static void stylesheet_changed_sig(GtkWidget *da, NarrativeWindow *nw)
-{
-    int i;
-
-    /* Full rerender */
-    gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
-
-    /* Full rerender of all slide windows */
-    for ( i=0; i<nw->n_slidewindows; i++ ) {
-        slide_window_update(nw->slidewindows[i]);
-    }
-}
-
-
-static void edit_ss_sig(GSimpleAction *action, GVariant *parameter,
-                        gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    StylesheetEditor *se;
-
-    se = stylesheet_editor_new(narrative_get_stylesheet(nw->n));
-    g_signal_connect(G_OBJECT(se), "changed",
-                     G_CALLBACK(stylesheet_changed_sig), nw);
-    gtk_widget_show_all(GTK_WIDGET(se));
-}
-
-
-static void load_ss_sig(GSimpleAction *action, GVariant *parameter,
-                        gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    GtkWidget *d;
-
-    d = gtk_file_chooser_dialog_new(_("Load stylesheet"),
-                                    GTK_WINDOW(nw),
-                                    GTK_FILE_CHOOSER_ACTION_OPEN,
-                                    _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                    _("_Open"), GTK_RESPONSE_ACCEPT,
-                                    NULL);
-
-    g_signal_connect(G_OBJECT(d), "response",
-                     G_CALLBACK(load_ss_response_sig), nw);
-
-    gtk_widget_show_all(d);
-}
-
-
 static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
@@ -737,8 +662,6 @@ GActionEntry nw_entries[] = {
     { "prestitle", add_prestitle_sig, NULL, NULL, NULL },
     { "segstart", add_segstart_sig, NULL, NULL, NULL },
     { "segend", add_segend_sig, NULL, NULL, NULL },
-    { "loadstyle", load_ss_sig, NULL, NULL, NULL },
-    { "stylesheet", edit_ss_sig, NULL, NULL, NULL },
     { "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
     { "startslideshowhere", start_slideshow_here_sig, NULL, NULL, NULL },
     { "startslideshownoslides", start_slideshow_noslides_sig, NULL, NULL, NULL },

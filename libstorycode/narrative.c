@@ -974,10 +974,6 @@ static Narrative *parse_md_narrative(const char *text, size_t len)
     pstate.block_open = 0;
     pstate.type = NARRATIVE_ITEM_TEXT;
 
-    GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/default.ss");
-    stylesheet_set_from_file(narrative_get_stylesheet(pstate.n), file);
-    g_object_unref(file);
-
     md_parse(text, len, &md_parser, &pstate);
 
     return pstate.n;

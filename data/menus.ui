@@ -42,16 +42,6 @@
       </section>
       <section>
         <item>
-          <attribute name='label' translatable='yes'>Load stylesheet...</attribute>
-          <attribute name='action'>win.loadstyle</attribute>
-        </item>
-        <item>
-          <attribute name='label' translatable='yes'>Save stylesheet...</attribute>
-          <attribute name='action'>win.savestyle</attribute>
-        </item>
-      </section>
-      <section>
-        <item>
           <attribute name='label' translatable='yes'>_Quit</attribute>
           <attribute name='action'>app.quit</attribute>
           <attribute name='accel'>&lt;Primary&gt;q</attribute>
@@ -93,13 +83,6 @@
         <item>
           <attribute name='label' translatable='yes'>Copy Frame</attribute>
           <attribute name='action'>win.copyframe</attribute>
-        </item>
-      </section>
-      <section>
-        <item>
-          <attribute name='label' translatable='yes'>Edit stylesheet...</attribute>
-          <attribute name='action'>win.stylesheet</attribute>
-          <attribute name='accel'>&lt;Primary&gt;e</attribute>
         </item>
       </section>
       <section>

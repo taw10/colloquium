@@ -114,7 +114,7 @@ static void default_style(struct style *s)
     s->geom.h.len = 1.0;
     s->geom.h.unit = LENGTH_FRAC;
 
-    s->font = strdup("Sans 12");
+    s->font = strdup("Sans 16");
     s->alignment = ALIGN_LEFT;
 
     s->fgcol.rgba[0] = 0.0;
@@ -140,16 +140,16 @@ static void default_style(struct style *s)
     s->paraspace[0].len = 0.0;
     s->paraspace[1].len = 0.0;
     s->paraspace[2].len = 0.0;
-    s->paraspace[3].len = 0.0;
+    s->paraspace[3].len = 10.0;
     s->paraspace[0].unit = LENGTH_UNIT;
     s->paraspace[1].unit = LENGTH_UNIT;
     s->paraspace[2].unit = LENGTH_UNIT;
     s->paraspace[3].unit = LENGTH_UNIT;
 
-    s->padding[0].len = 0.0;
-    s->padding[1].len = 0.0;
-    s->padding[2].len = 0.0;
-    s->padding[3].len = 0.0;
+    s->padding[0].len = 10.0;
+    s->padding[1].len = 10.0;
+    s->padding[2].len = 10.0;
+    s->padding[3].len = 10.0;
     s->padding[0].unit = LENGTH_UNIT;
     s->padding[1].unit = LENGTH_UNIT;
     s->padding[2].unit = LENGTH_UNIT;
@@ -248,17 +248,10 @@ Stylesheet *stylesheet_new()
 
     create_style(ss, "", "NARRATIVE");
     create_style(ss, "NARRATIVE", "BP");
-    create_style(ss, "NARRATIVE", "PRESTITLE");
-    create_style(ss, "NARRATIVE", "SEGMENT_START");
-    sty = create_style(ss, "", "SLIDE");
-    sty->geom.w.unit = LENGTH_UNIT;
-    sty->geom.w.len = 1024.0;
-    sty->geom.h.unit = LENGTH_UNIT;
-    sty->geom.h.len = 768.0;
-    create_style(ss, "SLIDE", "TEXT");
-    create_style(ss, "SLIDE", "PRESTITLE");
-    create_style(ss, "SLIDE", "SLIDETITLE");
-    create_style(ss, "SLIDE", "FOOTER");
+    sty = create_style(ss, "NARRATIVE", "PRESTITLE");
+    sty->font = strdup("Sans Bold 22");
+    sty = create_style(ss, "NARRATIVE", "SEGMENT_START");
+    sty->font = strdup("Sans Bold 16");
 
     return ss;
 }

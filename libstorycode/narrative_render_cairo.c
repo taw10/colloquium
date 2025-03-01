@@ -43,7 +43,6 @@
 #include "narrative_render_cairo.h"
 
 #include "narrative_priv.h"
-#include "slide_priv.h"
 
 const double dummy_h_val = 1024.0;
 

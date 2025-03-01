@@ -51,7 +51,6 @@
 #include "slide.h"
 #include "narrative.h"
 #include "narrative_priv.h"
-#include "slide_priv.h"
 
 Narrative *narrative_new()
 {

@@ -35,7 +35,6 @@
 #endif
 
 #include "slide.h"
-#include "slide_priv.h"
 
 
 Slide *slide_new()

@@ -42,9 +42,6 @@
 #include "stylesheet.h"
 #include "slide_render_cairo.h"
 
-#include "slide_priv.h"
-
-
 int slide_render_cairo(Slide *s, cairo_t *cr)
 {
     double w, h;

@@ -29,7 +29,16 @@
 
 #include <stddef.h>
 
+struct _slide
+{
+    double logical_w;
+    double logical_h;
+    char *ext_filename;
+    int ext_slidenumber;
+};
+
 typedef struct _slide Slide;
+
 
 extern Slide *slide_new(void);
 extern void slide_free(Slide *s);

@@ -120,6 +120,160 @@ void narrative_add_empty_item(Narrative *n)
 }
 
 
+static size_t write_string(GOutputStream *fh, char *str)
+{
+    gssize r;
+    GError *error = NULL;
+    r = g_output_stream_write(fh, str, strlen(str), NULL, &error);
+    if ( r == -1 ) {
+        fprintf(stderr, "Write failed: %s\n", error->message);
+        return 0;
+    }
+    return strlen(str);
+}
+
+
+static size_t write_run_border(GOutputStream *fh, enum text_run_type t)
+{
+    if ( t == TEXT_RUN_BOLD ) return write_string(fh, "**");
+    if ( t == TEXT_RUN_ITALIC ) return write_string(fh, "*");
+    if ( t == TEXT_RUN_UNDERLINE ) return write_string(fh, "_");
+    return 0;
+}
+
+
+static char *escape_text(const char *in, size_t len)
+{
+    int i, j;
+    size_t nl = 0;
+    size_t np = 0;
+    const char *esc = "*/_";
+    size_t n_esc = 3;
+    char *out;
+
+    for ( i=0; i<len; i++ ) {
+        for ( j=0; j<n_esc; j++ ) {
+            if ( in[i] == esc[j] ) {
+                nl++;
+                break;
+            }
+        }
+    }
+
+    out = malloc(len + nl + 1);
+    if ( out == NULL ) return NULL;
+
+    np = 0;
+    for ( i=0; i<len; i++ ) {
+        for ( j=0; j<n_esc; j++ ) {
+            if ( in[i] == esc[j] ) {
+                out[np++] = '\\';
+                break;
+            }
+        }
+        out[np++] = in[i];
+    }
+    out[np] = '\0';
+
+    return out;
+}
+
+
+static size_t write_partial_run(GOutputStream *fh,
+                                struct text_run *run,
+                                size_t start,
+                                size_t len)
+{
+    char *escaped_str;
+    size_t tlen = 0;
+    tlen += write_run_border(fh, run->type);
+    escaped_str = escape_text(run->text+start, len);
+    tlen += write_string(fh, escaped_str);
+    free(escaped_str);
+    tlen += write_run_border(fh, run->type);
+    return tlen;
+}
+
+
+static size_t write_para(GOutputStream *fh, struct text_run *runs, int n_runs)
+{
+    int i;
+    size_t len = 0;
+    for ( i=0; i<n_runs; i++ ) {
+        if ( strlen(runs[i].text) == 0 ) continue;
+        len += write_partial_run(fh, &runs[i], 0, strlen(runs[i].text));
+    }
+    return len;
+}
+
+
+static void write_series(GOutputStream *fh, char *c, int n)
+{
+    int i;
+    for ( i=0; i<n; i++ ) {
+        write_string(fh, c);
+    }
+}
+
+
+static int write_markdown(GOutputStream *fh, Narrative *n)
+{
+    int i;
+    for ( i=0; i<n->n_items; i++ ) {
+
+        char tmp[64];
+        size_t len;
+        struct narrative_item *item = &n->items[i];
+
+        if ( i != 0 )  write_string(fh, "\n");
+
+        switch ( item->type ) {
+
+            case NARRATIVE_ITEM_TEXT:
+            write_para(fh, item->runs, item->n_runs);
+            write_string(fh, "\n");
+            break;
+
+            case NARRATIVE_ITEM_BP:
+            write_string(fh, "* ");
+            write_para(fh, item->runs, item->n_runs);
+            write_string(fh, "\n\n");
+            break;
+
+            case NARRATIVE_ITEM_SEGSTART:
+            write_string(fh, "\n");
+            len = write_para(fh, item->runs, item->n_runs);
+            write_string(fh, "\n");
+            write_series(fh, "-", len);
+            write_string(fh, "\n");
+            break;
+
+            case NARRATIVE_ITEM_PRESTITLE:
+            len = write_para(fh, item->runs, item->n_runs);
+            write_string(fh, "\n");
+            write_series(fh, "=", len);
+            write_string(fh, "\n");
+            break;
+
+            case NARRATIVE_ITEM_SLIDE:
+            write_string(fh, "###### Slide ");
+            snprintf(tmp, 64, "%i", item->slide->ext_slidenumber);
+            write_string(fh, tmp);
+            write_string(fh, "; ");
+            write_string(fh, item->slide->ext_filename);
+            write_string(fh, "\n");
+            break;
+
+            case NARRATIVE_ITEM_SEGEND:
+            case NARRATIVE_ITEM_EOP:
+            break;
+        }
+    }
+
+    return 0;
+}
+
+
 int narrative_save(Narrative *n, GFile *file)
 {
     GFileOutputStream *fh;
@@ -136,7 +290,7 @@ int narrative_save(Narrative *n, GFile *file)
         fprintf(stderr, _("Open failed: %s\n"), error->message);
         return 1;
     }
-    r = 1; // FIXME: Write as MD storycode_write_presentation(n, G_OUTPUT_STREAM(fh));
+    r = write_markdown(G_OUTPUT_STREAM(fh), n);
     if ( r ) {
         fprintf(stderr, _("Couldn't save presentation\n"));
     }

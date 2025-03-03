@@ -85,7 +85,6 @@ extern int narrative_get_num_items_to_eop(Narrative *n);
 extern int narrative_get_num_slides(Narrative *n);
 extern Slide *narrative_get_slide(Narrative *n, int para);
 extern Slide *narrative_get_slide_by_number(Narrative *n, int pos);
-extern int narrative_get_slide_number_for_para(Narrative *n, int para);
 extern int narrative_get_slide_number_for_slide(Narrative *n, Slide *s);
 extern void narrative_get_first_slide_size(Narrative *n, double *w, double *h);
 

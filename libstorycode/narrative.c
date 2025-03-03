@@ -779,17 +779,6 @@ Slide *narrative_get_slide(Narrative *n, int para)
 }
 
 
-int narrative_get_slide_number_for_para(Narrative *n, int para)
-{
-    int i;
-    int ns = 0;
-    for ( i=0; i<para; i++ ) {
-        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) ns++;
-    }
-    return ns;
-}
-
-
 int narrative_get_slide_number_for_slide(Narrative *n, Slide *s)
 {
     int i;

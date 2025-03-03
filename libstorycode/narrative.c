@@ -888,6 +888,20 @@ static void debug_runs(struct narrative_item *item)
 }
 
 
+void narrative_get_first_slide_size(Narrative *n, double *w, double *h)
+{
+    int i;
+    for ( i=0; i<n->n_items; i++ ) {
+        if ( n->items[i].type == NARRATIVE_ITEM_SLIDE ) {
+            slide_get_logical_size(n->items[i].slide, w, h);
+            return;
+        }
+    }
+    printf("No slides found - using standard slide size\n");
+    *w = 1024.0;  *h = 768.0;
+}
+
+
 void narrative_debug(Narrative *n)
 {
     int i;

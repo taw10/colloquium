@@ -246,8 +246,7 @@ void show_testcard(Narrative *n)
     if ( tc == NULL ) return;
 
     tc->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    stylesheet_get_slide_default_size(narrative_get_stylesheet(n),
-                                      &tc->slide_width, &tc->slide_height);
+    narrative_get_first_slide_size(n, &tc->slide_width, &tc->slide_height);
 
     tc->drawingarea = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(tc->window), tc->drawingarea);

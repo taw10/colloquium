@@ -45,12 +45,6 @@ struct testcard
     GtkWidget *drawingarea;
 };
 
-static gint tc_destroy_sig(GtkWidget *widget, struct testcard *tc)
-{
-    free(tc);
-    return FALSE;
-}
-
 
 static void arrow_left(cairo_t *cr, double size)
 {
@@ -106,19 +100,17 @@ static void colour_box(cairo_t *cr, double x, double y,
 }
 
 
-static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
+static void tc_draw_sig(GtkDrawingArea *da, cairo_t *cr,
+        int width, int height, gpointer vp)
 {
     double xoff, yoff;
-    double width, height;
     double w, h;
     PangoLayout *pl;
     PangoFontDescription *desc;
     char tmp[1024];
     int plw, plh;
     double xp, yp;
-
-    width = gtk_widget_get_width(GTK_WIDGET(da));
-    height = gtk_widget_get_height(GTK_WIDGET(da));
+    struct testcard *tc = vp;
 
     /* Overall background */
     cairo_rectangle(cr, 0.0, 0.0, width, height);
@@ -189,7 +181,7 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
     cairo_translate(cr, 0.0, yp);
 
     snprintf(tmp, 1024, _("Test Card\nColloquium version %s\n"
-                        "Screen resolution %.0f × %.0f\n"
+                        "Screen resolution %i × %i\n"
                         "Slide resolution %.0f × %.0f"),
                         PACKAGE_VERSION, width, height,
                         w, h);
@@ -223,8 +215,6 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
         colour_box(cr, xp+(i*5*80), 300, i, i, i, label);
     }
     cairo_restore(cr);
-
-    return FALSE;
 }
 
 
@@ -234,8 +224,8 @@ static gboolean tc_key_press_sig(GtkEventControllerKey *self,
                                  GdkModifierType state,
                                  struct testcard *tc)
 {
-    gtk_window_destroy(GTK_WINDOW(tc->window));
-    return FALSE;
+    gtk_window_close(GTK_WINDOW(tc->window));
+    return TRUE;
 }
 
 
@@ -258,16 +248,12 @@ void show_testcard(Narrative *n)
     gtk_widget_set_can_focus(GTK_WIDGET(tc->drawingarea), TRUE);
 
     evc = gtk_event_controller_key_new();
-    gtk_widget_add_controller(GTK_WIDGET(tc->drawingarea), evc);
-    g_signal_connect(G_OBJECT(evc), "key-press-event",
-             G_CALLBACK(tc_key_press_sig), tc);
+    gtk_widget_add_controller(GTK_WIDGET(tc->window), evc);
+    g_signal_connect(G_OBJECT(evc), "key-pressed",
+                     G_CALLBACK(tc_key_press_sig), tc);
 
-    g_signal_connect(G_OBJECT(tc->window), "destroy",
-                     G_CALLBACK(tc_destroy_sig), tc);
-    g_signal_connect(G_OBJECT(tc->drawingarea), "draw",
-             G_CALLBACK(tc_draw_sig), tc);
-
-    gtk_widget_grab_focus(GTK_WIDGET(tc->drawingarea));
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(tc->drawingarea),
+                                   tc_draw_sig, tc, free);
 
     monitors = gdk_display_get_monitors(gdk_display_get_default());
 
@@ -280,5 +266,6 @@ void show_testcard(Narrative *n)
     }
 
     gtk_window_fullscreen_on_monitor(GTK_WINDOW(tc->window),  mon_ss);
+    gtk_widget_grab_focus(GTK_WIDGET(tc->drawingarea));
     gtk_window_present(GTK_WINDOW(tc->window));
 }

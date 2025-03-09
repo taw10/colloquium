@@ -660,6 +660,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->file = file;
     if ( file != NULL ) g_object_ref(file);
 
+    gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(nw), TRUE);
+
     update_titlebar(nw);
 
     g_action_map_add_action_entries(G_ACTION_MAP(nw), nw_entries,
@@ -669,6 +671,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_window_set_child(GTK_WINDOW(nw), vbox);
 
     nw->nv = gtk_text_view_new();
+    gtk_widget_set_vexpand(GTK_WIDGET(nw->nv), TRUE);
 
     toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");
@@ -751,7 +754,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 
     gtk_window_set_default_size(GTK_WINDOW(nw), 768, 768);
     gtk_box_append(GTK_BOX(vbox), scroll);
-    gtk_widget_set_focus_child(GTK_WIDGET(nw), GTK_WIDGET(nw->nv));
+    gtk_widget_set_focus_child(GTK_WIDGET(scroll), GTK_WIDGET(nw->nv));
+    gtk_widget_set_focus_child(GTK_WIDGET(vbox), GTK_WIDGET(scroll));
 
     return nw;
 }

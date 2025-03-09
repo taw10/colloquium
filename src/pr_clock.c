@@ -216,14 +216,13 @@ static gint close_clock_sig(GtkWidget *w, PRClock *n)
 }
 
 
-static gboolean clock_draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
+static void clock_draw_sig(GtkDrawingArea *da, cairo_t *cr,
+        int width, int height, gpointer vp)
 {
-    int width, height;
     double s;
     double ff;
+    struct pr_clock *n = vp;
 
-    width = gtk_widget_get_width(GTK_WIDGET(da));
-    height = gtk_widget_get_height(GTK_WIDGET(da));
     s = width-20.0;
 
     /* Overall background */
@@ -262,8 +261,6 @@ static gboolean clock_draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
         cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
         cairo_show_text(cr, _("Timer is NOT running!"));
     }
-
-    return FALSE;
 }
 
 
@@ -319,7 +316,7 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
     if ( n->running ) {
         n->running = 0;
         n->time_elapsed_at_start = n->time_elapsed;
-        gtk_label_set_text(GTK_LABEL(gtk_window_get_child(GTK_WINDOW(w))),
+        gtk_label_set_text(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(w))),
                            _("Start"));
     } else {
         n->time_elapsed_at_start = n->time_elapsed;
@@ -328,7 +325,7 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
         }
         n->start = g_date_time_new_now(n->tz);
         n->running = 1;
-        gtk_label_set_text(GTK_LABEL(gtk_window_get_child(GTK_WINDOW(w))),
+        gtk_label_set_text(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(w))),
                            _("Stop"));
     }
 
@@ -357,39 +354,40 @@ PRClock *pr_clock_new(PRClock **delete_ptr)
     n->window = gtk_window_new();
     gtk_window_set_default_size(GTK_WINDOW(n->window), 600, 150);
 
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_window_set_child(GTK_WINDOW(n->window), vbox);
 
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_box_append(GTK_BOX(vbox), hbox);
 
     label = gtk_label_new(_("Length (mins):"));
     gtk_label_set_markup(GTK_LABEL(label), _("<b>Length (mins):</b>"));
     g_object_set(G_OBJECT(label), "halign", GTK_ALIGN_END, NULL);
-    gtk_box_prepend(GTK_BOX(hbox), label);
+    gtk_box_append(GTK_BOX(hbox), label);
 
     n->entry = gtk_entry_new();
-    gtk_box_prepend(GTK_BOX(hbox), n->entry);
+    gtk_box_append(GTK_BOX(hbox), n->entry);
 
     n->startbutton = gtk_button_new_with_label(_("Start"));
-    gtk_box_prepend(GTK_BOX(hbox), n->startbutton);
+    gtk_box_append(GTK_BOX(hbox), n->startbutton);
 
     resetbutton = gtk_button_new_with_label(_("Reset"));
-    gtk_box_prepend(GTK_BOX(hbox), resetbutton);
+    gtk_box_append(GTK_BOX(hbox), resetbutton);
 
     setposbutton = gtk_button_new_with_label(_("Set position"));
-    gtk_box_prepend(GTK_BOX(hbox), setposbutton);
+    gtk_box_append(GTK_BOX(hbox), setposbutton);
 
     n->da = gtk_drawing_area_new();
-    gtk_box_prepend(GTK_BOX(vbox), n->da);
-    g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(clock_draw_sig), n);
+    gtk_box_append(GTK_BOX(vbox), n->da);
+    gtk_widget_set_vexpand(GTK_WIDGET(n->da), TRUE);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(n->da), clock_draw_sig, n, NULL);
     g_signal_connect(G_OBJECT(n->window), "destroy",
                      G_CALLBACK(close_clock_sig), n);
 
     grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), TRUE);
-    gtk_box_prepend(GTK_BOX(vbox), grid);
+    gtk_box_append(GTK_BOX(vbox), grid);
     label = gtk_label_new(_("Time elapsed"));
     gtk_label_set_markup(GTK_LABEL(label), _("<b>Time elapsed</b>"));
     gtk_grid_attach(GTK_GRID(grid), label, 0, 0, 1, 1);

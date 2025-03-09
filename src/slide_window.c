@@ -183,6 +183,8 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
     sw->slide = slide;
     sw->parent = nw;
 
+    gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(sw), TRUE);
+
     slide_window_update_titlebar(sw);
 
     g_action_map_add_action_entries(G_ACTION_MAP(sw), sw_entries,

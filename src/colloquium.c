@@ -329,9 +329,6 @@ static void colloquium_startup(GApplication *papp)
     gtk_application_set_menubar(GTK_APPLICATION(app),
         G_MENU_MODEL(gtk_builder_get_object(app->builder, "menubar")));
 
-    GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(app->builder, "app-menu"));
-    gtk_application_set_menubar(GTK_APPLICATION(app), mmodel);
-
     configdir = g_get_user_config_dir();
     app->mydir = malloc(strlen(configdir)+14);
     strcpy(app->mydir, configdir);

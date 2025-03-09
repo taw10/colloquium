@@ -45,13 +45,6 @@ struct print_stuff
 {
     Narrative *n;
 
-    /* Printing config */
-    GtkWidget *combo;
-    int slides_only;
-
-    /* When printing slides only */
-    Slide *slide;
-
     /* When printing narrative */
     int nar_line;
     int start_paras[256];
@@ -59,87 +52,9 @@ struct print_stuff
 };
 
 
-static void print_widget_apply(GtkPrintOperation *op, GtkWidget *widget,
-                               void *vp)
+static void print_begin(GtkPrintOperation *op, GtkPrintContext *ctx, void *vp)
 {
-    const char *id;
     struct print_stuff *ps = vp;
-
-    id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(ps->combo));
-    if ( strcmp(id, "slides") == 0 ) {
-        ps->slides_only = 1;
-    } else {
-        ps->slides_only = 0;
-    }
-}
-
-
-static GObject *print_widget(GtkPrintOperation *op, void *vp)
-{
-    GtkWidget *vbox;
-    GtkWidget *cbox;
-    struct print_stuff *ps = vp;
-
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_set_border_width(GTK_CONTAINER(vbox), 10);
-
-    /* What do you want to print? */
-    cbox = gtk_combo_box_text_new();
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cbox), "slides",
-                              _("Print the slides only"));
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(cbox), "narrative",
-                              _("Print the narrative"));
-    gtk_box_pack_start(GTK_BOX(vbox), cbox, FALSE, FALSE, 10);
-    gtk_combo_box_set_active(GTK_COMBO_BOX(cbox), 1);
-    ps->combo = cbox;
-
-    gtk_widget_show_all(vbox);
-    return G_OBJECT(vbox);
-
-}
-
-
-static void print_slide_only(GtkPrintOperation *op, GtkPrintContext *ctx,
-                             struct print_stuff *ps, int page)
-{
-    cairo_t *cr;
-    double w, h;
-    double sw, sh;
-    double slide_width, slide_height;
-
-    cr = gtk_print_context_get_cairo_context(ctx);
-    w = gtk_print_context_get_width(ctx);
-    h = gtk_print_context_get_height(ctx);
-
-    slide_get_logical_size(ps->slide, &sw, &sh);
-
-    cairo_rectangle(cr, 0.0, 0.0, w, h);
-    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_fill(cr);
-
-    if ( sw/sh > w/h ) {
-        /* Slide is too wide.  Letterboxing top/bottom */
-        slide_width = w;
-        slide_height = w * sh/sw;
-    } else {
-        /* Letterboxing at sides */
-        slide_width = h * sw/sh;
-        slide_height = h;
-    }
-
-    printf("%f x %f ---> %f x %f\n", w, h, slide_width, slide_height);
-
-    cairo_scale(cr, slide_width/sw, slide_width/sw);
-
-    slide_render_cairo(ps->slide, cr);
-
-    ps->slide = narrative_get_slide_by_number(ps->n, page+1);
-}
-
-
-static void begin_narrative_print(GtkPrintOperation *op, GtkPrintContext *ctx,
-                                  struct print_stuff *ps)
-{
     PangoContext *pc;
     int i, n_pages;
     double h, page_height;
@@ -201,28 +116,11 @@ static void print_narrative(GtkPrintOperation *op, GtkPrintContext *ctx,
 }
 
 
-static void print_begin(GtkPrintOperation *op, GtkPrintContext *ctx, void *vp)
-{
-    struct print_stuff *ps = vp;
-
-    if ( ps->slides_only ) {
-        gtk_print_operation_set_n_pages(op, narrative_get_num_slides(ps->n));
-        ps->slide = narrative_get_slide_by_number(ps->n, 0);
-    } else {
-        begin_narrative_print(op, ctx, ps);
-    }
-}
-
-
 static void print_draw(GtkPrintOperation *op, GtkPrintContext *ctx, gint page,
                        void *vp)
 {
     struct print_stuff *ps = vp;
-    if ( ps->slides_only ) {
-        print_slide_only(op, ctx, ps, page);
-    } else {
-        print_narrative(op, ctx, ps, page);
-    }
+    print_narrative(op, ctx, ps, page);
 }
 
 
@@ -242,10 +140,6 @@ void run_printing(Narrative *n, GtkWidget *parent)
         gtk_print_operation_set_print_settings(print, print_settings);
     }
 
-    g_signal_connect(print, "create-custom-widget",
-             G_CALLBACK(print_widget), ps);
-    g_signal_connect(print, "custom-widget-apply",
-             G_CALLBACK(print_widget_apply), ps);
     g_signal_connect(print, "begin_print", G_CALLBACK(print_begin), ps);
     g_signal_connect(print, "draw_page", G_CALLBACK(print_draw), ps);
 

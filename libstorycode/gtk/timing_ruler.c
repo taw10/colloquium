@@ -36,10 +36,9 @@
 #include <narrative.h>
 
 #include "narrative_priv.h"
-#include "gtknarrativeview.h"
 
 
-void draw_ruler(cairo_t *cr, GtkNarrativeView *e)
+void draw_ruler(cairo_t *cr, void *e)
 {
     int start_item, end_item;
     int i;
@@ -49,6 +48,7 @@ void draw_ruler(cairo_t *cr, GtkNarrativeView *e)
     PangoLayout *layout;
     PangoFontDescription *fontdesc;
 
+#if 0
     /* Background */
     cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 1.0);
     cairo_rectangle(cr, 0.0, 0.0, e->ruler_width, e->h);
@@ -97,4 +97,5 @@ void draw_ruler(cairo_t *cr, GtkNarrativeView *e)
 
     g_object_unref(layout);
     pango_font_description_free(fontdesc);
+#endif
 }

@@ -121,18 +121,21 @@ static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static gboolean sw_key_press_sig(GtkWidget *da, GdkEventKey *event,
+static gboolean sw_key_press_sig(GtkEventControllerKey *self,
+                                 guint keyval,
+                                 guint keycode,
+                                 GdkModifierType state,
                                  SlideWindow *sw)
 {
-    switch ( event->keyval ) {
+    switch ( keyval ) {
 
         case GDK_KEY_Page_Up :
         change_slide_backwards(sw);
-        break;
+        return TRUE;
 
         case GDK_KEY_Page_Down :
         change_slide_forwards(sw);
-        break;
+        return TRUE;
 
     }
 
@@ -171,10 +174,10 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 {
     SlideWindow *sw;
     double w, h;
+    GtkEventController *evc;
     Colloquium *app = COLLOQUIUM(papp);
 
     sw = g_object_new(GTK_TYPE_SLIDE_WINDOW, "application", app, NULL);
-    gtk_window_set_role(GTK_WINDOW(sw), "slide");
 
     sw->n = n;
     sw->slide = slide;
@@ -187,13 +190,15 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
     sw->sv = gtk_slide_view_new(n, slide);
 
-    g_signal_connect(G_OBJECT(sw->sv), "key-press-event",
-             G_CALLBACK(sw_key_press_sig), sw);
+    evc = gtk_event_controller_key_new();
+    gtk_widget_add_controller(GTK_WIDGET(sw), evc);
+    g_signal_connect(G_OBJECT(evc), "key-press",
+                     G_CALLBACK(sw_key_press_sig), sw);
 
     slide_get_logical_size(slide, &w, &h);
     gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
 
-    gtk_container_add(GTK_CONTAINER(sw), GTK_WIDGET(sw->sv));
+    gtk_window_set_child(GTK_WINDOW(sw), GTK_WIDGET(sw->sv));
 
     gtk_window_set_resizable(GTK_WINDOW(sw), TRUE);
 
@@ -203,10 +208,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
 void slide_window_update(SlideWindow *sw)
 {
-    gint w, h;
-    w = gtk_widget_get_allocated_width(GTK_WIDGET(sw->sv));
-    h = gtk_widget_get_allocated_height(GTK_WIDGET(sw->sv));
-    gtk_widget_queue_draw_area(GTK_WIDGET(sw->sv), 0, 0, w, h);
+    gtk_widget_queue_draw(GTK_WIDGET(sw->sv));
 }
 
 

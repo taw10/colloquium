@@ -56,10 +56,10 @@ struct _narrativewindow
     GtkApplicationWindow parent_instance;
 
     /*< private >*/
-    GtkToolItem         *bfirst;
-    GtkToolItem         *bprev;
-    GtkToolItem         *bnext;
-    GtkToolItem         *blast;
+    GtkWidget           *bfirst;
+    GtkWidget           *bprev;
+    GtkWidget           *bnext;
+    GtkWidget           *blast;
     GtkWidget           *nv;
     GApplication        *app;
     Narrative           *n;

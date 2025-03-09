@@ -64,7 +64,7 @@ static void colloquium_activate(GApplication *papp)
         Narrative *n = narrative_new();
         narrative_add_empty_item(n);
         nw = narrative_window_new(n, NULL, papp);
-        gtk_widget_show_all(GTK_WIDGET(nw));
+        gtk_window_present(GTK_WINDOW(nw));
     }
 }
 
@@ -123,10 +123,10 @@ void open_about_dialog(GtkWidget *parent)
     gtk_about_dialog_set_translator_credits(GTK_ABOUT_DIALOG(window),
                                             _("translator-credits"));
 
-    g_signal_connect(window, "response", G_CALLBACK(gtk_widget_destroy),
+    g_signal_connect(window, "response", G_CALLBACK(g_object_unref),
         NULL);
 
-    gtk_widget_show_all(window);
+    gtk_window_present(GTK_WINDOW(window));
 }
 
 
@@ -137,21 +137,17 @@ static void quit_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static GFile **gslist_to_array(GSList *item, int *n)
+static GFile **glistmodel_to_array(GListModel *list, int *n)
 {
     int i = 0;
-    int len = g_slist_length(item);
+    int len = g_list_model_get_n_items(list);
     GFile **files = malloc(len * sizeof(GFile *));
 
     if ( files == NULL ) return NULL;
 
-    while ( item != NULL ) {
-        if ( i == len ) {
-            fprintf(stderr, "WTF? Too many files\n");
-            break;
-        }
-        files[i++] = item->data;
-        item = item->next;
+    for ( i=0; i<len; i++ ) {
+        files[i] = g_list_model_get_item(list, i);
+        g_object_ref(files[i]);
     }
 
     *n = len;
@@ -159,54 +155,45 @@ static GFile **gslist_to_array(GSList *item, int *n)
 }
 
 
-static gint open_response_sig(GtkWidget *d, gint response, GApplication *papp)
+static void open_response_sig(GObject *d, GAsyncResult  *res, gpointer vp)
 {
-    if ( response == GTK_RESPONSE_ACCEPT ) {
+    GListModel *files;
+    GFile **files_array;
+    int i, n_files;
+    GApplication *app = vp;
 
-        GSList *files;
-        int n_files = 0;
-        GFile **files_array;
-        int i;
+    files = gtk_file_dialog_open_multiple_finish(GTK_FILE_DIALOG(d), res, NULL);
+    if ( files == NULL ) return;
 
-        files = gtk_file_chooser_get_files(GTK_FILE_CHOOSER(d));
-        files_array = gslist_to_array(files, &n_files);
-        if ( files_array == NULL ) {
-            fprintf(stderr, "Failed to convert file list\n");
-            return 0;
-        }
-        g_slist_free(files);
-        g_application_open(papp, files_array, n_files, "");
+    files_array = glistmodel_to_array(files, &n_files);
+    if ( files_array == NULL ) {
+        fprintf(stderr, "Failed to convert file list\n");
+        return;
+    }
+    g_object_unref(files);
+    g_application_open(app, files_array, n_files, "");
 
-        for ( i=0; i<n_files; i++ ) {
-            g_object_unref(files_array[i]);
-        }
-
+    for ( i=0; i<n_files; i++ ) {
+        g_object_unref(files_array[i]);
     }
 
-    gtk_widget_destroy(d);
-
-    return 0;
+    g_object_unref(d);
 }
 
 
 static void open_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-    GtkWidget *d;
+    GtkFileDialog *d;
     GApplication *app = vp;
 
-    d = gtk_file_chooser_dialog_new(_("Open Presentation"),
-                                    gtk_application_get_active_window(GTK_APPLICATION(app)),
-                                    GTK_FILE_CHOOSER_ACTION_OPEN,
-                                    _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                    _("_Open"), GTK_RESPONSE_ACCEPT,
-                                    NULL);
+    d = gtk_file_dialog_new();
 
-    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(d), TRUE);
+    gtk_file_dialog_set_title(d, _("Open Presentation"));
+    gtk_file_dialog_set_accept_label(d, _("Open"));
 
-    g_signal_connect(G_OBJECT(d), "response",
-                     G_CALLBACK(open_response_sig), app);
-
-    gtk_widget_show_all(d);
+    gtk_file_dialog_open_multiple(d,
+                                  gtk_application_get_active_window(GTK_APPLICATION(app)),
+                                  NULL, open_response_sig, app);
 }
 
 
@@ -230,7 +217,7 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
         if ( n != NULL ) {
             NarrativeWindow *nw;
             nw = narrative_window_new(n, files[i], papp);
-            gtk_widget_show_all(GTK_WIDGET(nw));
+            gtk_window_present(GTK_WINDOW(nw));
         } else {
             char *uri = g_file_get_uri(files[i]);
             fprintf(stderr, _("Failed to load presentation '%s'\n"),
@@ -342,14 +329,8 @@ static void colloquium_startup(GApplication *papp)
     gtk_application_set_menubar(GTK_APPLICATION(app),
         G_MENU_MODEL(gtk_builder_get_object(app->builder, "menubar")));
 
-    if ( gtk_application_prefers_app_menu(GTK_APPLICATION(app)) ) {
-        /* Set the application menu only if it will be shown by the
-         * desktop environment.  All the entries are already in the
-         * normal menus, so don't let GTK create a fallback menu in the
-         * menu bar. */
-        GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(app->builder, "app-menu"));
-        gtk_application_set_app_menu(GTK_APPLICATION(app), mmodel);
-    }
+    GMenuModel *mmodel = G_MENU_MODEL(gtk_builder_get_object(app->builder, "app-menu"));
+    gtk_application_set_menubar(GTK_APPLICATION(app), mmodel);
 
     configdir = g_get_user_config_dir();
     app->mydir = malloc(strlen(configdir)+14);

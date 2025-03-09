@@ -19,8 +19,7 @@ subdir('po')
 
 # Dependencies
 gnome = import('gnome')
-gdk_dep = dependency('gdk-3.0', required : true)
-gtk_dep = dependency('gtk+-3.0', required : true)
+gtk_dep = dependency('gtk4', required : true)
 glib_dep = dependency('glib-2.0', required : true)
 gio_dep = dependency('gio-2.0', required : true)
 cairo_dep = dependency('cairo', required : true)
@@ -58,7 +57,7 @@ libstorycode = library('storycode',
                    ],
                    include_directories : libstorycode_includes,
                    dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
-                                   pangocairo_dep, mdep, gdk_dep, gio_dep,
+                                   pangocairo_dep, mdep, gio_dep,
                                    poppler_dep, md4c_dep],
                    install : true)
 
@@ -70,8 +69,7 @@ libstorycode_dep = declare_dependency(include_directories : libstorycode_include
 libgtkstorycode_includes = include_directories('libstorycode/gtk')
 
 libgtkstorycode = library('gtkstorycode',
-                   ['libstorycode/gtk/gtknarrativeview.c',
-                    'libstorycode/gtk/timing_ruler.c',
+                   ['libstorycode/gtk/timing_ruler.c',
                     'libstorycode/gtk/gtkslideview.c'],
                    include_directories : libgtkstorycode_includes,
                    dependencies : [gtk_dep, libstorycode_dep, mdep],
@@ -90,7 +88,6 @@ executable('colloquium',
             'src/slide_window.c',
             'src/testcard.c',
             'src/print.c',
-            'src/stylesheet_editor.c',
            ],
            gresources,
            dependencies : [gtk_dep, mdep, libstorycode_dep, libgtkstorycode_dep, md4c_dep],

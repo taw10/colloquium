@@ -129,7 +129,6 @@ static gboolean update_clock(gpointer data)
     GTimeSpan sp;
     double time_remaining;
     double delta;
-    gint w, h;
     char *tmp;
 
     dt = g_date_time_new_now(n->tz);
@@ -188,9 +187,7 @@ static gboolean update_clock(gpointer data)
     gtk_label_set_text(GTK_LABEL(n->status), tmp);
     free(tmp);
 
-    w = gtk_widget_get_allocated_width(GTK_WIDGET(n->da));
-    h = gtk_widget_get_allocated_height(GTK_WIDGET(n->da));
-    gtk_widget_queue_draw_area(n->da, 0, 0, w, h);
+    gtk_widget_queue_draw(n->da);
 
     return TRUE;
 }
@@ -225,8 +222,8 @@ static gboolean clock_draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
     double s;
     double ff;
 
-    width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
-    height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
+    width = gtk_widget_get_width(GTK_WIDGET(da));
+    height = gtk_widget_get_height(GTK_WIDGET(da));
     s = width-20.0;
 
     /* Overall background */
@@ -272,15 +269,16 @@ static gboolean clock_draw_sig(GtkWidget *da, cairo_t *cr, struct pr_clock *n)
 
 static void set_sig(GtkEditable *w, struct pr_clock *n)
 {
-    const gchar *t;
+    gchar *t;
     char *check;
 
-    t = gtk_entry_get_text(GTK_ENTRY(n->entry));
+    t = gtk_editable_get_chars(GTK_EDITABLE(n->entry), 0, -1);
     n->time_allowed = 60.0 * strtod(t, &check);
     if ( check == t ) {
         fprintf(stderr, "Invalid time '%s'\n", t);
         n->time_allowed = 0.0;
     }
+    g_free(t);
 
     update_clock(n);
 }
@@ -321,7 +319,7 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
     if ( n->running ) {
         n->running = 0;
         n->time_elapsed_at_start = n->time_elapsed;
-        gtk_label_set_text(GTK_LABEL(gtk_bin_get_child(GTK_BIN(w))),
+        gtk_label_set_text(GTK_LABEL(gtk_window_get_child(GTK_WINDOW(w))),
                            _("Start"));
     } else {
         n->time_elapsed_at_start = n->time_elapsed;
@@ -330,7 +328,7 @@ static gboolean start_sig(GtkWidget *w, gpointer data)
         }
         n->start = g_date_time_new_now(n->tz);
         n->running = 1;
-        gtk_label_set_text(GTK_LABEL(gtk_bin_get_child(GTK_BIN(w))),
+        gtk_label_set_text(GTK_LABEL(gtk_window_get_child(GTK_WINDOW(w))),
                            _("Stop"));
     }
 
@@ -356,34 +354,34 @@ PRClock *pr_clock_new(PRClock **delete_ptr)
     n->delete_ptr = delete_ptr;
     n->tz = g_time_zone_new_local();
 
-    n->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    n->window = gtk_window_new();
     gtk_window_set_default_size(GTK_WINDOW(n->window), 600, 150);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(n->window), vbox);
+    gtk_window_set_child(GTK_WINDOW(n->window), vbox);
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 10);
+    gtk_box_append(GTK_BOX(vbox), hbox);
 
     label = gtk_label_new(_("Length (mins):"));
     gtk_label_set_markup(GTK_LABEL(label), _("<b>Length (mins):</b>"));
     g_object_set(G_OBJECT(label), "halign", GTK_ALIGN_END, NULL);
-    gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 10);
+    gtk_box_prepend(GTK_BOX(hbox), label);
 
     n->entry = gtk_entry_new();
-    gtk_box_pack_start(GTK_BOX(hbox), n->entry, TRUE, TRUE, 0);
+    gtk_box_prepend(GTK_BOX(hbox), n->entry);
 
     n->startbutton = gtk_button_new_with_label(_("Start"));
-    gtk_box_pack_start(GTK_BOX(hbox), n->startbutton, TRUE, TRUE, 10);
+    gtk_box_prepend(GTK_BOX(hbox), n->startbutton);
 
     resetbutton = gtk_button_new_with_label(_("Reset"));
-    gtk_box_pack_start(GTK_BOX(hbox), resetbutton, TRUE, TRUE, 10);
+    gtk_box_prepend(GTK_BOX(hbox), resetbutton);
 
     setposbutton = gtk_button_new_with_label(_("Set position"));
-    gtk_box_pack_start(GTK_BOX(hbox), setposbutton, TRUE, TRUE, 10);
+    gtk_box_prepend(GTK_BOX(hbox), setposbutton);
 
     n->da = gtk_drawing_area_new();
-    gtk_box_pack_start(GTK_BOX(vbox), n->da, TRUE, TRUE, 0);
+    gtk_box_prepend(GTK_BOX(vbox), n->da);
     g_signal_connect(G_OBJECT(n->da), "draw", G_CALLBACK(clock_draw_sig), n);
     g_signal_connect(G_OBJECT(n->window), "destroy",
                      G_CALLBACK(close_clock_sig), n);
@@ -391,7 +389,7 @@ PRClock *pr_clock_new(PRClock **delete_ptr)
     grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), TRUE);
-    gtk_box_pack_start(GTK_BOX(vbox), grid, FALSE, FALSE, 10);
+    gtk_box_prepend(GTK_BOX(vbox), grid);
     label = gtk_label_new(_("Time elapsed"));
     gtk_label_set_markup(GTK_LABEL(label), _("<b>Time elapsed</b>"));
     gtk_grid_attach(GTK_GRID(grid), label, 0, 0, 1, 1);
@@ -429,12 +427,12 @@ PRClock *pr_clock_new(PRClock **delete_ptr)
 
     gtk_window_set_title(GTK_WINDOW(n->window), _("Presentation clock"));
 
-    gtk_widget_show_all(n->window);
+    gtk_window_present(GTK_WINDOW(n->window));
     return n;
 }
 
 
 void pr_clock_destroy(PRClock *n)
 {
-    gtk_widget_destroy(n->window);
+    gtk_window_destroy(GTK_WINDOW(n->window));
 }

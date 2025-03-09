@@ -117,8 +117,8 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
     int plw, plh;
     double xp, yp;
 
-    width = gtk_widget_get_allocated_width(GTK_WIDGET(da));
-    height = gtk_widget_get_allocated_height(GTK_WIDGET(da));
+    width = gtk_widget_get_width(GTK_WIDGET(da));
+    height = gtk_widget_get_height(GTK_WIDGET(da));
 
     /* Overall background */
     cairo_rectangle(cr, 0.0, 0.0, width, height);
@@ -228,34 +228,40 @@ static gboolean tc_draw_sig(GtkWidget *da, cairo_t *cr, struct testcard *tc)
 }
 
 
-static gboolean tc_key_press_sig(GtkWidget *da, GdkEventKey *event,
+static gboolean tc_key_press_sig(GtkEventControllerKey *self,
+                                 guint keyval,
+                                 guint keycode,
+                                 GdkModifierType state,
                                  struct testcard *tc)
 {
-    if ( !event->is_modifier ) gtk_widget_destroy(tc->window);
+    gtk_window_destroy(GTK_WINDOW(tc->window));
     return FALSE;
 }
 
 
 void show_testcard(Narrative *n)
 {
-    GdkDisplay *display;
-    int n_monitors;
+    GListModel *monitors;
+    GdkMonitor *mon_ss;
     struct testcard *tc;
+    GtkEventController *evc;
 
     tc = calloc(1, sizeof(struct testcard));
     if ( tc == NULL ) return;
 
-    tc->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    tc->window = gtk_window_new();
     narrative_get_first_slide_size(n, &tc->slide_width, &tc->slide_height);
 
     tc->drawingarea = gtk_drawing_area_new();
-    gtk_container_add(GTK_CONTAINER(tc->window), tc->drawingarea);
+    gtk_window_set_child(GTK_WINDOW(tc->window), tc->drawingarea);
 
     gtk_widget_set_can_focus(GTK_WIDGET(tc->drawingarea), TRUE);
-    gtk_widget_add_events(GTK_WIDGET(tc->drawingarea), GDK_KEY_PRESS_MASK);
 
-    g_signal_connect(G_OBJECT(tc->drawingarea), "key-press-event",
+    evc = gtk_event_controller_key_new();
+    gtk_widget_add_controller(GTK_WIDGET(tc->drawingarea), evc);
+    g_signal_connect(G_OBJECT(evc), "key-press-event",
              G_CALLBACK(tc_key_press_sig), tc);
+
     g_signal_connect(G_OBJECT(tc->window), "destroy",
                      G_CALLBACK(tc_destroy_sig), tc);
     g_signal_connect(G_OBJECT(tc->drawingarea), "draw",
@@ -263,25 +269,16 @@ void show_testcard(Narrative *n)
 
     gtk_widget_grab_focus(GTK_WIDGET(tc->drawingarea));
 
-    display = gdk_display_get_default();
-    n_monitors = gdk_display_get_n_monitors(display);
+    monitors = gdk_display_get_monitors(gdk_display_get_default());
 
-    GdkMonitor *mon_ss;
-    if ( n_monitors == 1 ) {
-        mon_ss = gdk_display_get_primary_monitor(display);
+    if ( g_list_model_get_n_items(monitors) == 1 ) {
+        mon_ss = GDK_MONITOR(g_list_model_get_object(monitors, 0));
         printf(_("Single monitor mode\n"));
     } else {
-        mon_ss = gdk_display_get_monitor(display, 1);
+        mon_ss = GDK_MONITOR(g_list_model_get_object(monitors, 1));
         printf(_("Dual monitor mode\n"));
     }
 
-    /* Workaround because gtk_window_fullscreen_on_monitor doesn't work */
-    GdkRectangle rect;
-    gdk_monitor_get_geometry(mon_ss, &rect);
-    gtk_window_move(GTK_WINDOW(tc->window), rect.x, rect.y);
-    gtk_window_fullscreen(GTK_WINDOW(tc->window));
-
-    gtk_widget_show_all(GTK_WIDGET(tc->window));
-
+    gtk_window_fullscreen_on_monitor(GTK_WINDOW(tc->window),  mon_ss);
+    gtk_window_present(GTK_WINDOW(tc->window));
 }
-

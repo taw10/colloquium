@@ -55,10 +55,7 @@ void sc_slideshow_class_init(SCSlideshowClass *klass)
 
 static void redraw(SCSlideshow *ss)
 {
-    gint w, h;
-    w = gtk_widget_get_allocated_width(GTK_WIDGET(ss->drawingarea));
-    h = gtk_widget_get_allocated_height(GTK_WIDGET(ss->drawingarea));
-    gtk_widget_queue_draw_area(ss->drawingarea, 0, 0, w, h);
+    gtk_widget_queue_draw(GTK_WIDGET(ss));
 }
 
 
@@ -81,8 +78,8 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
     double sw, sh;  /* Size of slide on screen */
     double xoff, yoff;
 
-    dw = gtk_widget_get_allocated_width(GTK_WIDGET(da));
-    dh = gtk_widget_get_allocated_height(GTK_WIDGET(da));
+    dw = gtk_widget_get_width(GTK_WIDGET(da));
+    dh = gtk_widget_get_height(GTK_WIDGET(da));
 
     /* Overall background */
     cairo_rectangle(cr, 0.0, 0.0, dw, dh);
@@ -121,11 +118,8 @@ static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
     if ( (ss->app == NULL) || colloquium_get_hidepointer(COLLOQUIUM(ss->app)) ) {
 
         /* Hide the pointer */
-        GdkWindow *win;
-        win = gtk_widget_get_window(w);
-        ss->blank_cursor = gdk_cursor_new_for_display(gdk_display_get_default(),
-                                                      GDK_BLANK_CURSOR);
-        gdk_window_set_cursor(GDK_WINDOW(win), ss->blank_cursor);
+        ss->blank_cursor = gdk_cursor_new_from_name("none", NULL);
+        gtk_widget_set_cursor(w, ss->blank_cursor);
 
     } else {
         ss->blank_cursor = NULL;
@@ -144,8 +138,8 @@ void sc_slideshow_set_slide(SCSlideshow *ss, Slide *ns)
 
 SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app)
 {
-    GdkDisplay *display;
-    int n_monitors;
+    GListModel *monitors;
+    GdkMonitor *mon_ss;
     SCSlideshow *ss;
 
     ss = g_object_new(SC_TYPE_SLIDESHOW, NULL);
@@ -158,11 +152,9 @@ SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app)
     ss->app = app;
 
     ss->drawingarea = gtk_drawing_area_new();
-    gtk_container_add(GTK_CONTAINER(ss), ss->drawingarea);
+    gtk_window_set_child(GTK_WINDOW(ss), ss->drawingarea);
 
     gtk_widget_set_can_focus(GTK_WIDGET(ss->drawingarea), TRUE);
-    gtk_widget_add_events(GTK_WIDGET(ss->drawingarea),
-                          GDK_KEY_PRESS_MASK);
 
     g_signal_connect(G_OBJECT(ss), "destroy",
                      G_CALLBACK(ssh_destroy_sig), ss);
@@ -173,25 +165,18 @@ SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app)
 
     gtk_widget_grab_focus(GTK_WIDGET(ss->drawingarea));
 
-    display = gdk_display_get_default();
-    n_monitors = gdk_display_get_n_monitors(display);
+    monitors = gdk_display_get_monitors(gdk_display_get_default());
 
-    GdkMonitor *mon_ss;
-    if ( n_monitors == 1 ) {
-        mon_ss = gdk_display_get_primary_monitor(display);
+    if ( g_list_model_get_n_items(monitors) == 1 ) {
+        mon_ss = GDK_MONITOR(g_list_model_get_object(monitors, 0));
         printf(_("Single monitor mode\n"));
-        ss->single_monitor = 1;
     } else {
-        mon_ss = gdk_display_get_monitor(display, 1);
+        mon_ss = GDK_MONITOR(g_list_model_get_object(monitors, 1));
         printf(_("Dual monitor mode\n"));
-        ss->single_monitor = 0;
     }
 
-    /* Workaround because gtk_window_fullscreen_on_monitor doesn't work */
-    GdkRectangle rect;
-    gdk_monitor_get_geometry(mon_ss, &rect);
-    gtk_window_move(GTK_WINDOW(ss), rect.x, rect.y);
-    gtk_window_fullscreen(GTK_WINDOW(ss));
+    gtk_window_fullscreen_on_monitor(GTK_WINDOW(ss),  mon_ss);
+    gtk_window_present(GTK_WINDOW(ss));
 
     if ( app != NULL ) {
         ss->inhibit_cookie = gtk_application_inhibit(app, GTK_WINDOW(ss),

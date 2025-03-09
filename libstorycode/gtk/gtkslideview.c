@@ -46,8 +46,8 @@
 G_DEFINE_TYPE_WITH_CODE(GtkSlideView, gtk_slide_view, GTK_TYPE_DRAWING_AREA,
                         NULL)
 
-static gboolean gtksv_resize_sig(GtkWidget *widget, GdkEventConfigure *event,
-                                 GtkSlideView *e)
+static void gtksv_resize_sig(GtkDrawingArea *widget, gint width, gint height,
+                             GtkSlideView *e)
 {
     double sx, sy;
     double aw, ah;
@@ -55,11 +55,11 @@ static gboolean gtksv_resize_sig(GtkWidget *widget, GdkEventConfigure *event,
 
     if ( slide_get_logical_size(e->slide, &log_w, &log_h) ) {
         fprintf(stderr, "Failed to get logical size\n");
-        return FALSE;
+        return;
     }
 
-    e->w = event->width;
-    e->h = event->height;
+    e->w = width;
+    e->h = height;
     sx = (double)e->w / log_w;
     sy = (double)e->h / log_h;
     e->view_scale = (sx < sy) ? sx : sy;
@@ -68,15 +68,11 @@ static gboolean gtksv_resize_sig(GtkWidget *widget, GdkEventConfigure *event,
     aw = e->view_scale * log_w;
     ah = e->view_scale * log_h;
 
-    e->border_offs_x = (event->width - aw)/2.0;
-    e->border_offs_y = (event->height - ah)/2.0;
+    e->border_offs_x = (width - aw)/2.0;
+    e->border_offs_y = (height - ah)/2.0;
 
-    e->visible_height = event->height;
-    e->visible_width = event->width;
-
-    //update_size(e);
-
-    return FALSE;
+    e->visible_height = height;
+    e->visible_width = width;
 }
 
 
@@ -92,10 +88,7 @@ static void gtk_slide_view_init(GtkSlideView *e)
 
 static void gtksv_redraw(GtkSlideView *e)
 {
-    gint w, h;
-    w = gtk_widget_get_allocated_width(GTK_WIDGET(e));
-    h = gtk_widget_get_allocated_height(GTK_WIDGET(e));
-    gtk_widget_queue_draw_area(GTK_WIDGET(e), 0, 0, w, h);
+    gtk_widget_queue_draw(GTK_WIDGET(e));
 }
 
 
@@ -181,14 +174,12 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
                      G_CALLBACK(gtksv_resize_sig), sv);
 
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
-    gtk_widget_add_events(GTK_WIDGET(sv), GDK_SCROLL_MASK);
+    //gtk_widget_add_events(GTK_WIDGET(sv), GDK_SCROLL_MASK);
 
     g_signal_connect(G_OBJECT(sv), "draw",
              G_CALLBACK(gtksv_draw_sig), sv);
 
     gtk_widget_grab_focus(GTK_WIDGET(sv));
-
-    gtk_widget_show(GTK_WIDGET(sv));
 
     return GTK_WIDGET(sv);
 }

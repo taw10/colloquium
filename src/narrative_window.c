@@ -35,7 +35,6 @@
 #define _(x) gettext(x)
 
 #include <narrative.h>
-#include <gtk/gtknarrativeview.h>
 
 #include "colloquium.h"
 #include "narrative_window.h"
@@ -49,19 +48,29 @@
 
 G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
+typedef struct _nv GtkNarrativeView;
+#define GTK_NARRATIVE_VIEW(a) ((GtkNarrativeView *)a)
+void gtk_narrative_view_set_para_highlight(GtkNarrativeView *e, int para_highlight) {}
+int gtk_narrative_view_get_cursor_para(GtkNarrativeView *e) { return 0; }
+void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos) {}
+void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e) {}
+void gtk_narrative_view_add_bp_at_cursor(GtkNarrativeView *e) {}
+void gtk_narrative_view_add_segend_at_cursor(GtkNarrativeView *e) {}
+void gtk_narrative_view_add_eop_at_cursor(GtkNarrativeView *e) {}
+void gtk_narrative_view_add_segstart_at_cursor(GtkNarrativeView *e) {}
+void gtk_narrative_view_add_prestitle_at_cursor(GtkNarrativeView *e) {}
+void gtk_narrative_view_redraw(GtkNarrativeView *e) {}
+
 static void show_error(NarrativeWindow *nw, const char *err)
 {
-    GtkWidget *mw;
+    GtkAlertDialog *mw;
+    const char *buttons[2] = {"Close", NULL};
 
-    mw = gtk_message_dialog_new(GTK_WINDOW(nw),
-                                GTK_DIALOG_DESTROY_WITH_PARENT,
-                                GTK_MESSAGE_ERROR,
-                                GTK_BUTTONS_CLOSE, "%s", err);
+    mw = gtk_alert_dialog_new("%s", err);
 
-    g_signal_connect_swapped(mw, "response",
-                             G_CALLBACK(gtk_widget_destroy), mw);
+    gtk_alert_dialog_set_buttons(mw, buttons);
 
-    gtk_widget_show(mw);
+    gtk_alert_dialog_show(mw, GTK_WINDOW(nw));
 }
 
 
@@ -148,54 +157,42 @@ static void update_toolbar(NarrativeWindow *nw)
 }
 
 
-static gint saveas_response_sig(GtkWidget *d, gint response,
-                                NarrativeWindow *nw)
+static void saveas_response_sig(GObject *d, GAsyncResult *res, gpointer vp)
 {
-    if ( response == GTK_RESPONSE_ACCEPT ) {
+    NarrativeWindow *nw = vp;
+    GFile *file;
 
-        GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(d));
+    file = gtk_file_dialog_save_finish(GTK_FILE_DIALOG(d), res, NULL);
+    if ( file == NULL ) return;
 
-        if ( narrative_save(nw->n, file) ) {
-            show_error(nw, _("Failed to save presentation"));
-        } else {
-            update_titlebar(nw);
-        }
-
-        if ( nw->file != file ) {
-            if ( nw->file != NULL ) g_object_unref(nw->file);
-            nw->file = file;
-            g_object_ref(nw->file);
-        }
-        g_object_unref(file);
-
+    if ( narrative_save(nw->n, file) ) {
+        show_error(nw, _("Failed to save presentation"));
+    } else {
+        update_titlebar(nw);
     }
-    gtk_widget_destroy(d);
-    return 0;
+
+    if ( nw->file != file ) {
+        if ( nw->file != NULL ) g_object_unref(nw->file);
+        nw->file = file;
+        g_object_ref(nw->file);
+    }
+    g_object_unref(file);
 }
 
 
 static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
-    GtkWidget *d;
-    GtkWidget *box;
+    GtkFileDialog *d;
     NarrativeWindow *nw = vp;
 
-    d = gtk_file_chooser_dialog_new(_("Save presentation"),
-                                    GTK_WINDOW(nw),
-                                    GTK_FILE_CHOOSER_ACTION_SAVE,
-                                    _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                    _("_Save"), GTK_RESPONSE_ACCEPT,
-                                    NULL);
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
-                                                   TRUE);
 
-    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-    gtk_file_chooser_set_extra_widget(GTK_FILE_CHOOSER(d), box);
+    d = gtk_file_dialog_new();
 
-    g_signal_connect(G_OBJECT(d), "response",
-                     G_CALLBACK(saveas_response_sig), nw);
+    gtk_file_dialog_set_title(d, _("Save presentation"));
+    gtk_file_dialog_set_accept_label(d, _("Save"));
 
-    gtk_widget_show_all(d);
+    gtk_file_dialog_save(d, GTK_WINDOW(nw),
+                         NULL, saveas_response_sig, nw);
 }
 
 
@@ -417,57 +414,11 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static gint export_pdf_response_sig(GtkWidget *d, gint response,
-                                    Narrative *n)
-{
-    if ( response == GTK_RESPONSE_ACCEPT ) {
-        char *filename;
-        filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(d));
-        render_slides_to_pdf(n, filename);
-        g_free(filename);
-    }
-
-    gtk_widget_destroy(d);
-
-    return 0;
-}
-
-
 static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     NarrativeWindow *nw = vp;
     run_printing(nw->n, GTK_WIDGET(nw));
     gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
-}
-
-
-static void exportpdf_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    GtkWidget *d;
-
-    d = gtk_file_chooser_dialog_new(_("Export PDF"),
-                                    NULL,
-                                    GTK_FILE_CHOOSER_ACTION_SAVE,
-                                    _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                    _("_Export"), GTK_RESPONSE_ACCEPT,
-                                    NULL);
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(d),
-                                                   TRUE);
-
-    g_signal_connect(G_OBJECT(d), "response",
-                     G_CALLBACK(export_pdf_response_sig), nw->n);
-
-    gtk_widget_show_all(d);
-}
-
-
-
-static gboolean nw_button_press_sig(GtkWidget *da, GdkEventButton *event,
-                                    NarrativeWindow *nw)
-{
-    return 0;
 }
 
 
@@ -495,7 +446,7 @@ static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
     int i;
     if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
     for ( i=0; i<nw->n_slidewindows; i++ ) {
-        gtk_widget_destroy(GTK_WIDGET(nw->slidewindows[i]));
+        gtk_window_close(GTK_WINDOW(nw->slidewindows[i]));
     }
     return FALSE;
 }
@@ -511,7 +462,7 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
             nw->slidewindows[nw->n_slidewindows++] = sw;
             g_signal_connect(G_OBJECT(sw), "delete-event",
                              G_CALLBACK(slide_window_closed_sig), nw);
-            gtk_widget_show_all(GTK_WIDGET(sw));
+            gtk_window_present(GTK_WINDOW(sw));
         } else {
             fprintf(stderr, _("Too many slide windows\n"));
         }
@@ -522,10 +473,13 @@ static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
 }
 
 
-static gboolean nw_key_press_sig(GtkWidget *da, GdkEventKey *event,
+static gboolean nw_key_press_sig(GtkEventControllerKey *self,
+                                 guint keyval,
+                                 guint keycode,
+                                 GdkModifierType state,
                                  NarrativeWindow *nw)
 {
-    switch ( event->keyval ) {
+    switch ( keyval ) {
 
         case GDK_KEY_B :
         case GDK_KEY_b :
@@ -551,7 +505,7 @@ static gboolean nw_key_press_sig(GtkWidget *da, GdkEventKey *event,
 
         case GDK_KEY_Escape :
         if ( nw->show != NULL ) {
-            gtk_widget_destroy(GTK_WIDGET(nw->show));
+            gtk_window_close(GTK_WINDOW(nw->show));
             return TRUE;
         }
         break;
@@ -581,6 +535,7 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     Slide *slide;
+    GtkEventController *evc;
 
     if ( narrative_get_num_slides(nw->n) == 0 ) return;
 
@@ -593,13 +548,15 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 
     nw->show_no_slides = 0;
 
-    g_signal_connect(G_OBJECT(nw->show), "key-press-event",
+    evc = gtk_event_controller_key_new();
+    gtk_widget_add_controller(GTK_WIDGET(nw), evc);
+
+    g_signal_connect(G_OBJECT(evc), "key-press-event",
          G_CALLBACK(nw_key_press_sig), nw);
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, slide);
     gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 1);
-    gtk_widget_show_all(GTK_WIDGET(nw->show));
     update_toolbar(nw);
 }
 
@@ -646,7 +603,6 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
     sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
     gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 1);
     gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
-    gtk_widget_show_all(GTK_WIDGET(nw->show));
     update_toolbar(nw);
 }
 
@@ -675,7 +631,6 @@ GActionEntry nw_entries[] = {
     { "italic", italic_sig, NULL, NULL, NULL },
     { "underline", underline_sig, NULL, NULL, NULL },
     { "print", print_sig, NULL, NULL, NULL  },
-    { "exportpdf", exportpdf_sig, NULL, NULL, NULL  },
 };
 
 
@@ -695,11 +650,9 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     GtkWidget *vbox;
     GtkWidget *scroll;
     GtkWidget *toolbar;
-    GtkToolItem *button;
-    GtkWidget *image;
+    GtkWidget *button;
 
     nw = g_object_new(GTK_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
-    gtk_window_set_role(GTK_WINDOW(nw), "narrative");
 
     nw->app = app;
     nw->n = n;
@@ -713,85 +666,67 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
                                     G_N_ELEMENTS(nw_entries), nw);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(nw), vbox);
+    gtk_window_set_child(GTK_WINDOW(nw), vbox);
 
-    nw->nv = gtk_narrative_view_new(n);
+    nw->nv = gtk_text_view_new();
 
-    toolbar = gtk_toolbar_new();
-    gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);
-    gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(toolbar), FALSE, FALSE, 0);
+    toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");
+    gtk_box_prepend(GTK_BOX(vbox), GTK_WIDGET(toolbar));
 
     /* Fullscreen */
-    image = gtk_image_new_from_icon_name("view-fullscreen",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    button = gtk_tool_button_new(image, _("Start slideshow"));
+    button = gtk_button_new_from_icon_name("view-fullscreen");
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.startslideshow");
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
 
-    button = gtk_separator_tool_item_new();
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
 
     /* Add slide */
-    image = gtk_image_new_from_icon_name("list-add",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    button = gtk_tool_button_new(image, _("Add slide"));
+    button = gtk_button_new_from_icon_name("list-add");
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.slide");
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
 
-    button = gtk_separator_tool_item_new();
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
 
-    image = gtk_image_new_from_icon_name("go-top",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    nw->bfirst = gtk_tool_button_new(image, _("First slide"));
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bfirst));
+    nw->bfirst = gtk_button_new_from_icon_name("go-top");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->bfirst));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bfirst),
                                    "win.first");
 
-    image = gtk_image_new_from_icon_name("go-up",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    nw->bprev = gtk_tool_button_new(image, _("Previous slide"));
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bprev));
+    nw->bprev = gtk_button_new_from_icon_name("go-up");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->bprev));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bprev),
                                    "win.prev");
 
-    image = gtk_image_new_from_icon_name("go-down",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    nw->bnext = gtk_tool_button_new(image, _("Next slide"));
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->bnext));
+    nw->bnext = gtk_button_new_from_icon_name("go-down");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->bnext));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bnext),
                                    "win.next");
 
-    image = gtk_image_new_from_icon_name("go-bottom",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    nw->blast = gtk_tool_button_new(image, _("Last slide"));
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(nw->blast));
+    nw->blast = gtk_button_new_from_icon_name("go-bottom");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->blast));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
                                    "win.last");
 
-    button = gtk_separator_tool_item_new();
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
 
-    image = gtk_image_new_from_icon_name("format-text-bold",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    button = gtk_tool_button_new(image, _("Bold"));
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    button = gtk_button_new_from_icon_name("format-text-bold");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.bold");
 
-    image = gtk_image_new_from_icon_name("format-text-italic",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    button = gtk_tool_button_new(image, _("Italic"));
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    button = gtk_button_new_from_icon_name("format-text-italic");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.italic");
 
-    image = gtk_image_new_from_icon_name("format-text-underline",
-                                         GTK_ICON_SIZE_LARGE_TOOLBAR);
-    button = gtk_tool_button_new(image, _("Underline"));
-    gtk_container_add(GTK_CONTAINER(toolbar), GTK_WIDGET(button));
+    button = gtk_button_new_from_icon_name("format-text-underline");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.underline");
 
@@ -800,13 +735,11 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
     gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
 
-    scroll = gtk_scrolled_window_new(NULL, NULL);
+    scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
                                    GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
-    gtk_container_add(GTK_CONTAINER(scroll), GTK_WIDGET(nw->nv));
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), GTK_WIDGET(nw->nv));
 
-    g_signal_connect(G_OBJECT(nw->nv), "button-press-event",
-                     G_CALLBACK(nw_button_press_sig), nw);
     g_signal_connect(G_OBJECT(nw->nv), "changed",
                      G_CALLBACK(changed_sig), nw);
     g_signal_connect(G_OBJECT(nw->nv), "key-press-event",
@@ -817,9 +750,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
              G_CALLBACK(nw_double_click_sig), nw);
 
     gtk_window_set_default_size(GTK_WINDOW(nw), 768, 768);
-    gtk_box_pack_start(GTK_BOX(vbox), scroll, TRUE, TRUE, 0);
-    gtk_container_set_focus_child(GTK_CONTAINER(nw),
-                                  GTK_WIDGET(nw->nv));
+    gtk_box_append(GTK_BOX(vbox), scroll);
+    gtk_widget_set_focus_child(GTK_WIDGET(nw), GTK_WIDGET(nw->nv));
 
     return nw;
 }

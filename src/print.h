@@ -27,7 +27,7 @@
 #include <config.h>
 #endif
 
-#include <narrative.h>
+#include "narrative.h"
 
 extern void run_printing(Narrative *n, GtkWidget *parent);
 

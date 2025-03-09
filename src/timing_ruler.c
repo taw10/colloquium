@@ -30,11 +30,12 @@
 #include <gtk/gtk.h>
 #include <assert.h>
 #include <math.h>
+#include <pango/pangocairo.h>
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <narrative.h>
 
+#include "narrative.h"
 #include "narrative_priv.h"
 
 

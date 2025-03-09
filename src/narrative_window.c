@@ -34,8 +34,7 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <narrative.h>
-
+#include "narrative.h"
 #include "colloquium.h"
 #include "narrative_window.h"
 #include "slide_window.h"

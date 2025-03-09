@@ -45,40 +45,6 @@ gresources = gnome.compile_resources('colloquium-resources',
                                      source_dir: 'data', c_name: 'colloquium')
 
 
-# libstorycode
-libstorycode_includes = include_directories('libstorycode')
-
-libstorycode = library('storycode',
-                   ['libstorycode/narrative.c',
-                    'libstorycode/slide.c',
-                    'libstorycode/stylesheet.c',
-                    'libstorycode/slide_render_cairo.c',
-                    'libstorycode/narrative_render_cairo.c',
-                   ],
-                   include_directories : libstorycode_includes,
-                   dependencies : [cairo_dep, pango_dep, gdkpixbuf_dep,
-                                   pangocairo_dep, mdep, gio_dep,
-                                   poppler_dep, md4c_dep],
-                   install : true)
-
-libstorycode_dep = declare_dependency(include_directories : libstorycode_includes,
-                                      link_with : libstorycode)
-
-
-# libstorycode-gtk
-libgtkstorycode_includes = include_directories('libstorycode/gtk')
-
-libgtkstorycode = library('gtkstorycode',
-                   ['libstorycode/gtk/timing_ruler.c',
-                    'libstorycode/gtk/gtkslideview.c'],
-                   include_directories : libgtkstorycode_includes,
-                   dependencies : [gtk_dep, libstorycode_dep, mdep],
-                   install : true)
-
-libgtkstorycode_dep = declare_dependency(include_directories : libgtkstorycode_includes,
-                                         link_with : libgtkstorycode)
-
-
 # Main program
 executable('colloquium',
            ['src/colloquium.c',
@@ -88,9 +54,16 @@ executable('colloquium',
             'src/slide_window.c',
             'src/testcard.c',
             'src/print.c',
+            'src/narrative.c',
+            'src/timing_ruler.c',
+            'src/slide.c',
+            'src/stylesheet.c',
+            'src/slide_render_cairo.c',
+            'src/narrative_render_cairo.c',
+            'src/gtkslideview.c',
            ],
            gresources,
-           dependencies : [gtk_dep, mdep, libstorycode_dep, libgtkstorycode_dep, md4c_dep],
+           dependencies : [gtk_dep, mdep, md4c_dep, poppler_dep],
            install : true)
 
 

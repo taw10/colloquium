@@ -36,10 +36,9 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <narrative.h>
-#include <slide.h>
-#include <gtkslideview.h>
-
+#include "narrative.h"
+#include "slide.h"
+#include "gtkslideview.h"
 #include "colloquium.h"
 #include "slide_window.h"
 #include "narrative_window.h"

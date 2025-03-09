@@ -33,7 +33,7 @@
 #include <libintl.h>
 #define _(x) gettext(x)
 
-#include <narrative.h>
+#include "narrative.h"
 
 
 struct testcard

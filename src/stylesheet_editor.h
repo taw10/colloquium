@@ -29,7 +29,7 @@
 
 #include <gtk/gtk.h>
 
-#include <narrative.h>
+#include "narrative.h"
 
 #define COLLOQUIUM_TYPE_STYLESHEET_EDITOR (stylesheet_editor_get_type())
 

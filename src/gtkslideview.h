@@ -31,9 +31,9 @@
 #include <glib-object.h>
 
 
-#include <stylesheet.h>
-#include <narrative.h>
-#include <slide_render_cairo.h>
+#include "stylesheet.h"
+#include "narrative.h"
+#include "slide_render_cairo.h"
 
 
 #define GTK_TYPE_SLIDE_VIEW (gtk_slide_view_get_type())

@@ -75,16 +75,17 @@ Narrative *narrative_new()
                                "left-margin", 10,
                                "right-margin", 10,
                                "pixels-above-lines", 10,
+                               "background", "#ffffff",
                                NULL);
 
     gtk_text_buffer_create_tag(n->textbuf, "text", NULL);
 
     gtk_text_buffer_create_tag(n->textbuf, "segstart",
-                               "scale", 1.5,
+                               "font", "Sans Bold 18",
                                NULL);
 
     gtk_text_buffer_create_tag(n->textbuf, "prestitle",
-                               "scale", 2.0,
+                               "font", "Sans Bold 24",
                                NULL);
 
     gtk_text_buffer_create_tag(n->textbuf, "bulletpoint",

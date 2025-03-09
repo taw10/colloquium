@@ -44,6 +44,7 @@
 #include "slideshow.h"
 #include "print.h"
 #include "stylesheet_editor.h"
+#include "narrative_priv.h"
 
 G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
@@ -671,6 +672,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 
     nw->nv = gtk_text_view_new();
     gtk_widget_set_vexpand(GTK_WIDGET(nw->nv), TRUE);
+    gtk_text_view_set_buffer(GTK_TEXT_VIEW(nw->nv), n->textbuf);
 
     toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");

@@ -27,6 +27,8 @@
 #include <pango/pangocairo.h>
 #endif
 
+#include <gtk/gtk.h>
+
 #include "slide.h"
 
 
@@ -87,6 +89,8 @@ struct _narrative
     Stylesheet *stylesheet;
     int saved;
     const char *language;
+
+    GtkTextBuffer *textbuf;
 
     int n_items;
     struct narrative_item *items;

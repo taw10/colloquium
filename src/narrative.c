@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <gio/gio.h>
+#include <gtk/gtk.h>
 #include <poppler.h>
 
 #include <libintl.h>
@@ -61,11 +62,48 @@ Narrative *narrative_new()
     n->items = NULL;
     n->stylesheet = stylesheet_new();
     n->saved = 1;
+    n->textbuf = gtk_text_buffer_new(NULL);
 #ifdef HAVE_PANGO
     n->language = pango_language_to_string(pango_language_get_default());
 #else
     n->language = NULL;
 #endif
+
+    gtk_text_buffer_create_tag(n->textbuf, "overall",
+                               "wrap-mode", GTK_WRAP_WORD_CHAR,
+                               "font", "Sans 16",
+                               "left-margin", 10,
+                               "right-margin", 10,
+                               "pixels-above-lines", 10,
+                               NULL);
+
+    gtk_text_buffer_create_tag(n->textbuf, "text", NULL);
+
+    gtk_text_buffer_create_tag(n->textbuf, "segstart",
+                               "scale", 1.5,
+                               NULL);
+
+    gtk_text_buffer_create_tag(n->textbuf, "prestitle",
+                               "scale", 2.0,
+                               NULL);
+
+    gtk_text_buffer_create_tag(n->textbuf, "bulletpoint",
+                               "indent", 20,
+                               NULL);
+
+    gtk_text_buffer_create_tag(n->textbuf, "normal",
+                               NULL);
+
+    gtk_text_buffer_create_tag(n->textbuf, "bold",
+                               "weight", PANGO_WEIGHT_BOLD,
+                               NULL);
+    gtk_text_buffer_create_tag(n->textbuf, "italic",
+                               "style", PANGO_STYLE_ITALIC,
+                               NULL);
+    gtk_text_buffer_create_tag(n->textbuf, "underline",
+                               "underline", PANGO_UNDERLINE_SINGLE,
+                               NULL);
+
     return n;
 }
 
@@ -954,8 +992,11 @@ struct md_parse_ctx {
 
 static void close_block(struct md_parse_ctx *ps)
 {
-    ps->block_open = 0;
+    GtkTextIter end;
+    gtk_text_buffer_get_end_iter(ps->n->textbuf, &end);
+    gtk_text_buffer_insert(ps->n->textbuf, &end, "\n", -1);
     update_timing(&ps->n->items[ps->n->n_items-1]);
+    ps->block_open = 0;
 }
 
 
@@ -1006,6 +1047,27 @@ static enum text_run_type run_type(struct md_parse_ctx *ps)
     if ( ps->italic ) return TEXT_RUN_ITALIC;
     if ( ps->underline ) return TEXT_RUN_UNDERLINE;
     return TEXT_RUN_NORMAL;
+}
+
+
+static const char *block_tag_name(struct md_parse_ctx *ps)
+{
+    switch ( ps->type ) {
+        case NARRATIVE_ITEM_TEXT : return "text";
+        case NARRATIVE_ITEM_SEGSTART : return "segstart";
+        case NARRATIVE_ITEM_PRESTITLE : return "prestitle";
+        case NARRATIVE_ITEM_BP : return "bulletpoint";
+    }
+    return "text";
+}
+
+
+static const char *run_tag_name(struct md_parse_ctx *ps)
+{
+    if ( ps->bold ) return "bold";
+    if ( ps->italic ) return "italic";
+    if ( ps->underline ) return "underline";
+    return "normal";
 }
 
 
@@ -1093,6 +1155,12 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         item->runs[item->n_runs].text = strndup(text, len);
         item->runs[item->n_runs].type = run_type(ps);
         item->n_runs++;
+
+        GtkTextIter start;
+        gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
+        gtk_text_buffer_insert_with_tags_by_name(ps->n->textbuf, &start, text, len,
+                                                 run_tag_name(ps),
+                                                 block_tag_name(ps), NULL);
     }
 
     return 0;
@@ -1165,6 +1233,10 @@ Narrative *narrative_load(GFile *file)
         /* Presentation is empty.  Add a dummy to start things off */
         narrative_add_empty_item(n);
     }
+
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(n->textbuf, &start, &end);
+    gtk_text_buffer_apply_tag_by_name(n->textbuf, "overall", &start, &end);
 
     return n;
 }

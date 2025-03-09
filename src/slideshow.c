@@ -70,15 +70,13 @@ static gint ssh_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 }
 
 
-static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
+static void ss_draw_sig(GtkDrawingArea *da, cairo_t *cr,
+                        int dw, int dh, gpointer vp)
 {
-    double dw, dh;  /* Size of drawing area */
     double lw, lh;  /* Logical size of slide */
     double sw, sh;  /* Size of slide on screen */
     double xoff, yoff;
-
-    dw = gtk_widget_get_width(GTK_WIDGET(da));
-    dh = gtk_widget_get_height(GTK_WIDGET(da));
+    SCSlideshow *ss = vp;
 
     /* Overall background */
     cairo_rectangle(cr, 0.0, 0.0, dw, dh);
@@ -107,8 +105,6 @@ static gboolean ss_draw_sig(GtkWidget *da, cairo_t *cr, SCSlideshow *ss)
         slide_render_cairo(ss->cur_slide, cr);
         cairo_restore(cr);
     }
-
-    return FALSE;
 }
 
 
@@ -159,8 +155,9 @@ SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app)
                      G_CALLBACK(ssh_destroy_sig), ss);
     g_signal_connect(G_OBJECT(ss), "realize",
                      G_CALLBACK(ss_realize_sig), ss);
-    g_signal_connect(G_OBJECT(ss->drawingarea), "draw",
-             G_CALLBACK(ss_draw_sig), ss);
+
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(ss->drawingarea),
+                                   ss_draw_sig, ss, NULL);
 
     gtk_widget_grab_focus(GTK_WIDGET(ss->drawingarea));
 

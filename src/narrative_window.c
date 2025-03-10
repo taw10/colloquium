@@ -549,10 +549,10 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
     nw->show_no_slides = 0;
 
     evc = gtk_event_controller_key_new();
-    gtk_widget_add_controller(GTK_WIDGET(nw), evc);
-
-    g_signal_connect(G_OBJECT(evc), "key-press-event",
+    gtk_widget_add_controller(GTK_WIDGET(nw->show), evc);
+    g_signal_connect(G_OBJECT(evc), "key-pressed",
          G_CALLBACK(nw_key_press_sig), nw);
+
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, slide);
@@ -573,8 +573,6 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 
     nw->show_no_slides = 1;
 
-    g_signal_connect(G_OBJECT(nw->show), "key-press-event",
-         G_CALLBACK(nw_key_press_sig), nw);
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
@@ -588,6 +586,7 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
                                 gpointer vp)
 {
     NarrativeWindow *nw = vp;
+    GtkEventController *evc;
 
     if ( narrative_get_num_slides(nw->n) == 0 ) return;
 
@@ -596,8 +595,11 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 
     nw->show_no_slides = 0;
 
-    g_signal_connect(G_OBJECT(nw->show), "key-press-event",
+    evc = gtk_event_controller_key_new();
+    gtk_widget_add_controller(GTK_WIDGET(nw->show), evc);
+    g_signal_connect(G_OBJECT(evc), "key-pressed",
          G_CALLBACK(nw_key_press_sig), nw);
+
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));

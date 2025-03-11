@@ -27,6 +27,7 @@
 #include <config.h>
 #endif
 
+#include "narrative.h"
 #include "slide.h"
 
 extern int slide_render_cairo(Slide *s, cairo_t *cr);

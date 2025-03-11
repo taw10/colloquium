@@ -78,6 +78,7 @@ struct narrative_item
 #else
     void *slide_thumbnail;
 #endif
+    GtkTextChildAnchor *anchor;
     int selected;  /* Whether or not this item should be given a "selected" highlight */
 
     double estd_duration;  /* Estimated duration in minutes, based on word count */

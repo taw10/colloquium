@@ -419,6 +419,7 @@ static struct narrative_item *add_item(Narrative *n)
     if ( new_items == NULL ) return NULL;
     n->items = new_items;
     item = &n->items[n->n_items++];
+    item->slide = NULL;
     return item;
 }
 
@@ -1148,6 +1149,11 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         slide_set_ext_number(item->slide, atoi(tx));
         get_ext_slide_size(item->slide, &w, &h);
         slide_set_logical_size(item->slide, w, h);
+
+        GtkTextIter start;
+        gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
+        item->anchor = gtk_text_buffer_create_child_anchor(ps->n->textbuf, &start);
+
         free(tx);
         close_block(ps);
 

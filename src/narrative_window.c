@@ -45,6 +45,7 @@
 #include "print.h"
 #include "stylesheet_editor.h"
 #include "narrative_priv.h"
+#include "thumbnailwidget.h"
 
 G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
@@ -646,6 +647,21 @@ static void narrativewindow_init(NarrativeWindow *sw)
 }
 
 
+static void add_thumbnails(GtkTextView *tv, Narrative *n)
+{
+    int i;
+
+    for ( i=0; i<n->n_items; i++ ) {
+        if ( n->items[i].slide != NULL ) {
+            GtkWidget *th = gtk_thumbnail_new(n->items[i].slide);
+            gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
+                                              GTK_WIDGET(th),
+                                              n->items[i].anchor);
+        }
+    }
+}
+
+
 NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *app)
 {
     NarrativeWindow *nw;
@@ -675,6 +691,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->nv = gtk_text_view_new();
     gtk_widget_set_vexpand(GTK_WIDGET(nw->nv), TRUE);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(nw->nv), n->textbuf);
+    add_thumbnails(GTK_TEXT_VIEW(nw->nv), n);
 
     toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");

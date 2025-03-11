@@ -36,7 +36,6 @@
 #include "narrative.h"
 #include "narrative_window.h"
 #include "slide_render_cairo.h"
-#include "narrative_render_cairo.h"
 
 
 static GtkPrintSettings *print_settings = NULL;
@@ -54,65 +53,12 @@ struct print_stuff
 
 static void print_begin(GtkPrintOperation *op, GtkPrintContext *ctx, void *vp)
 {
-    struct print_stuff *ps = vp;
-    PangoContext *pc;
-    int i, n_pages;
-    double h, page_height;
-    struct edit_pos sel;
-
-    ps->slide_number = 1;
-
-    pc = gtk_print_context_create_pango_context(ctx);
-
-    sel.para = 0;  sel.pos = 0;  sel.trail = 0;
-    narrative_wrap_range(ps->n, narrative_get_stylesheet(ps->n),
-                         pango_language_get_default(), pc,
-                         gtk_print_context_get_width(ctx),
-                         0, narrative_get_num_items(ps->n), sel, sel);
-
-    /* Count pages */
-    page_height = gtk_print_context_get_height(ctx);
-    h = 0.0;
-    n_pages = 1;
-    ps->start_paras[0] = 0;
-    for ( i=0; i<narrative_get_num_items(ps->n); i++ ) {
-        if ( h + narrative_item_get_height(ps->n, i) > page_height ) {
-            /* Paragraph does not fit on page */
-            ps->start_paras[n_pages] = i;
-            n_pages++;
-            h = 0.0;
-        }
-        h += narrative_item_get_height(ps->n, i);
-    }
-    gtk_print_operation_set_n_pages(op, n_pages);
-    g_object_unref(pc);
 }
 
 
 static void print_narrative(GtkPrintOperation *op, GtkPrintContext *ctx,
                             struct print_stuff *ps, gint page)
 {
-    int i;
-    double h, page_height;
-    cairo_t *cr;
-
-    page_height = gtk_print_context_get_height(ctx);
-    cr = gtk_print_context_get_cairo_context(ctx);
-
-    h = 0.0;
-    for ( i=ps->start_paras[page]; i<narrative_get_num_items(ps->n); i++ ) {
-
-        /* Will this paragraph fit? */
-        h += narrative_item_get_height(ps->n, i);
-        if ( h > page_height ) return;
-
-        cairo_save(cr);
-        narrative_render_item_cairo(ps->n, cr, i);
-        cairo_restore(cr);
-
-        cairo_translate(cr, 0.0, narrative_item_get_height(ps->n, i));
-
-    }
 }
 
 

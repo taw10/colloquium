@@ -43,7 +43,6 @@
 #include "pr_clock.h"
 #include "slideshow.h"
 #include "print.h"
-#include "stylesheet_editor.h"
 #include "narrative_priv.h"
 #include "thumbnailwidget.h"
 

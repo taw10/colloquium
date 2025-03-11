@@ -48,7 +48,6 @@
 #include <md4c.h>
 #endif
 
-#include "stylesheet.h"
 #include "slide.h"
 #include "narrative.h"
 #include "narrative_priv.h"
@@ -60,7 +59,6 @@ Narrative *narrative_new()
     if ( n == NULL ) return NULL;
     n->n_items = 0;
     n->items = NULL;
-    n->stylesheet = stylesheet_new();
     n->saved = 1;
     n->textbuf = gtk_text_buffer_new(NULL);
 #ifdef HAVE_PANGO
@@ -116,16 +114,6 @@ static void narrative_item_destroy(struct narrative_item *item)
         free(item->runs[i].text);
     }
     free(item->runs);
-#ifdef HAVE_PANGO
-    if ( item->layout != NULL ) {
-        g_object_unref(item->layout);
-    }
-#endif
-#ifdef HAVE_CAIRO
-    if ( item->slide_thumbnail != NULL ) {
-        cairo_surface_destroy(item->slide_thumbnail);
-    }
-#endif
 }
 
 
@@ -377,20 +365,6 @@ int narrative_item_is_empty_text(Narrative *n, int item)
 }
 
 
-void narrative_add_stylesheet(Narrative *n, Stylesheet *ss)
-{
-    assert(n->stylesheet == NULL);
-    n->stylesheet = ss;
-}
-
-
-Stylesheet *narrative_get_stylesheet(Narrative *n)
-{
-    if ( n == NULL ) return NULL;
-    return n->stylesheet;
-}
-
-
 const char *narrative_get_language(Narrative *n)
 {
     if ( n == NULL ) return NULL;
@@ -400,13 +374,9 @@ const char *narrative_get_language(Narrative *n)
 
 static void init_item(struct narrative_item *item)
 {
-#ifdef HAVE_PANGO
-    item->layout = NULL;
-#endif
     item->runs = NULL;
     item->n_runs = 0;
     item->slide = NULL;
-    item->slide_thumbnail = NULL;
     item->estd_duration = 0.0;
 }
 
@@ -447,8 +417,6 @@ static void insert_text_item(Narrative *n, int pos, struct text_run *runs, int n
     if ( item == NULL ) return;
 
     item->type = type;
-    item->align = ALIGN_INHERIT;
-    item->layout = NULL;
 
     item->runs = runs;
     item->n_runs = n_runs;
@@ -503,7 +471,6 @@ void narrative_insert_slide(Narrative *n, int pos, Slide *slide)
     if ( item == NULL ) return;
     item->type = NARRATIVE_ITEM_SLIDE;
     item->slide = slide;
-    item->slide_thumbnail = NULL;
     update_timing(item);
 }
 
@@ -1124,8 +1091,6 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         if ( item == NULL ) return 1;
         init_item(item);
         item->type = ps->type;
-        item->align = ALIGN_INHERIT;
-        item->layout = NULL;
         item->runs = NULL;
         item->n_runs = 0;
         ps->block_open = 1;

@@ -39,7 +39,6 @@
 
 #include "slide.h"
 #include "narrative.h"
-#include "stylesheet.h"
 #include "slide_render_cairo.h"
 
 int slide_render_cairo(Slide *s, cairo_t *cr)

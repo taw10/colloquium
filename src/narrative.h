@@ -47,15 +47,11 @@ struct text_run
 };
 
 
-#include "stylesheet.h"
 #include "slide.h"
 
 extern Narrative *narrative_new(void);
 extern void narrative_free(Narrative *n);
 extern void narrative_add_empty_item(Narrative *n);
-
-extern void narrative_add_stylesheet(Narrative *n, Stylesheet *ss);
-extern Stylesheet *narrative_get_stylesheet(Narrative *n);
 
 extern const char *narrative_get_language(Narrative *n);
 

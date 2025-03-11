@@ -31,7 +31,6 @@
 #include <glib-object.h>
 
 
-#include "stylesheet.h"
 #include "narrative.h"
 #include "slide_render_cairo.h"
 

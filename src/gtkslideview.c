@@ -37,7 +37,6 @@
 
 #include "narrative.h"
 #include "slide_render_cairo.h"
-#include "stylesheet.h"
 #include "slide.h"
 #include "gtkslideview.h"
 

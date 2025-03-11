@@ -64,20 +64,9 @@ struct narrative_item
     /* For TEXT, BP, PRESTITLE */
     int n_runs;
     struct text_run *runs;
-    enum alignment align;
-#ifdef HAVE_PANGO
-    PangoLayout *layout;
-#else
-    void *layout;
-#endif
 
     /* For SLIDE */
     Slide *slide;
-#ifdef HAVE_CAIRO
-    cairo_surface_t *slide_thumbnail;
-#else
-    void *slide_thumbnail;
-#endif
     GtkTextChildAnchor *anchor;
     int selected;  /* Whether or not this item should be given a "selected" highlight */
 
@@ -87,7 +76,6 @@ struct narrative_item
 
 struct _narrative
 {
-    Stylesheet *stylesheet;
     int saved;
     const char *language;
 

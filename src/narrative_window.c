@@ -422,7 +422,7 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
-static void changed_sig(GtkWidget *da, NarrativeWindow *nw)
+static void changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
     narrative_set_unsaved(nw->n);
     update_titlebar(nw);
@@ -447,27 +447,6 @@ static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
     if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
     for ( i=0; i<nw->n_slidewindows; i++ ) {
         gtk_window_close(GTK_WINDOW(nw->slidewindows[i]));
-    }
-    return FALSE;
-}
-
-
-static gboolean nw_double_click_sig(GtkWidget *da, gpointer *pslide,
-                                    NarrativeWindow *nw)
-{
-    Slide *slide = (Slide *)pslide;
-    if ( nw->show == NULL ) {
-        if ( nw->n_slidewindows < 16 ) {
-            SlideWindow *sw = slide_window_new(nw->n, slide, nw, nw->app);
-            nw->slidewindows[nw->n_slidewindows++] = sw;
-            g_signal_connect(G_OBJECT(sw), "delete-event",
-                             G_CALLBACK(slide_window_closed_sig), nw);
-            gtk_window_present(GTK_WINDOW(sw));
-        } else {
-            fprintf(stderr, _("Too many slide windows\n"));
-        }
-    } else {
-        sc_slideshow_set_slide(nw->show, slide);
     }
     return FALSE;
 }
@@ -646,16 +625,16 @@ static void narrativewindow_init(NarrativeWindow *sw)
 }
 
 
-static void add_thumbnails(GtkTextView *tv, Narrative *n)
+static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
 {
     int i;
 
-    for ( i=0; i<n->n_items; i++ ) {
-        if ( n->items[i].slide != NULL ) {
-            GtkWidget *th = gtk_thumbnail_new(n->items[i].slide);
+    for ( i=0; i<nw->n->n_items; i++ ) {
+        if ( nw->n->items[i].slide != NULL ) {
+            GtkWidget *th = gtk_thumbnail_new(nw->n->items[i].slide, nw);
             gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
                                               GTK_WIDGET(th),
-                                              n->items[i].anchor);
+                                              nw->n->items[i].anchor);
         }
     }
 }
@@ -668,6 +647,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     GtkWidget *scroll;
     GtkWidget *toolbar;
     GtkWidget *button;
+    GtkEventController *evc;
 
     nw = g_object_new(GTK_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
 
@@ -690,7 +670,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->nv = gtk_text_view_new();
     gtk_widget_set_vexpand(GTK_WIDGET(nw->nv), TRUE);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(nw->nv), n->textbuf);
-    add_thumbnails(GTK_TEXT_VIEW(nw->nv), n);
+    add_thumbnails(GTK_TEXT_VIEW(nw->nv), nw);
 
     toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");
@@ -757,19 +737,20 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
     gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
 
+    evc = gtk_event_controller_key_new();
+    gtk_widget_add_controller(GTK_WIDGET(nw->nv), evc);
+
     scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
                                    GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), GTK_WIDGET(nw->nv));
 
-    g_signal_connect(G_OBJECT(nw->nv), "changed",
+    g_signal_connect(G_OBJECT(n->textbuf), "changed",
                      G_CALLBACK(changed_sig), nw);
-    g_signal_connect(G_OBJECT(nw->nv), "key-press-event",
+    g_signal_connect(G_OBJECT(evc), "key-pressed",
              G_CALLBACK(nw_key_press_sig), nw);
     g_signal_connect(G_OBJECT(nw), "destroy",
              G_CALLBACK(nw_destroy_sig), nw);
-    g_signal_connect(G_OBJECT(nw->nv), "slide-double-clicked",
-             G_CALLBACK(nw_double_click_sig), nw);
 
     gtk_window_set_default_size(GTK_WINDOW(nw), 768, 768);
     gtk_box_append(GTK_BOX(vbox), scroll);

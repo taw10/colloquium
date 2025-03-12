@@ -31,6 +31,7 @@
 #include <glib-object.h>
 
 #include "slide_render_cairo.h"
+#include "narrative_window.h"
 
 
 #define GTK_TYPE_THUMBNAIL (gtk_thumbnail_get_type())
@@ -57,6 +58,7 @@ struct _gtkthumbnail
 
     /*< private >*/
     Slide               *slide;
+    NarrativeWindow     *nw;
 };
 
 struct _gtkthumbnailclass
@@ -68,6 +70,6 @@ typedef struct _gtkthumbnail GtkThumbnail;
 typedef struct _gtkthumbnailclass GtkThumbnailClass;
 
 extern GType gtk_thumbnail_get_type(void);
-extern GtkWidget *gtk_thumbnail_new(Slide *slide);
+extern GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw);
 
 #endif  /* GTK_THUMBNAIL_H */

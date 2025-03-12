@@ -193,7 +193,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
     evc = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(sw), evc);
-    g_signal_connect(G_OBJECT(evc), "key-press",
+    g_signal_connect(G_OBJECT(evc), "key-pressed",
                      G_CALLBACK(sw_key_press_sig), sw);
 
     slide_get_logical_size(slide, &w, &h);

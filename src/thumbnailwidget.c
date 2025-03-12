@@ -29,10 +29,14 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <assert.h>
+#include <libintl.h>
+#define _(x) gettext(x)
 
 #include "thumbnailwidget.h"
+#include "narrative_window.h"
 #include "slide_render_cairo.h"
 #include "slide.h"
+#include "slide_window.h"
 
 
 G_DEFINE_TYPE_WITH_CODE(GtkThumbnail, gtk_thumbnail, GTK_TYPE_DRAWING_AREA, NULL)
@@ -45,6 +49,28 @@ static void gtk_thumbnail_class_init(GtkThumbnailClass *klass)
 
 static void gtk_thumbnail_init(GtkThumbnail *e)
 {
+}
+
+
+static void click_sig(GtkGestureClick *self, int n_press, gdouble x, gdouble y, gpointer vp)
+{
+    GtkThumbnail *th = vp;
+
+    if ( n_press != 2 ) return;
+
+    if ( th->nw->show == NULL ) {
+        if ( th->nw->n_slidewindows < 16 ) {
+            SlideWindow *sw = slide_window_new(th->nw->n, th->slide, th->nw, th->nw->app);
+            th->nw->slidewindows[th->nw->n_slidewindows++] = sw;
+            //g_signal_connect(G_OBJECT(sw), "delete-event",
+            //                 G_CALLBACK(slide_window_closed_sig), th->nw);
+            gtk_window_present(GTK_WINDOW(sw));
+        } else {
+            fprintf(stderr, _("Too many slide windows\n"));
+        }
+    } else {
+        sc_slideshow_set_slide(th->nw->show, th->slide);
+    }
 }
 
 
@@ -64,18 +90,25 @@ static void thumbnail_draw_sig(GtkDrawingArea *da, cairo_t *cr,
 }
 
 
-GtkWidget *gtk_thumbnail_new(Slide *slide)
+GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw)
 {
     GtkThumbnail *th;
     double w, h;
+    GtkGesture *evc;
 
     th = g_object_new(GTK_TYPE_THUMBNAIL, NULL);
+    th->nw = nw;
     th->slide = slide;
 
     slide_get_logical_size(th->slide, &w, &h);
     gtk_widget_set_size_request(GTK_WIDGET(th), 320*w/h, 320);
-
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(th),
                                    thumbnail_draw_sig, th, NULL);
+
+    evc = gtk_gesture_click_new();
+    gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
+    g_signal_connect(G_OBJECT(evc), "pressed",
+             G_CALLBACK(click_sig), th);
+
     return GTK_WIDGET(th);
 }

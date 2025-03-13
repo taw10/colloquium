@@ -59,6 +59,7 @@ struct _gtkthumbnail
     /*< private >*/
     Slide               *slide;
     NarrativeWindow     *nw;
+    GdkCursor           *cursor;
 };
 
 struct _gtkthumbnailclass

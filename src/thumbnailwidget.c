@@ -105,6 +105,9 @@ GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw)
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(th),
                                    thumbnail_draw_sig, th, NULL);
 
+    th->cursor = gdk_cursor_new_from_name("pointer", NULL);
+    gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);
+
     evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
     g_signal_connect(G_OBJECT(evc), "pressed",

@@ -44,35 +44,6 @@
 G_DEFINE_TYPE_WITH_CODE(GtkSlideView, gtk_slide_view, GTK_TYPE_DRAWING_AREA,
                         NULL)
 
-static void gtksv_resize_sig(GtkDrawingArea *widget, gint width, gint height,
-                             GtkSlideView *e)
-{
-    double sx, sy;
-    double aw, ah;
-    double log_w, log_h;
-
-    if ( slide_get_logical_size(e->slide, &log_w, &log_h) ) {
-        fprintf(stderr, "Failed to get logical size\n");
-        return;
-    }
-
-    e->w = width;
-    e->h = height;
-    sx = (double)e->w / log_w;
-    sy = (double)e->h / log_h;
-    e->view_scale = (sx < sy) ? sx : sy;
-
-    /* Actual size (in device units) */
-    aw = e->view_scale * log_w;
-    ah = e->view_scale * log_h;
-
-    e->border_offs_x = (width - aw)/2.0;
-    e->border_offs_y = (height - ah)/2.0;
-
-    e->visible_height = height;
-    e->visible_width = width;
-}
-
 
 static void gtk_slide_view_class_init(GtkSlideViewClass *klass)
 {
@@ -96,9 +67,33 @@ static gint gtksv_destroy_sig(GtkWidget *window, GtkSlideView *e)
 }
 
 
-static gboolean gtksv_draw_sig(GtkWidget *da, cairo_t *cr, GtkSlideView *e)
+static void gtksv_draw_sig(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpointer vp)
 {
-    PangoContext *pc;
+    GtkSlideView *e = vp;
+    double sx, sy;
+    double aw, ah;
+    double log_w, log_h;
+
+    if ( slide_get_logical_size(e->slide, &log_w, &log_h) ) {
+        fprintf(stderr, "Failed to get logical size\n");
+        return;
+    }
+
+    e->w = w;
+    e->h = h;
+    sx = (double)e->w / log_w;
+    sy = (double)e->h / log_h;
+    e->view_scale = (sx < sy) ? sx : sy;
+
+    /* Actual size (in device units) */
+    aw = e->view_scale * log_w;
+    ah = e->view_scale * log_h;
+
+    e->border_offs_x = (w - aw)/2.0;
+    e->border_offs_y = (h - ah)/2.0;
+
+    e->visible_height = h;
+    e->visible_width = w;
 
     /* Ultimate background */
     if ( e->bg_pixbuf != NULL ) {
@@ -115,12 +110,7 @@ static gboolean gtksv_draw_sig(GtkWidget *da, cairo_t *cr, GtkSlideView *e)
     cairo_translate(cr, -e->h_scroll_pos, -e->v_scroll_pos);
     cairo_scale(cr, e->view_scale, e->view_scale);
 
-    /* Contents */
-    pc = pango_cairo_create_context(cr);
     slide_render_cairo(e->slide, cr);
-    g_object_unref(pc);
-
-    return FALSE;
 }
 
 void gtk_slide_view_set_scale(GtkSlideView *e, double scale)
@@ -159,25 +149,14 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
     sv->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/Colloquium/sky.png",
                                                        &err);
     if ( sv->bg_pixbuf == NULL ) {
-        fprintf(stderr, _("Failed to load background: %s\n"),
-                err->message);
+        fprintf(stderr, _("Failed to load background: %s\n"), err->message);
     }
 
-    gtk_widget_set_size_request(GTK_WIDGET(sv),
-                                sv->w, sv->h);
-
-    g_signal_connect(G_OBJECT(sv), "destroy",
-                     G_CALLBACK(gtksv_destroy_sig), sv);
-    g_signal_connect(G_OBJECT(sv), "configure-event",
-                     G_CALLBACK(gtksv_resize_sig), sv);
-
+    gtk_widget_set_size_request(GTK_WIDGET(sv), sv->w, sv->h);
+    g_signal_connect(G_OBJECT(sv), "destroy", G_CALLBACK(gtksv_destroy_sig), sv);
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
-    //gtk_widget_add_events(GTK_WIDGET(sv), GDK_SCROLL_MASK);
-
-    g_signal_connect(G_OBJECT(sv), "draw",
-             G_CALLBACK(gtksv_draw_sig), sv);
-
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(sv),
+                                   gtksv_draw_sig, sv, NULL);
     gtk_widget_grab_focus(GTK_WIDGET(sv));
-
     return GTK_WIDGET(sv);
 }

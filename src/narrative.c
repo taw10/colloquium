@@ -699,85 +699,6 @@ int narrative_get_num_slides(Narrative *n)
 }
 
 
-/* Return the text between item p1/offset o1 and p2/o2 */
-char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2)
-{
-    int i;
-    char *t;
-    int r1, r2;
-    size_t r1offs, r2offs;
-    size_t len = 0;
-    size_t size = 256;
-
-    t = malloc(size);
-    if ( t == NULL ) return NULL;
-    t[0] = '\0';
-
-    r1 = narrative_which_run(&n->items[p1], o1, &r1offs);
-    r2 = narrative_which_run(&n->items[p2], o2, &r2offs);
-
-    for ( i=p1; i<=p2; i++ ) {
-
-        int r;
-
-        /* Skip non-text runs straight away */
-        if ( !narrative_item_is_text(n, i) ) continue;
-
-        for ( r=0; r<n->items[i].n_runs; r++ ) {
-
-            size_t run_text_len, len_to_add, start_run_offs;
-
-            /* Is this run within the range? */
-            if ( (i==p1) && (r<r1) ) continue;
-            if ( (i==p2) && (r>r2) ) continue;
-
-            run_text_len = strlen(n->items[i].runs[r].text);
-
-            if ( (p1==p2) && (r1==r2) && (r==r1) ) {
-                start_run_offs = r1offs;
-                len_to_add = r2offs - r1offs;
-            } else if ( (i==p1) && (r==r1) ) {
-                start_run_offs = r1offs;
-                len_to_add = run_text_len - r1offs;
-            } else if ( (i==p2) && (r==r2) ) {
-                start_run_offs = 0;
-                len_to_add = r2offs;
-            } else {
-                start_run_offs = 0;
-                len_to_add = run_text_len;
-            }
-
-            if ( len_to_add == 0 ) continue;
-
-            /* Ensure space */
-            if ( len + len_to_add + 2 > size ) {
-                char *nt;
-                size += 256 + len_to_add;
-                nt = realloc(t, size);
-                if ( nt == NULL ) {
-                    fprintf(stderr, "Failed to allocate\n");
-                    return NULL;
-                }
-                t = nt;
-            }
-
-            memcpy(&t[len], n->items[i].runs[r].text+start_run_offs,
-                   len_to_add);
-            len += len_to_add;
-            t[len] = '\0';
-        }
-
-        if ( i < p2 ) {
-            t[len++] = '\n';
-            t[len] = '\0';
-        }
-
-    }
-
-    return t;
-}
-
-
 Slide *narrative_get_slide(Narrative *n, int para)
 {
     if ( para >= n->n_items ) return NULL;
@@ -875,15 +796,6 @@ void update_timing(struct narrative_item *item)
 }
 
 
-static void debug_runs(struct narrative_item *item)
-{
-    int j;
-    for ( j=0; j<item->n_runs; j++ ) {
-        printf("Run %i: '%s'\n", j, item->runs[j].text);
-    }
-}
-
-
 void narrative_get_first_slide_size(Narrative *n, double *w, double *h)
 {
     int i;
@@ -895,54 +807,6 @@ void narrative_get_first_slide_size(Narrative *n, double *w, double *h)
     }
     printf("No slides found - using standard slide size\n");
     *w = 1024.0;  *h = 768.0;
-}
-
-
-void narrative_debug(Narrative *n)
-{
-    int i;
-
-    for ( i=0; i<n->n_items; i++ ) {
-
-        struct narrative_item *item = &n->items[i];
-        printf("Item %i ", i);
-        switch ( item->type ) {
-
-            case NARRATIVE_ITEM_TEXT :
-            printf("(text):\n");
-            debug_runs(item);
-            break;
-
-            case NARRATIVE_ITEM_BP :
-            printf("(bp):\n");
-            debug_runs(item);
-            break;
-
-            case NARRATIVE_ITEM_PRESTITLE :
-            printf("(prestitle):\n");
-            debug_runs(item);
-            break;
-
-            case NARRATIVE_ITEM_EOP :
-            printf("(EOP marker)\n");
-            break;
-
-            case NARRATIVE_ITEM_SEGSTART :
-            printf("(start of segment):\n");
-            debug_runs(item);
-            break;
-
-            case NARRATIVE_ITEM_SEGEND :
-            printf("(end of segment)\n");
-            break;
-
-            case NARRATIVE_ITEM_SLIDE :
-            printf("Slide\n");
-            break;
-
-        }
-
-    }
 }
 
 

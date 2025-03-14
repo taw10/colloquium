@@ -53,16 +53,11 @@ extern Narrative *narrative_new(void);
 extern void narrative_free(Narrative *n);
 extern void narrative_add_empty_item(Narrative *n);
 
-extern const char *narrative_get_language(Narrative *n);
-
 extern Narrative *narrative_load(GFile *file);
 extern int narrative_save(Narrative *n, GFile *file);
 
 extern void narrative_set_unsaved(Narrative *n);
 extern int narrative_get_unsaved(Narrative *n);
-
-extern int narrative_item_is_text(Narrative *n, int item);
-extern int narrative_item_is_empty_text(Narrative *n, int item);
 
 extern void narrative_insert_text(Narrative *n, int pos, struct text_run *runs, int n_runs);
 extern void narrative_insert_bp(Narrative *n, int pos, struct text_run *runs, int n_runs);
@@ -85,9 +80,5 @@ extern int narrative_get_slide_number_for_slide(Narrative *n, Slide *s);
 extern void narrative_get_first_slide_size(Narrative *n, double *w, double *h);
 
 extern double narrative_find_time_pos(Narrative *n, double minutes);
-
-extern char *narrative_range_as_text(Narrative *n, int p1, size_t o1, int p2, size_t o2);
-
-extern void narrative_debug(Narrative *n);
 
 #endif /* NARRATIVE_H */

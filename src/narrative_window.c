@@ -50,7 +50,6 @@ G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_W
 
 typedef struct _nv GtkNarrativeView;
 #define GTK_NARRATIVE_VIEW(a) ((GtkNarrativeView *)a)
-void gtk_narrative_view_set_para_highlight(GtkNarrativeView *e, int para_highlight) {}
 int gtk_narrative_view_get_cursor_para(GtkNarrativeView *e) { return 0; }
 void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos) {}
 void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e) {}
@@ -498,7 +497,6 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
 static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
     nw->show = NULL;
-    gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 0);
 
     gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
     gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
@@ -535,7 +533,6 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, slide);
-    gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 1);
     update_toolbar(nw);
 }
 
@@ -555,7 +552,6 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
-    gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 1);
     gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
     update_toolbar(nw);
 }
@@ -582,7 +578,6 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
-    gtk_narrative_view_set_para_highlight(GTK_NARRATIVE_VIEW(nw->nv), 1);
     gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
     update_toolbar(nw);
 }

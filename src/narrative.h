@@ -71,8 +71,6 @@ extern void narrative_delete_block(Narrative *n, int i1, size_t o1,
                                                  int i2, size_t o2);
 extern void narrative_split_item(Narrative *n, int i1, size_t o1);
 extern void narrative_delete_item(Narrative *n, int del);
-extern int narrative_get_num_items(Narrative *n);
-extern int narrative_get_num_items_to_eop(Narrative *n);
 extern int narrative_get_num_slides(Narrative *n);
 extern Slide *narrative_get_slide(Narrative *n, int para);
 extern Slide *narrative_get_slide_by_number(Narrative *n, int pos);

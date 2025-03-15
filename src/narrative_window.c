@@ -50,8 +50,6 @@ G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_W
 
 typedef struct _nv GtkNarrativeView;
 #define GTK_NARRATIVE_VIEW(a) ((GtkNarrativeView *)a)
-int gtk_narrative_view_get_cursor_para(GtkNarrativeView *e) { return 0; }
-void gtk_narrative_view_set_cursor_para(GtkNarrativeView *e, signed int pos) {}
 void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e) {}
 void gtk_narrative_view_add_bp_at_cursor(GtkNarrativeView *e) {}
 void gtk_narrative_view_add_segend_at_cursor(GtkNarrativeView *e) {}
@@ -60,15 +58,40 @@ void gtk_narrative_view_add_segstart_at_cursor(GtkNarrativeView *e) {}
 void gtk_narrative_view_add_prestitle_at_cursor(GtkNarrativeView *e) {}
 void gtk_narrative_view_redraw(GtkNarrativeView *e) {}
 
+
+static int get_cursor_para(GtkTextView *nv)
+{
+    GtkTextBuffer *buf;
+    GtkTextMark *cur;
+    GtkTextIter iter;
+
+    buf = gtk_text_view_get_buffer(nv);
+    cur = gtk_text_buffer_get_insert(buf);
+    gtk_text_buffer_get_iter_at_mark(buf, &iter, cur);
+
+    return gtk_text_iter_get_line(&iter);
+}
+
+
+static int num_items(Narrative *n)
+{
+    return gtk_text_buffer_get_line_count(n->textbuf);
+}
+
+
+static int num_items_to_eop(Narrative *n)
+{
+    /* FIXME: Decide on end of presentation mark */
+    return gtk_text_buffer_get_line_count(n->textbuf);
+}
+
+
 static void show_error(NarrativeWindow *nw, const char *err)
 {
     GtkAlertDialog *mw;
     const char *buttons[2] = {"Close", NULL};
-
     mw = gtk_alert_dialog_new("%s", err);
-
     gtk_alert_dialog_set_buttons(mw, buttons);
-
     gtk_alert_dialog_show(mw, GTK_WINDOW(nw));
 }
 
@@ -136,7 +159,7 @@ static void update_toolbar(NarrativeWindow *nw)
 
     if ( nw->show == NULL ) return;
 
-    cur_para = gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv));
+    cur_para = get_cursor_para(GTK_TEXT_VIEW(nw->nv));
     if ( cur_para == 0 ) {
         gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
         gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
@@ -145,7 +168,7 @@ static void update_toolbar(NarrativeWindow *nw)
         gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), TRUE);
     }
 
-    n_para = narrative_get_num_items(nw->n);
+    n_para = num_items(nw->n);
     if ( cur_para == n_para - 1 ) {
         gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
         gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
@@ -279,8 +302,8 @@ static void add_eop_sig(GSimpleAction *action, GVariant *parameter,
 
 static void set_clock_pos(NarrativeWindow *nw)
 {
-    int pos = gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv));
-    int end = narrative_get_num_items_to_eop(nw->n);
+    int pos = get_cursor_para(GTK_TEXT_VIEW(nw->nv));
+    int end = num_items_to_eop(nw->n);
     if ( pos >= end ) pos = end-1;
     pr_clock_set_pos(nw->pr_clock, pos, end);
 }
@@ -290,7 +313,8 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_BUFFER_ENDS, 0, FALSE);
     set_clock_pos(nw);
     update_toolbar(nw);
 }
@@ -299,10 +323,9 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
 static void ss_prev_para(SCSlideshow *ss, void *vp)
 {
     NarrativeWindow *nw = vp;
-    if ( gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)) == 0 ) return;
-    gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv),
-                              gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv))-1);
-                     set_clock_pos(nw);
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_PARAGRAPHS, -1, FALSE);
+    set_clock_pos(nw);
     update_toolbar(nw);
 }
 
@@ -319,29 +342,29 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 {
     NarrativeWindow *nw = vp;
     Slide *ns;
-    GtkNarrativeView *nv;
-    int n_paras;
+    GtkTextView *nv;
 
-    n_paras = narrative_get_num_items(nw->n);
-    nv = GTK_NARRATIVE_VIEW(nw->nv);
+    nv = GTK_TEXT_VIEW(nw->nv);
 
-    if ( gtk_narrative_view_get_cursor_para(nv) == n_paras - 1 ) return;
-    gtk_narrative_view_set_cursor_para(nv, gtk_narrative_view_get_cursor_para(nv)+1);
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_PARAGRAPHS, 1, FALSE);
 
     /* If we only have one monitor, skip to next slide */
-    if ( ss != NULL && ss->single_monitor && !nw->show_no_slides ) {
-        int i;
-        for ( i=gtk_narrative_view_get_cursor_para(nv); i<n_paras; i++ )
-        {
-            Slide *ns;
-            gtk_narrative_view_set_cursor_para(nv, i);
-            ns = narrative_get_slide(nw->n, i);
-            if ( ns != NULL ) break;
-        }
-    }
+    /* FIXME: Skip to next slide tag */
+    //int n_paras = narrative_get_num_items(nw->n);
+    //if ( ss != NULL && ss->single_monitor && !nw->show_no_slides ) {
+    //    int i;
+    //    for ( i=get_cursor_para(nv); i<n_paras; i++ )
+    //    {
+    //        Slide *ns;
+    //        set_cursor_para(nv, i);
+    //        ns = narrative_get_slide(nw->n, i);
+    //        if ( ns != NULL ) break;
+    //    }
+    //}
 
     set_clock_pos(nw);
-    ns = narrative_get_slide(nw->n, gtk_narrative_view_get_cursor_para(nv));
+    ns = narrative_get_slide(nw->n, get_cursor_para(nv));
     if ( nw->show != NULL && ns != NULL ) {
         sc_slideshow_set_slide(nw->show, ns);
     }
@@ -361,7 +384,8 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), -1);
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_BUFFER_ENDS, 1, FALSE);
     set_clock_pos(nw);
     update_toolbar(nw);
 }
@@ -516,8 +540,7 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
 
     if ( narrative_get_num_slides(nw->n) == 0 ) return;
 
-    slide = narrative_get_slide(nw->n,
-                                gtk_narrative_view_get_cursor_para(GTK_NARRATIVE_VIEW(nw->nv)));
+    slide = narrative_get_slide(nw->n, get_cursor_para(GTK_TEXT_VIEW(nw->nv)));
     if ( slide == NULL ) return;
 
     nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
@@ -547,12 +570,14 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
     nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
     if ( nw->show == NULL ) return;
 
+    gtk_widget_set_visible(GTK_WIDGET(nw->show), FALSE);
     nw->show_no_slides = 1;
 
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
-    gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
     update_toolbar(nw);
 }
 
@@ -578,7 +603,8 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
     sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
-    gtk_narrative_view_set_cursor_para(GTK_NARRATIVE_VIEW(nw->nv), 0);
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
     update_toolbar(nw);
 }
 

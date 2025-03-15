@@ -104,8 +104,8 @@ static void update_titlebar(NarrativeWindow *nw)
 }
 
 
-static gboolean slide_window_closed_sig(GtkWidget *sw, GdkEvent *event,
-                                        NarrativeWindow *nw)
+gboolean slide_window_closed_sig(GtkWidget *sw, GdkEvent *event,
+                                 NarrativeWindow *nw)
 {
     int i;
     int found = 0;

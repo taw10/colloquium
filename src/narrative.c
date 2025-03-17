@@ -477,21 +477,25 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 
     } else {
 
-        GtkTextIter start, end;
-        gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
+        GtkTextIter start_iter, end_iter;
+        int start_offset;
 
-        gtk_text_buffer_insert_with_tags_by_name(ps->n->textbuf, &start, text, len,
+        gtk_text_buffer_get_end_iter(ps->n->textbuf, &end_iter);
+        start_offset = gtk_text_iter_get_offset(&end_iter);
+
+        gtk_text_buffer_insert_with_tags_by_name(ps->n->textbuf, &end_iter, text, len,
                                                  block_tag_name(ps), NULL);
-        gtk_text_buffer_get_end_iter(ps->n->textbuf, &end);
+
+        gtk_text_buffer_get_iter_at_offset(ps->n->textbuf, &start_iter, start_offset);
 
         if ( ps->bold ) {
-            gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "bold", &start, &end);
+            gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "bold", &start_iter, &end_iter);
         }
         if ( ps->italic ) {
-            gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "italic", &start, &end);
+            gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "italic", &start_iter, &end_iter);
         }
         if ( ps->underline ) {
-            gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "underline", &start, &end);
+            gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "underline", &start_iter, &end_iter);
         }
     }
 

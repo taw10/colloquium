@@ -23,77 +23,9 @@
 #ifndef NARRATIVE_PRIV_H
 #define NARRATIVE_PRIV_H
 
-#ifdef HAVE_PANGO
-#include <pango/pangocairo.h>
-#endif
-
 #include <gtk/gtk.h>
 
-#include "slide.h"
 
-
-enum narrative_item_type
-{
-    NARRATIVE_ITEM_TEXT,
-    NARRATIVE_ITEM_SEGSTART,
-    NARRATIVE_ITEM_SEGEND,
-    NARRATIVE_ITEM_PRESTITLE,
-    NARRATIVE_ITEM_SLIDE,
-    NARRATIVE_ITEM_BP,
-    NARRATIVE_ITEM_EOP,
-};
-
-
-struct narrative_item
-{
-    enum narrative_item_type type;
-
-    /* Space around the thing (PangoLayout, slide, marker etc) */
-    double space_l;
-    double space_r;
-    double space_t;
-    double space_b;
-
-    /* Size of the thing (PangoLayout, slide, marker etc) */
-    double obj_w;
-    double obj_h;
-
-    /* Total height is obj_h + space_t + space_b.
-     * obj_w + space_l + space_r might be less than width of rendering surface */
-
-    /* For TEXT, BP, PRESTITLE */
-    int n_runs;
-    struct text_run *runs;
-
-    /* For SLIDE */
-    Slide *slide;
-    GtkTextChildAnchor *anchor;
-    int selected;  /* Whether or not this item should be given a "selected" highlight */
-
-    double estd_duration;  /* Estimated duration in minutes, based on word count */
-};
-
-
-struct _narrative
-{
-    int saved;
-    const char *language;
-
-    GtkTextBuffer *textbuf;
-
-    int n_items;
-    struct narrative_item *items;
-
-    double w;
-    double space_l;
-    double space_r;
-    double space_t;
-    double space_b;
-};
-
-extern int narrative_which_run(struct narrative_item *item, size_t item_offs, size_t *run_offs);
-
-extern void update_timing(struct narrative_item *item);
 
 
 #endif /* NARRATIVE_PRIV_H */

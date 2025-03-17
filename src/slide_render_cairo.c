@@ -74,7 +74,7 @@ int render_slides_to_pdf(Narrative *n, const char *filename)
     double w = 2048.0;
     cairo_surface_t *surf;
     cairo_t *cr;
-    int i;
+    //int i;
 
     surf = cairo_pdf_surface_create(filename, w, w);
     if ( cairo_surface_status(surf) != CAIRO_STATUS_SUCCESS ) {
@@ -84,6 +84,8 @@ int render_slides_to_pdf(Narrative *n, const char *filename)
 
     cr = cairo_create(surf);
 
+    /* FIXME: For each slide */
+#if 0
     for ( i=0; i<narrative_get_num_slides(n); i++ )
     {
         Slide *s;
@@ -100,6 +102,7 @@ int render_slides_to_pdf(Narrative *n, const char *filename)
         cairo_show_page(cr);
         cairo_restore(cr);
     }
+#endif
 
     cairo_surface_finish(surf);
     cairo_destroy(cr);

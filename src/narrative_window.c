@@ -116,7 +116,7 @@ static void update_titlebar(NarrativeWindow *nw)
 
     filename = narrative_window_get_filename(nw);
     snprintf(title, 1024, "%s - Colloquium", filename);
-    if ( narrative_get_unsaved(nw->n) ) strcat(title, " *");
+    if ( !nw->n->saved ) strcat(title, " *");
     free(filename);
 
     gtk_window_set_title(GTK_WINDOW(nw), title);
@@ -246,7 +246,7 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     gtk_narrative_view_add_slide_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    narrative_set_unsaved(nw->n);
+    nw->n->saved = 0;
     update_titlebar(nw);
 }
 
@@ -255,7 +255,7 @@ static void add_prestitle_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     gtk_narrative_view_add_prestitle_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    narrative_set_unsaved(nw->n);
+    nw->n->saved = 0;
     update_titlebar(nw);
 }
 
@@ -265,7 +265,7 @@ static void add_bp_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     gtk_narrative_view_add_bp_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    narrative_set_unsaved(nw->n);
+    nw->n->saved = 0;
     update_titlebar(nw);
 }
 
@@ -275,7 +275,7 @@ static void add_segstart_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     gtk_narrative_view_add_segstart_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    narrative_set_unsaved(nw->n);
+    nw->n->saved = 0;
     update_titlebar(nw);
 }
 
@@ -285,7 +285,7 @@ static void add_segend_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     gtk_narrative_view_add_segend_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    narrative_set_unsaved(nw->n);
+    nw->n->saved = 0;
     update_titlebar(nw);
 }
 
@@ -295,7 +295,7 @@ static void add_eop_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     gtk_narrative_view_add_eop_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    narrative_set_unsaved(nw->n);
+    nw->n->saved = 0;
     update_titlebar(nw);
 }
 
@@ -391,33 +391,27 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
-static void set_text_type(NarrativeWindow *nw, enum text_run_type t)
-{
-    printf("%i\n", t);
-}
-
-
 static void bold_sig(GSimpleAction *action, GVariant *parameter,
                      gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    set_text_type(nw, TEXT_RUN_BOLD);
+    //NarrativeWindow *nw = vp;
+    //set_text_type(nw, TEXT_RUN_BOLD);
 }
 
 
 static void italic_sig(GSimpleAction *action, GVariant *parameter,
                        gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    set_text_type(nw, TEXT_RUN_ITALIC);
+    //NarrativeWindow *nw = vp;
+    //set_text_type(nw, TEXT_RUN_ITALIC);
 }
 
 
 static void underline_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    set_text_type(nw, TEXT_RUN_UNDERLINE);
+    //NarrativeWindow *nw = vp;
+    //set_text_type(nw, TEXT_RUN_UNDERLINE);
 }
 
 
@@ -447,7 +441,7 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 
 static void changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
-    narrative_set_unsaved(nw->n);
+    nw->n->saved = 0;
     update_titlebar(nw);
 }
 
@@ -538,8 +532,6 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
     Slide *slide;
     GtkEventController *evc;
 
-    if ( narrative_get_num_slides(nw->n) == 0 ) return;
-
     slide = narrative_get_slide(nw->n, get_cursor_para(GTK_TEXT_VIEW(nw->nv)));
     if ( slide == NULL ) return;
 
@@ -565,8 +557,6 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 {
     NarrativeWindow *nw = vp;
 
-    if ( narrative_get_num_slides(nw->n) == 0 ) return;
-
     nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
     if ( nw->show == NULL ) return;
 
@@ -575,7 +565,10 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
 
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
-    sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
+
+    /* FIXME: Set first slide */
+    //sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
+
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
     update_toolbar(nw);
@@ -587,8 +580,6 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     GtkEventController *evc;
-
-    if ( narrative_get_num_slides(nw->n) == 0 ) return;
 
     nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
     if ( nw->show == NULL ) return;
@@ -602,7 +593,10 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
-    sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
+
+    /* FIXME: Set first slide */
+    //sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
+
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
     update_toolbar(nw);
@@ -650,13 +644,11 @@ static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
 {
     int i;
 
-    for ( i=0; i<nw->n->n_items; i++ ) {
-        if ( nw->n->items[i].slide != NULL ) {
-            GtkWidget *th = gtk_thumbnail_new(nw->n->items[i].slide, nw);
-            gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
-                                              GTK_WIDGET(th),
-                                              nw->n->items[i].anchor);
-        }
+    for ( i=0; i<nw->n->n_slides; i++ ) {
+        GtkWidget *th = gtk_thumbnail_new(nw->n->slides[i], nw);
+        gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
+                                          GTK_WIDGET(th),
+                                          nw->n->slides[i]->anchor);
     }
 }
 

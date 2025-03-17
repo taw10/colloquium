@@ -61,7 +61,6 @@ static void colloquium_activate(GApplication *papp)
     if ( !app->first_run ) {
         NarrativeWindow *nw;
         Narrative *n = narrative_new();
-        narrative_add_empty_item(n);
         nw = narrative_window_new(n, NULL, papp);
         gtk_window_present(GTK_WINDOW(nw));
     }

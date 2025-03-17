@@ -46,101 +46,6 @@
 
 G_DEFINE_TYPE_WITH_CODE(SlideWindow, gtk_slide_window, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
-/* Change the editor's slide to "np" */
-static void change_edit_slide(SlideWindow *sw, Slide *np)
-{
-    gtk_slide_view_set_slide(sw->sv, np);
-    sw->slide = np;
-    slide_window_update_titlebar(sw);
-}
-
-
-static void change_slide_first(SlideWindow *sw)
-{
-    Slide *s = narrative_get_slide_by_number(sw->n, 0);
-    if ( s != NULL ) change_edit_slide(sw, s);
-}
-
-
-static void change_slide_backwards(SlideWindow *sw)
-{
-    int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
-    if ( slide_n > 0 ) {
-        Slide *s = narrative_get_slide_by_number(sw->n, slide_n-1);
-        change_edit_slide(sw, s);
-    }
-}
-
-
-static void change_slide_forwards(SlideWindow *sw)
-{
-    int slide_n = narrative_get_slide_number_for_slide(sw->n, sw->slide);
-    Slide *s = narrative_get_slide_by_number(sw->n, slide_n+1);
-    if ( s != NULL ) change_edit_slide(sw, s);
-}
-
-
-static void change_slide_last(SlideWindow *sw)
-{
-    int slide_n = narrative_get_num_slides(sw->n);
-    Slide *s = narrative_get_slide_by_number(sw->n, slide_n);
-    if ( s != NULL ) change_edit_slide(sw, s);
-}
-
-
-static void first_slide_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-    SlideWindow *sw = vp;
-    change_slide_first(sw);
-}
-
-
-static void prev_slide_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-    SlideWindow *sw = vp;
-    change_slide_backwards(sw);
-}
-
-
-static void next_slide_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-    SlideWindow *sw = vp;
-    change_slide_forwards(sw);
-}
-
-
-static void last_slide_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-    SlideWindow *sw = vp;
-    change_slide_last(sw);
-}
-
-
-static gboolean sw_key_press_sig(GtkEventControllerKey *self,
-                                 guint keyval,
-                                 guint keycode,
-                                 GdkModifierType state,
-                                 SlideWindow *sw)
-{
-    switch ( keyval ) {
-
-        case GDK_KEY_Page_Up :
-        change_slide_backwards(sw);
-        return TRUE;
-
-        case GDK_KEY_Page_Down :
-        change_slide_forwards(sw);
-        return TRUE;
-
-    }
-
-    return FALSE;
-}
-
 
 static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
@@ -151,10 +56,6 @@ static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp
 GActionEntry sw_entries[] = {
 
     { "about", sw_about_sig, NULL, NULL, NULL },
-    { "first", first_slide_sig, NULL, NULL, NULL },
-    { "prev", prev_slide_sig, NULL, NULL, NULL },
-    { "next", next_slide_sig, NULL, NULL, NULL },
-    { "last", last_slide_sig, NULL, NULL, NULL },
 };
 
 
@@ -173,7 +74,6 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 {
     SlideWindow *sw;
     double w, h;
-    GtkEventController *evc;
     Colloquium *app = COLLOQUIUM(papp);
 
     sw = g_object_new(GTK_TYPE_SLIDE_WINDOW, "application", app, NULL);
@@ -182,7 +82,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
     sw->slide = slide;
     sw->parent = nw;
 
-    gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(sw), TRUE);
+    gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(sw), FALSE);
 
     slide_window_update_titlebar(sw);
 
@@ -190,11 +90,6 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
                                     G_N_ELEMENTS(sw_entries), sw);
 
     sw->sv = gtk_slide_view_new(n, slide);
-
-    evc = gtk_event_controller_key_new();
-    gtk_widget_add_controller(GTK_WIDGET(sw), evc);
-    g_signal_connect(G_OBJECT(evc), "key-pressed",
-                     G_CALLBACK(sw_key_press_sig), sw);
 
     slide_get_logical_size(slide, &w, &h);
     gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
@@ -219,9 +114,8 @@ void slide_window_update_titlebar(SlideWindow *sw)
     char *filename;
 
     filename = narrative_window_get_filename(sw->parent);
-    snprintf(title, 1024, "%s (slide %i) - Colloquium", filename,
-             1+narrative_get_slide_number_for_slide(sw->n, sw->slide));
-    if ( narrative_get_unsaved(sw->n) ) strcat(title, " *");
+    snprintf(title, 1024, "%s - Colloquium", filename);
+    if ( !sw->n->saved ) strcat(title, " *");
 
     gtk_window_set_title(GTK_WINDOW(sw), title);
 }

@@ -28,6 +28,7 @@
 #endif
 
 #include <stddef.h>
+#include <gtk/gtk.h>
 
 struct _slide
 {
@@ -35,6 +36,7 @@ struct _slide
     double logical_h;
     char *ext_filename;
     int ext_slidenumber;
+    GtkTextChildAnchor *anchor;
 };
 
 typedef struct _slide Slide;

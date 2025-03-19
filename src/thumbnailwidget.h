@@ -72,5 +72,6 @@ typedef struct _gtkthumbnailclass GtkThumbnailClass;
 
 extern GType gtk_thumbnail_get_type(void);
 extern GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw);
+extern Slide *gtk_thumbnail_get_slide(GtkThumbnail *th);
 
 #endif  /* GTK_THUMBNAIL_H */

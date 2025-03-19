@@ -341,13 +341,14 @@ static void prev_para_sig(GSimpleAction *action, GVariant *parameter,
 static void ss_next_para(SCSlideshow *ss, void *vp)
 {
     NarrativeWindow *nw = vp;
-    Slide *ns;
-    GtkTextView *nv;
-
-    nv = GTK_TEXT_VIEW(nw->nv);
+    GtkTextMark *cursor;
+    GtkTextIter iter;
+    GtkTextChildAnchor *anc;
 
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_PARAGRAPHS, 1, FALSE);
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_PARAGRAPH_ENDS, -1, FALSE);
 
     /* If we only have one monitor, skip to next slide */
     /* FIXME: Skip to next slide tag */
@@ -364,9 +365,18 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
     //}
 
     set_clock_pos(nw);
-    ns = narrative_get_slide(nw->n, get_cursor_para(nv));
-    if ( nw->show != NULL && ns != NULL ) {
-        sc_slideshow_set_slide(nw->show, ns);
+
+    /* Is the cursor on a slide? */
+    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+    anc = gtk_text_iter_get_child_anchor(&iter);
+
+    if ( nw->show != NULL && anc != NULL ) {
+        guint n;
+        GtkWidget **th = gtk_text_child_anchor_get_widgets(anc, &n);
+        assert(n == 1);
+        sc_slideshow_set_slide(nw->show, gtk_thumbnail_get_slide(GTK_THUMBNAIL(th[0])));
+        g_free(th);
     }
     update_toolbar(nw);
 }

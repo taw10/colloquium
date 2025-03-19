@@ -115,3 +115,9 @@ GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
     return GTK_WIDGET(th);
 }
+
+
+Slide *gtk_thumbnail_get_slide(GtkThumbnail *th)
+{
+    return th->slide;
+}

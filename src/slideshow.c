@@ -52,12 +52,6 @@ void sc_slideshow_class_init(SCSlideshowClass *klass)
 }
 
 
-static void redraw(SCSlideshow *ss)
-{
-    gtk_widget_queue_draw(GTK_WIDGET(ss));
-}
-
-
 static gint ssh_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 {
     if ( ss->blank_cursor != NULL ) {
@@ -82,6 +76,8 @@ static void ss_draw_sig(GtkDrawingArea *da, cairo_t *cr,
     cairo_rectangle(cr, 0.0, 0.0, dw, dh);
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
     cairo_fill(cr);
+
+    if ( ss->cur_slide == NULL ) return;
 
     slide_get_logical_size(ss->cur_slide, &lw, &lh);
 
@@ -127,7 +123,7 @@ static gboolean ss_realize_sig(GtkWidget *w, SCSlideshow *ss)
 void sc_slideshow_set_slide(SCSlideshow *ss, Slide *ns)
 {
     ss->cur_slide = ns;
-    redraw(ss);
+    gtk_widget_queue_draw(GTK_WIDGET(ss->drawingarea));
 }
 
 

@@ -1,7 +1,9 @@
 Presentation tips
 =================
 
-Here is a collection of tips I've gleaned from watching scientific presentations over about 15 years, noting what did and didn't work well.  Some, but not all of them are specific to scientific conference presentations.  These may sound a little prescriptive and, of course, there are no absolutes.  But I try to follow all of my own recommendations, and I can assure that they do work...
+Here is a collection of tips I've gleaned from giving and watching scientific presentations over about 15 years, noting what did and didn't work well.  Some, but not all of them are specific to scientific conference presentations.  These may sound a little prescriptive and, of course, there are no absolutes, but I do find these tips helpful.
+
+For more tips, I recommend [this page from Matt Might]<https://matt.might.net/articles/academic-presentation-tips/>, which links to even more resources.  I also recommend reading the [Official TED Guide to Public Speaking]<https://www.ted.com/read/ted-talks-the-official-ted-guide-to-public-speaking>, particularly chapters 10 to 18.  Just in case you're thinking that a scientific presentation is *completely* different to a TED talk: know that the TED book probably does not say what you think it says, and actually contains a wealth of practical tips including how to best use a tool like Colloquium.
 
 
 Preparing the presentation

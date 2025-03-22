@@ -86,7 +86,6 @@ extern NarrativeWindow *narrative_window_new(Narrative *n,
 
 extern char *narrative_window_get_filename(NarrativeWindow *nw);
 
-extern gboolean slide_window_closed_sig(GtkWidget *sw, GdkEvent *event,
-                                        NarrativeWindow *nw);
+extern void slide_window_closed_sig(GtkWidget *sw, NarrativeWindow *nw);
 
 #endif	/* NARRATIVE_WINDOW_H */

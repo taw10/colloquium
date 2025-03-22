@@ -62,7 +62,7 @@ static void click_sig(GtkGestureClick *self, int n_press, gdouble x, gdouble y, 
         if ( th->nw->n_slidewindows < 16 ) {
             SlideWindow *sw = slide_window_new(th->nw->n, th->slide, th->nw, th->nw->app);
             th->nw->slidewindows[th->nw->n_slidewindows++] = sw;
-            g_signal_connect(G_OBJECT(sw), "delete-event",
+            g_signal_connect(G_OBJECT(sw), "destroy",
                              G_CALLBACK(slide_window_closed_sig), th->nw);
             gtk_window_present(GTK_WINDOW(sw));
         } else {

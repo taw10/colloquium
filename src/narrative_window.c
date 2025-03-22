@@ -127,8 +127,7 @@ static void update_titlebar(NarrativeWindow *nw)
 }
 
 
-gboolean slide_window_closed_sig(GtkWidget *sw, GdkEvent *event,
-                                 NarrativeWindow *nw)
+void slide_window_closed_sig(GtkWidget *sw, NarrativeWindow *nw)
 {
     int i;
     int found = 0;
@@ -148,8 +147,6 @@ gboolean slide_window_closed_sig(GtkWidget *sw, GdkEvent *event,
     if ( !found ) {
         fprintf(stderr, "Couldn't find slide window in narrative record\n");
     }
-
-    return FALSE;
 }
 
 

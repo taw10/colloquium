@@ -366,11 +366,13 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 
     set_clock_pos(nw);
 
-    /* Is the cursor on a slide? */
     cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
     gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    anc = gtk_text_iter_get_child_anchor(&iter);
 
+    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(nw->nv), &iter, 0, TRUE, 0, 0.5);
+
+    /* Is the cursor on a slide? */
+    anc = gtk_text_iter_get_child_anchor(&iter);
     if ( nw->show != NULL && anc != NULL ) {
         guint n;
         GtkWidget **th = gtk_text_child_anchor_get_widgets(anc, &n);

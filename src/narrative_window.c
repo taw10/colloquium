@@ -537,30 +537,38 @@ static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 }
 
 
-static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
-                                     gpointer vp)
+static void start_slideshow(NarrativeWindow *nw, int no_slides)
 {
-    NarrativeWindow *nw = vp;
-    Slide *slide;
     GtkEventController *evc;
-
-    slide = narrative_get_slide(nw->n, get_cursor_para(GTK_TEXT_VIEW(nw->nv)));
-    if ( slide == NULL ) return;
 
     nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
     if ( nw->show == NULL ) return;
-
-    nw->show_no_slides = 0;
 
     evc = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(nw->show), evc);
     g_signal_connect(G_OBJECT(evc), "key-pressed",
          G_CALLBACK(nw_key_press_sig), nw);
 
+    if ( no_slides ) {
+        gtk_widget_set_visible(GTK_WIDGET(nw->show), FALSE);
+        nw->show_no_slides = 1;
+    }
+
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
-    sc_slideshow_set_slide(nw->show, slide);
+
     update_toolbar(nw);
+    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+}
+
+
+static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
+                                     gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    start_slideshow(nw, 0);
+    /* FIXME: Look backwards to the last slide, and set it */
+    // sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
 }
 
 
@@ -568,22 +576,9 @@ static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parame
                                          gpointer vp)
 {
     NarrativeWindow *nw = vp;
-
-    nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
-    if ( nw->show == NULL ) return;
-
-    gtk_widget_set_visible(GTK_WIDGET(nw->show), FALSE);
-    nw->show_no_slides = 1;
-
-    g_signal_connect(G_OBJECT(nw->show), "destroy",
-         G_CALLBACK(ss_destroy_sig), nw);
-
-    /* FIXME: Set first slide */
-    //sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
-
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
-    update_toolbar(nw);
+    start_slideshow(nw, 1);
 }
 
 
@@ -591,27 +586,9 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
                                 gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    GtkEventController *evc;
-
-    nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
-    if ( nw->show == NULL ) return;
-
-    nw->show_no_slides = 0;
-
-    evc = gtk_event_controller_key_new();
-    gtk_widget_add_controller(GTK_WIDGET(nw->show), evc);
-    g_signal_connect(G_OBJECT(evc), "key-pressed",
-         G_CALLBACK(nw_key_press_sig), nw);
-
-    g_signal_connect(G_OBJECT(nw->show), "destroy",
-         G_CALLBACK(ss_destroy_sig), nw);
-
-    /* FIXME: Set first slide */
-    //sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
-
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
-    update_toolbar(nw);
+    start_slideshow(nw, 0);
 }
 
 

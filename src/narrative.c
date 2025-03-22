@@ -42,6 +42,8 @@
 
 #include "slide.h"
 #include "narrative.h"
+#include "thumbnailwidget.h"
+
 
 Narrative *narrative_new()
 {
@@ -78,6 +80,10 @@ Narrative *narrative_new()
                                "indent", 20,
                                NULL);
 
+    gtk_text_buffer_create_tag(n->textbuf, "slide",
+                               "background", "#ddddff",
+                               NULL);
+
     gtk_text_buffer_create_tag(n->textbuf, "bold",
                                "weight", PANGO_WEIGHT_BOLD,
                                NULL);
@@ -106,26 +112,97 @@ Slide *narrative_get_slide(Narrative *n, int para)
 }
 
 
-#if 0
-static size_t write_string(GOutputStream *fh, char *str)
+static ssize_t write_string(GOutputStream *fh, char *str)
 {
     gssize r;
     GError *error = NULL;
     r = g_output_stream_write(fh, str, strlen(str), NULL, &error);
     if ( r == -1 ) {
         fprintf(stderr, "Write failed: %s\n", error->message);
-        return 0;
+        return -1;
     }
     return strlen(str);
 }
 
 
-static size_t write_run_border(GOutputStream *fh, enum text_run_type t)
+static void write_series(GOutputStream *fh, char *c, int n)
 {
-    if ( t == TEXT_RUN_BOLD ) return write_string(fh, "**");
-    if ( t == TEXT_RUN_ITALIC ) return write_string(fh, "*");
-    if ( t == TEXT_RUN_UNDERLINE ) return write_string(fh, "_");
-    return 0;
+    int i;
+    for ( i=0; i<n; i++ ) {
+        write_string(fh, c);
+    }
+}
+
+
+static void write_tag_start(GOutputStream *fh,
+                            GtkTextTag *tag,
+                            GtkTextIter *iter,
+                            int *char_count)
+{
+    gchar *name;
+    g_object_get(G_OBJECT(tag), "name", &name, NULL);
+    if ( strcmp(name, "bold") == 0 ) {
+        write_string(fh, "**");
+    }
+    if ( strcmp(name, "italic") == 0 ) {
+        write_string(fh, "*");
+    }
+    if ( strcmp(name, "underline") == 0 ) {
+        write_string(fh, "_");
+    }
+    if ( strcmp(name, "segstart") == 0 ) {
+        write_string(fh, "\n");
+        *char_count = 0;
+    }
+    if ( strcmp(name, "prestitle") == 0 ) {
+        *char_count = 0;
+    }
+    if ( strcmp(name, "bulletpoint") == 0 ) {
+        write_string(fh, "* ");
+    }
+    if ( strcmp(name, "slide") == 0 ) {
+        GtkTextChildAnchor *anc = gtk_text_iter_get_child_anchor(iter);
+        if ( anc != NULL ) {
+            GtkWidget **widgets;
+            Slide *slide;
+            guint len;
+            char tmp[64];
+            widgets = gtk_text_child_anchor_get_widgets(anc, &len);
+            assert(len == 1);
+            slide = gtk_thumbnail_get_slide(GTK_THUMBNAIL(widgets[0]));
+            write_string(fh, "###### Slide ");
+            snprintf(tmp, 64, "%i", slide->ext_slidenumber);
+            write_string(fh, tmp);
+            write_string(fh, "; ");
+            write_string(fh, slide->ext_filename);
+        }
+    }
+    g_free(name);
+}
+
+
+static void write_tag_end(GOutputStream *fh, GtkTextTag *tag, int last_len)
+{
+    gchar *name;
+    g_object_get(G_OBJECT(tag), "name", &name, NULL);
+    if ( strcmp(name, "bold") == 0 ) {
+        write_string(fh, "**");
+    }
+    if ( strcmp(name, "italic") == 0 ) {
+        write_string(fh, "*");
+    }
+    if ( strcmp(name, "underline") == 0 ) {
+        write_string(fh, "_");
+    }
+    if ( strcmp(name, "prestitle") == 0 ) {
+        write_series(fh, "=", last_len);
+        write_string(fh, "\n");
+    }
+    if ( strcmp(name, "segstart") == 0 ) {
+        write_series(fh, "-", last_len);
+        write_string(fh, "\n");
+    }
+    g_free(name);
 }
 
 
@@ -166,100 +243,77 @@ static char *escape_text(const char *in, size_t len)
 }
 
 
-static size_t write_partial_run(GOutputStream *fh,
-                                struct text_run *run,
-                                size_t start,
-                                size_t len)
+static int write_escaped_text(GOutputStream *fh, GtkTextBuffer *textbuf,
+                              GtkTextIter *start, GtkTextIter *end)
 {
-    char *escaped_str;
-    size_t tlen = 0;
-    tlen += write_run_border(fh, run->type);
-    escaped_str = escape_text(run->text+start, len);
-    tlen += write_string(fh, escaped_str);
-    free(escaped_str);
-    tlen += write_run_border(fh, run->type);
-    return tlen;
-}
-
-
-static size_t write_para(GOutputStream *fh, struct text_run *runs, int n_runs)
-{
-    int i;
-    size_t len = 0;
-    for ( i=0; i<n_runs; i++ ) {
-        if ( strlen(runs[i].text) == 0 ) continue;
-        len += write_partial_run(fh, &runs[i], 0, strlen(runs[i].text));
-    }
-    return len;
-}
-
-
-static void write_series(GOutputStream *fh, char *c, int n)
-{
-    int i;
-    for ( i=0; i<n; i++ ) {
-        write_string(fh, c);
-    }
+    char *str = gtk_text_buffer_get_text(textbuf, start, end, TRUE);
+    size_t len = strlen(str);
+    int char_len = g_utf8_strlen(str, len);
+    char *esc = escape_text(str, len);
+    if ( write_string(fh, esc) == -1 ) return 0;
+    free(esc);
+    g_free(str);
+    return char_len;
 }
 
 
 static int write_markdown(GOutputStream *fh, Narrative *n)
 {
-    int i;
-    for ( i=0; i<n->n_items; i++ ) {
+    GtkTextIter start;
+    int finished = 0;
+    int char_count = 0;
 
-        char tmp[64];
-        size_t len;
-        struct narrative_item *item = &n->items[i];
+    gtk_text_buffer_get_start_iter(n->textbuf, &start);
+    do {
 
-        if ( i != 0 )  write_string(fh, "\n");
+        GtkTextIter end_tag, end_para;
+        int have_etag, have_epara;
+        GSList *tag;
+        GSList *t_on = gtk_text_iter_get_toggled_tags(&start, TRUE);
+        GSList *t_off = gtk_text_iter_get_toggled_tags(&start, FALSE);
 
-        switch ( item->type ) {
-
-            case NARRATIVE_ITEM_TEXT:
-            write_para(fh, item->runs, item->n_runs);
-            write_string(fh, "\n");
-            break;
-
-            case NARRATIVE_ITEM_BP:
-            write_string(fh, "* ");
-            write_para(fh, item->runs, item->n_runs);
-            write_string(fh, "\n\n");
-            break;
-
-            case NARRATIVE_ITEM_SEGSTART:
-            write_string(fh, "\n");
-            len = write_para(fh, item->runs, item->n_runs);
-            write_string(fh, "\n");
-            write_series(fh, "-", len);
-            write_string(fh, "\n");
-            break;
-
-            case NARRATIVE_ITEM_PRESTITLE:
-            len = write_para(fh, item->runs, item->n_runs);
-            write_string(fh, "\n");
-            write_series(fh, "=", len);
-            write_string(fh, "\n");
-            break;
-
-            case NARRATIVE_ITEM_SLIDE:
-            write_string(fh, "###### Slide ");
-            snprintf(tmp, 64, "%i", item->slide->ext_slidenumber);
-            write_string(fh, tmp);
-            write_string(fh, "; ");
-            write_string(fh, item->slide->ext_filename);
-            write_string(fh, "\n");
-            break;
-
-            case NARRATIVE_ITEM_SEGEND:
-            case NARRATIVE_ITEM_EOP:
-            break;
+        for ( tag=t_off; tag != NULL; tag=g_slist_next(tag) ) {
+            write_tag_end(fh, tag->data, char_count);
         }
-    }
+
+        for ( tag=t_on; tag != NULL; tag=g_slist_next(tag) ) {
+            write_tag_start(fh, tag->data, &start, &char_count);
+        }
+
+        end_tag = start;
+        end_para = start;
+        have_etag = gtk_text_iter_forward_to_tag_toggle(&end_tag, NULL);
+        have_epara = gtk_text_iter_forward_to_line_end(&end_para);
+
+        if ( !have_etag && !have_epara ) {
+            GtkTextIter end;
+            gtk_text_buffer_get_end_iter(n->textbuf, &end);
+            write_escaped_text(fh, n->textbuf, &start, &end);
+            finished = 1;
+        } else if ( have_etag && have_epara ) {
+            if ( gtk_text_iter_compare(&end_tag, &end_para) >= 0 ) {
+                /* End of paragraph happens first, or they coincide */
+                char_count += write_escaped_text(fh, n->textbuf, &start, &end_para);
+                write_string(fh, "\n");
+                start = end_para;
+            } else {
+                char_count += write_escaped_text(fh, n->textbuf, &start, &end_tag);
+                start = end_tag;
+            }
+        } else if ( have_etag ) {
+            char_count += write_escaped_text(fh, n->textbuf, &start, &end_tag);
+            start = end_tag;
+        } else {
+            assert(have_epara);
+            char_count += write_escaped_text(fh, n->textbuf, &start, &end_para);
+            write_string(fh, "\n");
+            start = end_para;
+        }
+
+    } while ( !finished );
 
     return 0;
 }
-#endif
 
 
 int narrative_save(Narrative *n, GFile *file)
@@ -278,7 +332,7 @@ int narrative_save(Narrative *n, GFile *file)
         fprintf(stderr, _("Open failed: %s\n"), error->message);
         return 1;
     }
-    r = 1;//write_markdown(G_OUTPUT_STREAM(fh), n);  FIXME!
+    r = write_markdown(G_OUTPUT_STREAM(fh), n);
     if ( r ) {
         fprintf(stderr, _("Couldn't save presentation\n"));
     }
@@ -469,9 +523,17 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         get_ext_slide_size(slide, &w, &h);
         slide_set_logical_size(slide, w, h);
 
-        GtkTextIter start;
+        GtkTextIter start, end;
+        GtkTextMark *mark;
+        gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
+        mark = gtk_text_mark_new(NULL, TRUE);
+        gtk_text_buffer_add_mark(ps->n->textbuf, mark, &start);
         gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
         slide->anchor = gtk_text_buffer_create_child_anchor(ps->n->textbuf, &start);
+        gtk_text_buffer_get_end_iter(ps->n->textbuf, &end);
+        gtk_text_buffer_get_iter_at_mark(ps->n->textbuf, &start, mark);
+        gtk_text_buffer_delete_mark(ps->n->textbuf, mark);
+        gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "slide", &start, &end);
 
         free(tx);
 

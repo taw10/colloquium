@@ -162,9 +162,11 @@ SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app)
     if ( g_list_model_get_n_items(monitors) == 1 ) {
         mon_ss = GDK_MONITOR(g_list_model_get_object(monitors, 0));
         printf(_("Single monitor mode\n"));
+        ss->single_monitor = 1;
     } else {
         mon_ss = GDK_MONITOR(g_list_model_get_object(monitors, 1));
         printf(_("Dual monitor mode\n"));
+        ss->single_monitor = 0;
     }
 
     gtk_window_fullscreen_on_monitor(GTK_WINDOW(ss),  mon_ss);

@@ -335,6 +335,13 @@ static void prev_para_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static GtkTextTag *slide_tag(GtkTextBuffer *buf)
+{
+    GtkTextTagTable *table = gtk_text_buffer_get_tag_table(buf);
+    return gtk_text_tag_table_lookup(table, "slide");
+}
+
+
 static void ss_next_para(SCSlideshow *ss, void *vp)
 {
     NarrativeWindow *nw = vp;
@@ -348,24 +355,17 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
             GTK_MOVEMENT_PARAGRAPH_ENDS, -1, FALSE);
 
     /* If we only have one monitor, skip to next slide */
-    /* FIXME: Skip to next slide tag */
-    //int n_paras = narrative_get_num_items(nw->n);
-    //if ( ss != NULL && ss->single_monitor && !nw->show_no_slides ) {
-    //    int i;
-    //    for ( i=get_cursor_para(nv); i<n_paras; i++ )
-    //    {
-    //        Slide *ns;
-    //        set_cursor_para(nv, i);
-    //        ns = narrative_get_slide(nw->n, i);
-    //        if ( ns != NULL ) break;
-    //    }
-    //}
+    if ( ss != NULL && ss->single_monitor && !nw->show_no_slides ) {
+        cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
+        gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+        gtk_text_iter_forward_to_tag_toggle(&iter, slide_tag(nw->n->textbuf));
+        gtk_text_buffer_place_cursor(nw->n->textbuf, &iter);
+    }
 
     set_clock_pos(nw);
 
     cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
     gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-
     gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(nw->nv), &iter, 0, TRUE, 0, 0.5);
 
     /* Is the cursor on a slide? */

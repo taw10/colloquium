@@ -1,6 +1,6 @@
 # Meson file for Colloquium
 project('colloquium', 'c',
-        version : '0.5.0',
+        version : '0.9.0',
         license : 'GPL3+',
         default_options : ['buildtype=debugoptimized'])
 

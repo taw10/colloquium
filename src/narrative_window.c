@@ -563,9 +563,31 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
                                      gpointer vp)
 {
     NarrativeWindow *nw = vp;
+    GtkTextMark *cursor;
+    GtkTextIter iter;
+
     start_slideshow(nw, 0);
-    /* FIXME: Look backwards to the last slide, and set it */
-    // sc_slideshow_set_slide(nw->show, narrative_get_slide_by_number(nw->n, 0));
+
+    /* Look backwards to the last slide, and set it */
+    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+    if ( gtk_text_iter_backward_to_tag_toggle(&iter, slide_tag(nw->n->textbuf)) ) {
+
+        guint n;
+        GtkWidget **th;
+        GtkTextChildAnchor *anc;
+
+        gtk_text_iter_backward_cursor_position(&iter);
+        anc = gtk_text_iter_get_child_anchor(&iter);
+        if ( anc == NULL ) {
+            fprintf(stderr, "No anchor found despite slide tag!\n");
+            return;
+        }
+        th = gtk_text_child_anchor_get_widgets(anc, &n);
+        assert(n == 1);
+        sc_slideshow_set_slide(nw->show, gtk_thumbnail_get_slide(GTK_THUMBNAIL(th[0])));
+        g_free(th);
+    }
 }
 
 

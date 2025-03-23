@@ -57,6 +57,11 @@ Narrative *narrative_new()
     n->slides = malloc(64*sizeof(Slide *));
     n->max_slides = 64;
 
+    n->n_time_marks = 1;
+    n->time_marks = malloc(60*sizeof(struct time_mark));
+    n->time_marks[0].minutes = 1.0;
+    n->time_marks[0].y = 300.0;
+
     gtk_text_buffer_create_tag(n->textbuf, "overall",
                                "wrap-mode", GTK_WRAP_WORD_CHAR,
                                "font", "Sans 16",
@@ -376,6 +381,50 @@ void narrative_get_first_slide_size(Narrative *n, double *w, double *h)
     } else {
         slide_get_logical_size(n->slides[0], w, h);
     }
+}
+
+
+static int wordcount(char *text)
+{
+       int j;
+       int words = 0;
+       size_t len = strlen(text);
+       for ( j=0; j<len; j++ ) {
+           if ( text[j] == ' ' ) words++;
+       }
+       return words;
+}
+
+
+void narrative_update_timing(GtkTextView *nv, Narrative *n)
+{
+    GtkTextIter start;
+    int i = 0;
+    double total_minutes = 0.0;
+    double last_mark = 0.0;
+
+    n->n_time_marks = 0;
+    gtk_text_buffer_get_start_iter(n->textbuf, &start);
+    do {
+        int y, h;
+        char *txt;
+        GtkTextIter end = start;
+        gtk_text_iter_forward_line(&end);
+        gtk_text_view_get_line_yrange(nv, &start, &y, &h);
+        txt = gtk_text_iter_get_slice(&start, &end);
+        total_minutes += wordcount(txt)/120.0;
+        g_free(txt);
+
+        if ( total_minutes - last_mark >= 1.0 ) {
+            n->time_marks[i].y = y;
+            n->time_marks[i].minutes = total_minutes;
+            i++;
+            if ( i == 60 ) break; /* Lazy memory "management" */
+            last_mark = total_minutes;
+        }
+        start = end;
+    } while ( !gtk_text_iter_is_end(&start) );
+    n->n_time_marks = i;
 }
 
 

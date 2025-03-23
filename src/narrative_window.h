@@ -69,6 +69,7 @@ struct _narrativewindow
     PRClock             *pr_clock;
     SlideWindow         *slidewindows[16];
     int                  n_slidewindows;
+    GtkWidget           *timing_ruler;
 };
 
 

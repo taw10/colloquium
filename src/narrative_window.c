@@ -452,6 +452,8 @@ static void changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
     nw->n->saved = 0;
     update_titlebar(nw);
+    narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n);
+    gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
 }
 
 
@@ -611,6 +613,53 @@ static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void draw_timing_ruler(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    int i;
+    double scroll_pos;
+    PangoLayout *layout;
+    PangoFontDescription *fontdesc;
+
+    /* Background */
+    cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 1.0);
+    cairo_rectangle(cr, 0.0, 0.0, w, h);
+    cairo_fill(cr);
+
+    scroll_pos = gtk_adjustment_get_value(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(nw->nv)));
+
+    layout = pango_layout_new(gtk_widget_get_pango_context(GTK_WIDGET(nw->nv)));
+    fontdesc = pango_font_description_from_string("Sans 12");
+    pango_layout_set_font_description(layout, fontdesc);
+
+    for ( i=0; i<nw->n->n_time_marks; i++ ) {
+
+        char tmp[64];
+        double y;
+
+        y = nw->n->time_marks[i].y-scroll_pos;
+
+        cairo_move_to(cr, 0.0, y);
+        cairo_line_to(cr, 20.0, y);
+        cairo_set_line_width(cr, 1.0);
+        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        cairo_stroke(cr);
+
+        snprintf(tmp, 63, _("%.0f min"), nw->n->time_marks[i].minutes);
+        cairo_move_to(cr, 5.0, y+2.0);
+        pango_layout_set_text(layout, tmp, -1);
+        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        pango_cairo_update_layout(cr, layout);
+        pango_cairo_show_layout(cr, layout);
+        cairo_fill(cr);
+
+    }
+
+    g_object_unref(layout);
+    pango_font_description_free(fontdesc);
+}
+
+
 GActionEntry nw_entries[] = {
 
     { "about", nw_about_sig, NULL, NULL, NULL },
@@ -661,6 +710,12 @@ static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
 }
 
 
+static void scroll_update(GtkAdjustment *adj, GtkDrawingArea *da)
+{
+    gtk_widget_queue_draw(GTK_WIDGET(da));
+}
+
+
 NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *app)
 {
     NarrativeWindow *nw;
@@ -692,6 +747,11 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_set_vexpand(GTK_WIDGET(nw->nv), TRUE);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(nw->nv), n->textbuf);
     add_thumbnails(GTK_TEXT_VIEW(nw->nv), nw);
+
+    nw->timing_ruler = gtk_drawing_area_new();
+    gtk_text_view_set_gutter(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_LEFT, nw->timing_ruler);
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(nw->timing_ruler), 100);
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(nw->timing_ruler), draw_timing_ruler, nw, NULL);
 
     toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");
@@ -766,12 +826,12 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
                                    GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), GTK_WIDGET(nw->nv));
 
-    g_signal_connect(G_OBJECT(n->textbuf), "changed",
-                     G_CALLBACK(changed_sig), nw);
-    g_signal_connect(G_OBJECT(evc), "key-pressed",
-             G_CALLBACK(nw_key_press_sig), nw);
-    g_signal_connect(G_OBJECT(nw), "destroy",
-             G_CALLBACK(nw_destroy_sig), nw);
+    GtkAdjustment *adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(nw->nv));
+    g_signal_connect(G_OBJECT(adj), "value-changed", G_CALLBACK(scroll_update), nw->timing_ruler);
+
+    g_signal_connect_after(G_OBJECT(n->textbuf), "changed", G_CALLBACK(changed_sig), nw);
+    g_signal_connect(G_OBJECT(evc), "key-pressed", G_CALLBACK(nw_key_press_sig), nw);
+    g_signal_connect(G_OBJECT(nw), "destroy", G_CALLBACK(nw_destroy_sig), nw);
 
     gtk_window_set_default_size(GTK_WINDOW(nw), 768, 768);
     gtk_box_append(GTK_BOX(vbox), scroll);

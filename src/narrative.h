@@ -33,6 +33,13 @@ typedef struct _narrative Narrative;
 
 #include "slide.h"
 
+struct time_mark
+{
+    double minutes;
+    double y;
+};
+
+
 struct _narrative
 {
     int saved;
@@ -43,6 +50,9 @@ struct _narrative
     int n_slides;
     int max_slides;
     Slide **slides;
+
+    struct time_mark *time_marks;
+    int n_time_marks;
 };
 
 
@@ -63,6 +73,7 @@ extern void narrative_free(Narrative *n);
 extern Narrative *narrative_load(GFile *file);
 extern int narrative_save(Narrative *n, GFile *file);
 
+extern void narrative_update_timing(GtkTextView *nv, Narrative *n);
 extern Slide *narrative_get_slide(Narrative *n, int para);
 extern void narrative_get_first_slide_size(Narrative *n, double *w, double *h);
 

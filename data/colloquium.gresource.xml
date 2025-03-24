@@ -3,11 +3,7 @@
   <gresource prefix="/uk/me/bitwiz/Colloquium">
     <file>sky.png</file>
     <file>menus.ui</file>
-    <file>stylesheeteditor.ui</file>
-    <file>demo.sc</file>
-    <file>default.ss</file>
     <file>canvas.png</file>
-    <file>alpha_warning.svg</file>
     <file>colloquium.svg</file>
   </gresource>
 </gresources>

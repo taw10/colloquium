@@ -73,12 +73,6 @@ static int get_cursor_para(GtkTextView *nv)
 }
 
 
-static int num_items(Narrative *n)
-{
-    return gtk_text_buffer_get_line_count(n->textbuf);
-}
-
-
 static int num_items_to_eop(Narrative *n)
 {
     /* FIXME: Decide on end of presentation mark */
@@ -146,32 +140,6 @@ void slide_window_closed_sig(GtkWidget *sw, NarrativeWindow *nw)
 
     if ( !found ) {
         fprintf(stderr, "Couldn't find slide window in narrative record\n");
-    }
-}
-
-
-static void update_toolbar(NarrativeWindow *nw)
-{
-    int cur_para, n_para;
-
-    if ( nw->show == NULL ) return;
-
-    cur_para = get_cursor_para(GTK_TEXT_VIEW(nw->nv));
-    if ( cur_para == 0 ) {
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
-    } else {
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), TRUE);
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), TRUE);
-    }
-
-    n_para = num_items(nw->n);
-    if ( cur_para == n_para - 1 ) {
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
-    } else {
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), TRUE);
-        gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), TRUE);
     }
 }
 
@@ -313,7 +281,6 @@ static void first_para_sig(GSimpleAction *action, GVariant *parameter,
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, 0, FALSE);
     set_clock_pos(nw);
-    update_toolbar(nw);
 }
 
 
@@ -323,7 +290,6 @@ static void ss_prev_para(SCSlideshow *ss, void *vp)
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_PARAGRAPHS, -1, FALSE);
     set_clock_pos(nw);
-    update_toolbar(nw);
 }
 
 
@@ -377,7 +343,6 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
         sc_slideshow_set_slide(nw->show, gtk_thumbnail_get_slide(GTK_THUMBNAIL(th[0])));
         g_free(th);
     }
-    update_toolbar(nw);
 }
 
 
@@ -396,7 +361,6 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, 1, FALSE);
     set_clock_pos(nw);
-    update_toolbar(nw);
 }
 
 
@@ -527,11 +491,6 @@ static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
     nw->show = NULL;
 
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
-
     return FALSE;
 }
 
@@ -556,7 +515,6 @@ static void start_slideshow(NarrativeWindow *nw, int no_slides)
     g_signal_connect(G_OBJECT(nw->show), "destroy",
          G_CALLBACK(ss_destroy_sig), nw);
 
-    update_toolbar(nw);
     gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
 }
 
@@ -775,29 +733,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
 
-    nw->bfirst = gtk_button_new_from_icon_name("go-top");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->bfirst));
-    gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bfirst),
-                                   "win.first");
-
-    nw->bprev = gtk_button_new_from_icon_name("go-up");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->bprev));
-    gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bprev),
-                                   "win.prev");
-
-    nw->bnext = gtk_button_new_from_icon_name("go-down");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->bnext));
-    gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->bnext),
-                                   "win.next");
-
-    nw->blast = gtk_button_new_from_icon_name("go-bottom");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(nw->blast));
-    gtk_actionable_set_action_name(GTK_ACTIONABLE(nw->blast),
-                                   "win.last");
-
-    button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
-
     button = gtk_button_new_from_icon_name("format-text-bold");
     gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
@@ -812,11 +747,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.underline");
-
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->bfirst), FALSE);
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->bprev), FALSE);
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->bnext), FALSE);
-    gtk_widget_set_sensitive(GTK_WIDGET(nw->blast), FALSE);
 
     evc = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(nw->nv), evc);

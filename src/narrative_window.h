@@ -56,10 +56,6 @@ struct _narrativewindow
     GtkApplicationWindow parent_instance;
 
     /*< private >*/
-    GtkWidget           *bfirst;
-    GtkWidget           *bprev;
-    GtkWidget           *bnext;
-    GtkWidget           *blast;
     GtkWidget           *nv;
     GApplication        *app;
     Narrative           *n;

@@ -715,6 +715,9 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");
     gtk_box_prepend(GTK_BOX(vbox), GTK_WIDGET(toolbar));
 
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "win.save",
+            (const char *[])  {"<Control>s", NULL});
+
     /* Fullscreen */
     button = gtk_button_new_from_icon_name("view-fullscreen");
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),

@@ -322,6 +322,13 @@ static void colloquium_startup(GApplication *papp)
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries,
                                      G_N_ELEMENTS(app_entries), app);
 
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.new",
+            (const char *[]){"<Control>n", NULL});
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.open",
+            (const char *[]){"<Control>o", NULL});
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.quit",
+            (const char *[]){"<Control>q", NULL});
+
     configdir = g_get_user_config_dir();
     app->mydir = malloc(strlen(configdir)+14);
     strcpy(app->mydir, configdir);

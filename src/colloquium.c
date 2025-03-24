@@ -322,10 +322,6 @@ static void colloquium_startup(GApplication *papp)
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries,
                                      G_N_ELEMENTS(app_entries), app);
 
-    app->builder = gtk_builder_new_from_resource("/uk/me/bitwiz/Colloquium/menus.ui");
-    gtk_application_set_menubar(GTK_APPLICATION(app),
-        G_MENU_MODEL(gtk_builder_get_object(app->builder, "menubar")));
-
     configdir = g_get_user_config_dir();
     app->mydir = malloc(strlen(configdir)+14);
     strcpy(app->mydir, configdir);
@@ -393,7 +389,7 @@ static Colloquium *colloquium_new()
 
     g_set_application_name("Colloquium");
     app = g_object_new(colloquium_get_type(),
-                       "application-id", "uk.org.bitwiz.Colloquium",
+                       "application-id", "uk.me.bitwiz.colloquium",
                        "flags", G_APPLICATION_HANDLES_OPEN,
                        "register-session", TRUE,
                        NULL);

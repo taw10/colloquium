@@ -128,10 +128,17 @@ void open_about_dialog(GtkWidget *parent)
 }
 
 
+static void closeit(gpointer d, gpointer vp)
+{
+    gtk_window_close(GTK_WINDOW(d));
+}
+
+
 static void quit_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     GApplication *app = vp;
-    g_application_quit(app);
+    GList *windows = gtk_application_get_windows(GTK_APPLICATION(app));
+    g_list_foreach(windows, closeit, app);
 }
 
 

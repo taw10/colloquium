@@ -108,7 +108,7 @@ void open_about_dialog(GtkWidget *parent)
     gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(window),
         PACKAGE_VERSION);
     gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
-        "© 2017-2019 Thomas White <taw@bitwiz.me.uk>");
+        "© 2011-2025 Thomas White <taw@bitwiz.me.uk>");
     gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(window),
         /* Description of the program */
         _("Narrative-based presentation system"));

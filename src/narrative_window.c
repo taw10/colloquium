@@ -433,6 +433,40 @@ static void scroll_down(NarrativeWindow *nw)
 }
 
 
+static void confirm_chosen(GObject *source, GAsyncResult *res, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    GError *error = NULL;
+    int i;
+    i = gtk_alert_dialog_choose_finish(GTK_ALERT_DIALOG(source), res, &error);
+    if ( i == 0 ) {
+        nw->n->saved = 1;  /* Not really, but user doesn't want to save */
+        gtk_window_close(GTK_WINDOW(nw));
+    } else if ( i == 1 ) {
+        if ( narrative_save(nw->n, nw->file) ) {
+            show_error(nw, _("Failed to save presentation"));
+        } else {
+            gtk_window_close(GTK_WINDOW(nw));
+        }
+    } /* else i == 2, do nothing */
+}
+
+
+static gboolean nw_close_request_sig(GtkWidget *self, NarrativeWindow *nw)
+{
+    if ( !nw->n->saved ) {
+        GtkAlertDialog *c;
+        const char *const buttons[] = {_("Discard"), ("Save"), _("Cancel"), NULL};
+        c = gtk_alert_dialog_new(_("Document not saved, really exit?"));
+        gtk_alert_dialog_set_buttons(c, buttons);
+        gtk_alert_dialog_set_default_button(c, 2);
+        gtk_alert_dialog_choose(c, GTK_WINDOW(self), NULL, confirm_chosen, nw);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+
 static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
     int i;
@@ -765,6 +799,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     g_signal_connect_after(G_OBJECT(n->textbuf), "changed", G_CALLBACK(changed_sig), nw);
     g_signal_connect(G_OBJECT(evc), "key-pressed", G_CALLBACK(nw_key_press_sig), nw);
     g_signal_connect(G_OBJECT(nw), "destroy", G_CALLBACK(nw_destroy_sig), nw);
+    g_signal_connect(G_OBJECT(nw), "close-request", G_CALLBACK(nw_close_request_sig), nw);
 
     gtk_window_set_default_size(GTK_WINDOW(nw), 768, 768);
     gtk_box_append(GTK_BOX(vbox), scroll);

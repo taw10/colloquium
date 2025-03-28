@@ -29,6 +29,9 @@
 
 #include <gtk/gtk.h>
 
+typedef struct _scslideshow SCSlideshow;
+typedef struct _scslideshowclass SCSlideshowClass;
+
 #define SC_TYPE_SLIDESHOW            (sc_slideshow_get_type())
 
 #define SC_SLIDESHOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), \
@@ -45,6 +48,9 @@
 
 #define SC_SLIDESHOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), \
                                       SC_TYPE_SLIDESHOW, SCSlideShowClass))
+
+#include "narrative.h"
+#include "slide.h"
 
 struct _scslideshow
 {
@@ -68,9 +74,6 @@ struct _scslideshowclass
 {
     GtkWindowClass parent_class;
 };
-
-typedef struct _scslideshow SCSlideshow;
-typedef struct _scslideshowclass SCSlideshowClass;
 
 extern SCSlideshow *sc_slideshow_new(Narrative *n, GtkApplication *app);
 extern void sc_slideshow_set_slide(SCSlideshow *ss, Slide *ns);

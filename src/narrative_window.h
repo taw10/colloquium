@@ -50,6 +50,7 @@ typedef struct _narrativewindowclass NarrativeWindowClass;
 #include "pr_clock.h"
 #include "slideshow.h"
 #include "slide_window.h"
+#include "narrative.h"
 
 struct _narrativewindow
 {

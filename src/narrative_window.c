@@ -48,17 +48,6 @@
 
 G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_WINDOW, NULL)
 
-typedef struct _nv GtkNarrativeView;
-#define GTK_NARRATIVE_VIEW(a) ((GtkNarrativeView *)a)
-void gtk_narrative_view_add_slide_at_cursor(GtkNarrativeView *e) {}
-void gtk_narrative_view_add_bp_at_cursor(GtkNarrativeView *e) {}
-void gtk_narrative_view_add_segend_at_cursor(GtkNarrativeView *e) {}
-void gtk_narrative_view_add_eop_at_cursor(GtkNarrativeView *e) {}
-void gtk_narrative_view_add_segstart_at_cursor(GtkNarrativeView *e) {}
-void gtk_narrative_view_add_prestitle_at_cursor(GtkNarrativeView *e) {}
-void gtk_narrative_view_redraw(GtkNarrativeView *e) {}
-
-
 static int get_cursor_para(GtkTextView *nv)
 {
     GtkTextBuffer *buf;
@@ -210,58 +199,38 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    gtk_narrative_view_add_slide_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    nw->n->saved = 0;
-    update_titlebar(nw);
 }
 
 static void add_prestitle_sig(GSimpleAction *action, GVariant *parameter,
                               gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    gtk_narrative_view_add_prestitle_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    nw->n->saved = 0;
-    update_titlebar(nw);
+    //NarrativeWindow *nw = vp;
+    //nw->n->saved = 0;
+    //update_titlebar(nw);
 }
 
 
 static void add_bp_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    gtk_narrative_view_add_bp_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    nw->n->saved = 0;
-    update_titlebar(nw);
 }
 
 
 static void add_segstart_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    gtk_narrative_view_add_segstart_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    nw->n->saved = 0;
-    update_titlebar(nw);
 }
 
 
 static void add_segend_sig(GSimpleAction *action, GVariant *parameter,
                            gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    gtk_narrative_view_add_segend_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    nw->n->saved = 0;
-    update_titlebar(nw);
 }
 
 
 static void add_eop_sig(GSimpleAction *action, GVariant *parameter,
                         gpointer vp)
 {
-    NarrativeWindow *nw = vp;
-    gtk_narrative_view_add_eop_at_cursor(GTK_NARRATIVE_VIEW(nw->nv));
-    nw->n->saved = 0;
-    update_titlebar(nw);
 }
 
 
@@ -408,7 +377,6 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     NarrativeWindow *nw = vp;
     run_printing(nw->n, GTK_WIDGET(nw));
-    gtk_narrative_view_redraw(GTK_NARRATIVE_VIEW(nw->nv));
 }
 
 

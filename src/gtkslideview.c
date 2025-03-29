@@ -146,7 +146,7 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
     sv->view_scale = 1.0;
 
     err = NULL;
-    sv->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/Colloquium/sky.png",
+    sv->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/colloquium/sky.png",
                                                        &err);
     if ( sv->bg_pixbuf == NULL ) {
         fprintf(stderr, _("Failed to load background: %s\n"), err->message);

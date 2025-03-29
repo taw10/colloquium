@@ -199,6 +199,10 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
     NarrativeWindow *nw = vp;
+    if ( nw->slide_sorter == NULL ) {
+        nw->slide_sorter = slide_sorter_new(nw);
+    }
+    gtk_window_present(GTK_WINDOW(nw->slide_sorter));
 }
 
 static void add_prestitle_sig(GSimpleAction *action, GVariant *parameter,
@@ -691,6 +695,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->n = n;
     nw->n_slidewindows = 0;
     nw->file = file;
+    nw->slide_sorter = NULL;
     if ( file != NULL ) g_object_ref(file);
 
     gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(nw), TRUE);

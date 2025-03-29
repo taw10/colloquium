@@ -313,7 +313,7 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
         guint n;
         GtkWidget **th = gtk_text_child_anchor_get_widgets(anc, &n);
         assert(n == 1);
-        sc_slideshow_set_slide(nw->show, gtk_thumbnail_get_slide(GTK_THUMBNAIL(th[0])));
+        sc_slideshow_set_slide(nw->show, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
         g_free(th);
     }
 }
@@ -551,7 +551,7 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
         }
         th = gtk_text_child_anchor_get_widgets(anc, &n);
         assert(n == 1);
-        sc_slideshow_set_slide(nw->show, gtk_thumbnail_get_slide(GTK_THUMBNAIL(th[0])));
+        sc_slideshow_set_slide(nw->show, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
         g_free(th);
     }
 }
@@ -666,7 +666,7 @@ static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
     int i;
 
     for ( i=0; i<nw->n->n_slides; i++ ) {
-        GtkWidget *th = gtk_thumbnail_new(nw->n->slides[i], nw);
+        GtkWidget *th = thumbnail_new(nw->n->slides[i], nw);
         gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
                                           GTK_WIDGET(th),
                                           nw->n->slides[i]->anchor);

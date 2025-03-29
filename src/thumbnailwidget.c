@@ -39,22 +39,22 @@
 #include "slide_window.h"
 
 
-G_DEFINE_TYPE_WITH_CODE(GtkThumbnail, gtk_thumbnail, GTK_TYPE_DRAWING_AREA, NULL)
+G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_DRAWING_AREA)
 
 
-static void gtk_thumbnail_class_init(GtkThumbnailClass *klass)
+static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
 {
 }
 
 
-static void gtk_thumbnail_init(GtkThumbnail *e)
+static void colloquium_thumbnail_init(Thumbnail *e)
 {
 }
 
 
 static void click_sig(GtkGestureClick *self, int n_press, gdouble x, gdouble y, gpointer vp)
 {
-    GtkThumbnail *th = vp;
+    Thumbnail *th = vp;
 
     if ( n_press != 2 ) return;
 
@@ -78,7 +78,7 @@ static void thumbnail_draw_sig(GtkDrawingArea *da, cairo_t *cr,
                                int w, int h, gpointer vp)
 {
     double logical_w, logical_h;
-    GtkThumbnail *th = GTK_THUMBNAIL(da);
+    Thumbnail *th = COLLOQUIUM_THUMBNAIL(da);
     slide_get_logical_size(th->slide, &logical_w, &logical_h);
     cairo_scale(cr, (double)w/logical_w, (double)h/logical_h);
     slide_render_cairo(th->slide, cr);
@@ -90,13 +90,13 @@ static void thumbnail_draw_sig(GtkDrawingArea *da, cairo_t *cr,
 }
 
 
-GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw)
+GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 {
-    GtkThumbnail *th;
+    Thumbnail *th;
     double w, h;
     GtkGesture *evc;
 
-    th = g_object_new(GTK_TYPE_THUMBNAIL, NULL);
+    th = g_object_new(COLLOQUIUM_TYPE_THUMBNAIL, NULL);
     th->nw = nw;
     th->slide = slide;
 
@@ -110,14 +110,13 @@ GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
     evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
-    g_signal_connect(G_OBJECT(evc), "pressed",
-             G_CALLBACK(click_sig), th);
+    g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(click_sig), th);
 
     return GTK_WIDGET(th);
 }
 
 
-Slide *gtk_thumbnail_get_slide(GtkThumbnail *th)
+Slide *thumbnail_get_slide(Thumbnail *th)
 {
     return th->slide;
 }

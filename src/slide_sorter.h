@@ -33,7 +33,7 @@ typedef struct _slidesorterclass SlideSorterClass;
 #include "narrative_window.h"
 
 #define COLLOQUIUM_SLIDE_SORTER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
-                                      GTK_TYPE_SLIDE_SORTER, SlideSorter))
+                                      COLLOQUIUM_TYPE_SLIDE_SORTER, SlideSorter))
 
 #define COLLOQUIUM_TYPE_SLIDE_SORTER (colloquium_slide_sorter_get_type())
 

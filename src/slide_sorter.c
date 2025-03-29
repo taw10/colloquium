@@ -78,7 +78,7 @@ static GSList *files_in_narrative(Narrative *n)
             guint nc;
             GtkWidget **th = gtk_text_child_anchor_get_widgets(anc, &nc);
             assert(nc == 1);
-            slide = gtk_thumbnail_get_slide(GTK_THUMBNAIL(th[0]));
+            slide = thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0]));
             if ( g_slist_find_custom(list, slide->ext_filename, (GCompareFunc)g_strcmp0) == NULL ) {
                 list = g_slist_prepend(list, slide->ext_filename);
             }
@@ -113,7 +113,7 @@ static void addfile(gpointer sv, gpointer vp)
         slide_set_ext_filename(s, filename);
         slide_set_ext_number(s, i+1);
         slide_set_logical_size(s, 128, 128);
-        th = gtk_thumbnail_new(s, NULL);
+        th = thumbnail_new(s, NULL);
         gtk_flow_box_append(GTK_FLOW_BOX(flowbox), GTK_WIDGET(th));
 
     }

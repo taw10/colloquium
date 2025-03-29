@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef GTK_THUMBNAIL_H
-#define GTK_THUMBNAIL_H
+#ifndef COLLOQUIUM_THUMBNAIL_H
+#define COLLOQUIUM_THUMBNAIL_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -30,29 +30,18 @@
 #include <gtk/gtk.h>
 #include <glib-object.h>
 
+typedef struct _colloquiumthumbnail Thumbnail;
+typedef struct _colloquiumthumbnailclass ThumbnailClass;
+
 #include "slide_render_cairo.h"
 #include "narrative_window.h"
 
+#define COLLOQUIUM_TYPE_THUMBNAIL (colloquium_thumbnail_get_type())
 
-#define GTK_TYPE_THUMBNAIL (gtk_thumbnail_get_type())
+#define COLLOQUIUM_THUMBNAIL(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                   COLLOQUIUM_TYPE_THUMBNAIL, Thumbnail))
 
-#define GTK_THUMBNAIL(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
-                                 GTK_TYPE_THUMBNAIL, GtkThumbnail))
-
-#define GTK_IS_THUMBNAIL(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
-                                    GTK_TYPE_THUMBNAIL))
-
-#define GTK_THUMBNAIL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((obj), \
-                                         GTK_TYPE_THUMBNAIL, GtkThumbnailClass))
-
-#define GTK_IS_THUMBNAIL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
-                                            GTK_TYPE_THUMBNAIL))
-
-#define GTK_THUMBNAIL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
-                                           GTK_TYPE_THUMBNAIL, GtkThumbnailClass))
-
-
-struct _gtkthumbnail
+struct _colloquiumthumbnail
 {
     GtkDrawingArea       parent_instance;
 
@@ -62,16 +51,12 @@ struct _gtkthumbnail
     GdkCursor           *cursor;
 };
 
-struct _gtkthumbnailclass
+struct _colloquiumthumbnailclass
 {
     GtkDrawingAreaClass parent_class;
 };
 
-typedef struct _gtkthumbnail GtkThumbnail;
-typedef struct _gtkthumbnailclass GtkThumbnailClass;
+extern GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw);
+extern Slide *thumbnail_get_slide(Thumbnail *th);
 
-extern GType gtk_thumbnail_get_type(void);
-extern GtkWidget *gtk_thumbnail_new(Slide *slide, NarrativeWindow *nw);
-extern Slide *gtk_thumbnail_get_slide(GtkThumbnail *th);
-
-#endif  /* GTK_THUMBNAIL_H */
+#endif  /* COLLOQUIUM_THUMBNAIL_H */

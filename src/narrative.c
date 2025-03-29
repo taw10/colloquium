@@ -174,7 +174,7 @@ static void write_tag_start(GOutputStream *fh,
             char tmp[64];
             widgets = gtk_text_child_anchor_get_widgets(anc, &len);
             assert(len == 1);
-            slide = gtk_thumbnail_get_slide(GTK_THUMBNAIL(widgets[0]));
+            slide = thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(widgets[0]));
             write_string(fh, "###### Slide ");
             snprintf(tmp, 64, "%i", slide->ext_slidenumber);
             write_string(fh, tmp);

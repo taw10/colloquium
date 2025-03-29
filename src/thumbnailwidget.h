@@ -43,7 +43,7 @@ typedef struct _colloquiumthumbnailclass ThumbnailClass;
 
 struct _colloquiumthumbnail
 {
-    GtkDrawingArea       parent_instance;
+    GtkWidget            parent_instance;
 
     /*< private >*/
     Slide               *slide;
@@ -53,7 +53,7 @@ struct _colloquiumthumbnail
 
 struct _colloquiumthumbnailclass
 {
-    GtkDrawingAreaClass parent_class;
+    GtkWidgetClass parent_class;
 };
 
 extern GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw);

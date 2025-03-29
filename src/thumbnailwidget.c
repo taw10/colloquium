@@ -39,11 +39,15 @@
 #include "slide_window.h"
 
 
-G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_DRAWING_AREA)
+G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_WIDGET)
 
+
+static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
 
 static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
 {
+    GtkWidgetClass *wklass = GTK_WIDGET_CLASS(klass);
+    wklass->snapshot = thumbnail_snapshot;
 }
 
 
@@ -74,11 +78,18 @@ static void click_sig(GtkGestureClick *self, int n_press, gdouble x, gdouble y, 
 }
 
 
-static void thumbnail_draw_sig(GtkDrawingArea *da, cairo_t *cr,
-                               int w, int h, gpointer vp)
+static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
 {
     double logical_w, logical_h;
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(da);
+    cairo_t *cr;
+    int w, h;
+
+    w = gtk_widget_get_width(da);
+    h = gtk_widget_get_height(da);
+
+    cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(0,0,w,h));
+
     slide_get_logical_size(th->slide, &logical_w, &logical_h);
     cairo_scale(cr, (double)w/logical_w, (double)h/logical_h);
     slide_render_cairo(th->slide, cr);
@@ -87,6 +98,7 @@ static void thumbnail_draw_sig(GtkDrawingArea *da, cairo_t *cr,
     cairo_set_line_width(cr, 2);
     cairo_set_source_rgb(cr, 0, 0, 0);
     cairo_stroke(cr);
+    cairo_destroy(cr);
 }
 
 
@@ -102,8 +114,6 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
     slide_get_logical_size(th->slide, &w, &h);
     gtk_widget_set_size_request(GTK_WIDGET(th), 320*w/h, 320);
-    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(th),
-                                   thumbnail_draw_sig, th, NULL);
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
     gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);

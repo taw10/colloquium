@@ -337,27 +337,36 @@ static void last_para_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+/* FIXME: Actually toggle, and don't add tags across newlines */
+static void toggle_tag(NarrativeWindow *nw, const char *name)
+{
+    GtkTextIter start, end;
+    gtk_text_buffer_get_selection_bounds(nw->n->textbuf, &start, &end);
+    gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, name, &start, &end);
+}
+
+
 static void bold_sig(GSimpleAction *action, GVariant *parameter,
                      gpointer vp)
 {
-    //NarrativeWindow *nw = vp;
-    //set_text_type(nw, TEXT_RUN_BOLD);
+    NarrativeWindow *nw = vp;
+    toggle_tag(nw, "bold");
 }
 
 
 static void italic_sig(GSimpleAction *action, GVariant *parameter,
                        gpointer vp)
 {
-    //NarrativeWindow *nw = vp;
-    //set_text_type(nw, TEXT_RUN_ITALIC);
+    NarrativeWindow *nw = vp;
+    toggle_tag(nw, "italic");
 }
 
 
 static void underline_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
-    //NarrativeWindow *nw = vp;
-    //set_text_type(nw, TEXT_RUN_UNDERLINE);
+    NarrativeWindow *nw = vp;
+    toggle_tag(nw, "underline");
 }
 
 

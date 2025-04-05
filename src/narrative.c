@@ -348,30 +348,6 @@ int narrative_save(Narrative *n, GFile *file)
 }
 
 
-/* Find the position (in units of narrative items) of time 'minutes' */
-double narrative_find_time_pos(Narrative *n, double minutes)
-{
-    return 0;
-/* FIXME: Word count */
-#if 0
-    int i;
-    double t = 0.0;
-
-    if ( minutes == 0.0 ) return 0.0;
-
-    for ( i=0; i<n->n_items; i++ ) {
-        double idur = n->items[i].estd_duration;
-        if ( t + idur > minutes ) {
-            /* It's in this item */
-            return (double)i + (minutes - t)/idur;
-        }
-        t += n->items[i].estd_duration;
-    }
-    return n->n_items;
-#endif
-}
-
-
 /* FIXME: Eventually, there should be no need for constant slide size */
 void narrative_get_first_slide_size(Narrative *n, double *w, double *h)
 {

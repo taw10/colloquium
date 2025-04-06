@@ -82,23 +82,39 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
 {
     double logical_w, logical_h;
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(da);
-    cairo_t *cr;
     int w, h;
+    graphene_rect_t rect;
 
     w = gtk_widget_get_width(da);
     h = gtk_widget_get_height(da);
+    rect = GRAPHENE_RECT_INIT(0,0,w,h);
 
-    cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(0,0,w,h));
+    if ( th->pic == NULL ) {
 
-    slide_get_logical_size(th->slide, &logical_w, &logical_h);
-    cairo_scale(cr, (double)w/logical_w, (double)h/logical_h);
-    slide_render_cairo(th->slide, cr);
+        cairo_t *sncr;
+        GtkSnapshot *sn;
 
-    cairo_rectangle(cr, 0, 0, logical_w, logical_h);
-    cairo_set_line_width(cr, 2);
-    cairo_set_source_rgb(cr, 0, 0, 0);
-    cairo_stroke(cr);
-    cairo_destroy(cr);
+        sn = gtk_snapshot_new();
+        sncr = gtk_snapshot_append_cairo(sn, &rect);
+        slide_get_logical_size(th->slide, &logical_w, &logical_h);
+        cairo_scale(sncr, (double)w/logical_w, (double)h/logical_h);
+        slide_render_cairo(th->slide, sncr);
+        cairo_destroy(sncr);
+
+        th->pic = gtk_snapshot_free_to_paintable(sn, &GRAPHENE_SIZE_INIT(w,h));
+
+    }
+
+    GskRoundedRect rrect;
+    gsk_rounded_rect_init_from_rect(&rrect, &rect, 3);
+    gtk_snapshot_push_rounded_clip(snapshot, &rrect);
+    gdk_paintable_snapshot(th->pic, snapshot, w, h);
+    gtk_snapshot_pop(snapshot);
+
+    GdkRGBA color = { 0.1f, 0.1f, 0.1f, 0.8f };
+    GdkRGBA colors[] = { color, color, color, color };
+    float widths[4] = {1.0f,1.0f,1.0f,1.0f};
+    gtk_snapshot_append_border(snapshot, &rrect, widths, colors);
 }
 
 
@@ -114,6 +130,7 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
     slide_get_logical_size(th->slide, &w, &h);
     gtk_widget_set_size_request(GTK_WIDGET(th), 320*w/h, 320);
+    th->pic = NULL;
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
     gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);

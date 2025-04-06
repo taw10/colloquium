@@ -49,6 +49,7 @@ struct _colloquiumthumbnail
     Slide               *slide;
     NarrativeWindow     *nw;
     GdkCursor           *cursor;
+    GdkPaintable        *pic;
 };
 
 struct _colloquiumthumbnailclass

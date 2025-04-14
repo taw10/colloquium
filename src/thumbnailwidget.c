@@ -102,6 +102,7 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
         cairo_destroy(sncr);
 
         th->pic = gtk_snapshot_free_to_paintable(sn, &GRAPHENE_SIZE_INIT(w,h));
+        gtk_drag_source_set_icon(th->drag_source, th->pic, w/2, h/2);
 
     }
 
@@ -115,6 +116,16 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     GdkRGBA colors[] = { color, color, color, color };
     float widths[4] = {1.0f,1.0f,1.0f,1.0f};
     gtk_snapshot_append_border(snapshot, &rrect, widths, colors);
+}
+
+
+static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, Thumbnail *th)
+{
+    GValue val;
+
+    g_value_init(&val, COLLOQUIUM_TYPE_THUMBNAIL);
+    g_value_set_object(&val, G_OBJECT(th));
+    return  gdk_content_provider_new_for_value(&val);
 }
 
 
@@ -138,6 +149,11 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
     evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
     g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(click_sig), th);
+
+    th->drag_source = gtk_drag_source_new();
+    gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(th->drag_source));
+    g_signal_connect(G_OBJECT(th->drag_source), "prepare",
+                     G_CALLBACK(drag_prepare), th);
 
     return GTK_WIDGET(th);
 }

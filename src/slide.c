@@ -54,6 +54,16 @@ void slide_free(Slide *s)
 }
 
 
+Slide *slide_copy(const Slide *s)
+{
+    Slide *o = slide_new();
+    *o = *s;
+    o->anchor = NULL;
+    o->ext_filename = strdup(s->ext_filename);
+    return o;
+}
+
+
 void slide_set_ext_filename(Slide *s, char *filename)
 {
     s->ext_filename = filename;

@@ -516,6 +516,37 @@ static int get_ext_slide_size(Slide *s, double *pw, double *ph)
     return 0;
 }
 
+
+void insert_slide_anchor(GtkTextBuffer *buf, Slide *slide, GtkTextIter start, int newline)
+{
+    GtkTextIter end;
+    GtkTextMark *mark;
+
+    /* Mark this position for later */
+    mark = gtk_text_mark_new(NULL, TRUE);
+    gtk_text_buffer_add_mark(buf, mark, &start);
+
+    /* Insert the slide's anchor */
+    slide->anchor = gtk_text_buffer_create_child_anchor(buf, &start);
+
+    /* Retrieve the mark  and figure out positions before and after the slide */
+    gtk_text_buffer_get_iter_at_mark(buf, &end, mark);
+    start = end;
+    gtk_text_iter_forward_cursor_position(&end);
+    gtk_text_buffer_apply_tag_by_name(buf, "slide", &start, &end);
+
+    /* Retrieve the mark (again) and add a newline, if requested */
+    if ( newline ) {
+        gtk_text_buffer_get_iter_at_mark(buf, &end, mark);
+        gtk_text_iter_forward_cursor_position(&end);
+        gtk_text_buffer_insert(buf, &end, "\n", 1);
+    }
+
+    /* Mark is not needed any more */
+    gtk_text_buffer_delete_mark(buf, mark);
+}
+
+
 static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 {
     struct md_parse_ctx *ps = vp;
@@ -548,17 +579,9 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         get_ext_slide_size(slide, &w, &h);
         slide_set_logical_size(slide, w, h);
 
-        GtkTextIter start, end;
-        GtkTextMark *mark;
+        GtkTextIter start;
         gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
-        mark = gtk_text_mark_new(NULL, TRUE);
-        gtk_text_buffer_add_mark(ps->n->textbuf, mark, &start);
-        gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
-        slide->anchor = gtk_text_buffer_create_child_anchor(ps->n->textbuf, &start);
-        gtk_text_buffer_get_end_iter(ps->n->textbuf, &end);
-        gtk_text_buffer_get_iter_at_mark(ps->n->textbuf, &start, mark);
-        gtk_text_buffer_delete_mark(ps->n->textbuf, mark);
-        gtk_text_buffer_apply_tag_by_name(ps->n->textbuf, "slide", &start, &end);
+        insert_slide_anchor(ps->n->textbuf, slide, start, 0);
 
         free(tx);
 

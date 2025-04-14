@@ -43,6 +43,7 @@ typedef struct _slide Slide;
 
 
 extern Slide *slide_new(void);
+extern Slide *slide_copy(const Slide *s);
 extern void slide_free(Slide *s);
 
 extern void slide_set_ext_filename(Slide *s, char *filename);

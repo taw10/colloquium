@@ -689,6 +689,31 @@ static void scroll_update(GtkAdjustment *adj, GtkDrawingArea *da)
 }
 
 
+static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, double y, gpointer vp)
+{
+    Thumbnail *th;
+    int bx, by;
+    GtkTextIter iter;
+    NarrativeWindow *nw = vp;
+
+    if ( !G_VALUE_HOLDS(val, COLLOQUIUM_TYPE_THUMBNAIL) ) {
+            fprintf(stderr, "Wrong type of data dropped!\n");
+            return FALSE;
+    }
+
+    th = COLLOQUIUM_THUMBNAIL(g_value_get_object(val));
+    gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_TEXT, x, y, &bx, &by);
+    gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(nw->nv), &iter, bx, by);
+    gtk_text_iter_forward_line(&iter);
+
+    Slide *slide = slide_copy(th->slide);
+    insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
+    GtkWidget *thn = thumbnail_new(slide, nw);
+    gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
+    return TRUE;
+}
+
+
 NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *app)
 {
     NarrativeWindow *nw;
@@ -697,6 +722,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     GtkWidget *toolbar;
     GtkWidget *button;
     GtkEventController *evc;
+    GtkDropTarget *drop;
 
     nw = g_object_new(GTK_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
 
@@ -769,6 +795,10 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 
     evc = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(nw->nv), evc);
+
+    drop = gtk_drop_target_new(COLLOQUIUM_TYPE_THUMBNAIL, GDK_ACTION_COPY);
+    gtk_widget_add_controller(GTK_WIDGET(nw->nv), GTK_EVENT_CONTROLLER(drop));
+    g_signal_connect(G_OBJECT(drop), "drop", G_CALLBACK(drop_sig), nw);
 
     scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),

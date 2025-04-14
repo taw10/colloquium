@@ -50,12 +50,15 @@ struct _colloquiumthumbnail
     NarrativeWindow     *nw;
     GdkCursor           *cursor;
     GdkPaintable        *pic;
+    GtkDragSource       *drag_source;
 };
 
 struct _colloquiumthumbnailclass
 {
     GtkWidgetClass parent_class;
 };
+
+extern GType colloquium_thumbnail_get_type(void);
 
 extern GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw);
 extern Slide *thumbnail_get_slide(Thumbnail *th);

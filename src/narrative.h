@@ -73,6 +73,7 @@ extern void narrative_free(Narrative *n);
 extern Narrative *narrative_load(GFile *file);
 extern int narrative_save(Narrative *n, GFile *file);
 
+extern void insert_slide_anchor(GtkTextBuffer *buf, Slide *slide, GtkTextIter start, int newline);
 extern void narrative_update_timing(GtkTextView *nv, Narrative *n);
 extern Slide *narrative_get_slide(Narrative *n, int para);
 extern void narrative_get_first_slide_size(Narrative *n, double *w, double *h);

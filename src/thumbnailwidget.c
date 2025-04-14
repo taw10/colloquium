@@ -84,32 +84,46 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(da);
     int w, h;
     graphene_rect_t rect;
+    double view_scale, aw, ah, sx, sy;
+    double border_offs_x, border_offs_y;
 
+    slide_get_logical_size(th->slide, &logical_w, &logical_h);
     w = gtk_widget_get_width(da);
     h = gtk_widget_get_height(da);
-    rect = GRAPHENE_RECT_INIT(0,0,w,h);
+    sx = (double)w / logical_w;
+    sy = (double)h / logical_h;
+    view_scale = (sx < sy) ? sx : sy;
+    aw = view_scale * logical_w;
+    ah = view_scale * logical_h;
+    border_offs_x = (w - aw)/2.0;
+    border_offs_y = (h - ah)/2.0;
 
-    if ( th->pic == NULL ) {
+    if ( (th->pic == NULL) || (th->pic_scale != view_scale) ) {
 
         cairo_t *sncr;
         GtkSnapshot *sn;
+        graphene_rect_t rect;
 
         sn = gtk_snapshot_new();
+
+        rect = GRAPHENE_RECT_INIT(0,0,aw,ah);
         sncr = gtk_snapshot_append_cairo(sn, &rect);
-        slide_get_logical_size(th->slide, &logical_w, &logical_h);
-        cairo_scale(sncr, (double)w/logical_w, (double)h/logical_h);
+        cairo_scale(sncr, view_scale, view_scale);
         slide_render_cairo(th->slide, sncr);
         cairo_destroy(sncr);
 
-        th->pic = gtk_snapshot_free_to_paintable(sn, &GRAPHENE_SIZE_INIT(w,h));
-        gtk_drag_source_set_icon(th->drag_source, th->pic, w/2, h/2);
+        th->pic = gtk_snapshot_free_to_paintable(sn, &GRAPHENE_SIZE_INIT(aw,ah));
+        th->pic_scale = view_scale;
+        gtk_drag_source_set_icon(th->drag_source, th->pic, aw/2, ah/2);
 
     }
 
     GskRoundedRect rrect;
+    rect = GRAPHENE_RECT_INIT(border_offs_x, border_offs_y, aw, ah);
     gsk_rounded_rect_init_from_rect(&rrect, &rect, 3);
     gtk_snapshot_push_rounded_clip(snapshot, &rrect);
-    gdk_paintable_snapshot(th->pic, snapshot, w, h);
+    gtk_snapshot_translate(snapshot, &GRAPHENE_POINT_INIT(border_offs_x, border_offs_y));
+    gdk_paintable_snapshot(th->pic, snapshot, aw, ah);
     gtk_snapshot_pop(snapshot);
 
     GdkRGBA color = { 0.1f, 0.1f, 0.1f, 0.8f };

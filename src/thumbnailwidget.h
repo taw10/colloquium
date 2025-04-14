@@ -50,6 +50,7 @@ struct _colloquiumthumbnail
     NarrativeWindow     *nw;
     GdkCursor           *cursor;
     GdkPaintable        *pic;
+    double               pic_scale;
     GtkDragSource       *drag_source;
 };
 

@@ -78,6 +78,39 @@ static void click_sig(GtkGestureClick *self, int n_press, gdouble x, gdouble y, 
 }
 
 
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+#define MEMFORMAT GDK_MEMORY_B8G8R8X8
+#elif G_BYTE_ORDER == G_BIG_ENDIAN
+#define MEMFORMAT GDK_MEMORY_X8R8G8B8
+#else
+#define MEMFORMAT "unknown byte order"
+#endif
+
+static void update_thumbnail_texture(Thumbnail *th, double view_scale, int w, int h)
+{
+    cairo_t *cr;
+    cairo_surface_t *surf;
+    GBytes *bytes;
+
+    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+    cr = cairo_create(surf);
+    cairo_scale(cr, view_scale, view_scale);
+    slide_render_cairo(th->slide, cr);
+    cairo_destroy(cr);
+
+    bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surf),
+                                       h*cairo_image_surface_get_stride(surf),
+                                       (GDestroyNotify)cairo_surface_destroy,
+                                       cairo_surface_reference(surf));
+
+    th->texture = gdk_memory_texture_new(w, h, MEMFORMAT, bytes,
+                                         cairo_image_surface_get_stride(surf));
+
+    g_bytes_unref(bytes);
+    th->texture_scale = view_scale;
+}
+
+
 static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
 {
     double logical_w, logical_h;
@@ -98,24 +131,8 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     border_offs_x = (w - aw)/2.0;
     border_offs_y = (h - ah)/2.0;
 
-    if ( (th->pic == NULL) || (th->pic_scale != view_scale) ) {
-
-        cairo_t *sncr;
-        GtkSnapshot *sn;
-        graphene_rect_t rect;
-
-        sn = gtk_snapshot_new();
-
-        rect = GRAPHENE_RECT_INIT(0,0,aw,ah);
-        sncr = gtk_snapshot_append_cairo(sn, &rect);
-        cairo_scale(sncr, view_scale, view_scale);
-        slide_render_cairo(th->slide, sncr);
-        cairo_destroy(sncr);
-
-        th->pic = gtk_snapshot_free_to_paintable(sn, &GRAPHENE_SIZE_INIT(aw,ah));
-        th->pic_scale = view_scale;
-        gtk_drag_source_set_icon(th->drag_source, th->pic, aw/2, ah/2);
-
+    if ( (th->texture == NULL) || (th->texture_scale != view_scale) ) {
+        update_thumbnail_texture(th, view_scale, aw, ah);
     }
 
     GskRoundedRect rrect;
@@ -123,7 +140,7 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     gsk_rounded_rect_init_from_rect(&rrect, &rect, 3);
     gtk_snapshot_push_rounded_clip(snapshot, &rrect);
     gtk_snapshot_translate(snapshot, &GRAPHENE_POINT_INIT(border_offs_x, border_offs_y));
-    gdk_paintable_snapshot(th->pic, snapshot, aw, ah);
+    gtk_snapshot_append_texture(snapshot, th->texture, &GRAPHENE_RECT_INIT(0,0,aw,ah));
     gtk_snapshot_pop(snapshot);
 
     GdkRGBA color = { 0.1f, 0.1f, 0.1f, 0.8f };
@@ -155,7 +172,7 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
     slide_get_logical_size(th->slide, &w, &h);
     gtk_widget_set_size_request(GTK_WIDGET(th), 320*w/h, 320);
-    th->pic = NULL;
+    th->texture = NULL;
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
     gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);

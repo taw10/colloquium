@@ -154,6 +154,7 @@ SlideSorter *slide_sorter_new(NarrativeWindow *nw)
 
     gtk_window_set_hide_on_close(GTK_WINDOW(sr), TRUE);
     g_signal_connect(G_OBJECT(nw), "destroy", G_CALLBACK(sr_destroy_sig), nw);
+    gtk_window_set_default_size(GTK_WINDOW(sr), 512, 768);
 
     return sr;
 }

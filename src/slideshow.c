@@ -34,7 +34,7 @@
 #define _(x) gettext(x)
 
 #include "narrative.h"
-#include "slide_render_cairo.h"
+#include "slide.h"
 #include "slideshow.h"
 #include "colloquium.h"
 #include "pr_clock.h"

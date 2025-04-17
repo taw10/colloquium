@@ -29,10 +29,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <cairo.h>
+#include <poppler.h>
 
-#ifdef HAVE_PANGO
-#include <pango/pangocairo.h>
-#endif
+#include <libintl.h>
+#define _(x) gettext(x)
 
 #include "slide.h"
 
@@ -81,6 +82,34 @@ int slide_set_logical_size(Slide *s, double w, double h)
     if ( s == NULL ) return 1;
     s->logical_w = w;
     s->logical_h = h;
+    return 0;
+}
+
+
+int slide_render_cairo(Slide *s, cairo_t *cr)
+{
+    double w, h;
+    GFile *file;
+    PopplerDocument *doc;
+    PopplerPage *page;
+    double pw, ph;
+
+    slide_get_logical_size(s, &w, &h);
+
+    file = g_file_new_for_path(s->ext_filename);
+    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+    if ( doc == NULL ) return 1;
+
+    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
+    if ( page == NULL ) return 1;
+
+    poppler_page_get_size(page, &pw, &ph);
+    cairo_scale(cr, (double)w/pw, (double)h/ph);
+    poppler_page_render(page, cr);
+
+    g_object_unref(G_OBJECT(page));
+    g_object_unref(G_OBJECT(doc));
+
     return 0;
 }
 

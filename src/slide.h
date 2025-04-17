@@ -51,5 +51,6 @@ extern void slide_set_ext_number(Slide *s, int num);
 
 extern int slide_set_logical_size(Slide *s, double w, double h);
 extern int slide_get_logical_size(Slide *s, double *w, double *h);
+extern int slide_render_cairo(Slide *s, cairo_t *cr);
 
 #endif /* SLIDE_H */

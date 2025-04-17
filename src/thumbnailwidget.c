@@ -34,7 +34,6 @@
 
 #include "thumbnailwidget.h"
 #include "narrative_window.h"
-#include "slide_render_cairo.h"
 #include "slide.h"
 #include "slide_window.h"
 

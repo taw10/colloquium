@@ -35,7 +35,7 @@
 
 #include "narrative.h"
 #include "narrative_window.h"
-#include "slide_render_cairo.h"
+#include "slide.h"
 
 
 static GtkPrintSettings *print_settings = NULL;

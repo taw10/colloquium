@@ -32,7 +32,7 @@
 
 
 #include "narrative.h"
-#include "slide_render_cairo.h"
+#include "slide.h"
 
 
 #define GTK_TYPE_SLIDE_VIEW (gtk_slide_view_get_type())

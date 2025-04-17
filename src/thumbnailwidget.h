@@ -33,7 +33,7 @@
 typedef struct _colloquiumthumbnail Thumbnail;
 typedef struct _colloquiumthumbnailclass ThumbnailClass;
 
-#include "slide_render_cairo.h"
+#include "slide.h"
 #include "narrative_window.h"
 
 #define COLLOQUIUM_TYPE_THUMBNAIL (colloquium_thumbnail_get_type())

@@ -38,7 +38,6 @@
 #include "colloquium.h"
 #include "narrative_window.h"
 #include "slide_window.h"
-#include "slide_render_cairo.h"
 #include "testcard.h"
 #include "pr_clock.h"
 #include "slideshow.h"

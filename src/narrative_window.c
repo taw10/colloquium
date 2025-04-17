@@ -675,6 +675,7 @@ static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
 
     for ( i=0; i<nw->n->n_slides; i++ ) {
         GtkWidget *th = thumbnail_new(nw->n->slides[i], nw);
+        thumbnail_set_slide_height(COLLOQUIUM_THUMBNAIL(th), 320);
         gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
                                           GTK_WIDGET(th),
                                           nw->n->slides[i]->anchor);

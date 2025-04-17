@@ -63,5 +63,6 @@ extern GType colloquium_thumbnail_get_type(void);
 
 extern GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw);
 extern Slide *thumbnail_get_slide(Thumbnail *th);
+extern void thumbnail_set_slide_height(Thumbnail *th, int h);
 
 #endif  /* COLLOQUIUM_THUMBNAIL_H */

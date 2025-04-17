@@ -32,8 +32,7 @@
 
 struct _slide
 {
-    double logical_w;
-    double logical_h;
+    float aspect;  /* Width divided by height */
     char *ext_filename;
     int ext_slidenumber;
     GtkTextChildAnchor *anchor;
@@ -49,8 +48,11 @@ extern void slide_free(Slide *s);
 extern void slide_set_ext_filename(Slide *s, char *filename);
 extern void slide_set_ext_number(Slide *s, int num);
 
-extern int slide_set_logical_size(Slide *s, double w, double h);
-extern int slide_get_logical_size(Slide *s, double *w, double *h);
-extern int slide_render_cairo(Slide *s, cairo_t *cr);
+extern int slide_set_aspect(Slide *s, float aspect);
+extern float slide_get_aspect(Slide *s);
+extern int slide_render_cairo(Slide *s, cairo_t *cr, float w);
+
+extern void letterbox(float dw, float dh, float aspect,
+                      float *sw, float *xoff, float *yoff);
 
 #endif /* SLIDE_H */

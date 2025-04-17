@@ -348,18 +348,6 @@ int narrative_save(Narrative *n, GFile *file)
 }
 
 
-/* FIXME: Eventually, there should be no need for constant slide size */
-void narrative_get_first_slide_size(Narrative *n, double *w, double *h)
-{
-    if ( n->n_slides == 0 ) {
-        printf("No slides found - using standard slide size\n");
-        *w = 1024.0;  *h = 768.0;
-    } else {
-        slide_get_logical_size(n->slides[0], w, h);
-    }
-}
-
-
 static int wordcount(char *text)
 {
        int j;
@@ -495,28 +483,6 @@ static int md_leave_span(MD_SPANTYPE type, void *detail, void *vp)
 }
 
 
-static int get_ext_slide_size(Slide *s, double *pw, double *ph)
-{
-    GFile *file;
-    PopplerDocument *doc;
-    PopplerPage *page;
-
-    file = g_file_new_for_path(s->ext_filename);
-    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
-    if ( doc == NULL ) return 1;
-
-    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
-    if ( page == NULL ) return 1;
-
-    poppler_page_get_size(page, pw, ph);
-
-    g_object_unref(G_OBJECT(page));
-    g_object_unref(G_OBJECT(doc));
-
-    return 0;
-}
-
-
 void insert_slide_anchor(GtkTextBuffer *buf, Slide *slide, GtkTextIter start, int newline)
 {
     GtkTextIter end;
@@ -553,8 +519,6 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 
     if ( ps->type == NARRATIVE_ITEM_SLIDE ) {
 
-        double w, h;
-
         if ( strncmp(text, "Slide ", 6) != 0 ) return 1;
         char *tx = strndup(text+6, len-6);
         const char *sc = strchr(tx, ';');
@@ -576,8 +540,6 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 
         slide_set_ext_filename(slide, strdup(sc+2));
         slide_set_ext_number(slide, atoi(tx));
-        get_ext_slide_size(slide, &w, &h);
-        slide_set_logical_size(slide, w, h);
 
         GtkTextIter start;
         gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);

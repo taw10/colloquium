@@ -50,7 +50,7 @@ struct _colloquiumthumbnail
     NarrativeWindow     *nw;
     GdkCursor           *cursor;
     GdkTexture          *texture;
-    double               texture_scale;
+    int                  widget_w_for_texture;
     GtkDragSource       *drag_source;
 };
 

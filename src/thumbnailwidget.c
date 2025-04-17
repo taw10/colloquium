@@ -85,7 +85,7 @@ static void click_sig(GtkGestureClick *self, int n_press, gdouble x, gdouble y, 
 #define MEMFORMAT "unknown byte order"
 #endif
 
-static void update_thumbnail_texture(Thumbnail *th, double view_scale, int w, int h)
+static void update_thumbnail_texture(Thumbnail *th, int w, int h)
 {
     cairo_t *cr;
     cairo_surface_t *surf;
@@ -93,8 +93,7 @@ static void update_thumbnail_texture(Thumbnail *th, double view_scale, int w, in
 
     surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     cr = cairo_create(surf);
-    cairo_scale(cr, view_scale, view_scale);
-    slide_render_cairo(th->slide, cr);
+    slide_render_cairo(th->slide, cr, w);
     cairo_destroy(cr);
 
     bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surf),
@@ -106,32 +105,30 @@ static void update_thumbnail_texture(Thumbnail *th, double view_scale, int w, in
                                          cairo_image_surface_get_stride(surf));
 
     g_bytes_unref(bytes);
-    th->texture_scale = view_scale;
+    th->widget_w_for_texture = w;
 }
 
 
 static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
 {
-    double logical_w, logical_h;
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(da);
+    float aspect;
     int w, h;
     graphene_rect_t rect;
-    double view_scale, aw, ah, sx, sy;
-    double border_offs_x, border_offs_y;
+    float aw, ah;
+    float border_offs_x, border_offs_y;
+    int awi;
 
-    slide_get_logical_size(th->slide, &logical_w, &logical_h);
+    aspect = slide_get_aspect(th->slide);
     w = gtk_widget_get_width(da);
     h = gtk_widget_get_height(da);
-    sx = (double)w / logical_w;
-    sy = (double)h / logical_h;
-    view_scale = (sx < sy) ? sx : sy;
-    aw = view_scale * logical_w;
-    ah = view_scale * logical_h;
-    border_offs_x = (w - aw)/2.0;
-    border_offs_y = (h - ah)/2.0;
 
-    if ( (th->texture == NULL) || (th->texture_scale != view_scale) ) {
-        update_thumbnail_texture(th, view_scale, aw, ah);
+    letterbox(w, h, aspect, &aw, &border_offs_x, &border_offs_y);
+    ah = aw/aspect;
+
+    awi = aw;
+    if ( (th->texture == NULL) || (th->widget_w_for_texture != awi) ) {
+        update_thumbnail_texture(th, aw, ah);
     }
 
     GskRoundedRect rrect;
@@ -162,15 +159,13 @@ static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, T
 GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 {
     Thumbnail *th;
-    double w, h;
     GtkGesture *evc;
 
     th = g_object_new(COLLOQUIUM_TYPE_THUMBNAIL, NULL);
     th->nw = nw;
     th->slide = slide;
 
-    slide_get_logical_size(th->slide, &w, &h);
-    gtk_widget_set_size_request(GTK_WIDGET(th), 320*w/h, 320);
+    gtk_widget_set_size_request(GTK_WIDGET(th), 320*slide_get_aspect(th->slide), 320);
     th->texture = NULL;
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);

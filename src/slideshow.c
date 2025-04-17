@@ -67,10 +67,10 @@ static gint ssh_destroy_sig(GtkWidget *widget, SCSlideshow *ss)
 static void ss_draw_sig(GtkDrawingArea *da, cairo_t *cr,
                         int dw, int dh, gpointer vp)
 {
-    double lw, lh;  /* Logical size of slide */
-    double sw, sh;  /* Size of slide on screen */
-    double xoff, yoff;
+    float w;
+    float xoff, yoff;
     SCSlideshow *ss = vp;
+    float aspect;
 
     /* Overall background */
     cairo_rectangle(cr, 0.0, 0.0, dw, dh);
@@ -79,26 +79,13 @@ static void ss_draw_sig(GtkDrawingArea *da, cairo_t *cr,
 
     if ( ss->cur_slide == NULL ) return;
 
-    slide_get_logical_size(ss->cur_slide, &lw, &lh);
-
-    if ( lw/lh > (double)dw/dh ) {
-        /* Slide is too wide.  Letterboxing top/bottom */
-        sw = dw;
-        sh = dw * lh/lw;
-    } else {
-        /* Letterboxing at sides */
-        sw = dh * lw/lh;
-        sh = dh;
-    }
-
-    xoff = (dw - sw)/2.0;
-    yoff = (dh - sh)/2.0;
+    aspect = slide_get_aspect(ss->cur_slide);
+    letterbox(dw, dh, aspect, &w, &xoff, &yoff);
 
     if ( !ss->blank ) {
         cairo_save(cr);
         cairo_translate(cr, xoff, yoff);
-        cairo_scale(cr, sw/lw, sh/lh);
-        slide_render_cairo(ss->cur_slide, cr);
+        slide_render_cairo(ss->cur_slide, cr, w);
         cairo_restore(cr);
     }
 }

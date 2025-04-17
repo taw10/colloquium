@@ -91,7 +91,8 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
     sw->sv = gtk_slide_view_new(n, slide);
 
-    slide_get_logical_size(slide, &w, &h);
+    w = 1280;
+    h = w/slide_get_aspect(slide);
     gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
 
     gtk_window_set_child(GTK_WINDOW(sw), GTK_WIDGET(sw->sv));

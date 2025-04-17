@@ -69,30 +69,12 @@ static gint gtksv_destroy_sig(GtkWidget *window, GtkSlideView *e)
 static void gtksv_draw_sig(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpointer vp)
 {
     GtkSlideView *e = vp;
-    double sx, sy;
-    double aw, ah;
-    double log_w, log_h;
+    float aspect;
+    float aw;
+    float bx, by;
 
-    if ( slide_get_logical_size(e->slide, &log_w, &log_h) ) {
-        fprintf(stderr, "Failed to get logical size\n");
-        return;
-    }
-
-    e->w = w;
-    e->h = h;
-    sx = (double)e->w / log_w;
-    sy = (double)e->h / log_h;
-    e->view_scale = (sx < sy) ? sx : sy;
-
-    /* Actual size (in device units) */
-    aw = e->view_scale * log_w;
-    ah = e->view_scale * log_h;
-
-    e->border_offs_x = (w - aw)/2.0;
-    e->border_offs_y = (h - ah)/2.0;
-
-    e->visible_height = h;
-    e->visible_width = w;
+    aspect = slide_get_aspect(e->slide);
+    letterbox(w, h, aspect, &aw, &bx, &by);
 
     /* Ultimate background */
     if ( e->bg_pixbuf != NULL ) {
@@ -105,16 +87,8 @@ static void gtksv_draw_sig(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpoint
         cairo_paint(cr);
     }
 
-    cairo_translate(cr, e->border_offs_x, e->border_offs_y);
-    cairo_translate(cr, -e->h_scroll_pos, -e->v_scroll_pos);
-    cairo_scale(cr, e->view_scale, e->view_scale);
-
-    slide_render_cairo(e->slide, cr);
-}
-
-void gtk_slide_view_set_scale(GtkSlideView *e, double scale)
-{
-    e->view_scale = 1.0;
+    cairo_translate(cr, bx, by);
+    slide_render_cairo(e->slide, cr, aw);
 }
 
 
@@ -135,14 +109,6 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
 
     sv->n = n;
     sv->slide = slide;
-    sv->w = 100;
-    sv->h = 100;
-    sv->border_offs_x = 0;
-    sv->border_offs_y = 0;
-    sv->min_border = 0.0;
-    sv->h_scroll_pos = 0;
-    sv->v_scroll_pos = 0;
-    sv->view_scale = 1.0;
 
     err = NULL;
     sv->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/colloquium/sky.png",
@@ -151,7 +117,7 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
         fprintf(stderr, _("Failed to load background: %s\n"), err->message);
     }
 
-    gtk_widget_set_size_request(GTK_WIDGET(sv), sv->w, sv->h);
+    gtk_widget_set_size_request(GTK_WIDGET(sv), 100, 100);
     g_signal_connect(G_OBJECT(sv), "destroy", G_CALLBACK(gtksv_destroy_sig), sv);
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(sv),

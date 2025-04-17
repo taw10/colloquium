@@ -40,8 +40,6 @@ struct testcard
 {
     GtkWidget *window;
     char geom[256];
-    double slide_width;
-    double slide_height;
     GtkWidget *drawingarea;
 };
 
@@ -103,41 +101,16 @@ static void colour_box(cairo_t *cr, double x, double y,
 static void tc_draw_sig(GtkDrawingArea *da, cairo_t *cr,
         int width, int height, gpointer vp)
 {
-    double xoff, yoff;
-    double w, h;
     PangoLayout *pl;
     PangoFontDescription *desc;
     char tmp[1024];
     int plw, plh;
     double xp, yp;
-    struct testcard *tc = vp;
 
     /* Overall background */
     cairo_rectangle(cr, 0.0, 0.0, width, height);
-    cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
-    cairo_fill(cr);
-
-    if ( tc->slide_width/tc->slide_height < width/height ) {
-        w = (tc->slide_width / tc->slide_height) * height;
-        h = height;
-    } else {
-        w = width;
-        h = (tc->slide_height / tc->slide_width) * width;
-    }
-
-    /* Get the overall size */
-    xoff = (width - w)/2.0;
-    yoff = (height - h)/2.0;
-
-    /* Background of slide */
-    cairo_rectangle(cr, xoff, yoff, w, h);
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_fill(cr);
-
-    cairo_rectangle(cr, xoff+10.5, yoff+10.5, w-20.0, h-20.0);
-    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-    cairo_set_line_width(cr, 1.0);
-    cairo_stroke(cr);
 
     /* Arrows showing edges of screen */
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -154,37 +127,14 @@ static void tc_draw_sig(GtkDrawingArea *da, cairo_t *cr,
     arrow_up(cr, 100.0);
     cairo_fill(cr);
 
-    /* Arrows showing edges of slide */
-    cairo_translate(cr, xoff, yoff);
-    cairo_set_source_rgb(cr, 0.5, 0.0, 0.0);
-    cairo_move_to(cr, 0.0, 100+h/2);
-    arrow_left(cr, 80.0);
-    cairo_fill(cr);
-    cairo_move_to(cr, w, 100+h/2);
-    arrow_right(cr, 80.0);
-    cairo_fill(cr);
-    cairo_move_to(cr, 100+w/2, h);
-    arrow_down(cr, 80.0);
-    cairo_fill(cr);
-    cairo_move_to(cr, 100+w/2, 0.0);
-    arrow_up(cr, 80.0);
-    cairo_fill(cr);
-
-    cairo_rectangle(cr, 10.5, 10.5, w-20.0, h-20.0);
-    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-    cairo_set_line_width(cr, 1.0);
-    cairo_stroke(cr);
-
     /* Stuff in the middle */
-    yp = (h-400)/2.0;
+    yp = (height-400)/2.0;
     cairo_save(cr);
     cairo_translate(cr, 0.0, yp);
 
     snprintf(tmp, 1024, _("Test Card\nColloquium version %s\n"
-                        "Screen resolution %i × %i\n"
-                        "Slide resolution %.0f × %.0f"),
-                        PACKAGE_VERSION, width, height,
-                        w, h);
+                        "Screen resolution %i × %i\n"),
+                        PACKAGE_VERSION, width, height);
 
     pl = pango_cairo_create_layout(cr);
     desc = pango_font_description_from_string("Sans 24");
@@ -194,12 +144,12 @@ static void tc_draw_sig(GtkDrawingArea *da, cairo_t *cr,
     pango_layout_get_size(pl, &plw, &plh);
     plw = pango_units_to_double(plw);
     plh = pango_units_to_double(plh);
-    cairo_move_to(cr, (w-plw)/2, 0.0);
+    cairo_move_to(cr, (width-plw)/2, 0.0);
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
     pango_cairo_show_layout(cr, pl);
 
     /* Colour boxes */
-    xp = (w-450)/2.0;
+    xp = (width-450)/2.0;
     colour_box(cr, xp+0,   200, 1.0, 0.0, 0.0, _("Red"));
     colour_box(cr, xp+80,  200, 0.0, 1.0, 0.0, _("Green"));
     colour_box(cr, xp+160, 200, 0.0, 0.0, 1.0, _("Blue"));
@@ -240,7 +190,6 @@ void show_testcard(Narrative *n)
     if ( tc == NULL ) return;
 
     tc->window = gtk_window_new();
-    narrative_get_first_slide_size(n, &tc->slide_width, &tc->slide_height);
 
     tc->drawingarea = gtk_drawing_area_new();
     gtk_window_set_child(GTK_WINDOW(tc->window), tc->drawingarea);

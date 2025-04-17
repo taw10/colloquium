@@ -108,17 +108,10 @@ static void addfile(gpointer sv, gpointer vp)
 
         Slide *s;
         GtkWidget *th;
-        PopplerPage *p;
-        double w, h;
-
-        p = poppler_document_get_page(doc, i);
-        poppler_page_get_size(p, &w, &h);
-        g_object_unref(p);
 
         s = slide_new();
         slide_set_ext_filename(s, filename);
         slide_set_ext_number(s, i+1);
-        slide_set_logical_size(s, w, h);
         th = thumbnail_new(s, NULL);
         gtk_flow_box_append(GTK_FLOW_BOX(flowbox), GTK_WIDGET(th));
 

@@ -43,9 +43,8 @@ Slide *slide_new()
     Slide *s;
     s = malloc(sizeof(*s));
     if ( s == NULL ) return NULL;
-    s->logical_w = -1.0;
-    s->logical_h = -1.0;
     s->ext_filename = NULL;
+    s->aspect = -1.0;
     return s;
 }
 
@@ -77,24 +76,38 @@ void slide_set_ext_number(Slide *s, int num)
 }
 
 
-int slide_set_logical_size(Slide *s, double w, double h)
+float slide_get_aspect(Slide *s)
 {
     if ( s == NULL ) return 1;
-    s->logical_w = w;
-    s->logical_h = h;
-    return 0;
+    if ( s->aspect < 0.0 ) {
+
+        GFile *file;
+        PopplerDocument *doc;
+        PopplerPage *page;
+        double pw, ph;
+
+        file = g_file_new_for_path(s->ext_filename);
+        doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+        if ( doc == NULL ) return 1;
+
+        page = poppler_document_get_page(doc, s->ext_slidenumber-1);
+        if ( page == NULL ) return 1;
+
+        poppler_page_get_size(page, &pw, &ph);
+
+        s->aspect = pw/ph;
+
+    }
+    return s->aspect;
 }
 
 
-int slide_render_cairo(Slide *s, cairo_t *cr)
+int slide_render_cairo(Slide *s, cairo_t *cr, float w)
 {
-    double w, h;
     GFile *file;
     PopplerDocument *doc;
     PopplerPage *page;
     double pw, ph;
-
-    slide_get_logical_size(s, &w, &h);
 
     file = g_file_new_for_path(s->ext_filename);
     doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
@@ -104,7 +117,7 @@ int slide_render_cairo(Slide *s, cairo_t *cr)
     if ( page == NULL ) return 1;
 
     poppler_page_get_size(page, &pw, &ph);
-    cairo_scale(cr, (double)w/pw, (double)h/ph);
+    cairo_scale(cr, w/pw, w/pw);
     poppler_page_render(page, cr);
 
     g_object_unref(G_OBJECT(page));
@@ -114,14 +127,17 @@ int slide_render_cairo(Slide *s, cairo_t *cr)
 }
 
 
-int slide_get_logical_size(Slide *s, double *w, double *h)
+void letterbox(float dw, float dh, float aspect,
+               float *sw, float *xoff, float *yoff)
 {
-    if ( s == NULL ) return 1;
+    if ( aspect > dw/dh ) {
+        /* Slide is too wide.  Letterboxing top/bottom */
+        *sw = dw;
+    } else {
+        /* Letterboxing at sides */
+        *sw = dh * aspect;
+    }
 
-    /* Slide-specific value not set */
-    if ( s->logical_w < 0.0 ) return 1;
-
-    *w = s->logical_w;
-    *h = s->logical_h;
-    return 0;
+    *xoff = (dw - (*sw))/2.0;
+    *yoff = (dh - (*sw)/aspect)/2.0;
 }

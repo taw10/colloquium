@@ -246,30 +246,12 @@ static void set_clock_pos(NarrativeWindow *nw)
 }
 
 
-static void first_para_sig(GSimpleAction *action, GVariant *parameter,
-                           gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
-            GTK_MOVEMENT_BUFFER_ENDS, 0, FALSE);
-    set_clock_pos(nw);
-}
-
-
 static void ss_prev_para(SCSlideshow *ss, void *vp)
 {
     NarrativeWindow *nw = vp;
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_PARAGRAPHS, -1, FALSE);
     set_clock_pos(nw);
-}
-
-
-static void prev_para_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    ss_prev_para(nw->show, nw);
 }
 
 
@@ -315,24 +297,6 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
         sc_slideshow_set_slide(nw->show, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
         g_free(th);
     }
-}
-
-
-static void next_para_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    ss_next_para(nw->show, nw);
-}
-
-
-static void last_para_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
-            GTK_MOVEMENT_BUFFER_ENDS, 1, FALSE);
-    set_clock_pos(nw);
 }
 
 
@@ -648,10 +612,6 @@ GActionEntry nw_entries[] = {
     { "startslideshownoslides", start_slideshow_noslides_sig, NULL, NULL, NULL },
     { "clock", open_clock_sig, NULL, NULL, NULL },
     { "testcard", testcard_sig, NULL, NULL, NULL },
-    { "first", first_para_sig, NULL, NULL, NULL },
-    { "prev", prev_para_sig, NULL, NULL, NULL },
-    { "next", next_para_sig, NULL, NULL, NULL },
-    { "last", last_para_sig, NULL, NULL, NULL },
     { "bold", bold_sig, NULL, NULL, NULL },
     { "italic", italic_sig, NULL, NULL, NULL },
     { "underline", underline_sig, NULL, NULL, NULL },

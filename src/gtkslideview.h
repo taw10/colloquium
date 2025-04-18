@@ -60,22 +60,6 @@ struct _gtkslideview
     /*< private >*/
     Narrative           *n;
     Slide               *slide;
-
-    int                  w;   /* Surface size in pixels */
-    int                  h;
-
-    /* Redraw/scroll stuff */
-    double               view_scale;  /* The scale factor */
-    double               h_scroll_pos;
-    double               v_scroll_pos;
-    double               visible_width;
-    double               visible_height;
-
-    /* Border surrounding actual slide within drawingarea */
-    double               border_offs_x;
-    double               border_offs_y;
-    double               min_border;
-    double               bgcol[3];
     GdkPixbuf           *bg_pixbuf;
 };
 

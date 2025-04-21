@@ -55,28 +55,6 @@ static void colloquium_thumbnail_init(Thumbnail *e)
 }
 
 
-static void click_sig(GtkGestureClick *self, int n_press, gdouble x, gdouble y, gpointer vp)
-{
-    Thumbnail *th = vp;
-
-    if ( n_press != 2 ) return;
-
-    if ( th->nw->show == NULL ) {
-        if ( th->nw->n_slidewindows < 16 ) {
-            SlideWindow *sw = slide_window_new(th->nw->n, th->slide, th->nw, th->nw->app);
-            th->nw->slidewindows[th->nw->n_slidewindows++] = sw;
-            g_signal_connect(G_OBJECT(sw), "destroy",
-                             G_CALLBACK(slide_window_closed_sig), th->nw);
-            gtk_window_present(GTK_WINDOW(sw));
-        } else {
-            fprintf(stderr, _("Too many slide windows\n"));
-        }
-    } else {
-        sc_slideshow_set_slide(th->nw->show, th->slide);
-    }
-}
-
-
 #if G_BYTE_ORDER == G_LITTLE_ENDIAN
 #define MEMFORMAT GDK_MEMORY_B8G8R8X8
 #elif G_BYTE_ORDER == G_BIG_ENDIAN
@@ -159,7 +137,6 @@ static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, T
 GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 {
     Thumbnail *th;
-    GtkGesture *evc;
 
     th = g_object_new(COLLOQUIUM_TYPE_THUMBNAIL, NULL);
     th->nw = nw;
@@ -170,10 +147,6 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
     gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);
-
-    evc = gtk_gesture_click_new();
-    gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
-    g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(click_sig), th);
 
     th->drag_source = gtk_drag_source_new();
     gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(th->drag_source));

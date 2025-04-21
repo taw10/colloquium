@@ -653,12 +653,38 @@ static void narrativewindow_init(NarrativeWindow *sw)
 }
 
 
+static void thumbnail_click_sig(GtkGestureClick *self, int n_press,
+                                gdouble x, gdouble y, gpointer vp)
+{
+    Thumbnail *th = vp;
+
+    if ( n_press != 2 ) return;
+
+    if ( th->nw->show == NULL ) {
+        if ( th->nw->n_slidewindows < 16 ) {
+            SlideWindow *sw = slide_window_new(th->nw->n, th->slide, th->nw, th->nw->app);
+            th->nw->slidewindows[th->nw->n_slidewindows++] = sw;
+            g_signal_connect(G_OBJECT(sw), "destroy",
+                             G_CALLBACK(slide_window_closed_sig), th->nw);
+            gtk_window_present(GTK_WINDOW(sw));
+        } else {
+            fprintf(stderr, _("Too many slide windows\n"));
+        }
+    } else {
+        sc_slideshow_set_slide(th->nw->show, th->slide);
+    }
+}
+
+
 static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
 {
     int i;
 
     for ( i=0; i<nw->n->n_slides; i++ ) {
         GtkWidget *th = thumbnail_new(nw->n->slides[i], nw);
+        GtkGesture *evc = gtk_gesture_click_new();
+        gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
+        g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), th);
         thumbnail_set_slide_height(COLLOQUIUM_THUMBNAIL(th), 320);
         gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
                                           GTK_WIDGET(th),

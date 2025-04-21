@@ -116,7 +116,7 @@ void slide_window_update_titlebar(SlideWindow *sw)
 
     filename = narrative_window_get_filename(sw->parent);
     snprintf(title, 1024, "%s - Colloquium", filename);
-    if ( !sw->n->saved ) strcat(title, " *");
+    if ( gtk_text_buffer_get_modified(sw->n->textbuf) ) strcat(title, " *");
 
     gtk_window_set_title(GTK_WINDOW(sw), title);
 }

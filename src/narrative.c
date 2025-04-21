@@ -50,7 +50,6 @@ Narrative *narrative_new()
     Narrative *n;
     n = malloc(sizeof(*n));
     if ( n == NULL ) return NULL;
-    n->saved = 1;
     n->textbuf = gtk_text_buffer_new(NULL);
 
     n->n_slides = 0;
@@ -98,6 +97,8 @@ Narrative *narrative_new()
     gtk_text_buffer_create_tag(n->textbuf, "underline",
                                "underline", PANGO_UNDERLINE_SINGLE,
                                NULL);
+
+    gtk_text_buffer_set_modified(n->textbuf, FALSE);
 
     return n;
 }
@@ -343,7 +344,7 @@ int narrative_save(Narrative *n, GFile *file)
     }
     g_object_unref(fh);
 
-    n->saved = 1;
+    gtk_text_buffer_set_modified(n->textbuf, FALSE);
     return 0;
 }
 

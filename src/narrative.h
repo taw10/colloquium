@@ -42,7 +42,6 @@ struct time_mark
 
 struct _narrative
 {
-    int saved;
     const char *language;
     GtkTextBuffer *textbuf;
 

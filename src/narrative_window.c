@@ -98,7 +98,7 @@ static void update_titlebar(NarrativeWindow *nw)
 
     filename = narrative_window_get_filename(nw);
     snprintf(title, 1024, "%s - Colloquium", filename);
-    if ( !nw->n->saved ) strcat(title, " *");
+    if ( gtk_text_buffer_get_modified(nw->n->textbuf) ) strcat(title, " *");
     free(filename);
 
     gtk_window_set_title(GTK_WINDOW(nw), title);
@@ -142,8 +142,6 @@ static void saveas_response_sig(GObject *d, GAsyncResult *res, gpointer vp)
 
     if ( narrative_save(nw->n, file) ) {
         show_error(nw, _("Failed to save presentation"));
-    } else {
-        update_titlebar(nw);
     }
 
     if ( nw->file != file ) {
@@ -188,8 +186,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 
     if ( narrative_save(nw->n, nw->file) ) {
         show_error(nw, _("Failed to save presentation"));
-    } else {
-        update_titlebar(nw);
     }
 }
 
@@ -204,12 +200,11 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
     gtk_window_present(GTK_WINDOW(nw->slide_sorter));
 }
 
+
 static void add_prestitle_sig(GSimpleAction *action, GVariant *parameter,
                               gpointer vp)
 {
     //NarrativeWindow *nw = vp;
-    //nw->n->saved = 0;
-    //update_titlebar(nw);
 }
 
 
@@ -379,10 +374,14 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
+static void modified_changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
+{
+    update_titlebar(nw);
+}
+
+
 static void changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
-    nw->n->saved = 0;
-    update_titlebar(nw);
     narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n);
     gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
 }
@@ -407,7 +406,8 @@ static void confirm_chosen(GObject *source, GAsyncResult *res, gpointer vp)
     int i;
     i = gtk_alert_dialog_choose_finish(GTK_ALERT_DIALOG(source), res, &error);
     if ( i == 0 ) {
-        nw->n->saved = 1;  /* Not really, but user doesn't want to save */
+        /* Not really, but user doesn't want to save */
+        gtk_text_buffer_set_modified(nw->n->textbuf, FALSE);
         gtk_window_close(GTK_WINDOW(nw));
     } else if ( i == 1 ) {
         if ( narrative_save(nw->n, nw->file) ) {
@@ -421,7 +421,7 @@ static void confirm_chosen(GObject *source, GAsyncResult *res, gpointer vp)
 
 static gboolean nw_close_request_sig(GtkWidget *self, NarrativeWindow *nw)
 {
-    if ( !nw->n->saved ) {
+    if ( gtk_text_buffer_get_modified(nw->n->textbuf) ) {
         GtkAlertDialog *c;
         const char *const buttons[] = {_("Discard"), ("Save"), _("Cancel"), NULL};
         c = gtk_alert_dialog_new(_("Document not saved, really exit?"));
@@ -719,8 +719,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 
     gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(nw), TRUE);
 
-    update_titlebar(nw);
-
     g_action_map_add_action_entries(G_ACTION_MAP(nw), nw_entries,
                                     G_N_ELEMENTS(nw_entries), nw);
 
@@ -731,6 +729,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_set_vexpand(GTK_WIDGET(nw->nv), TRUE);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(nw->nv), n->textbuf);
     add_thumbnails(GTK_TEXT_VIEW(nw->nv), nw);
+    gtk_text_buffer_set_modified(n->textbuf, FALSE);
 
     nw->timing_ruler = gtk_drawing_area_new();
     gtk_text_view_set_gutter(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_LEFT, nw->timing_ruler);
@@ -801,6 +800,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     g_signal_connect(G_OBJECT(adj), "value-changed", G_CALLBACK(scroll_update), nw->timing_ruler);
 
     g_signal_connect_after(G_OBJECT(n->textbuf), "changed", G_CALLBACK(changed_sig), nw);
+    g_signal_connect_after(G_OBJECT(n->textbuf), "modified-changed",
+                                    G_CALLBACK(modified_changed_sig), nw);
     g_signal_connect(G_OBJECT(evc), "key-pressed", G_CALLBACK(nw_key_press_sig), nw);
     g_signal_connect(G_OBJECT(nw), "destroy", G_CALLBACK(nw_destroy_sig), nw);
     g_signal_connect(G_OBJECT(nw), "close-request", G_CALLBACK(nw_close_request_sig), nw);
@@ -809,6 +810,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_box_append(GTK_BOX(vbox), scroll);
     gtk_widget_set_focus_child(GTK_WIDGET(scroll), GTK_WIDGET(nw->nv));
     gtk_widget_set_focus_child(GTK_WIDGET(vbox), GTK_WIDGET(scroll));
+
+    update_titlebar(nw);
 
     return nw;
 }

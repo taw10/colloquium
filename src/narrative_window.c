@@ -724,6 +724,14 @@ static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, doubl
 }
 
 
+static void finish_nw(gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n);
+    gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
+}
+
+
 NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *app)
 {
     NarrativeWindow *nw;
@@ -838,6 +846,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_set_focus_child(GTK_WIDGET(vbox), GTK_WIDGET(scroll));
 
     update_titlebar(nw);
+    g_idle_add_once(finish_nw, nw);
 
     return nw;
 }

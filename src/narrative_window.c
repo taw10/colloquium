@@ -333,6 +333,29 @@ static void underline_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void section_start_sig(GSimpleAction *action, GVariant *parameter,
+                              gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    GtkTextMark *cursor;
+    GtkTextIter iter, end;
+
+    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+    gtk_text_iter_forward_line(&iter);
+    gtk_text_buffer_insert(nw->n->textbuf, &iter, "Start of section\n", -1);
+
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+    gtk_text_iter_forward_line(&iter);
+    end = iter;
+    gtk_text_iter_forward_chars(&end, 16);
+
+    gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, "segstart", &iter, &end);
+
+    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+}
+
+
 static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     NarrativeWindow *nw = vp;
@@ -615,6 +638,7 @@ GActionEntry nw_entries[] = {
     { "bold", bold_sig, NULL, NULL, NULL },
     { "italic", italic_sig, NULL, NULL, NULL },
     { "underline", underline_sig, NULL, NULL, NULL },
+    { "sectionstart", section_start_sig, NULL, NULL, NULL },
     { "print", print_sig, NULL, NULL, NULL  },
 };
 
@@ -752,6 +776,14 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.underline");
+
+    button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+
+    button = gtk_button_new_from_icon_name("format-text-direction-ltr");
+    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
+                                   "win.sectionstart");
 
     evc = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(nw->nv), evc);

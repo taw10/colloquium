@@ -138,21 +138,41 @@ static void write_series(GOutputStream *fh, char *c, int n)
 }
 
 
+#define TB_BOLD (1<<0)
+#define TB_ITALIC (1<<1)
+#define TB_UNDERLINE (1<<2)
+
+static void set_bit(int *bp, int bit)
+{
+    *bp = (*bp) | bit;
+}
+
+
+static void clear_bit(int *bp, int bit)
+{
+    *bp = ((*bp) | bit) ^ bit;
+}
+
+
 static void write_tag_start(GOutputStream *fh,
                             GtkTextTag *tag,
                             GtkTextIter *iter,
-                            int *char_count)
+                            int *char_count,
+                            int *tags_open)
 {
     gchar *name;
     g_object_get(G_OBJECT(tag), "name", &name, NULL);
     if ( strcmp(name, "bold") == 0 ) {
         write_string(fh, "**");
+        set_bit(tags_open, TB_BOLD);
     }
     if ( strcmp(name, "italic") == 0 ) {
         write_string(fh, "*");
+        set_bit(tags_open, TB_ITALIC);
     }
     if ( strcmp(name, "underline") == 0 ) {
         write_string(fh, "_");
+        set_bit(tags_open, TB_UNDERLINE);
     }
     if ( strcmp(name, "segstart") == 0 ) {
         write_string(fh, "\n");
@@ -185,28 +205,50 @@ static void write_tag_start(GOutputStream *fh,
 }
 
 
-static void write_tag_end(GOutputStream *fh, GtkTextTag *tag, int last_len)
+static void write_tag_end(GOutputStream *fh, GtkTextTag *tag, int *last_len, int *tags_open)
 {
     gchar *name;
     g_object_get(G_OBJECT(tag), "name", &name, NULL);
-    if ( strcmp(name, "bold") == 0 ) {
+    if ( (strcmp(name, "bold") == 0) && (*tags_open & TB_BOLD) ) {
         write_string(fh, "**");
+        clear_bit(tags_open, TB_BOLD);
     }
-    if ( strcmp(name, "italic") == 0 ) {
+    if ( (strcmp(name, "italic") == 0) && (*tags_open & TB_ITALIC) ) {
         write_string(fh, "*");
+        clear_bit(tags_open, TB_ITALIC);
     }
-    if ( strcmp(name, "underline") == 0 ) {
+    if ( (strcmp(name, "underline") == 0) && (*tags_open & TB_UNDERLINE) ) {
         write_string(fh, "_");
+        clear_bit(tags_open, TB_UNDERLINE);
     }
     if ( strcmp(name, "prestitle") == 0 ) {
-        write_series(fh, "=", last_len);
         write_string(fh, "\n");
+        write_series(fh, "=", *last_len);
+        *last_len = 0;
     }
     if ( strcmp(name, "segstart") == 0 ) {
-        write_series(fh, "-", last_len);
         write_string(fh, "\n");
+        write_series(fh, "-", *last_len);
+        *last_len = 0;
     }
     g_free(name);
+}
+
+
+static void close_span_tags(GOutputStream *fh, int *tags)
+{
+    if ( *tags & TB_BOLD ) {
+        write_string(fh, "**");
+        clear_bit(tags, TB_BOLD);
+    }
+    if ( *tags & TB_ITALIC ) {
+        write_string(fh, "*");
+        clear_bit(tags, TB_ITALIC);
+    }
+    if ( *tags & TB_UNDERLINE ) {
+        write_string(fh, "_");
+        clear_bit(tags, TB_UNDERLINE);
+    }
 }
 
 
@@ -247,10 +289,8 @@ static char *escape_text(const char *in, size_t len)
 }
 
 
-static int write_escaped_text(GOutputStream *fh, GtkTextBuffer *textbuf,
-                              GtkTextIter *start, GtkTextIter *end)
+static int write_escaped_text(GOutputStream *fh, char *str)
 {
-    char *str = gtk_text_buffer_get_text(textbuf, start, end, TRUE);
     size_t len = strlen(str);
     int char_len = g_utf8_strlen(str, len);
     char *esc = escape_text(str, len);
@@ -261,60 +301,86 @@ static int write_escaped_text(GOutputStream *fh, GtkTextBuffer *textbuf,
 }
 
 
+static void write_tags(GtkTextIter pos, int *char_count, GOutputStream *fh, int *tags_open)
+{
+    GSList *tag;
+
+    for ( tag=gtk_text_iter_get_toggled_tags(&pos, FALSE);
+          tag != NULL;
+          tag=g_slist_next(tag) )
+    {
+        write_tag_end(fh, tag->data, char_count, tags_open);
+    }
+
+    for ( tag=gtk_text_iter_get_toggled_tags(&pos, TRUE);
+          tag != NULL;
+          tag=g_slist_next(tag) )
+    {
+        write_tag_start(fh, tag->data, &pos, char_count, tags_open);
+    }
+}
+
+
 static int write_markdown(GOutputStream *fh, Narrative *n)
 {
-    GtkTextIter start;
+    GtkTextIter start, end;
     int finished = 0;
     int char_count = 0;
+    int tags_open = 0;
 
     gtk_text_buffer_get_start_iter(n->textbuf, &start);
+    gtk_text_buffer_get_end_iter(n->textbuf, &end);
+
+    write_tags(start, &char_count, fh, &tags_open);
     do {
 
         GtkTextIter end_tag, end_para;
+        GtkTextIter nrl;  /* "Next Relevant Location */
         int have_etag, have_epara;
-        GSList *tag;
-        GSList *t_on = gtk_text_iter_get_toggled_tags(&start, TRUE);
-        GSList *t_off = gtk_text_iter_get_toggled_tags(&start, FALSE);
-
-        for ( tag=t_off; tag != NULL; tag=g_slist_next(tag) ) {
-            write_tag_end(fh, tag->data, char_count);
-        }
-
-        for ( tag=t_on; tag != NULL; tag=g_slist_next(tag) ) {
-            write_tag_start(fh, tag->data, &start, &char_count);
-        }
+        int epara = 0;
 
         end_tag = start;
         end_para = start;
         have_etag = gtk_text_iter_forward_to_tag_toggle(&end_tag, NULL);
         have_epara = gtk_text_iter_forward_to_line_end(&end_para);
-
         if ( !have_etag && !have_epara ) {
-            GtkTextIter end;
-            gtk_text_buffer_get_end_iter(n->textbuf, &end);
-            write_escaped_text(fh, n->textbuf, &start, &end);
+            nrl = end;
             finished = 1;
-        } else if ( have_etag && have_epara ) {
-            if ( gtk_text_iter_compare(&end_tag, &end_para) >= 0 ) {
-                /* End of paragraph happens first, or they coincide */
-                char_count += write_escaped_text(fh, n->textbuf, &start, &end_para);
-                write_string(fh, "\n");
-                start = end_para;
-            } else {
-                char_count += write_escaped_text(fh, n->textbuf, &start, &end_tag);
-                start = end_tag;
-            }
-        } else if ( have_etag ) {
-            char_count += write_escaped_text(fh, n->textbuf, &start, &end_tag);
-            start = end_tag;
         } else {
-            assert(have_epara);
-            char_count += write_escaped_text(fh, n->textbuf, &start, &end_para);
-            write_string(fh, "\n");
-            start = end_para;
+            int r;
+            r = gtk_text_iter_compare(&end_tag, &end_para);
+            if ( r < 0 ) {
+                /* end_tag comes first */
+                nrl = end_tag;
+            } else {
+                /* end_para comes first, or they coincide */
+                nrl = end_para;
+                epara = 1;
+            }
         }
 
+        char *str = gtk_text_buffer_get_text(n->textbuf, &start, &nrl, TRUE);
+        char_count += write_escaped_text(fh, str);
+
+        write_tags(nrl, &char_count, fh, &tags_open);
+
+        if ( epara ) {
+
+            /* Close any open span tags (bold/italic/underline) */
+            close_span_tags(fh, &tags_open);
+
+            /* Sneakily move to start of the next paragraph */
+            if ( gtk_text_iter_forward_line(&nrl) ) {
+                write_string(fh, "\n\n");
+                write_tags(nrl, &char_count, fh, &tags_open);
+            } /* else no more lines */
+
+        }
+
+        start = nrl;
+
     } while ( !finished );
+    write_string(fh, "\n");
 
     return 0;
 }

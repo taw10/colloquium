@@ -465,15 +465,8 @@ struct md_parse_ctx {
     int bold;
     int italic;
     int underline;
+    int need_newline;
 };
-
-
-static void close_block(struct md_parse_ctx *ps)
-{
-    GtkTextIter end;
-    gtk_text_buffer_get_end_iter(ps->n->textbuf, &end);
-    gtk_text_buffer_insert(ps->n->textbuf, &end, "\n", -1);
-}
 
 
 static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
@@ -511,7 +504,8 @@ static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
 static int md_leave_block(MD_BLOCKTYPE type, void *detail, void *vp)
 {
     struct md_parse_ctx *ps = vp;
-    close_block(ps);
+    if ( type == MD_BLOCK_DOC ) return 0;
+    ps->need_newline = 1;
     return 0;
 }
 
@@ -581,6 +575,13 @@ void insert_slide_anchor(GtkTextBuffer *buf, Slide *slide, GtkTextIter start, in
 static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 {
     struct md_parse_ctx *ps = vp;
+
+    if ( ps->need_newline ) {
+        GtkTextIter end;
+        gtk_text_buffer_get_end_iter(ps->n->textbuf, &end);
+        gtk_text_buffer_insert(ps->n->textbuf, &end, "\n", -1);
+        ps->need_newline = 0;
+    }
 
     if ( ps->type == NARRATIVE_ITEM_SLIDE ) {
 
@@ -674,6 +675,7 @@ static Narrative *parse_md_narrative(const char *text, size_t len)
     pstate.italic = 0;
     pstate.underline = 0;
     pstate.type = NARRATIVE_ITEM_TEXT;
+    pstate.need_newline = 0;
 
     md_parse(text, len, &md_parser, &pstate);
 

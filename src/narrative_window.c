@@ -462,6 +462,7 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
         break;
 
         case GDK_KEY_Page_Up :
+        case GDK_KEY_Left :
         if ( nw->show != NULL ) {
             ss_prev_para(nw->show, nw);
             return TRUE;
@@ -469,6 +470,7 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
         break;
 
         case GDK_KEY_Page_Down :
+        case GDK_KEY_Right :
         if ( nw->show != NULL) {
             ss_next_para(nw->show, nw);
             return TRUE;

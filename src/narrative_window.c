@@ -150,6 +150,8 @@ static void saveas_response_sig(GObject *d, GAsyncResult *res, gpointer vp)
         g_object_ref(nw->file);
     }
     g_object_unref(file);
+
+    update_titlebar(nw);
 }
 
 

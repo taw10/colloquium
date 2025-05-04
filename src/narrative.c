@@ -70,8 +70,6 @@ Narrative *narrative_new()
                                "background", "#ffffff",
                                NULL);
 
-    gtk_text_buffer_create_tag(n->textbuf, "text", NULL);
-
     gtk_text_buffer_create_tag(n->textbuf, "segstart",
                                "font", "Sans Bold 18",
                                NULL);
@@ -455,11 +453,11 @@ static int md_leave_block(MD_BLOCKTYPE type, void *detail, void *vp)
 static const char *block_tag_name(struct md_parse_ctx *ps)
 {
     switch ( ps->type ) {
-        case NARRATIVE_ITEM_TEXT : return "text";
+        case NARRATIVE_ITEM_TEXT : return NULL;
         case NARRATIVE_ITEM_SEGSTART : return "segstart";
         case NARRATIVE_ITEM_PRESTITLE : return "prestitle";
         case NARRATIVE_ITEM_BP : return "bulletpoint";
-        default: return "text";
+        default: return NULL;
     }
 }
 
@@ -556,8 +554,13 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         gtk_text_buffer_get_end_iter(ps->n->textbuf, &end_iter);
         start_offset = gtk_text_iter_get_offset(&end_iter);
 
-        gtk_text_buffer_insert_with_tags_by_name(ps->n->textbuf, &end_iter, text, len,
-                                                 block_tag_name(ps), NULL);
+        const char *tn = block_tag_name(ps);
+        if ( tn == NULL ) {
+            gtk_text_buffer_insert(ps->n->textbuf, &end_iter, text, len);
+        } else {
+            gtk_text_buffer_insert_with_tags_by_name(ps->n->textbuf, &end_iter, text, len,
+                                                     block_tag_name(ps), NULL);
+        }
 
         gtk_text_buffer_get_iter_at_offset(ps->n->textbuf, &start_iter, start_offset);
 

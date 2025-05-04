@@ -243,12 +243,32 @@ static void set_clock_pos(NarrativeWindow *nw)
 }
 
 
+static void update_highlight(NarrativeWindow *nw)
+{
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(nw->n->textbuf, &start, &end);
+    gtk_text_buffer_remove_tag_by_name(nw->n->textbuf, "highlight", &start, &end);
+
+    if ( nw->show == NULL ) return;
+
+    GtkTextMark *cursor;
+    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &start, cursor);
+
+    end = start;
+    gtk_text_iter_forward_to_line_end(&end);
+
+    gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, "highlight", &start, &end);
+}
+
+
 static void ss_prev_para(SCSlideshow *ss, void *vp)
 {
     NarrativeWindow *nw = vp;
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_PARAGRAPHS, -1, FALSE);
     set_clock_pos(nw);
+    update_highlight(nw);
 }
 
 
@@ -284,6 +304,8 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
     cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
     gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
     gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(nw->nv), &iter, 0, TRUE, 0, 0.5);
+
+    update_highlight(nw);
 
     /* Is the cursor on a slide? */
     anc = gtk_text_iter_get_child_anchor(&iter);
@@ -495,7 +517,7 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
 static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
     nw->show = NULL;
-
+    update_highlight(nw);
     return FALSE;
 }
 
@@ -521,6 +543,7 @@ static void start_slideshow(NarrativeWindow *nw, int no_slides)
          G_CALLBACK(ss_destroy_sig), nw);
 
     gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+    update_highlight(nw);
 }
 
 

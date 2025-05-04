@@ -96,6 +96,11 @@ Narrative *narrative_new()
                                "underline", PANGO_UNDERLINE_SINGLE,
                                NULL);
 
+    gtk_text_buffer_create_tag(n->textbuf, "highlight",
+                               "background", "#ddddff",
+                               "background-full-height", TRUE,
+                               NULL);
+
     gtk_text_buffer_set_modified(n->textbuf, FALSE);
 
     return n;

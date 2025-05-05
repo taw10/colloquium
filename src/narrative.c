@@ -673,7 +673,9 @@ static Narrative *parse_md_narrative(const char *text, size_t len)
     pstate.type = NARRATIVE_ITEM_TEXT;
     pstate.need_newline = 0;
 
+    gtk_text_buffer_begin_irreversible_action(pstate.n->textbuf);
     md_parse(text, len, &md_parser, &pstate);
+    gtk_text_buffer_end_irreversible_action(pstate.n->textbuf);
 
     return pstate.n;
 }

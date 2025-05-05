@@ -76,7 +76,7 @@ static void new_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 
 static void open_intro_doc(Colloquium *app)
 {
-    GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/Colloquium/demo.sc");
+    GFile *file = g_file_new_for_uri("resource:///uk/me/bitwiz/colloquium/demo.md");
     g_application_open(G_APPLICATION(app), &file, 1, "");
     g_object_unref(file);
 }

@@ -3,6 +3,7 @@
   <gresource prefix="/uk/me/bitwiz/colloquium">
     <file>sky.png</file>
     <file>canvas.png</file>
+    <file>demo.md</file>
     <file>colloquium.svg</file>
     <file>narrative.css</file>
   </gresource>

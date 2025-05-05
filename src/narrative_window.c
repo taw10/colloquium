@@ -319,12 +319,22 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 }
 
 
-/* FIXME: Actually toggle, and don't add tags across newlines */
-static void toggle_tag(NarrativeWindow *nw, const char *name)
+static void toggle_tag(GtkTextBuffer *buf, const char *name)
 {
     GtkTextIter start, end;
-    gtk_text_buffer_get_selection_bounds(nw->n->textbuf, &start, &end);
-    gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, name, &start, &end);
+    GtkTextTag *tag = lookup_tag(buf, name);
+
+    gtk_text_buffer_get_selection_bounds(buf, &start, &end);
+    if ( gtk_text_iter_has_tag(&start, tag)
+      || gtk_text_iter_has_tag(&end, tag)
+      || gtk_text_iter_starts_tag(&start, tag)
+      || gtk_text_iter_ends_tag(&end, tag) )
+    {
+        gtk_text_buffer_remove_tag(buf, tag, &start, &end);
+    } else {
+        gtk_text_buffer_apply_tag(buf, tag, &start, &end);
+    }
+    gtk_text_buffer_set_modified(buf, TRUE);
 }
 
 
@@ -332,7 +342,7 @@ static void bold_sig(GSimpleAction *action, GVariant *parameter,
                      gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    toggle_tag(nw, "bold");
+    toggle_tag(nw->n->textbuf, "bold");
 }
 
 
@@ -340,7 +350,7 @@ static void italic_sig(GSimpleAction *action, GVariant *parameter,
                        gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    toggle_tag(nw, "italic");
+    toggle_tag(nw->n->textbuf, "italic");
 }
 
 
@@ -348,7 +358,7 @@ static void underline_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    toggle_tag(nw, "underline");
+    toggle_tag(nw->n->textbuf, "underline");
 }
 
 

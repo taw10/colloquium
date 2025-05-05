@@ -243,6 +243,13 @@ static void set_clock_pos(NarrativeWindow *nw)
 }
 
 
+static GtkTextTag *lookup_tag(GtkTextBuffer *buf, const char *name)
+{
+    GtkTextTagTable *table = gtk_text_buffer_get_tag_table(buf);
+    return gtk_text_tag_table_lookup(table, name);
+}
+
+
 static void update_highlight(NarrativeWindow *nw)
 {
     GtkTextIter start, end;
@@ -272,13 +279,6 @@ static void ss_prev_para(SCSlideshow *ss, void *vp)
 }
 
 
-static GtkTextTag *slide_tag(GtkTextBuffer *buf)
-{
-    GtkTextTagTable *table = gtk_text_buffer_get_tag_table(buf);
-    return gtk_text_tag_table_lookup(table, "slide");
-}
-
-
 static void ss_next_para(SCSlideshow *ss, void *vp)
 {
     NarrativeWindow *nw = vp;
@@ -295,7 +295,7 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
     if ( ss != NULL && ss->single_monitor && !nw->show_no_slides ) {
         cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
         gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-        gtk_text_iter_forward_to_tag_toggle(&iter, slide_tag(nw->n->textbuf));
+        gtk_text_iter_forward_to_tag_toggle(&iter, lookup_tag(nw->n->textbuf, "slide"));
         gtk_text_buffer_place_cursor(nw->n->textbuf, &iter);
     }
 
@@ -559,7 +559,7 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
     /* Look backwards to the last slide, and set it */
     cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
     gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    if ( gtk_text_iter_backward_to_tag_toggle(&iter, slide_tag(nw->n->textbuf)) ) {
+    if ( gtk_text_iter_backward_to_tag_toggle(&iter, lookup_tag(nw->n->textbuf, "slide")) ) {
 
         guint n;
         GtkWidget **th;

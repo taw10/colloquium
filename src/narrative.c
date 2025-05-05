@@ -61,15 +61,6 @@ Narrative *narrative_new()
     n->time_marks[0].minutes = 1.0;
     n->time_marks[0].y = 300.0;
 
-    gtk_text_buffer_create_tag(n->textbuf, "overall",
-                               "wrap-mode", GTK_WRAP_WORD_CHAR,
-                               "font", "Sans 16",
-                               "left-margin", 10,
-                               "right-margin", 10,
-                               "pixels-above-lines", 10,
-                               "background", "#ffffff",
-                               NULL);
-
     gtk_text_buffer_create_tag(n->textbuf, "segstart",
                                "font", "Sans Bold 18",
                                NULL);
@@ -711,10 +702,6 @@ Narrative *narrative_load(GFile *file)
     n = parse_md_narrative(text, len);
     g_bytes_unref(bytes);
     if ( n == NULL ) return NULL;
-
-    GtkTextIter start, end;
-    gtk_text_buffer_get_bounds(n->textbuf, &start, &end);
-    gtk_text_buffer_apply_tag_by_name(n->textbuf, "overall", &start, &end);
 
     return n;
 }

@@ -768,6 +768,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     GtkWidget *button;
     GtkEventController *evc;
     GtkDropTarget *drop;
+    GtkCssProvider *provider;
 
     nw = g_object_new(GTK_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
 
@@ -791,6 +792,18 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(nw->nv), n->textbuf);
     add_thumbnails(GTK_TEXT_VIEW(nw->nv), nw);
     gtk_text_buffer_set_modified(n->textbuf, FALSE);
+
+    gtk_widget_add_css_class(nw->nv, "narrative");
+    provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_resource(provider, "/uk/me/bitwiz/colloquium/narrative.css");
+    gtk_style_context_add_provider_for_display(gtk_widget_get_display(nw->nv),
+                                               GTK_STYLE_PROVIDER(provider),
+                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(nw->nv), GTK_WRAP_WORD);
+    gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(nw->nv), 10);
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(nw->nv), 10);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(nw->nv), 10);
+    gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(nw->nv), 10);
 
     nw->timing_ruler = gtk_drawing_area_new();
     gtk_text_view_set_gutter(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_LEFT, nw->timing_ruler);

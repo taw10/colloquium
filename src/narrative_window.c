@@ -202,23 +202,40 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
     gtk_window_present(GTK_WINDOW(nw->slide_sorter));
 }
 
+static void add_heading(NarrativeWindow *nw, const char *name, const char *placeholder)
+{
+    GtkTextMark *cursor;
+    GtkTextIter iter, end;
+
+    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+    gtk_text_iter_forward_line(&iter);
+    gtk_text_buffer_insert(nw->n->textbuf, &iter, placeholder, -1);
+
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+    gtk_text_iter_forward_line(&iter);
+    end = iter;
+    gtk_text_iter_forward_chars(&end, 16);
+
+    gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, name, &iter, &end);
+
+    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+}
+
 
 static void add_prestitle_sig(GSimpleAction *action, GVariant *parameter,
                               gpointer vp)
 {
-    //NarrativeWindow *nw = vp;
-}
-
-
-static void add_bp_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
+    NarrativeWindow *nw = vp;
+    add_heading(nw, "prestitle", "Presentation title");
 }
 
 
 static void add_segstart_sig(GSimpleAction *action, GVariant *parameter,
                              gpointer vp)
 {
+    NarrativeWindow *nw = vp;
+    add_heading(nw, "segstart", "Start of section");
 }
 
 
@@ -359,29 +376,6 @@ static void underline_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     toggle_tag(nw->n->textbuf, "underline");
-}
-
-
-static void section_start_sig(GSimpleAction *action, GVariant *parameter,
-                              gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    GtkTextMark *cursor;
-    GtkTextIter iter, end;
-
-    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
-    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    gtk_text_iter_forward_line(&iter);
-    gtk_text_buffer_insert(nw->n->textbuf, &iter, "Start of section\n", -1);
-
-    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    gtk_text_iter_forward_line(&iter);
-    end = iter;
-    gtk_text_iter_forward_chars(&end, 16);
-
-    gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, "segstart", &iter, &end);
-
-    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
 }
 
 
@@ -662,7 +656,6 @@ GActionEntry nw_entries[] = {
     { "save", save_sig, NULL, NULL, NULL },
     { "saveas", saveas_sig, NULL, NULL, NULL },
     { "slide", add_slide_sig, NULL, NULL, NULL },
-    { "bp", add_bp_sig, NULL, NULL, NULL },
     { "eop", add_eop_sig, NULL, NULL, NULL },
     { "prestitle", add_prestitle_sig, NULL, NULL, NULL },
     { "segstart", add_segstart_sig, NULL, NULL, NULL },
@@ -675,7 +668,6 @@ GActionEntry nw_entries[] = {
     { "bold", bold_sig, NULL, NULL, NULL },
     { "italic", italic_sig, NULL, NULL, NULL },
     { "underline", underline_sig, NULL, NULL, NULL },
-    { "sectionstart", section_start_sig, NULL, NULL, NULL },
     { "print", print_sig, NULL, NULL, NULL  },
 };
 
@@ -862,11 +854,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 
     button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
-
-    button = gtk_button_new_from_icon_name("format-text-direction-ltr");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
-    gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
-                                   "win.sectionstart");
 
     evc = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(nw->nv), evc);

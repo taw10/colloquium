@@ -82,10 +82,6 @@
           <attribute name="action">win.slide</attribute>
         </item>
         <item>
-          <attribute name="label" translatable="yes">Bullet point</attribute>
-          <attribute name="action">win.bp</attribute>
-        </item>
-        <item>
           <attribute name="label" translatable="yes">Presentation title</attribute>
           <attribute name="action">win.prestitle</attribute>
         </item>

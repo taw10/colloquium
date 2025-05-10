@@ -69,6 +69,39 @@ static void gtk_slide_window_init(SlideWindow *sw)
 }
 
 
+static void slide_click_sig(GtkGestureClick *self, int n_press,
+                            gdouble x, gdouble y, gpointer vp)
+{
+    SlideWindow *sw = vp;
+
+    if ( n_press != 2 ) return;
+    if ( gtk_window_is_fullscreen(GTK_WINDOW(sw)) ) {
+        gtk_window_unfullscreen(GTK_WINDOW(sw));
+    } else {
+        gtk_window_fullscreen(GTK_WINDOW(sw));
+    }
+}
+
+
+static gboolean slide_key_press_sig(GtkEventControllerKey *self,
+                                    guint keyval,
+                                    guint keycode,
+                                    GdkModifierType state,
+                                    SlideWindow *sw)
+{
+    switch ( keyval ) {
+
+        case GDK_KEY_Escape :
+        if ( gtk_window_is_fullscreen(GTK_WINDOW(sw)) ) {
+            gtk_window_unfullscreen(GTK_WINDOW(sw));
+        }
+        break;
+    }
+
+    return FALSE;
+}
+
+
 SlideWindow *slide_window_new(Narrative *n, Slide *slide,
                               NarrativeWindow *nw, GApplication *papp)
 {
@@ -98,6 +131,14 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
     gtk_window_set_child(GTK_WINDOW(sw), GTK_WIDGET(sw->sv));
 
     gtk_window_set_resizable(GTK_WINDOW(sw), TRUE);
+
+    GtkGesture *evc = gtk_gesture_click_new();
+    gtk_widget_add_controller(GTK_WIDGET(sw->sv), GTK_EVENT_CONTROLLER(evc));
+    g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(slide_click_sig), sw);
+
+    GtkEventController *evk = gtk_event_controller_key_new();
+    gtk_widget_add_controller(GTK_WIDGET(sw), evk);
+    g_signal_connect(G_OBJECT(evk), "key-pressed", G_CALLBACK(slide_key_press_sig), sw);
 
     return sw;
 }

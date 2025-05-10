@@ -103,6 +103,12 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 }
 
 
+void slide_window_set_slide(SlideWindow *sw, Slide *s)
+{
+    gtk_slide_view_set_slide(sw->sv, s);
+}
+
+
 void slide_window_update(SlideWindow *sw)
 {
     gtk_widget_queue_draw(GTK_WIDGET(sw->sv));

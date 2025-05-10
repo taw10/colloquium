@@ -99,16 +99,12 @@
       <attribute name="label" translatable="yes">Tools</attribute>
       <section>
         <item>
-          <attribute name="label" translatable="yes">Start slideshow</attribute>
+          <attribute name="label" translatable="yes">Start presenting from beginning</attribute>
           <attribute name="action">win.startslideshow</attribute>
         </item>
         <item>
-          <attribute name="label" translatable="yes">Start slideshow here</attribute>
+          <attribute name="label" translatable="yes">Start presenting from here</attribute>
           <attribute name="action">win.startslideshowhere</attribute>
-        </item>
-        <item>
-          <attribute name="label" translatable="yes">Start slideshow without slides</attribute>
-          <attribute name="action">win.startslideshownoslides</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Presentation clock</attribute>

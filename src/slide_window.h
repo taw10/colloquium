@@ -30,6 +30,7 @@
 typedef struct _gtkslidewindow SlideWindow;
 typedef struct _gtkslidewindowclass SlideWindowClass;
 
+#include "narrative.h"
 #include "narrative_window.h"
 
 #define GTK_TYPE_SLIDE_WINDOW (gtk_slide_window_get_type())
@@ -74,5 +75,6 @@ extern SlideWindow *slide_window_new(Narrative *n,
 
 extern void slide_window_update(SlideWindow *sw);
 extern void slide_window_update_titlebar(SlideWindow *sw);
+extern void slide_window_set_slide(SlideWindow *sw, Slide *s);
 
 #endif	/* SLIDEWINDOW_H */

@@ -40,7 +40,6 @@
 #include "slide_window.h"
 #include "testcard.h"
 #include "pr_clock.h"
-#include "slideshow.h"
 #include "print.h"
 #include "narrative_priv.h"
 #include "thumbnailwidget.h"
@@ -273,7 +272,7 @@ static void update_highlight(NarrativeWindow *nw)
     gtk_text_buffer_get_bounds(nw->n->textbuf, &start, &end);
     gtk_text_buffer_remove_tag_by_name(nw->n->textbuf, "highlight", &start, &end);
 
-    if ( nw->show == NULL ) return;
+    if ( !nw->presenting ) return;
 
     GtkTextMark *cursor;
     cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
@@ -286,9 +285,17 @@ static void update_highlight(NarrativeWindow *nw)
 }
 
 
-static void ss_prev_para(SCSlideshow *ss, void *vp)
+static void set_presenting_slide(NarrativeWindow *nw, Slide *s)
 {
-    NarrativeWindow *nw = vp;
+    int i;
+    for ( i=0; i<nw->n_slidewindows; i++ ) {
+        slide_window_set_slide(nw->slidewindows[i], s);
+    }
+}
+
+
+static void reverse_paragraph(NarrativeWindow *nw)
+{
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_PARAGRAPHS, -1, FALSE);
     set_clock_pos(nw);
@@ -296,9 +303,8 @@ static void ss_prev_para(SCSlideshow *ss, void *vp)
 }
 
 
-static void ss_next_para(SCSlideshow *ss, void *vp)
+static void advance_paragraph(NarrativeWindow *nw)
 {
-    NarrativeWindow *nw = vp;
     GtkTextMark *cursor;
     GtkTextIter iter;
     GtkTextChildAnchor *anc;
@@ -307,14 +313,6 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
             GTK_MOVEMENT_PARAGRAPHS, 1, FALSE);
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_PARAGRAPH_ENDS, -1, FALSE);
-
-    /* If we only have one monitor, skip to next slide */
-    if ( ss != NULL && ss->single_monitor && !nw->show_no_slides ) {
-        cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
-        gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-        gtk_text_iter_forward_to_tag_toggle(&iter, lookup_tag(nw->n->textbuf, "slide"));
-        gtk_text_buffer_place_cursor(nw->n->textbuf, &iter);
-    }
 
     set_clock_pos(nw);
 
@@ -326,11 +324,11 @@ static void ss_next_para(SCSlideshow *ss, void *vp)
 
     /* Is the cursor on a slide? */
     anc = gtk_text_iter_get_child_anchor(&iter);
-    if ( nw->show != NULL && anc != NULL ) {
+    if ( anc != NULL ) {
         guint n;
         GtkWidget **th = gtk_text_child_anchor_get_widgets(anc, &n);
         assert(n == 1);
-        sc_slideshow_set_slide(nw->show, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
         g_free(th);
     }
 }
@@ -473,6 +471,44 @@ static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 }
 
 
+static void stop_presenting(NarrativeWindow *nw)
+{
+    if ( !nw->presenting ) return;
+    nw->presenting = 0;
+    update_highlight(nw);
+    gtk_widget_unparent(nw->presenting_label);
+
+    /* Put focus back in editor (not the toolbar) */
+    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+}
+
+
+static gboolean presenting_click_sig(GtkWidget *da, NarrativeWindow *nw)
+{
+    stop_presenting(nw);
+    return FALSE;
+}
+
+
+static void start_presenting(NarrativeWindow *nw)
+{
+    GtkWidget *label;
+
+    if ( nw->presenting ) return;
+    nw->presenting = 1;
+    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+    update_highlight(nw);
+
+    label = gtk_label_new("Presenting (click to stop)");
+    gtk_label_set_markup(GTK_LABEL(label),
+                "<span background='#33ff33'><b>Presenting (click to stop)</b></span>");
+    nw->presenting_label = gtk_button_new();
+    gtk_button_set_child(GTK_BUTTON(nw->presenting_label), label);
+    gtk_box_append(GTK_BOX(nw->toolbar), nw->presenting_label);
+    g_signal_connect(G_OBJECT(nw->presenting_label), "clicked", G_CALLBACK(presenting_click_sig), nw);
+}
+
+
 static gboolean nw_key_press_sig(GtkEventControllerKey *self,
                                  guint keyval,
                                  guint keycode,
@@ -483,7 +519,7 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
 
         case GDK_KEY_B :
         case GDK_KEY_b :
-        if ( nw->show != NULL ) {
+        if ( nw->presenting ) {
             scroll_down(nw);
             return TRUE;
         }
@@ -491,23 +527,16 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
 
         case GDK_KEY_Page_Up :
         case GDK_KEY_Left :
-        if ( nw->show != NULL ) {
-            ss_prev_para(nw->show, nw);
+        if ( nw->presenting ) {
+            reverse_paragraph(nw);
             return TRUE;
         }
         break;
 
         case GDK_KEY_Page_Down :
         case GDK_KEY_Right :
-        if ( nw->show != NULL) {
-            ss_next_para(nw->show, nw);
-            return TRUE;
-        }
-        break;
-
-        case GDK_KEY_Escape :
-        if ( nw->show != NULL ) {
-            gtk_window_close(GTK_WINDOW(nw->show));
+        if ( nw->presenting ) {
+            advance_paragraph(nw);
             return TRUE;
         }
         break;
@@ -518,47 +547,14 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
 }
 
 
-static gboolean ss_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
-{
-    nw->show = NULL;
-    update_highlight(nw);
-    return FALSE;
-}
-
-
-static void start_slideshow(NarrativeWindow *nw, int no_slides)
-{
-    GtkEventController *evc;
-
-    nw->show = sc_slideshow_new(nw->n, GTK_APPLICATION(nw->app));
-    if ( nw->show == NULL ) return;
-
-    evc = gtk_event_controller_key_new();
-    gtk_widget_add_controller(GTK_WIDGET(nw->show), evc);
-    g_signal_connect(G_OBJECT(evc), "key-pressed",
-         G_CALLBACK(nw_key_press_sig), nw);
-
-    if ( no_slides ) {
-        gtk_widget_set_visible(GTK_WIDGET(nw->show), FALSE);
-        nw->show_no_slides = 1;
-    }
-
-    g_signal_connect(G_OBJECT(nw->show), "destroy",
-         G_CALLBACK(ss_destroy_sig), nw);
-
-    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
-    update_highlight(nw);
-}
-
-
-static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
-                                     gpointer vp)
+static void start_presenting_here_sig(GSimpleAction *action, GVariant *parameter,
+                                      gpointer vp)
 {
     NarrativeWindow *nw = vp;
     GtkTextMark *cursor;
     GtkTextIter iter;
 
-    start_slideshow(nw, 0);
+    start_presenting(nw);
 
     /* Look backwards to the last slide, and set it */
     cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
@@ -577,29 +573,43 @@ static void start_slideshow_here_sig(GSimpleAction *action, GVariant *parameter,
         }
         th = gtk_text_child_anchor_get_widgets(anc, &n);
         assert(n == 1);
-        sc_slideshow_set_slide(nw->show, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
         g_free(th);
     }
 }
 
 
-static void start_slideshow_noslides_sig(GSimpleAction *action, GVariant *parameter,
-                                         gpointer vp)
+static void start_presenting_sig(GSimpleAction *action, GVariant *parameter,
+                                 gpointer vp)
 {
     NarrativeWindow *nw = vp;
+    GtkTextMark *cursor;
+    GtkTextIter iter;
+
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
-    start_slideshow(nw, 1);
-}
+    start_presenting(nw);
 
+    /* Look forwards to the first slide, and set it */
+    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
+    if ( gtk_text_iter_backward_to_tag_toggle(&iter, lookup_tag(nw->n->textbuf, "slide")) ) {
 
-static void start_slideshow_sig(GSimpleAction *action, GVariant *parameter,
-                                gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
-            GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
-    start_slideshow(nw, 0);
+        guint n;
+        GtkWidget **th;
+        GtkTextChildAnchor *anc;
+
+        gtk_text_iter_backward_cursor_position(&iter);
+        anc = gtk_text_iter_get_child_anchor(&iter);
+        if ( anc == NULL ) {
+            fprintf(stderr, "No anchor found despite slide tag!\n");
+            return;
+        }
+        th = gtk_text_child_anchor_get_widgets(anc, &n);
+        assert(n == 1);
+        set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        g_free(th);
+    }
 }
 
 
@@ -660,9 +670,8 @@ GActionEntry nw_entries[] = {
     { "prestitle", add_prestitle_sig, NULL, NULL, NULL },
     { "segstart", add_segstart_sig, NULL, NULL, NULL },
     { "segend", add_segend_sig, NULL, NULL, NULL },
-    { "startslideshow", start_slideshow_sig, NULL, NULL, NULL },
-    { "startslideshowhere", start_slideshow_here_sig, NULL, NULL, NULL },
-    { "startslideshownoslides", start_slideshow_noslides_sig, NULL, NULL, NULL },
+    { "startslideshow", start_presenting_sig, NULL, NULL, NULL },
+    { "startslideshowhere", start_presenting_here_sig, NULL, NULL, NULL },
     { "clock", open_clock_sig, NULL, NULL, NULL },
     { "testcard", testcard_sig, NULL, NULL, NULL },
     { "bold", bold_sig, NULL, NULL, NULL },
@@ -689,7 +698,7 @@ static void thumbnail_click_sig(GtkGestureClick *self, int n_press,
 
     if ( n_press != 2 ) return;
 
-    if ( th->nw->show == NULL ) {
+    if ( !th->nw->presenting ) {
         if ( th->nw->n_slidewindows < 16 ) {
             SlideWindow *sw = slide_window_new(th->nw->n, th->slide, th->nw, th->nw->app);
             th->nw->slidewindows[th->nw->n_slidewindows++] = sw;
@@ -700,7 +709,7 @@ static void thumbnail_click_sig(GtkGestureClick *self, int n_press,
             fprintf(stderr, _("Too many slide windows\n"));
         }
     } else {
-        sc_slideshow_set_slide(th->nw->show, th->slide);
+        set_presenting_slide(th->nw, th->slide);
     }
 }
 
@@ -766,7 +775,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     NarrativeWindow *nw;
     GtkWidget *vbox;
     GtkWidget *scroll;
-    GtkWidget *toolbar;
     GtkWidget *button;
     GtkEventController *evc;
     GtkDropTarget *drop;
@@ -779,6 +787,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->n_slidewindows = 0;
     nw->file = file;
     nw->slide_sorter = NULL;
+    nw->presenting = 0;
     if ( file != NULL ) g_object_ref(file);
 
     gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(nw), TRUE);
@@ -812,9 +821,9 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(nw->timing_ruler), 100);
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(nw->timing_ruler), draw_timing_ruler, nw, NULL);
 
-    toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_add_css_class(GTK_WIDGET(toolbar), "toolbar");
-    gtk_box_prepend(GTK_BOX(vbox), GTK_WIDGET(toolbar));
+    nw->toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_add_css_class(GTK_WIDGET(nw->toolbar), "toolbar");
+    gtk_box_prepend(GTK_BOX(vbox), GTK_WIDGET(nw->toolbar));
 
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), "win.save",
             (const char *[])  {"<Control>s", NULL});
@@ -823,37 +832,37 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     button = gtk_button_new_from_icon_name("view-fullscreen");
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.startslideshow");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
 
     button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
 
     /* Add slide */
     button = gtk_button_new_from_icon_name("list-add");
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.slide");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
 
     button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
 
     button = gtk_button_new_from_icon_name("format-text-bold");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.bold");
 
     button = gtk_button_new_from_icon_name("format-text-italic");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.italic");
 
     button = gtk_button_new_from_icon_name("format-text-underline");
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
     gtk_actionable_set_action_name(GTK_ACTIONABLE(button),
                                    "win.underline");
 
     button = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_append(GTK_BOX(toolbar), GTK_WIDGET(button));
+    gtk_box_append(GTK_BOX(nw->toolbar), GTK_WIDGET(button));
 
     evc = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(nw->nv), evc);

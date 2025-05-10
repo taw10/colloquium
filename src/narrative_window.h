@@ -48,7 +48,6 @@ typedef struct _narrativewindowclass NarrativeWindowClass;
                                            GTK_TYPE_NARRATIVE_WINDOW, NarrativeWindowClass))
 
 #include "pr_clock.h"
-#include "slideshow.h"
 #include "slide_window.h"
 #include "narrative.h"
 #include "slide_sorter.h"
@@ -62,13 +61,14 @@ struct _narrativewindow
     GApplication        *app;
     Narrative           *n;
     GFile               *file;
-    SCSlideshow         *show;
-    int                  show_no_slides;
     PRClock             *pr_clock;
     SlideWindow         *slidewindows[16];
     int                  n_slidewindows;
     GtkWidget           *timing_ruler;
     SlideSorter         *slide_sorter;
+    GtkWidget           *toolbar;
+    int                  presenting;
+    GtkWidget           *presenting_label;
 };
 
 

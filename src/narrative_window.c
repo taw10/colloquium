@@ -758,6 +758,9 @@ static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, doubl
     insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
     GtkWidget *thn = thumbnail_new(slide, nw);
     gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
+    GtkGesture *evc = gtk_gesture_click_new();
+    gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));
+    g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), thn);
     return TRUE;
 }
 

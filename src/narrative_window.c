@@ -460,55 +460,6 @@ static gboolean nw_close_request_sig(GtkWidget *self, NarrativeWindow *nw)
 }
 
 
-static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
-{
-    int i;
-    if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
-    for ( i=0; i<nw->n_slidewindows; i++ ) {
-        gtk_window_close(GTK_WINDOW(nw->slidewindows[i]));
-    }
-    return FALSE;
-}
-
-
-static void stop_presenting(NarrativeWindow *nw)
-{
-    if ( !nw->presenting ) return;
-    nw->presenting = 0;
-    update_highlight(nw);
-    gtk_widget_unparent(nw->presenting_label);
-
-    /* Put focus back in editor (not the toolbar) */
-    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
-}
-
-
-static gboolean presenting_click_sig(GtkWidget *da, NarrativeWindow *nw)
-{
-    stop_presenting(nw);
-    return FALSE;
-}
-
-
-static void start_presenting(NarrativeWindow *nw)
-{
-    GtkWidget *label;
-
-    if ( nw->presenting ) return;
-    nw->presenting = 1;
-    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
-    update_highlight(nw);
-
-    label = gtk_label_new("Presenting (click to stop)");
-    gtk_label_set_markup(GTK_LABEL(label),
-                "<span background='#33ff33'><b>Presenting (click to stop)</b></span>");
-    nw->presenting_label = gtk_button_new();
-    gtk_button_set_child(GTK_BUTTON(nw->presenting_label), label);
-    gtk_box_append(GTK_BOX(nw->toolbar), nw->presenting_label);
-    g_signal_connect(G_OBJECT(nw->presenting_label), "clicked", G_CALLBACK(presenting_click_sig), nw);
-}
-
-
 static gboolean nw_key_press_sig(GtkEventControllerKey *self,
                                  guint keyval,
                                  guint keycode,
@@ -547,6 +498,73 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
 }
 
 
+static void open_slide_window(NarrativeWindow *nw, Slide *slide)
+{
+    if ( nw->n_slidewindows < 16 ) {
+        SlideWindow *sw = slide_window_new(nw->n, slide, nw, nw->app);
+        nw->slidewindows[nw->n_slidewindows++] = sw;
+        g_signal_connect(G_OBJECT(sw), "destroy",
+                         G_CALLBACK(slide_window_closed_sig), nw);
+        GtkEventController *evk = gtk_event_controller_key_new();
+        gtk_widget_add_controller(GTK_WIDGET(sw), evk);
+        g_signal_connect(G_OBJECT(evk), "key-pressed", G_CALLBACK(nw_key_press_sig), nw);
+        gtk_window_present(GTK_WINDOW(sw));
+    } else {
+        fprintf(stderr, _("Too many slide windows\n"));
+    }
+}
+
+
+static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
+{
+    int i;
+    if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
+    for ( i=0; i<nw->n_slidewindows; i++ ) {
+        gtk_window_close(GTK_WINDOW(nw->slidewindows[i]));
+    }
+    return FALSE;
+}
+
+
+static void stop_presenting(NarrativeWindow *nw)
+{
+    if ( !nw->presenting ) return;
+    nw->presenting = 0;
+    update_highlight(nw);
+    gtk_widget_unparent(nw->presenting_label);
+
+    /* Put focus back in editor (not the toolbar) */
+    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+}
+
+
+static gboolean presenting_click_sig(GtkWidget *da, NarrativeWindow *nw)
+{
+    stop_presenting(nw);
+    return FALSE;
+}
+
+
+static void start_presenting(NarrativeWindow *nw)
+{
+    GtkWidget *label;
+
+    if ( nw->presenting ) return;
+    nw->presenting = 1;
+
+    label = gtk_label_new("Presenting (click to stop)");
+    gtk_label_set_markup(GTK_LABEL(label),
+                "<span background='#33ff33'><b>Presenting (click to stop)</b></span>");
+    nw->presenting_label = gtk_button_new();
+    gtk_button_set_child(GTK_BUTTON(nw->presenting_label), label);
+    gtk_box_append(GTK_BOX(nw->toolbar), nw->presenting_label);
+    g_signal_connect(G_OBJECT(nw->presenting_label), "clicked", G_CALLBACK(presenting_click_sig), nw);
+
+    update_highlight(nw);
+    gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
+}
+
+
 static void start_presenting_here_sig(GSimpleAction *action, GVariant *parameter,
                                       gpointer vp)
 {
@@ -575,7 +593,12 @@ static void start_presenting_here_sig(GSimpleAction *action, GVariant *parameter
         }
         th = gtk_text_child_anchor_get_widgets(anc, &n);
         assert(n == 1);
-        set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        if ( nw->n_slidewindows == 0 ) {
+            open_slide_window(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        } else {
+            set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        }
+
         g_free(th);
     }
 }
@@ -608,7 +631,11 @@ static void start_presenting_sig(GSimpleAction *action, GVariant *parameter,
         }
         th = gtk_text_child_anchor_get_widgets(anc, &n);
         assert(n == 1);
-        set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        if ( nw->n_slidewindows == 0 ) {
+            open_slide_window(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        } else {
+            set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+        }
         g_free(th);
     }
 }
@@ -700,18 +727,7 @@ static void thumbnail_click_sig(GtkGestureClick *self, int n_press,
     if ( n_press != 2 ) return;
 
     if ( !th->nw->presenting ) {
-        if ( th->nw->n_slidewindows < 16 ) {
-            SlideWindow *sw = slide_window_new(th->nw->n, th->slide, th->nw, th->nw->app);
-            th->nw->slidewindows[th->nw->n_slidewindows++] = sw;
-            g_signal_connect(G_OBJECT(sw), "destroy",
-                             G_CALLBACK(slide_window_closed_sig), th->nw);
-            GtkEventController *evk = gtk_event_controller_key_new();
-            gtk_widget_add_controller(GTK_WIDGET(sw), evk);
-            g_signal_connect(G_OBJECT(evk), "key-pressed", G_CALLBACK(nw_key_press_sig), th->nw);
-            gtk_window_present(GTK_WINDOW(sw));
-        } else {
-            fprintf(stderr, _("Too many slide windows\n"));
-        }
+        open_slide_window(th->nw, th->slide);
     } else {
         set_presenting_slide(th->nw, th->slide);
     }

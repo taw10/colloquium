@@ -554,6 +554,8 @@ static void start_presenting_here_sig(GSimpleAction *action, GVariant *parameter
     GtkTextMark *cursor;
     GtkTextIter iter;
 
+    g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
+            GTK_MOVEMENT_PARAGRAPH_ENDS, -1, FALSE);
     start_presenting(nw);
 
     /* Look backwards to the last slide, and set it */
@@ -593,13 +595,12 @@ static void start_presenting_sig(GSimpleAction *action, GVariant *parameter,
     /* Look forwards to the first slide, and set it */
     cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
     gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    if ( gtk_text_iter_backward_to_tag_toggle(&iter, lookup_tag(nw->n->textbuf, "slide")) ) {
+    if ( gtk_text_iter_forward_to_tag_toggle(&iter, lookup_tag(nw->n->textbuf, "slide")) ) {
 
         guint n;
         GtkWidget **th;
         GtkTextChildAnchor *anc;
 
-        gtk_text_iter_backward_cursor_position(&iter);
         anc = gtk_text_iter_get_child_anchor(&iter);
         if ( anc == NULL ) {
             fprintf(stderr, "No anchor found despite slide tag!\n");

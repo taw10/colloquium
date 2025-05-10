@@ -704,6 +704,9 @@ static void thumbnail_click_sig(GtkGestureClick *self, int n_press,
             th->nw->slidewindows[th->nw->n_slidewindows++] = sw;
             g_signal_connect(G_OBJECT(sw), "destroy",
                              G_CALLBACK(slide_window_closed_sig), th->nw);
+            GtkEventController *evk = gtk_event_controller_key_new();
+            gtk_widget_add_controller(GTK_WIDGET(sw), evk);
+            g_signal_connect(G_OBJECT(evk), "key-pressed", G_CALLBACK(nw_key_press_sig), th->nw);
             gtk_window_present(GTK_WINDOW(sw));
         } else {
             fprintf(stderr, _("Too many slide windows\n"));

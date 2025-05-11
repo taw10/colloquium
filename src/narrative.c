@@ -106,12 +106,6 @@ void narrative_free(Narrative *n)
 }
 
 
-Slide *narrative_get_slide(Narrative *n, int para)
-{
-    return n->slides[0];
-}
-
-
 static ssize_t write_string(GOutputStream *fh, char *str)
 {
     gssize r;

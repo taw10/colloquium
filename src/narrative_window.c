@@ -281,6 +281,7 @@ static void update_highlight(NarrativeWindow *nw)
 static void set_presenting_slide(NarrativeWindow *nw, Slide *s)
 {
     int i;
+    nw->presenting_slide = s;
     for ( i=0; i<nw->n_slidewindows; i++ ) {
         slide_window_set_slide(nw->slidewindows[i], s);
     }
@@ -507,6 +508,22 @@ static void open_slide_window(NarrativeWindow *nw, Slide *slide)
     }
 }
 
+static void openslide_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    if ( nw->presenting_slide != NULL ) {
+        open_slide_window(nw, nw->presenting_slide);
+    } else {
+        Slide *f = narrative_get_first_slide(nw->n);
+        if ( f != NULL ) {
+            open_slide_window(nw, f);
+        } else {
+            show_error(nw, "No slides!");
+        }
+    }
+}
+
 
 static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
@@ -525,6 +542,7 @@ static void stop_presenting(NarrativeWindow *nw)
     nw->presenting = 0;
     update_highlight(nw);
     gtk_widget_unparent(nw->presenting_label);
+    nw->presenting_slide = NULL;
 
     /* Put focus back in editor (not the toolbar) */
     gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
@@ -679,6 +697,7 @@ GActionEntry nw_entries[] = {
     { "startslideshowhere", start_presenting_here_sig, NULL, NULL, NULL },
     { "clock", open_clock_sig, NULL, NULL, NULL },
     { "testcard", testcard_sig, NULL, NULL, NULL },
+    { "openslide", openslide_sig, NULL, NULL, NULL },
     { "bold", bold_sig, NULL, NULL, NULL },
     { "italic", italic_sig, NULL, NULL, NULL },
     { "underline", underline_sig, NULL, NULL, NULL },
@@ -788,6 +807,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->file = file;
     nw->slide_sorter = NULL;
     nw->presenting = 0;
+    nw->presenting_slide = NULL;
     if ( file != NULL ) g_object_ref(file);
 
     gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(nw), TRUE);

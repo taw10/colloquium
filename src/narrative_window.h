@@ -69,6 +69,7 @@ struct _narrativewindow
     GtkWidget           *toolbar;
     int                  presenting;
     GtkWidget           *presenting_label;
+    Slide               *presenting_slide;
 };
 
 

@@ -114,6 +114,10 @@
           <attribute name="label" translatable="yes">Test card</attribute>
           <attribute name="action">win.testcard</attribute>
         </item>
+        <item>
+          <attribute name="label" translatable="yes">Open new slide window</attribute>
+          <attribute name="action">win.openslide</attribute>
+        </item>
       </section>
     </submenu>
     <submenu>

@@ -701,3 +701,37 @@ Narrative *narrative_load(GFile *file)
 
     return n;
 }
+
+
+GtkTextTag *lookup_tag(GtkTextBuffer *buf, const char *name)
+{
+    GtkTextTagTable *table = gtk_text_buffer_get_tag_table(buf);
+    return gtk_text_tag_table_lookup(table, name);
+}
+
+
+Slide *narrative_get_first_slide(Narrative *nar)
+{
+    GtkTextIter iter;
+
+    gtk_text_buffer_get_start_iter(nar->textbuf, &iter);
+    if ( gtk_text_iter_forward_to_tag_toggle(&iter, lookup_tag(nar->textbuf, "slide")) ) {
+
+        guint n;
+        GtkWidget **th;
+        GtkTextChildAnchor *anc;
+        Slide *slide;
+
+        anc = gtk_text_iter_get_child_anchor(&iter);
+        if ( anc == NULL ) {
+            fprintf(stderr, "No anchor found despite slide tag!\n");
+            return NULL;
+        }
+        th = gtk_text_child_anchor_get_widgets(anc, &n);
+        assert(n == 1);
+        slide = thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0]));
+        g_free(th);
+        return slide;
+    }
+    return NULL;
+}

@@ -259,13 +259,6 @@ static void set_clock_pos(NarrativeWindow *nw)
 }
 
 
-static GtkTextTag *lookup_tag(GtkTextBuffer *buf, const char *name)
-{
-    GtkTextTagTable *table = gtk_text_buffer_get_tag_table(buf);
-    return gtk_text_tag_table_lookup(table, name);
-}
-
-
 static void update_highlight(NarrativeWindow *nw)
 {
     GtkTextIter start, end;
@@ -608,36 +601,20 @@ static void start_presenting_sig(GSimpleAction *action, GVariant *parameter,
                                  gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    GtkTextMark *cursor;
-    GtkTextIter iter;
+    Slide *slide;
 
     g_signal_emit_by_name(G_OBJECT(nw->nv), "move-cursor",
             GTK_MOVEMENT_BUFFER_ENDS, -1, FALSE);
     start_presenting(nw);
 
-    /* Look forwards to the first slide, and set it */
-    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
-    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    if ( gtk_text_iter_forward_to_tag_toggle(&iter, lookup_tag(nw->n->textbuf, "slide")) ) {
-
-        guint n;
-        GtkWidget **th;
-        GtkTextChildAnchor *anc;
-
-        anc = gtk_text_iter_get_child_anchor(&iter);
-        if ( anc == NULL ) {
-            fprintf(stderr, "No anchor found despite slide tag!\n");
-            return;
-        }
-        th = gtk_text_child_anchor_get_widgets(anc, &n);
-        assert(n == 1);
+    slide = narrative_get_first_slide(nw->n);
+    if ( slide != NULL ) {
         if ( nw->n_slidewindows == 0 ) {
-            open_slide_window(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+            open_slide_window(nw, slide);
         } else {
-            set_presenting_slide(nw, thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0])));
+            set_presenting_slide(nw, slide);
         }
-        g_free(th);
-    }
+    } /* Else we are in presentation mode, but no slides */
 }
 
 

@@ -64,6 +64,8 @@ struct _gtkslideview
     int                  show_laser;
     double               laser_x;
     double               laser_y;
+    GdkTexture          *texture;
+    int                  widget_w_for_texture;
 };
 
 struct _gtkslideviewclass

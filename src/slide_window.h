@@ -59,6 +59,7 @@ struct _gtkslidewindow
     Slide               *slide;
     GtkWidget           *sv;
     NarrativeWindow     *parent;
+    int                  laser_on;
 };
 
 struct _gtkslidewindowclass
@@ -76,5 +77,7 @@ extern SlideWindow *slide_window_new(Narrative *n,
 extern void slide_window_update(SlideWindow *sw);
 extern void slide_window_update_titlebar(SlideWindow *sw);
 extern void slide_window_set_slide(SlideWindow *sw, Slide *s);
+extern void slide_window_set_laser(SlideWindow *sw, double x, double y);
+extern void slide_window_set_laser_off(SlideWindow *sw);
 
 #endif	/* SLIDEWINDOW_H */

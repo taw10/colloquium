@@ -492,6 +492,33 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
 }
 
 
+static void nw_laser_on_sig(SlideWindow *sw, gdouble x, gdouble y, NarrativeWindow *nw)
+{
+    int i;
+    for ( i=0; i<nw->n_slidewindows; i++ ) {
+        slide_window_set_laser(nw->slidewindows[i], x, y);
+    }
+}
+
+
+static void nw_laser_off_sig(SlideWindow *sw, NarrativeWindow *nw)
+{
+    int i;
+    for ( i=0; i<nw->n_slidewindows; i++ ) {
+        slide_window_set_laser_off(nw->slidewindows[i]);
+    }
+}
+
+
+static void nw_laser_move_sig(SlideWindow *sw, gdouble x, gdouble y, NarrativeWindow *nw)
+{
+    int i;
+    for ( i=0; i<nw->n_slidewindows; i++ ) {
+        slide_window_set_laser(nw->slidewindows[i], x, y);
+    }
+}
+
+
 static void open_slide_window(NarrativeWindow *nw, Slide *slide)
 {
     if ( nw->n_slidewindows < 16 ) {
@@ -502,6 +529,9 @@ static void open_slide_window(NarrativeWindow *nw, Slide *slide)
         GtkEventController *evk = gtk_event_controller_key_new();
         gtk_widget_add_controller(GTK_WIDGET(sw), evk);
         g_signal_connect(G_OBJECT(evk), "key-pressed", G_CALLBACK(nw_key_press_sig), nw);
+        g_signal_connect(G_OBJECT(sw), "laser-on", G_CALLBACK(nw_laser_on_sig), nw);
+        g_signal_connect(G_OBJECT(sw), "laser-off", G_CALLBACK(nw_laser_off_sig), nw);
+        g_signal_connect(G_OBJECT(sw), "laser-moved", G_CALLBACK(nw_laser_move_sig), nw);
         gtk_window_present(GTK_WINDOW(sw));
     } else {
         fprintf(stderr, _("Too many slide windows\n"));

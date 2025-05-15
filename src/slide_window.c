@@ -61,6 +61,16 @@ GActionEntry sw_entries[] = {
 
 static void gtk_slide_window_class_init(SlideWindowClass *klass)
 {
+    g_signal_new("laser-on", GTK_TYPE_SLIDE_WINDOW,
+                 G_SIGNAL_RUN_LAST, 0,
+                 NULL, NULL, NULL, G_TYPE_NONE, 0);
+    g_signal_new("laser-off", GTK_TYPE_SLIDE_WINDOW,
+                 G_SIGNAL_RUN_LAST, 0,
+                 NULL, NULL, NULL, G_TYPE_NONE, 0);
+    g_signal_new("laser-moved", GTK_TYPE_SLIDE_WINDOW,
+                 G_SIGNAL_RUN_LAST, 0,
+                 NULL, NULL, NULL, G_TYPE_NONE, 2,
+                 G_TYPE_DOUBLE, G_TYPE_DOUBLE);
 }
 
 
@@ -101,6 +111,38 @@ static gboolean slide_key_press_sig(GtkEventControllerKey *self,
     return FALSE;
 }
 
+void slide_window_set_laser(SlideWindow *sw, double x, double y)
+{
+    gtk_slide_view_set_laser(GTK_SLIDE_VIEW(sw->sv), x, y);
+}
+
+
+void slide_window_set_laser_off(SlideWindow *sw)
+{
+    gtk_slide_view_set_laser_off(GTK_SLIDE_VIEW(sw->sv));
+}
+
+
+static void slide_leave_sig(GtkEventControllerMotion *self, SlideWindow *sw)
+{
+    if ( sw->laser_on ) {
+        g_signal_emit_by_name(G_OBJECT(sw), "laser-off");
+        sw->laser_on = 0;
+    }
+}
+
+
+static void slide_motion_sig(GtkEventControllerMotion *self,
+                             gdouble x, gdouble y, SlideWindow *sw)
+{
+    if ( !sw->laser_on ) {
+        g_signal_emit_by_name(G_OBJECT(sw), "laser-on");
+        sw->laser_on = 1;
+    }
+    gtk_slide_view_widget_to_relative_coords(GTK_SLIDE_VIEW(sw->sv), &x, &y);
+    g_signal_emit_by_name(G_OBJECT(sw), "laser-moved", x, y);
+}
+
 
 SlideWindow *slide_window_new(Narrative *n, Slide *slide,
                               NarrativeWindow *nw, GApplication *papp)
@@ -139,6 +181,11 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
     GtkEventController *evk = gtk_event_controller_key_new();
     gtk_widget_add_controller(GTK_WIDGET(sw), evk);
     g_signal_connect(G_OBJECT(evk), "key-pressed", G_CALLBACK(slide_key_press_sig), sw);
+
+    GtkEventController *evm = gtk_event_controller_motion_new();
+    gtk_widget_add_controller(GTK_WIDGET(sw->sv), evm);
+    g_signal_connect(G_OBJECT(evm), "motion", G_CALLBACK(slide_motion_sig), sw);
+    g_signal_connect(G_OBJECT(evm), "leave", G_CALLBACK(slide_leave_sig), sw);
 
     return sw;
 }

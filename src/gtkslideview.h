@@ -61,6 +61,9 @@ struct _gtkslideview
     Narrative           *n;
     Slide               *slide;
     GdkPixbuf           *bg_pixbuf;
+    int                  show_laser;
+    double               laser_x;
+    double               laser_y;
 };
 
 struct _gtkslideviewclass
@@ -74,5 +77,8 @@ typedef struct _gtkslideviewclass GtkSlideViewClass;
 extern GType gtk_slide_view_get_type(void);
 extern GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide);
 extern void gtk_slide_view_set_slide(GtkWidget *sv, Slide *slide);
+extern void gtk_slide_view_set_laser(GtkSlideView *sv, double x, double y);
+extern void gtk_slide_view_set_laser_off(GtkSlideView *sv);
+extern void gtk_slide_view_widget_to_relative_coords(GtkSlideView *sv, gdouble *px, gdouble *py);
 
 #endif  /* GTK_SLIDE_VIEW_H */

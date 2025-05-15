@@ -88,7 +88,15 @@ static void gtksv_draw_sig(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpoint
     }
 
     cairo_translate(cr, bx, by);
+    cairo_save(cr);
     slide_render_cairo(e->slide, cr, aw);
+    cairo_restore(cr);
+
+    if ( e->show_laser ) {
+        cairo_arc(cr, aw*e->laser_x, (aw/aspect)*e->laser_y, 10.0, 0, 2*M_PI);
+        cairo_set_source_rgba(cr, 0.2, 1.0, 0.1, 0.8);
+        cairo_fill(cr);
+    }
 }
 
 
@@ -109,6 +117,7 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
 
     sv->n = n;
     sv->slide = slide;
+    sv->show_laser = 0;
 
     err = NULL;
     sv->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/colloquium/sky.png",
@@ -124,4 +133,39 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
                                    gtksv_draw_sig, sv, NULL);
     gtk_widget_grab_focus(GTK_WIDGET(sv));
     return GTK_WIDGET(sv);
+}
+
+
+void gtk_slide_view_set_laser(GtkSlideView *sv, double x, double y)
+{
+    sv->show_laser = 1;
+    sv->laser_x = x;
+    sv->laser_y = y;
+    gtk_widget_queue_draw(GTK_WIDGET(sv));
+}
+
+
+void gtk_slide_view_set_laser_off(GtkSlideView *sv)
+{
+    sv->show_laser = 0;
+    gtk_widget_queue_draw(GTK_WIDGET(sv));
+}
+
+
+void gtk_slide_view_widget_to_relative_coords(GtkSlideView *sv, gdouble *px, gdouble *py)
+{
+    float aspect;
+    float aw;
+    float bx, by;
+    double x, y;
+    int w, h;
+
+    w = gtk_widget_get_width(GTK_WIDGET(sv));
+    h = gtk_widget_get_height(GTK_WIDGET(sv));
+    aspect = slide_get_aspect(sv->slide);
+    letterbox(w, h, aspect, &aw, &bx, &by);
+
+    x = *px;   y = *py;
+    *px = (x-bx)/aw;
+    *py = (y-by)/(aw/aspect);
 }

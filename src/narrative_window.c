@@ -783,19 +783,12 @@ static void scroll_update(GtkAdjustment *adj, GtkDrawingArea *da)
 }
 
 
-static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, double y, gpointer vp)
+
+static gboolean drop_thumnail(NarrativeWindow *nw, double x, double y, Thumbnail *th)
 {
-    Thumbnail *th;
     int bx, by;
     GtkTextIter iter;
-    NarrativeWindow *nw = vp;
 
-    if ( !G_VALUE_HOLDS(val, COLLOQUIUM_TYPE_THUMBNAIL) ) {
-            fprintf(stderr, "Wrong type of data dropped!\n");
-            return FALSE;
-    }
-
-    th = COLLOQUIUM_THUMBNAIL(g_value_get_object(val));
     gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_TEXT, x, y, &bx, &by);
     gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(nw->nv), &iter, bx, by);
     gtk_text_iter_forward_line(&iter);
@@ -807,7 +800,48 @@ static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, doubl
     GtkGesture *evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));
     g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), thn);
+
     return TRUE;
+}
+
+
+static gboolean drop_file(NarrativeWindow *nw, double x, double y, GFile *file)
+{
+    int bx, by;
+    GtkTextIter iter;
+
+    gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_TEXT, x, y, &bx, &by);
+    gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(nw->nv), &iter, bx, by);
+    gtk_text_iter_forward_line(&iter);
+
+    printf("%s\n", g_file_peek_path(file));
+
+    Slide *slide = slide_new();
+    slide->ext_filename = g_file_get_path(file);
+    insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
+    GtkWidget *thn = thumbnail_new(slide, nw);
+    gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
+    GtkGesture *evc = gtk_gesture_click_new();
+    gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));
+    g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), thn);
+
+    return TRUE;
+}
+
+
+static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, double y, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+
+    if ( G_VALUE_HOLDS(val, COLLOQUIUM_TYPE_THUMBNAIL) ) {
+        return drop_thumnail(nw, x, y, COLLOQUIUM_THUMBNAIL(g_value_get_object(val)));
+    }
+
+    if ( G_VALUE_HOLDS(val, G_TYPE_FILE) ) {
+        return drop_file(nw, x, y, G_FILE(g_value_get_object(val)));
+    }
+
+    return FALSE;
 }
 
 
@@ -918,6 +952,10 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_add_controller(GTK_WIDGET(nw->nv), evc);
 
     drop = gtk_drop_target_new(COLLOQUIUM_TYPE_THUMBNAIL, GDK_ACTION_COPY);
+    GType types[2];
+    types[0] = COLLOQUIUM_TYPE_THUMBNAIL;
+    types[1] = G_TYPE_FILE;
+    gtk_drop_target_set_gtypes(drop, types, 2);
     gtk_widget_add_controller(GTK_WIDGET(nw->nv), GTK_EVENT_CONTROLLER(drop));
     g_signal_connect(G_OBJECT(drop), "drop", G_CALLBACK(drop_sig), nw);
 

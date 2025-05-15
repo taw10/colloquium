@@ -30,12 +30,21 @@
 #include <stddef.h>
 #include <gtk/gtk.h>
 
+enum slide_filetype
+{
+    SLIDE_FTYPE_UNKNOWN,
+    SLIDE_FTYPE_IMAGE,
+    SLIDE_FTYPE_PDF
+};
+
+
 struct _slide
 {
     float aspect;  /* Width divided by height */
     char *ext_filename;
     int ext_slidenumber;
     GtkTextChildAnchor *anchor;
+    enum slide_filetype file_type;
 };
 
 typedef struct _slide Slide;

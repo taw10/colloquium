@@ -45,6 +45,7 @@ Slide *slide_new()
     if ( s == NULL ) return NULL;
     s->ext_filename = NULL;
     s->aspect = -1.0;
+    s->file_type = SLIDE_FTYPE_UNKNOWN;
     return s;
 }
 
@@ -76,33 +77,40 @@ void slide_set_ext_number(Slide *s, int num)
 }
 
 
-float slide_get_aspect(Slide *s)
+static float get_aspect_image(Slide *s)
 {
-    if ( s == NULL ) return 1;
-    if ( s->aspect < 0.0 ) {
+    GFile *file;
+    GFileInputStream *stream;
+    GError *error;
+    GdkPixbuf *pixbuf;
+    int pw, ph;
 
-        GFile *file;
-        PopplerDocument *doc;
-        PopplerPage *page;
-        double pw, ph;
-
-        file = g_file_new_for_path(s->ext_filename);
-        doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
-        if ( doc == NULL ) return 1;
-
-        page = poppler_document_get_page(doc, s->ext_slidenumber-1);
-        if ( page == NULL ) return 1;
-
-        poppler_page_get_size(page, &pw, &ph);
-
-        s->aspect = pw/ph;
-
+    file = g_file_new_for_path(s->ext_filename);
+    error = NULL;
+    stream = g_file_read(file, NULL, &error);
+    g_object_unref(file);
+    if ( stream == NULL ) {
+        fprintf(stderr, _("Failed to open read (aspect): %s\n"), error->message);
+        return 1;
     }
-    return s->aspect;
+
+    error = NULL;
+    pixbuf = gdk_pixbuf_new_from_stream(G_INPUT_STREAM(stream), NULL, &error);
+    g_object_unref(stream);
+    if ( pixbuf == NULL ) {
+        fprintf(stderr, _("Failed to load image (aspect): %s\n"), error->message);
+        return 1;
+    }
+
+    pw = gdk_pixbuf_get_width(pixbuf);
+    ph = gdk_pixbuf_get_height(pixbuf);
+    g_object_unref(pixbuf);
+
+    return (float)pw/ph;
 }
 
 
-int slide_render_cairo(Slide *s, cairo_t *cr, float w)
+static float get_aspect_pdf(Slide *s)
 {
     GFile *file;
     PopplerDocument *doc;
@@ -111,19 +119,176 @@ int slide_render_cairo(Slide *s, cairo_t *cr, float w)
 
     file = g_file_new_for_path(s->ext_filename);
     doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+    g_object_unref(G_OBJECT(file));
     if ( doc == NULL ) return 1;
 
     page = poppler_document_get_page(doc, s->ext_slidenumber-1);
-    if ( page == NULL ) return 1;
+    if ( page == NULL ) {
+        g_object_unref(G_OBJECT(doc));
+        return 1;
+    }
 
     poppler_page_get_size(page, &pw, &ph);
+    g_object_unref(G_OBJECT(doc));
+    g_object_unref(G_OBJECT(page));
+    return pw/ph;
+}
+
+
+static int render_cairo_image(Slide *s, cairo_t *cr, float w)
+{
+    GFileInputStream *stream;
+    GError *error;
+    GdkPixbuf *pixbuf;
+    int pw;
+    double scale;
+    GFile *file;
+
+    file = g_file_new_for_path(s->ext_filename);
+    error = NULL;
+    stream = g_file_read(file, NULL, &error);
+    g_object_unref(file);
+    if ( stream == NULL ) {
+        fprintf(stderr, _("Failed to read image: %s\n"), error->message);
+        return 1;
+    }
+
+    error = NULL;
+    pixbuf = gdk_pixbuf_new_from_stream(G_INPUT_STREAM(stream), NULL, &error);
+    g_object_unref(G_OBJECT(stream));
+    if ( pixbuf == NULL ) {
+        fprintf(stderr, _("Failed to load image: %s\n"), error->message);
+        return 1;
+    }
+
+    pw = gdk_pixbuf_get_width(pixbuf);
+    scale = w/pw;
+
+    cairo_save(cr);
+    cairo_scale(cr, scale, scale);
+    gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
+    cairo_pattern_t *patt = cairo_get_source(cr);
+    cairo_pattern_set_extend(patt, CAIRO_EXTEND_PAD);
+    cairo_pattern_set_filter(patt, CAIRO_FILTER_BEST);
+    cairo_paint(cr);
+    cairo_restore(cr);
+
+    g_object_unref(G_OBJECT(pixbuf));
+
+    return 0;
+}
+
+
+static int render_cairo_pdf(Slide *s, cairo_t *cr, float w)
+{
+    PopplerDocument *doc;
+    PopplerPage *page;
+    double pw, ph;
+    GFile *file;
+
+    file = g_file_new_for_path(s->ext_filename);
+    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+    g_object_unref(G_OBJECT(file));
+    if ( doc == NULL ) return 1;
+
+    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
+    if ( page == NULL ) {
+        g_object_unref(G_OBJECT(doc));
+        return 1;
+    }
+
+    poppler_page_get_size(page, &pw, &ph);
+    cairo_save(cr);
     cairo_scale(cr, w/pw, w/pw);
     poppler_page_render(page, cr);
+    cairo_restore(cr);
 
     g_object_unref(G_OBJECT(page));
     g_object_unref(G_OBJECT(doc));
 
     return 0;
+}
+
+
+static int ensure_ftype(Slide *s)
+{
+    if ( s->file_type == SLIDE_FTYPE_UNKNOWN ) {
+
+        GFile *file;
+        GFileInfo *info;
+        const char *type;
+        GError *error;
+
+        file = g_file_new_for_path(s->ext_filename);
+        error = NULL;
+        info = g_file_query_info(file, "standard::", G_FILE_QUERY_INFO_NONE, NULL, &error);
+        g_object_unref(G_OBJECT(file));
+        if ( info == NULL ) {
+            fprintf(stderr, _("Failed to read info: %s\n"), error->message);
+            return 1;
+        }
+
+        type = g_file_info_get_content_type(info);
+        if ( g_content_type_equals(type, "application/pdf") ) {
+            s->file_type = SLIDE_FTYPE_PDF;
+        } else if ( g_content_type_equals(type, "image/png") ) {
+            s->file_type = SLIDE_FTYPE_IMAGE;
+        } else if ( g_content_type_equals(type, "image/jpeg") ) {
+            s->file_type = SLIDE_FTYPE_IMAGE;
+        } else if ( g_content_type_equals(type, "image/svg+xml") ) {
+            s->file_type = SLIDE_FTYPE_IMAGE;
+        } else {
+            fprintf(stderr, "File format not recognised: %s\n", type);
+            s->file_type = SLIDE_FTYPE_UNKNOWN;
+        }
+
+        g_object_unref(G_OBJECT(info));
+
+    }
+
+    if ( s->file_type == SLIDE_FTYPE_UNKNOWN ) return 1;
+    return 0;
+}
+
+
+float slide_get_aspect(Slide *s)
+{
+    if ( s == NULL ) return 1.0;
+
+    if ( s->aspect < 0.0 ) {
+        if ( ensure_ftype(s) ) return 1.0;
+        switch ( s->file_type ) {
+
+            case SLIDE_FTYPE_PDF:
+            return get_aspect_pdf(s);
+
+            case SLIDE_FTYPE_IMAGE:
+            return get_aspect_image(s);
+
+            default:
+            return 1;
+        }
+    } else {
+        return s->aspect;
+    }
+}
+
+
+int slide_render_cairo(Slide *s, cairo_t *cr, float w)
+{
+    if ( ensure_ftype(s) ) return 1;
+
+    switch ( s->file_type ) {
+
+        case SLIDE_FTYPE_PDF:
+        return render_cairo_pdf(s, cr, w);
+
+        case SLIDE_FTYPE_IMAGE:
+        return render_cairo_image(s, cr, w);
+
+        default:
+        return 1;
+    }
 }
 
 

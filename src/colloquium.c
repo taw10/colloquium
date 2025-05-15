@@ -121,9 +121,6 @@ void open_about_dialog(GtkWidget *parent)
     gtk_about_dialog_set_translator_credits(GTK_ABOUT_DIALOG(window),
                                             _("translator-credits"));
 
-    g_signal_connect(window, "response", G_CALLBACK(g_object_unref),
-        NULL);
-
     gtk_window_present(GTK_WINDOW(window));
 }
 

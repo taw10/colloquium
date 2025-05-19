@@ -85,6 +85,11 @@ static void update_sv_texture(GtkSlideView *sv, int w)
     float aspect = slide_get_aspect(sv->slide);
     int h = w/aspect;
 
+    if ( sv->texture != NULL ) {
+        g_object_unref(sv->texture);
+        sv->texture = NULL;
+    }
+
     surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     cr = cairo_create(surf);
     slide_render_cairo(sv->slide, cr, w);
@@ -99,6 +104,7 @@ static void update_sv_texture(GtkSlideView *sv, int w)
                                          cairo_image_surface_get_stride(surf));
 
     g_bytes_unref(bytes);
+    cairo_surface_destroy(surf);
     sv->widget_w_for_texture = w;
 }
 

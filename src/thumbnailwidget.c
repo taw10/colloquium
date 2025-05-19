@@ -69,6 +69,11 @@ static void update_thumbnail_texture(Thumbnail *th, int w, int h)
     cairo_surface_t *surf;
     GBytes *bytes;
 
+    if ( th->texture != NULL ) {
+        g_object_unref(th->texture);
+        th->texture = NULL;
+    }
+
     surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     cr = cairo_create(surf);
     slide_render_cairo(th->slide, cr, w);
@@ -83,6 +88,7 @@ static void update_thumbnail_texture(Thumbnail *th, int w, int h)
                                          cairo_image_surface_get_stride(surf));
 
     g_bytes_unref(bytes);
+    cairo_surface_destroy(surf);
     th->widget_w_for_texture = w;
 }
 

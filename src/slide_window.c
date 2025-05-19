@@ -148,7 +148,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
                               NarrativeWindow *nw, GApplication *papp)
 {
     SlideWindow *sw;
-    double w, h;
+    double w, h, asp;
     Colloquium *app = COLLOQUIUM(papp);
 
     sw = g_object_new(GTK_TYPE_SLIDE_WINDOW, "application", app, NULL);
@@ -166,8 +166,14 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
     sw->sv = gtk_slide_view_new(n, slide);
 
-    w = 1280;
-    h = w/slide_get_aspect(slide);
+    asp = slide_get_aspect(slide);
+    if ( asp > 1.0 ) {
+        w = 960;
+        h = w/slide_get_aspect(slide);
+    } else {
+        h = 960;
+        w = h*slide_get_aspect(slide);
+    }
     gtk_window_set_default_size(GTK_WINDOW(sw), w, h);
 
     gtk_window_set_child(GTK_WINDOW(sw), GTK_WIDGET(sw->sv));

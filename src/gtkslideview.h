@@ -60,7 +60,6 @@ struct _gtkslideview
     /*< private >*/
     Narrative           *n;
     Slide               *slide;
-    GdkPixbuf           *bg_pixbuf;
     int                  show_laser;
     double               laser_x;
     double               laser_y;

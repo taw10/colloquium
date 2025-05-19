@@ -118,17 +118,8 @@ static void slide_view_snapshot(GtkWidget *widget, GtkSnapshot *snapshot)
     letterbox(w, h, aspect, &aw, &bx, &by);
 
     /* Ultimate background */
-    if ( sv->bg_pixbuf != NULL ) {
-        cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(0,0,w,h));
-        gdk_cairo_set_source_pixbuf(cr, sv->bg_pixbuf, 0.0, 0.0);
-        cairo_pattern_t *patt = cairo_get_source(cr);
-        cairo_pattern_set_extend(patt, CAIRO_EXTEND_REPEAT);
-        cairo_paint(cr);
-        cairo_destroy(cr);
-    } else {
-        GdkRGBA col = {0.8, 0.8, 1.0, 1.0};
-        gtk_snapshot_append_color(snapshot, &col, &GRAPHENE_RECT_INIT(0,0,w,h));
-    }
+    GdkRGBA col = {0.0, 0.0, 0.0, 1.0};
+    gtk_snapshot_append_color(snapshot, &col, &GRAPHENE_RECT_INIT(0,0,w,h));
 
     int awi = aw;
     if ( (sv->texture == NULL) || (sv->widget_w_for_texture != awi) ) {
@@ -159,7 +150,6 @@ void gtk_slide_view_set_slide(GtkWidget *widget, Slide *slide)
 GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
 {
     GtkSlideView *sv;
-    GError *err;
 
     sv = g_object_new(GTK_TYPE_SLIDE_VIEW, NULL);
 
@@ -168,13 +158,6 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
     sv->show_laser = 0;
     sv->widget_w_for_texture = 0;
     sv->texture = NULL;
-
-    err = NULL;
-    sv->bg_pixbuf = gdk_pixbuf_new_from_resource("/uk/me/bitwiz/colloquium/sky.png",
-                                                       &err);
-    if ( sv->bg_pixbuf == NULL ) {
-        fprintf(stderr, _("Failed to load background: %s\n"), err->message);
-    }
 
     gtk_widget_set_size_request(GTK_WIDGET(sv), 100, 100);
     g_signal_connect(G_OBJECT(sv), "destroy", G_CALLBACK(gtksv_destroy_sig), sv);

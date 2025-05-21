@@ -260,13 +260,15 @@ float slide_get_aspect(Slide *s)
         switch ( s->file_type ) {
 
             case SLIDE_FTYPE_PDF:
-            return get_aspect_pdf(s);
+            s->aspect = get_aspect_pdf(s);
+            return s->aspect;
 
             case SLIDE_FTYPE_IMAGE:
-            return get_aspect_image(s);
+            s->aspect = get_aspect_image(s);
+            return s->aspect;
 
             default:
-            return 1;
+            return 1.0; /* Don't know! */
         }
     } else {
         return s->aspect;

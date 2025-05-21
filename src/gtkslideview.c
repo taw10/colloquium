@@ -136,7 +136,9 @@ static void slide_view_snapshot(GtkWidget *widget, GtkSnapshot *snapshot)
     gtk_snapshot_append_texture(snapshot, sv->texture, &GRAPHENE_RECT_INIT(0,0,aw,aw/aspect));
 
     if ( sv->show_laser ) {
-        cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(0,0,w,h));
+        int x = aw*sv->laser_x - 11;
+        int y = (aw/aspect)*sv->laser_y - 11;
+        cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(x,y,22,22));
         cairo_arc(cr, aw*sv->laser_x, (aw/aspect)*sv->laser_y, 10.0, 0, 2*M_PI);
         cairo_set_source_rgba(cr, 0.2, 1.0, 0.1, 0.8);
         cairo_fill(cr);

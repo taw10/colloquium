@@ -769,7 +769,13 @@ static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
         GtkGesture *evc = gtk_gesture_click_new();
         gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
         g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), th);
-        thumbnail_set_slide_height(COLLOQUIUM_THUMBNAIL(th), 320);
+
+        float asp = slide_get_aspect(nw->n->slides[i]);
+        if ( 320*asp > 512 ) {
+            thumbnail_set_slide_width(COLLOQUIUM_THUMBNAIL(th), 512);
+        } else {
+            thumbnail_set_slide_height(COLLOQUIUM_THUMBNAIL(th), 320);
+        }
         gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
                                           GTK_WIDGET(th),
                                           nw->n->slides[i]->anchor);
@@ -974,7 +980,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     g_signal_connect(G_OBJECT(nw), "destroy", G_CALLBACK(nw_destroy_sig), nw);
     g_signal_connect(G_OBJECT(nw), "close-request", G_CALLBACK(nw_close_request_sig), nw);
 
-    gtk_window_set_default_size(GTK_WINDOW(nw), 768, 768);
+    gtk_window_set_default_size(GTK_WINDOW(nw), 512, 768);
     gtk_box_append(GTK_BOX(vbox), scroll);
     gtk_widget_set_focus_child(GTK_WIDGET(scroll), GTK_WIDGET(nw->nv));
     gtk_widget_set_focus_child(GTK_WIDGET(vbox), GTK_WIDGET(scroll));

@@ -172,3 +172,9 @@ void thumbnail_set_slide_height(Thumbnail *th, int h)
 {
     gtk_widget_set_size_request(GTK_WIDGET(th), h*slide_get_aspect(th->slide), h);
 }
+
+
+void thumbnail_set_slide_width(Thumbnail *th, int w)
+{
+    gtk_widget_set_size_request(GTK_WIDGET(th), w, w/slide_get_aspect(th->slide));
+}

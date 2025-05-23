@@ -87,8 +87,10 @@ static void slide_click_sig(GtkGestureClick *self, int n_press,
     if ( n_press != 2 ) return;
     if ( gtk_window_is_fullscreen(GTK_WINDOW(sw)) ) {
         gtk_window_unfullscreen(GTK_WINDOW(sw));
+        gtk_widget_set_cursor_from_name(GTK_WIDGET(sw->sv), "default");
     } else {
         gtk_window_fullscreen(GTK_WINDOW(sw));
+        gtk_widget_set_cursor_from_name(GTK_WIDGET(sw->sv), "none");
     }
 }
 
@@ -104,6 +106,7 @@ static gboolean slide_key_press_sig(GtkEventControllerKey *self,
         case GDK_KEY_Escape :
         if ( gtk_window_is_fullscreen(GTK_WINDOW(sw)) ) {
             gtk_window_unfullscreen(GTK_WINDOW(sw));
+            gtk_widget_set_cursor_from_name(GTK_WIDGET(sw->sv), "default");
         }
         break;
     }

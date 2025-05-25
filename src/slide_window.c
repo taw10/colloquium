@@ -44,7 +44,7 @@
 #include "narrative_window.h"
 
 
-G_DEFINE_TYPE_WITH_CODE(SlideWindow, gtk_slide_window, GTK_TYPE_APPLICATION_WINDOW, NULL)
+G_DEFINE_FINAL_TYPE(SlideWindow, colloquium_slide_window, GTK_TYPE_APPLICATION_WINDOW)
 
 
 static void sw_about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
@@ -59,22 +59,22 @@ GActionEntry sw_entries[] = {
 };
 
 
-static void gtk_slide_window_class_init(SlideWindowClass *klass)
+static void colloquium_slide_window_class_init(SlideWindowClass *klass)
 {
-    g_signal_new("laser-on", GTK_TYPE_SLIDE_WINDOW,
+    g_signal_new("laser-on", COLLOQUIUM_TYPE_SLIDE_WINDOW,
                  G_SIGNAL_RUN_LAST, 0,
                  NULL, NULL, NULL, G_TYPE_NONE, 0);
-    g_signal_new("laser-off", GTK_TYPE_SLIDE_WINDOW,
+    g_signal_new("laser-off", COLLOQUIUM_TYPE_SLIDE_WINDOW,
                  G_SIGNAL_RUN_LAST, 0,
                  NULL, NULL, NULL, G_TYPE_NONE, 0);
-    g_signal_new("laser-moved", GTK_TYPE_SLIDE_WINDOW,
+    g_signal_new("laser-moved", COLLOQUIUM_TYPE_SLIDE_WINDOW,
                  G_SIGNAL_RUN_LAST, 0,
                  NULL, NULL, NULL, G_TYPE_NONE, 2,
                  G_TYPE_DOUBLE, G_TYPE_DOUBLE);
 }
 
 
-static void gtk_slide_window_init(SlideWindow *sw)
+static void colloquium_slide_window_init(SlideWindow *sw)
 {
 }
 
@@ -154,7 +154,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
     double w, h, asp;
     Colloquium *app = COLLOQUIUM(papp);
 
-    sw = g_object_new(GTK_TYPE_SLIDE_WINDOW, "application", app, NULL);
+    sw = g_object_new(COLLOQUIUM_TYPE_SLIDE_WINDOW, "application", app, NULL);
 
     sw->n = n;
     sw->slide = slide;

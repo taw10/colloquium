@@ -114,7 +114,7 @@ void slide_window_closed_sig(GtkWidget *sw, NarrativeWindow *nw)
     int found = 0;
 
     for ( i=0; i<nw->n_slidewindows; i++ ) {
-        if ( nw->slidewindows[i] == GTK_SLIDE_WINDOW(sw) ) {
+        if ( nw->slidewindows[i] == COLLOQUIUM_SLIDE_WINDOW(sw) ) {
             int j;
             for ( j=i; j<nw->n_slidewindows-1; j++ ) {
                 nw->slidewindows[j] = nw->slidewindows[j+1];

@@ -27,30 +27,18 @@
 #include <config.h>
 #endif
 
-typedef struct _gtkslidewindow SlideWindow;
-typedef struct _gtkslidewindowclass SlideWindowClass;
+typedef struct _slidewindow SlideWindow;
+typedef struct _slidewindowclass SlideWindowClass;
 
 #include "narrative.h"
 #include "narrative_window.h"
 
-#define GTK_TYPE_SLIDE_WINDOW (gtk_slide_window_get_type())
+#define COLLOQUIUM_TYPE_SLIDE_WINDOW (colloquium_slide_window_get_type())
 
-#define GTK_SLIDE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
-                                 GTK_TYPE_SLIDE_WINDOW, SlideWindow))
+#define COLLOQUIUM_SLIDE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                      COLLOQUIUM_TYPE_SLIDE_WINDOW, SlideWindow))
 
-#define GTK_IS_SLIDE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
-                                    GTK_TYPE_SLIDE_WINDOW))
-
-#define GTK_SLIDE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((obj), \
-                                         GTK_TYPE_SLIDE_WINDOW, SlideWindowClass))
-
-#define GTK_IS_SLIDE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
-                                            GTK_TYPE_SLIDE_WINDOW))
-
-#define GTK_SLIDE_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
-                                           GTK_TYPE_SLIDE_WINDOW, SlideWindowClass))
-
-struct _gtkslidewindow
+struct _slidewindow
 {
     GtkApplicationWindow parent_instance;
 
@@ -62,12 +50,12 @@ struct _gtkslidewindow
     int                  laser_on;
 };
 
-struct _gtkslidewindowclass
+struct _slidewindowclass
 {
     GtkApplicationWindowClass parent_class;
 };
 
-extern GType gtk_slide_window_get_type(void);
+extern GType colloquium_slide_window_get_type(void);
 
 extern SlideWindow *slide_window_new(Narrative *n,
                                      Slide *slide,

@@ -44,7 +44,7 @@
 #include "narrative_priv.h"
 #include "thumbnailwidget.h"
 
-G_DEFINE_TYPE_WITH_CODE(NarrativeWindow, narrativewindow, GTK_TYPE_APPLICATION_WINDOW, NULL)
+G_DEFINE_FINAL_TYPE(NarrativeWindow, colloquium_narrative_window, GTK_TYPE_APPLICATION_WINDOW)
 
 static int get_cursor_para(GtkTextView *nv)
 {
@@ -735,12 +735,12 @@ GActionEntry nw_entries[] = {
 };
 
 
-static void narrativewindow_class_init(NarrativeWindowClass *klass)
+static void colloquium_narrative_window_class_init(NarrativeWindowClass *klass)
 {
 }
 
 
-static void narrativewindow_init(NarrativeWindow *sw)
+static void colloquium_narrative_window_init(NarrativeWindow *sw)
 {
 }
 
@@ -869,7 +869,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     GtkDropTarget *drop;
     GtkCssProvider *provider;
 
-    nw = g_object_new(GTK_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
+    nw = g_object_new(COLLOQUIUM_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
 
     nw->app = app;
     nw->n = n;

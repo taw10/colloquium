@@ -30,22 +30,10 @@
 typedef struct _narrativewindow NarrativeWindow;
 typedef struct _narrativewindowclass NarrativeWindowClass;
 
-#define GTK_TYPE_NARRATIVE_WINDOW (narrativewindow_get_type())
+#define COLLOQUIUM_TYPE_NARRATIVE_WINDOW (colloquium_narrative_window_get_type())
 
-#define GTK_NARRATIVE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
-                                 GTK_TYPE_NARRATIVE_WINDOW, NarrativeWindow))
-
-#define GTK_IS_NARRATIVE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), \
-                                    GTK_TYPE_NARRATIVE_WINDOW))
-
-#define GTK_NARRATIVE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((obj), \
-                                         GTK_TYPE_NARRATIVE_WINDOW, NarrativeWindowClass))
-
-#define GTK_IS_NARRATIVE_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((obj), \
-                                            GTK_TYPE_NARRATIVE_WINDOW))
-
-#define GTK_NARRATIVE_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), \
-                                           GTK_TYPE_NARRATIVE_WINDOW, NarrativeWindowClass))
+#define COLLOQUIUM_NARRATIVE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                                          COLLOQUIUM_TYPE_NARRATIVE_WINDOW, NarrativeWindow))
 
 #include "pr_clock.h"
 #include "slide_window.h"
@@ -79,7 +67,7 @@ struct _narrativewindowclass
 };
 
 
-extern GType narrativewindow_get_type(void);
+extern GType colloquium_narrative_window_get_type(void);
 
 extern NarrativeWindow *narrative_window_new(Narrative *n,
                                              GFile *file,

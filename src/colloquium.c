@@ -1,7 +1,7 @@
 /*
  * colloquium.c
  *
- * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
+ * Copyright © 2013-2025 Thomas White <taw@bitwiz.me.uk>
  *
  * This file is part of Colloquium.
  *
@@ -102,7 +102,7 @@ void open_about_dialog(GtkWidget *parent)
     GtkWidget *window;
 
     const gchar *authors[] = {
-        "Thomas White <taw@bitwiz.org.uk>",
+        "Thomas White <taw@bitwiz.me.uk>",
         NULL
     };
 

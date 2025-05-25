@@ -1,5 +1,5 @@
 /*
- * gtkslideview.c
+ * slideview.c
  *
  * Copyright © 2013-2019 Thomas White <taw@bitwiz.org.uk>
  *
@@ -37,33 +37,33 @@
 
 #include "narrative.h"
 #include "slide.h"
-#include "gtkslideview.h"
+#include "slideview.h"
 
 
-G_DEFINE_TYPE_WITH_CODE(GtkSlideView, gtk_slide_view, GTK_TYPE_WIDGET, NULL)
+G_DEFINE_FINAL_TYPE(SlideView, colloquium_slide_view, GTK_TYPE_WIDGET)
 
 static void slide_view_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
 
-static void gtk_slide_view_class_init(GtkSlideViewClass *klass)
+static void colloquium_slide_view_class_init(SlideViewClass *klass)
 {
     GtkWidgetClass *wklass = GTK_WIDGET_CLASS(klass);
     wklass->snapshot = slide_view_snapshot;
 }
 
 
-static void gtk_slide_view_init(GtkSlideView *e)
+static void colloquium_slide_view_init(SlideView *e)
 {
 }
 
 
-static void gtksv_redraw(GtkSlideView *e)
+static void gtksv_redraw(SlideView *e)
 {
     e->widget_w_for_texture = 0;
     gtk_widget_queue_draw(GTK_WIDGET(e));
 }
 
 
-static gint gtksv_destroy_sig(GtkWidget *window, GtkSlideView *e)
+static gint gtksv_destroy_sig(GtkWidget *window, SlideView *e)
 {
     return 0;
 }
@@ -77,7 +77,7 @@ static gint gtksv_destroy_sig(GtkWidget *window, GtkSlideView *e)
 #define MEMFORMAT "unknown byte order"
 #endif
 
-static void update_sv_texture(GtkSlideView *sv, int w)
+static void update_sv_texture(SlideView *sv, int w)
 {
     cairo_t *cr;
     cairo_surface_t *surf;
@@ -111,7 +111,7 @@ static void update_sv_texture(GtkSlideView *sv, int w)
 
 static void slide_view_snapshot(GtkWidget *widget, GtkSnapshot *snapshot)
 {
-    GtkSlideView *sv = GTK_SLIDE_VIEW(widget);
+    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(widget);
     float aspect;
     float aw;
     float bx, by;
@@ -147,19 +147,19 @@ static void slide_view_snapshot(GtkWidget *widget, GtkSnapshot *snapshot)
 }
 
 
-void gtk_slide_view_set_slide(GtkWidget *widget, Slide *slide)
+void slide_view_set_slide(GtkWidget *widget, Slide *slide)
 {
-    GtkSlideView *e = GTK_SLIDE_VIEW(widget);
+    SlideView *e = COLLOQUIUM_SLIDE_VIEW(widget);
     e->slide = slide;
     gtksv_redraw(e);
 }
 
 
-GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
+GtkWidget *slide_view_new(Narrative *n, Slide *slide)
 {
-    GtkSlideView *sv;
+    SlideView *sv;
 
-    sv = g_object_new(GTK_TYPE_SLIDE_VIEW, NULL);
+    sv = g_object_new(COLLOQUIUM_TYPE_SLIDE_VIEW, NULL);
 
     sv->n = n;
     sv->slide = slide;
@@ -175,7 +175,7 @@ GtkWidget *gtk_slide_view_new(Narrative *n, Slide *slide)
 }
 
 
-void gtk_slide_view_set_laser(GtkSlideView *sv, double x, double y)
+void slide_view_set_laser(SlideView *sv, double x, double y)
 {
     sv->show_laser = 1;
     sv->laser_x = x;
@@ -184,14 +184,14 @@ void gtk_slide_view_set_laser(GtkSlideView *sv, double x, double y)
 }
 
 
-void gtk_slide_view_set_laser_off(GtkSlideView *sv)
+void slide_view_set_laser_off(SlideView *sv)
 {
     sv->show_laser = 0;
     gtk_widget_queue_draw(GTK_WIDGET(sv));
 }
 
 
-void gtk_slide_view_widget_to_relative_coords(GtkSlideView *sv, gdouble *px, gdouble *py)
+void slide_view_widget_to_relative_coords(SlideView *sv, gdouble *px, gdouble *py)
 {
     float aspect;
     float aw;

@@ -38,7 +38,7 @@
 
 #include "narrative.h"
 #include "slide.h"
-#include "gtkslideview.h"
+#include "slideview.h"
 #include "colloquium.h"
 #include "slide_window.h"
 #include "narrative_window.h"
@@ -116,13 +116,13 @@ static gboolean slide_key_press_sig(GtkEventControllerKey *self,
 
 void slide_window_set_laser(SlideWindow *sw, double x, double y)
 {
-    gtk_slide_view_set_laser(GTK_SLIDE_VIEW(sw->sv), x, y);
+    slide_view_set_laser(COLLOQUIUM_SLIDE_VIEW(sw->sv), x, y);
 }
 
 
 void slide_window_set_laser_off(SlideWindow *sw)
 {
-    gtk_slide_view_set_laser_off(GTK_SLIDE_VIEW(sw->sv));
+    slide_view_set_laser_off(COLLOQUIUM_SLIDE_VIEW(sw->sv));
 }
 
 
@@ -142,7 +142,7 @@ static void slide_motion_sig(GtkEventControllerMotion *self,
         g_signal_emit_by_name(G_OBJECT(sw), "laser-on");
         sw->laser_on = 1;
     }
-    gtk_slide_view_widget_to_relative_coords(GTK_SLIDE_VIEW(sw->sv), &x, &y);
+    slide_view_widget_to_relative_coords(COLLOQUIUM_SLIDE_VIEW(sw->sv), &x, &y);
     g_signal_emit_by_name(G_OBJECT(sw), "laser-moved", x, y);
 }
 
@@ -167,7 +167,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
     g_action_map_add_action_entries(G_ACTION_MAP(sw), sw_entries,
                                     G_N_ELEMENTS(sw_entries), sw);
 
-    sw->sv = gtk_slide_view_new(n, slide);
+    sw->sv = slide_view_new(n, slide);
 
     asp = slide_get_aspect(slide);
     if ( asp > 1.0 ) {
@@ -202,7 +202,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 
 void slide_window_set_slide(SlideWindow *sw, Slide *s)
 {
-    gtk_slide_view_set_slide(sw->sv, s);
+    slide_view_set_slide(sw->sv, s);
 }
 
 

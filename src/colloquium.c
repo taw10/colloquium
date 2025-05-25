@@ -39,20 +39,28 @@
 #include "colloquium.h"
 #include "narrative_window.h"
 
-struct _colloquium
+
+G_DEFINE_FINAL_TYPE(Colloquium, colloquium, GTK_TYPE_APPLICATION)
+
+
+static void colloquium_activate(GApplication *papp);
+static void colloquium_startup(GApplication *papp);
+static void colloquium_open(GApplication *papp, GFile **files, gint n_files, const gchar *hint);
+
+static void colloquium_class_init(ColloquiumClass *klass)
 {
-    GtkApplication parent_instance;
-    GtkBuilder *builder;
-    char *mydir;
-    int first_run;
-    int hidepointer;
-};
+    GApplicationClass *app_klass = G_APPLICATION_CLASS(klass);
+    app_klass->startup = colloquium_startup;
+    app_klass->activate = colloquium_activate;
+    app_klass->open = colloquium_open;
+}
 
 
-typedef GtkApplicationClass ColloquiumClass;
-
-
-G_DEFINE_TYPE(Colloquium, colloquium, GTK_TYPE_APPLICATION)
+static void colloquium_init(Colloquium *app)
+{
+    app->hidepointer = 0;
+    app->first_run = 0;
+}
 
 
 static void colloquium_activate(GApplication *papp)
@@ -104,7 +112,7 @@ void open_about_dialog(GtkWidget *parent)
     gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(window),
         "Colloquium");
     gtk_about_dialog_set_logo_icon_name(GTK_ABOUT_DIALOG(window),
-        "colloquium");
+        "uk.me.bitwiz.colloquium");
     gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(window),
         PACKAGE_VERSION);
     gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(window),
@@ -230,12 +238,6 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 }
 
 
-static void colloquium_finalize(GObject *object)
-{
-    G_OBJECT_CLASS(colloquium_parent_class)->finalize(object);
-}
-
-
 static void create_config(const char *filename)
 {
 
@@ -309,12 +311,6 @@ static void read_config(const char *filename, Colloquium *app)
 }
 
 
-int colloquium_get_hidepointer(Colloquium *app)
-{
-    return app->hidepointer;
-}
-
-
 static void colloquium_startup(GApplication *papp)
 {
     Colloquium *app = COLLOQUIUM(papp);
@@ -368,46 +364,13 @@ static void colloquium_startup(GApplication *papp)
 }
 
 
-static void colloquium_shutdown(GApplication *app)
-{
-    G_APPLICATION_CLASS(colloquium_parent_class)->shutdown(app);
-}
-
-
-static void colloquium_class_init(ColloquiumClass *class)
-{
-    GApplicationClass *app_class = G_APPLICATION_CLASS(class);
-    GObjectClass *object_class = G_OBJECT_CLASS(class);
-
-    app_class->startup = colloquium_startup;
-    app_class->shutdown = colloquium_shutdown;
-    app_class->activate = colloquium_activate;
-    app_class->open = colloquium_open;
-
-    object_class->finalize = colloquium_finalize;
-}
-
-
-static void colloquium_init(Colloquium *app)
-{
-    app->hidepointer = 0;
-}
-
-
 static Colloquium *colloquium_new()
 {
-    Colloquium *app;
-
-    g_set_application_name("Colloquium");
-    app = g_object_new(colloquium_get_type(),
-                       "application-id", "uk.me.bitwiz.colloquium",
-                       "flags", G_APPLICATION_HANDLES_OPEN,
-                       "register-session", TRUE,
-                       NULL);
-
-    app->first_run = 0;  /* Will be updated at "startup" if appropriate */
-
-    return app;
+    Colloquium *clq = g_object_new(COLLOQUIUM_TYPE_APP,
+                                   "application-id", "uk.me.bitwiz.colloquium",
+                                   "flags", G_APPLICATION_HANDLES_OPEN,
+                                   NULL);
+    return clq;
 }
 
 

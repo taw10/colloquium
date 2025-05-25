@@ -29,14 +29,30 @@
 
 #include <glib-object.h>
 
-
 typedef struct _colloquium Colloquium;
+typedef struct _colloquiumclass ColloquiumClass;
 
-#define COLLOQUIUM(obj)           (G_TYPE_CHECK_INSTANCE_CAST((obj), \
-                                   GTK_TYPE_APPLICATION, Colloquium))
+#define COLLOQUIUM_TYPE_APP (colloquium_get_type())
+#define COLLOQUIUM(obj)  (G_TYPE_CHECK_INSTANCE_CAST((obj), COLLOQUIUM_TYPE_APP, Colloquium))
+
+struct _colloquium
+{
+    GtkApplication parent_instance;
+
+    /*< private >*/
+    GtkBuilder *builder;
+    char *mydir;
+    int first_run;
+    int hidepointer;
+};
+
+struct _colloquiumclass
+{
+    GtkApplicationClass parent_class;
+};
 
 
-extern int colloquium_get_hidepointer(Colloquium *app);
+extern GType colloquium_get_type(void);
 
 extern void open_about_dialog(GtkWidget *parent);
 

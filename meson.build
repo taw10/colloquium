@@ -65,10 +65,10 @@ executable('colloquium',
 
 
 # Desktop file
-install_data(['data/colloquium.desktop'],
+install_data(['data/uk.me.bitwiz.colloquium.desktop'],
              install_dir : get_option('datadir')+'/applications')
 
 
 # Icon
-install_data(['data/colloquium.svg'],
+install_data(['data/uk.me.bitwiz.colloquium.svg'],
              install_dir : get_option('datadir')+'/icons/hicolor/scalable/apps')

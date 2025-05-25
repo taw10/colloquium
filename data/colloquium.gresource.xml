@@ -4,7 +4,7 @@
     <file>sky.png</file>
     <file>canvas.png</file>
     <file>demo.md</file>
-    <file>colloquium.svg</file>
+    <file>uk.me.bitwiz.colloquium.svg</file>
     <file>narrative.css</file>
   </gresource>
   <gresource prefix="/uk/me/bitwiz/colloquium/gtk">

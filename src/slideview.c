@@ -43,11 +43,14 @@
 G_DEFINE_FINAL_TYPE(SlideView, colloquium_slide_view, GTK_TYPE_WIDGET)
 
 static void slide_view_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
+static void slide_view_finalize(GObject *object);
 
 static void colloquium_slide_view_class_init(SlideViewClass *klass)
 {
     GtkWidgetClass *wklass = GTK_WIDGET_CLASS(klass);
+    GObjectClass *oklass = G_OBJECT_CLASS(klass);
     wklass->snapshot = slide_view_snapshot;
+    oklass->finalize = slide_view_finalize;
 }
 
 
@@ -63,9 +66,11 @@ static void gtksv_redraw(SlideView *e)
 }
 
 
-static gint gtksv_destroy_sig(GtkWidget *window, SlideView *e)
+static void slide_view_finalize(GObject *object)
 {
-    return 0;
+    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(object);
+    g_source_remove(sv->laser_timeout_source_id);
+    G_OBJECT_CLASS(colloquium_slide_view_parent_class)->finalize(object);
 }
 
 
@@ -155,6 +160,17 @@ void slide_view_set_slide(GtkWidget *widget, Slide *slide)
 }
 
 
+static gboolean laser_timeout(gpointer vp)
+{
+    SlideView *sv = vp;
+    if ( !sv->show_laser ) return G_SOURCE_CONTINUE;
+    if ( g_get_monotonic_time() > 500000+sv->last_laser ) {
+        slide_view_set_laser_off(sv);
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+
 GtkWidget *slide_view_new(Narrative *n, Slide *slide)
 {
     SlideView *sv;
@@ -168,9 +184,9 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
     sv->texture = NULL;
 
     gtk_widget_set_size_request(GTK_WIDGET(sv), 100, 100);
-    g_signal_connect(G_OBJECT(sv), "destroy", G_CALLBACK(gtksv_destroy_sig), sv);
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
     gtk_widget_grab_focus(GTK_WIDGET(sv));
+    sv->laser_timeout_source_id = g_timeout_add_seconds(1, laser_timeout, sv);
     return GTK_WIDGET(sv);
 }
 
@@ -180,6 +196,7 @@ void slide_view_set_laser(SlideView *sv, double x, double y)
     sv->show_laser = 1;
     sv->laser_x = x;
     sv->laser_y = y;
+    sv->last_laser = g_get_monotonic_time();
     gtk_widget_queue_draw(GTK_WIDGET(sv));
 }
 

@@ -41,7 +41,6 @@
 #include "testcard.h"
 #include "pr_clock.h"
 #include "print.h"
-#include "narrative_priv.h"
 #include "thumbnailwidget.h"
 
 G_DEFINE_FINAL_TYPE(NarrativeWindow, colloquium_narrative_window, GTK_TYPE_APPLICATION_WINDOW)

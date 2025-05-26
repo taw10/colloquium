@@ -41,7 +41,7 @@ enum slide_filetype
 struct _slide
 {
     float aspect;  /* Width divided by height */
-    char *ext_filename;
+    GFile *ext_file;
     int ext_slidenumber;
     GtkTextChildAnchor *anchor;
     enum slide_filetype file_type;

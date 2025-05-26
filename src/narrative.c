@@ -188,7 +188,9 @@ static void write_tag_start(GOutputStream *fh,
             snprintf(tmp, 64, "%i", slide->ext_slidenumber);
             write_string(fh, tmp);
             write_string(fh, "; ");
-            write_string(fh, slide->ext_filename);
+            char *ef = g_file_get_uri(slide->ext_file);
+            write_string(fh, ef);
+            g_free(ef);
         }
     }
     g_free(name);

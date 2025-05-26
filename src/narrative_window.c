@@ -819,10 +819,8 @@ static gboolean drop_file(NarrativeWindow *nw, double x, double y, GFile *file)
     gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(nw->nv), &iter, bx, by);
     gtk_text_iter_forward_line(&iter);
 
-    printf("%s\n", g_file_peek_path(file));
-
     Slide *slide = slide_new();
-    slide->ext_filename = g_file_get_path(file);
+    slide->ext_file = g_file_dup(file);
     insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
     GtkWidget *thn = thumbnail_new(slide, nw);
     gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);

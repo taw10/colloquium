@@ -7,6 +7,8 @@ Colloquium works differently to other presentation programs by making *narrative
 
 Slides come when you need to illustrate something.  This window is called the _narrative editor_.  Your slides are embedded into the narrative text, like this:
 
+###### Slide 0; resource:///uk/me/bitwiz/colloquium/uk.me.bitwiz.colloquium.svg
+
 You can add a new slide from the "Insert" menu or using the toolbar at the top of the narrative window.  Try it now: click to place the cursor at the end of this paragraph, then add a new slide.
 
 ➡️ Use it just to help plan a smooth flow for your talk, reading it through to spot awkward transitions.
@@ -22,6 +24,8 @@ You can add a new slide from the "Insert" menu or using the toolbar at the top o
 
 The test card
 -------------
+
+###### Slide 0; resource:///uk/me/bitwiz/colloquium/sky.png
 
 Use the test card to make sure your computer is talking to the projector correctly.  It shows you the resolution of the screen, where it thinks the edges are, and some colours.  This helps you spot and fix all-too-common display problems early.
 

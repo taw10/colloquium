@@ -43,7 +43,7 @@ Slide *slide_new()
     Slide *s;
     s = malloc(sizeof(*s));
     if ( s == NULL ) return NULL;
-    s->ext_filename = NULL;
+    s->ext_file = NULL;
     s->aspect = -1.0;
     s->file_type = SLIDE_FTYPE_UNKNOWN;
     return s;
@@ -51,6 +51,7 @@ Slide *slide_new()
 
 void slide_free(Slide *s)
 {
+    if ( s->ext_file != NULL ) g_object_unref(s->ext_file);
     free(s);
 }
 
@@ -60,14 +61,22 @@ Slide *slide_copy(const Slide *s)
     Slide *o = slide_new();
     *o = *s;
     o->anchor = NULL;
-    o->ext_filename = strdup(s->ext_filename);
+    if ( s->ext_file != NULL ) {
+        o->ext_file = g_file_dup(o->ext_file);
+    } else {
+        o->ext_file = NULL;
+    }
     return o;
 }
 
 
 void slide_set_ext_filename(Slide *s, char *filename)
 {
-    s->ext_filename = filename;
+    if ( strstr(filename, "://") == NULL ) {
+        s->ext_file = g_file_new_for_path(filename);
+    } else {
+        s->ext_file = g_file_new_for_uri(filename);
+    }
 }
 
 
@@ -79,16 +88,13 @@ void slide_set_ext_number(Slide *s, int num)
 
 static float get_aspect_image(Slide *s)
 {
-    GFile *file;
     GFileInputStream *stream;
     GError *error;
     GdkPixbuf *pixbuf;
     int pw, ph;
 
-    file = g_file_new_for_path(s->ext_filename);
     error = NULL;
-    stream = g_file_read(file, NULL, &error);
-    g_object_unref(file);
+    stream = g_file_read(s->ext_file, NULL, &error);
     if ( stream == NULL ) {
         fprintf(stderr, _("Failed to open read (aspect): %s\n"), error->message);
         return 1;
@@ -112,14 +118,11 @@ static float get_aspect_image(Slide *s)
 
 static float get_aspect_pdf(Slide *s)
 {
-    GFile *file;
     PopplerDocument *doc;
     PopplerPage *page;
     double pw, ph;
 
-    file = g_file_new_for_path(s->ext_filename);
-    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
-    g_object_unref(G_OBJECT(file));
+    doc = poppler_document_new_from_gfile(s->ext_file, NULL, NULL, NULL);
     if ( doc == NULL ) return 1;
 
     page = poppler_document_get_page(doc, s->ext_slidenumber-1);
@@ -142,12 +145,9 @@ static int render_cairo_image(Slide *s, cairo_t *cr, float w)
     GdkPixbuf *pixbuf;
     int pw;
     double scale;
-    GFile *file;
 
-    file = g_file_new_for_path(s->ext_filename);
     error = NULL;
-    stream = g_file_read(file, NULL, &error);
-    g_object_unref(file);
+    stream = g_file_read(s->ext_file, NULL, &error);
     if ( stream == NULL ) {
         fprintf(stderr, _("Failed to read image: %s\n"), error->message);
         return 1;
@@ -184,11 +184,8 @@ static int render_cairo_pdf(Slide *s, cairo_t *cr, float w)
     PopplerDocument *doc;
     PopplerPage *page;
     double pw, ph;
-    GFile *file;
 
-    file = g_file_new_for_path(s->ext_filename);
-    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
-    g_object_unref(G_OBJECT(file));
+    doc = poppler_document_new_from_gfile(s->ext_file, NULL, NULL, NULL);
     if ( doc == NULL ) return 1;
 
     page = poppler_document_get_page(doc, s->ext_slidenumber-1);
@@ -214,15 +211,12 @@ static int ensure_ftype(Slide *s)
 {
     if ( s->file_type == SLIDE_FTYPE_UNKNOWN ) {
 
-        GFile *file;
         GFileInfo *info;
         const char *type;
         GError *error;
 
-        file = g_file_new_for_path(s->ext_filename);
         error = NULL;
-        info = g_file_query_info(file, "standard::", G_FILE_QUERY_INFO_NONE, NULL, &error);
-        g_object_unref(G_OBJECT(file));
+        info = g_file_query_info(s->ext_file, "standard::", G_FILE_QUERY_INFO_NONE, NULL, &error);
         if ( info == NULL ) {
             fprintf(stderr, _("Failed to read info: %s\n"), error->message);
             return 1;

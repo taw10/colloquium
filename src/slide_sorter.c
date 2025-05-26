@@ -76,11 +76,13 @@ static GSList *files_in_narrative(Narrative *n)
         if ( anc != NULL ) {
             Slide *slide;
             guint nc;
+            char *ef;
             GtkWidget **th = gtk_text_child_anchor_get_widgets(anc, &nc);
             assert(nc == 1);
             slide = thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0]));
-            if ( g_slist_find_custom(list, slide->ext_filename, (GCompareFunc)g_strcmp0) == NULL ) {
-                list = g_slist_prepend(list, slide->ext_filename);
+            ef = g_file_get_uri(slide->ext_file);
+            if ( g_slist_find_custom(list, ef, (GCompareFunc)g_strcmp0) == NULL ) {
+                list = g_slist_prepend(list, ef);
             }
             g_free(th);
         }
@@ -98,7 +100,7 @@ static void addfile(gpointer sv, gpointer vp)
     int np;
     int i;
 
-    file = g_file_new_for_path(filename);
+    file = g_file_new_for_uri(filename);
     doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
     if ( doc == NULL ) return;
 

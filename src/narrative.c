@@ -148,7 +148,8 @@ static void write_tag_start(GOutputStream *fh,
                             GtkTextTag *tag,
                             GtkTextIter *iter,
                             int *char_count,
-                            int *tags_open)
+                            int *tags_open,
+                            GFile *parent)
 {
     gchar *name;
     g_object_get(G_OBJECT(tag), "name", &name, NULL);
@@ -181,6 +182,7 @@ static void write_tag_start(GOutputStream *fh,
             Slide *slide;
             guint len;
             char tmp[64];
+            char *ef;
             widgets = gtk_text_child_anchor_get_widgets(anc, &len);
             assert(len == 1);
             slide = thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(widgets[0]));
@@ -188,7 +190,10 @@ static void write_tag_start(GOutputStream *fh,
             snprintf(tmp, 64, "%i", slide->ext_slidenumber);
             write_string(fh, tmp);
             write_string(fh, "; ");
-            char *ef = g_file_get_uri(slide->ext_file);
+            ef = g_file_get_relative_path(parent, slide->ext_file);
+            if ( ef == NULL ) {
+                ef = g_file_get_uri(slide->ext_file);
+            }
             write_string(fh, ef);
             g_free(ef);
         }
@@ -293,7 +298,8 @@ static int write_escaped_text(GOutputStream *fh, char *str)
 }
 
 
-static void write_tags(GtkTextIter pos, int *char_count, GOutputStream *fh, int *tags_open)
+static void write_tags(GtkTextIter pos, int *char_count, GOutputStream *fh,
+                       int *tags_open, GFile *parent)
 {
     GSList *tag;
 
@@ -308,12 +314,12 @@ static void write_tags(GtkTextIter pos, int *char_count, GOutputStream *fh, int 
           tag != NULL;
           tag=g_slist_next(tag) )
     {
-        write_tag_start(fh, tag->data, &pos, char_count, tags_open);
+        write_tag_start(fh, tag->data, &pos, char_count, tags_open, parent);
     }
 }
 
 
-static int write_markdown(GOutputStream *fh, Narrative *n)
+static int write_markdown(GOutputStream *fh, Narrative *n, GFile *parent)
 {
     GtkTextIter start, end;
     int finished = 0;
@@ -323,7 +329,7 @@ static int write_markdown(GOutputStream *fh, Narrative *n)
     gtk_text_buffer_get_start_iter(n->textbuf, &start);
     gtk_text_buffer_get_end_iter(n->textbuf, &end);
 
-    write_tags(start, &char_count, fh, &tags_open);
+    write_tags(start, &char_count, fh, &tags_open, parent);
     do {
 
         GtkTextIter end_tag, end_para;
@@ -354,7 +360,7 @@ static int write_markdown(GOutputStream *fh, Narrative *n)
         char *str = gtk_text_buffer_get_text(n->textbuf, &start, &nrl, TRUE);
         char_count += write_escaped_text(fh, str);
 
-        write_tags(nrl, &char_count, fh, &tags_open);
+        write_tags(nrl, &char_count, fh, &tags_open, parent);
 
         if ( epara ) {
 
@@ -364,7 +370,7 @@ static int write_markdown(GOutputStream *fh, Narrative *n)
             /* Sneakily move to start of the next paragraph */
             if ( gtk_text_iter_forward_line(&nrl) ) {
                 write_string(fh, "\n\n");
-                write_tags(nrl, &char_count, fh, &tags_open);
+                write_tags(nrl, &char_count, fh, &tags_open, parent);
             } /* else no more lines */
 
         }
@@ -383,22 +389,26 @@ int narrative_save(Narrative *n, GFile *file)
     GFileOutputStream *fh;
     int r;
     GError *error = NULL;
+    GFile *parent;
 
     if ( file == NULL ) {
         fprintf(stderr, "Saving to NULL!\n");
         return 1;
     }
 
+    parent = g_file_get_parent(file);
+
     fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
     if ( fh == NULL ) {
         fprintf(stderr, _("Open failed: %s\n"), error->message);
         return 1;
     }
-    r = write_markdown(G_OUTPUT_STREAM(fh), n);
+    r = write_markdown(G_OUTPUT_STREAM(fh), n, parent);
     if ( r ) {
         fprintf(stderr, _("Couldn't save presentation\n"));
     }
     g_object_unref(fh);
+    g_object_unref(parent);
 
     gtk_text_buffer_set_modified(n->textbuf, FALSE);
     return 0;

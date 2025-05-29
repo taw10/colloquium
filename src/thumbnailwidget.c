@@ -150,6 +150,8 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
     gtk_widget_set_size_request(GTK_WIDGET(th), 320*slide_get_aspect(th->slide), 320);
     th->texture = NULL;
 
+    gtk_widget_add_css_class(GTK_WIDGET(th), "thumbnail");
+
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
     gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);
 

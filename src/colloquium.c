@@ -316,6 +316,7 @@ static void colloquium_startup(GApplication *papp)
     Colloquium *app = COLLOQUIUM(papp);
     const char *configdir;
     char *tmp;
+    GtkCssProvider *provider;
 
     G_APPLICATION_CLASS(colloquium_parent_class)->startup(papp);
 
@@ -361,6 +362,12 @@ static void colloquium_startup(GApplication *papp)
         read_config(tmp, app);
         free(tmp);
     }
+
+    provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_resource(provider, "/uk/me/bitwiz/colloquium/colloquium.css");
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(),
+                                               GTK_STYLE_PROVIDER(provider),
+                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 

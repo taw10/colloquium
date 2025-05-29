@@ -38,6 +38,7 @@
 #include "narrative.h"
 #include "colloquium.h"
 #include "narrative_window.h"
+#include "prefswindow.h"
 
 
 G_DEFINE_FINAL_TYPE(Colloquium, colloquium, GTK_TYPE_APPLICATION)
@@ -191,6 +192,13 @@ static void open_response_sig(GObject *d, GAsyncResult  *res, gpointer vp)
 }
 
 
+static void prefs_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    PrefsWindow *pw = prefs_window_new();
+    gtk_window_present(GTK_WINDOW(pw));
+}
+
+
 static void open_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     GtkFileDialog *d;
@@ -213,6 +221,7 @@ GActionEntry app_entries[] = {
     { "open", open_sig, NULL, NULL, NULL  },
     { "intro", intro_sig, NULL, NULL, NULL  },
     { "quit", quit_sig, NULL, NULL, NULL  },
+    { "prefs", prefs_sig, NULL, NULL, NULL  },
 };
 
 

@@ -672,9 +672,17 @@ static void draw_timing_ruler(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpo
     double scroll_pos;
     PangoLayout *layout;
     PangoFontDescription *fontdesc;
+    GdkRGBA col;
+
+    /* Foreground */
+    gtk_widget_get_color(GTK_WIDGET(da), &col);
 
     /* Background */
-    cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 1.0);
+    if ( col.red+col.blue+col.green < 1.5 ) {
+        cairo_set_source_rgba(cr, 0.9, 0.9, 0.9, 1.0);
+    } else {
+        cairo_set_source_rgba(cr, 0.1, 0.1, 0.1, 1.0);
+    }
     cairo_rectangle(cr, 0.0, 0.0, w, h);
     cairo_fill(cr);
 
@@ -694,13 +702,13 @@ static void draw_timing_ruler(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpo
         cairo_move_to(cr, 0.0, y);
         cairo_line_to(cr, 20.0, y);
         cairo_set_line_width(cr, 1.0);
-        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        cairo_set_source_rgb(cr, col.red, col.green, col.blue);
         cairo_stroke(cr);
 
         snprintf(tmp, 63, _("%.0f min"), nw->n->time_marks[i].minutes);
         cairo_move_to(cr, 5.0, y+2.0);
         pango_layout_set_text(layout, tmp, -1);
-        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        cairo_set_source_rgb(cr, col.red, col.green, col.blue);
         pango_cairo_update_layout(cr, layout);
         pango_cairo_show_layout(cr, layout);
         cairo_fill(cr);

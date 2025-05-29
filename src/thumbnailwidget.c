@@ -102,6 +102,7 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     float aw, ah;
     float border_offs_x, border_offs_y;
     int awi;
+    GdkRGBA color;
 
     aspect = slide_get_aspect(th->slide);
     w = gtk_widget_get_width(da);
@@ -123,7 +124,7 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     gtk_snapshot_append_texture(snapshot, th->texture, &GRAPHENE_RECT_INIT(0,0,aw,ah));
     gtk_snapshot_pop(snapshot);
 
-    GdkRGBA color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    gtk_widget_get_color(da, &color);
     GdkRGBA colors[] = { color, color, color, color };
     float widths[4] = {1.0f,1.0f,1.0f,1.0f};
     gtk_snapshot_append_border(snapshot, &rrect, widths, colors);

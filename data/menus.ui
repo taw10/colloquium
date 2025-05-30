@@ -45,16 +45,6 @@
       <attribute name="label" translatable="yes">Edit</attribute>
       <section>
         <item>
-          <attribute name="label" translatable="yes">Undo</attribute>
-          <attribute name="action">win.undo</attribute>
-        </item>
-        <item>
-          <attribute name="label" translatable="yes">Redo</attribute>
-          <attribute name="action">win.redo</attribute>
-        </item>
-      </section>
-      <section>
-        <item>
           <attribute name="label" translatable="yes">Cut</attribute>
           <attribute name="action">win.cut</attribute>
         </item>
@@ -65,6 +55,26 @@
         <item>
           <attribute name="label" translatable="yes">Paste</attribute>
           <attribute name="action">win.paste</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Delete</attribute>
+          <attribute name="action">win.delete</attribute>
+        </item>
+      </section>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">Undo</attribute>
+          <attribute name="action">win.undo</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Redo</attribute>
+          <attribute name="action">win.redo</attribute>
+        </item>
+      </section>
+      <section>
+        <item>
+          <attribute name="label" translatable="yes">Select all</attribute>
+	  <attribute name="action">win.select-all</attribute>
         </item>
       </section>
       <section>

@@ -386,6 +386,55 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void undo_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    gtk_widget_activate_action(nw->nv, "text.undo", NULL);
+}
+
+
+static void redo_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    gtk_widget_activate_action(nw->nv, "text.redo", NULL);
+}
+
+
+static void cut_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    gtk_widget_activate_action(nw->nv, "clipboard.cut", NULL);
+}
+
+
+static void copy_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    gtk_widget_activate_action(nw->nv, "clipboard.copy", NULL);
+}
+
+
+static void paste_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    gtk_widget_activate_action(nw->nv, "clipboard.paste", NULL);
+}
+
+
+static void delete_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    gtk_widget_activate_action(nw->nv, "selection.delete", NULL);
+}
+
+
+static void selectall_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    gtk_widget_activate_action(nw->nv, "selection.select-all", NULL);
+}
+
+
 static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     NarrativeWindow *nw = vp;
@@ -739,6 +788,13 @@ GActionEntry nw_entries[] = {
     { "italic", italic_sig, NULL, NULL, NULL },
     { "underline", underline_sig, NULL, NULL, NULL },
     { "print", print_sig, NULL, NULL, NULL  },
+    { "undo", undo_sig, NULL, NULL, NULL  },
+    { "redo", redo_sig, NULL, NULL, NULL  },
+    { "cut", cut_sig, NULL, NULL, NULL  },
+    { "copy", copy_sig, NULL, NULL, NULL  },
+    { "paste", paste_sig, NULL, NULL, NULL  },
+    { "delete", delete_sig, NULL, NULL, NULL  },
+    { "select-all", selectall_sig, NULL, NULL, NULL  },
 };
 
 

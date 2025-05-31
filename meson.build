@@ -73,3 +73,13 @@ install_data(['data/uk.me.bitwiz.colloquium.desktop'],
 # Icon
 install_data(['data/uk.me.bitwiz.colloquium.svg'],
              install_dir : get_option('datadir')+'/icons/hicolor/scalable/apps')
+
+
+# GSettings schema
+install_data(['data/uk.me.bitwiz.colloquium.gschema.xml'],
+             install_dir : join_paths(get_option('datadir'), 'glib-2.0', 'schemas'))
+
+
+gnome.post_install(glib_compile_schemas: true,
+                   gtk_update_icon_cache: true,
+                   update_desktop_database: true)

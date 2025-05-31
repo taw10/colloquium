@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="colloquium">
+
+  <schema id="uk.me.bitwiz.colloquium" path="/uk/me/bitwiz/colloquium/">
+
+    <key name="words-per-minute" type="d">
+      <default>120.0</default>
+      <summary>Words per minute</summary>
+      <description>Estimate of talking speed in words per minute</description>
+    </key>
+
+  </schema>
+
+</schemalist>

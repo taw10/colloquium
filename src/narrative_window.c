@@ -613,6 +613,7 @@ static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
     for ( i=0; i<nw->n_slidewindows; i++ ) {
         gtk_window_close(GTK_WINDOW(nw->slidewindows[i]));
     }
+    g_object_unref(nw->settings);
     return FALSE;
 }
 
@@ -1021,6 +1022,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 
     g_action_map_add_action_entries(G_ACTION_MAP(nw), nw_entries,
                                     G_N_ELEMENTS(nw_entries), nw);
+
+    nw->settings = g_settings_new("uk.me.bitwiz.colloquium");
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_window_set_child(GTK_WINDOW(nw), vbox);

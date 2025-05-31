@@ -58,6 +58,7 @@ struct _narrativewindow
     int                  presenting;
     GtkWidget           *presenting_label;
     Slide               *presenting_slide;
+    GSettings           *settings;
 };
 
 

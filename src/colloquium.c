@@ -247,84 +247,9 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 }
 
 
-static void create_config(const char *filename)
-{
-
-    FILE *fh;
-    fh = fopen(filename, "w");
-    if ( fh == NULL ) {
-        fprintf(stderr, _("Failed to create config\n"));
-        return;
-    }
-
-    fprintf(fh, "hidepointer: no\n");
-
-    fclose(fh);
-}
-
-
-static int yesno(const char *a)
-{
-    if ( a == NULL ) return 0;
-
-    if ( strcmp(a, "1") == 0 ) return 1;
-    if ( strcasecmp(a, "yes") == 0 ) return 1;
-    if ( strcasecmp(a, "true") == 0 ) return 1;
-
-    if ( strcasecmp(a, "0") == 0 ) return 0;
-    if ( strcasecmp(a, "no") == 0 ) return 0;
-    if ( strcasecmp(a, "false") == 0 ) return 0;
-
-    fprintf(stderr, "Don't understand '%s', assuming false\n", a);
-    return 0;
-}
-
-
-static void chomp(char *s)
-{
-    size_t i;
-
-    if ( !s ) return;
-
-    for ( i=0; i<strlen(s); i++ ) {
-        if ( (s[i] == '\n') || (s[i] == '\r') ) {
-            s[i] = '\0';
-            return;
-        }
-    }
-}
-
-
-static void read_config(const char *filename, Colloquium *app)
-{
-    FILE *fh;
-    char line[1024];
-
-    fh = fopen(filename, "r");
-    if ( fh == NULL ) {
-        fprintf(stderr, _("Failed to open config %s\n"), filename);
-        return;
-    }
-
-    do {
-
-        if ( fgets(line, 1024, fh) == NULL ) break;
-        chomp(line);
-
-        if ( strncmp(line, "hidepointer: ", 12) == 0 ) {
-            app->hidepointer = yesno(line+13);
-        }
-    } while ( !feof(fh) );
-
-    fclose(fh);
-}
-
-
 static void colloquium_startup(GApplication *papp)
 {
     Colloquium *app = COLLOQUIUM(papp);
-    const char *configdir;
-    char *tmp;
     GtkCssProvider *provider;
 
     G_APPLICATION_CLASS(colloquium_parent_class)->startup(papp);
@@ -338,39 +263,6 @@ static void colloquium_startup(GApplication *papp)
             (const char *[]){"<Control>o", NULL});
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.quit",
             (const char *[]){"<Control>q", NULL});
-
-    configdir = g_get_user_config_dir();
-    app->mydir = malloc(strlen(configdir)+14);
-    strcpy(app->mydir, configdir);
-    strcat(app->mydir, "/colloquium");
-
-    if ( !g_file_test(app->mydir, G_FILE_TEST_IS_DIR) ) {
-
-        /* Folder not created yet */
-        open_intro_doc(app);
-        app->first_run = 1;
-
-        if ( g_mkdir(app->mydir, S_IRUSR | S_IWUSR | S_IXUSR) ) {
-            fprintf(stderr, _("Failed to create config folder\n"));
-        }
-    }
-
-    /* Read config file */
-    tmp = malloc(strlen(app->mydir)+32);
-    if ( tmp != NULL ) {
-
-        tmp[0] = '\0';
-        strcat(tmp, app->mydir);
-        strcat(tmp, "/config");
-
-        /* Create default config file if it doesn't exist */
-        if ( !g_file_test(tmp, G_FILE_TEST_EXISTS) ) {
-            create_config(tmp);
-        }
-
-        read_config(tmp, app);
-        free(tmp);
-    }
 
     provider = gtk_css_provider_new();
     gtk_css_provider_load_from_resource(provider, "/uk/me/bitwiz/colloquium/colloquium.css");

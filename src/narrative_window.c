@@ -567,7 +567,7 @@ static void nw_laser_move_sig(SlideWindow *sw, gdouble x, gdouble y, NarrativeWi
 }
 
 
-static void open_slide_window(NarrativeWindow *nw, Slide *slide)
+static SlideWindow *open_slide_window(NarrativeWindow *nw, Slide *slide)
 {
     if ( nw->n_slidewindows < 16 ) {
         SlideWindow *sw = slide_window_new(nw->n, slide, nw, nw->app);
@@ -581,10 +581,13 @@ static void open_slide_window(NarrativeWindow *nw, Slide *slide)
         g_signal_connect(G_OBJECT(sw), "laser-off", G_CALLBACK(nw_laser_off_sig), nw);
         g_signal_connect(G_OBJECT(sw), "laser-moved", G_CALLBACK(nw_laser_move_sig), nw);
         gtk_window_present(GTK_WINDOW(sw));
+        return sw;
     } else {
         fprintf(stderr, _("Too many slide windows\n"));
+        return NULL;
     }
 }
+
 
 static void openslide_sig(GSimpleAction *action, GVariant *parameter,
                           gpointer vp)
@@ -714,6 +717,41 @@ static void start_presenting_sig(GSimpleAction *action, GVariant *parameter,
 }
 
 
+static void fsslide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    int n;
+    NarrativeWindow *nw = vp;
+    GListModel *monitors;
+    GdkMonitor *mon;
+    SlideWindow *sw;
+
+    g_variant_get(parameter, "u", &n);
+
+    monitors = gdk_display_get_monitors(gdk_display_get_default());
+    mon = GDK_MONITOR(g_list_model_get_object(monitors, n));
+    if ( mon == NULL ) {
+        show_error(nw, "Could not find monitor");
+        return;
+    }
+
+    if ( nw->presenting_slide != NULL ) {
+        sw = open_slide_window(nw, nw->presenting_slide);
+    } else {
+        Slide *f = narrative_get_first_slide(nw->n);
+        if ( f != NULL ) {
+            sw = open_slide_window(nw, f);
+        } else {
+            show_error(nw, "No slides!");
+            sw = NULL;
+        }
+    }
+
+    if ( sw != NULL ) {
+        slide_window_fullscreen_on_monitor(sw, mon);
+    }
+}
+
+
 static void draw_timing_ruler(GtkDrawingArea *da, cairo_t *cr, int w, int h, gpointer vp)
 {
     NarrativeWindow *nw = vp;
@@ -795,6 +833,8 @@ GActionEntry nw_entries[] = {
     { "paste", paste_sig, NULL, NULL, NULL  },
     { "delete", delete_sig, NULL, NULL, NULL  },
     { "select-all", selectall_sig, NULL, NULL, NULL  },
+    { "fsslidem", NULL, NULL, NULL, NULL },
+    { "fsslide", fsslide_sig, "u", NULL, NULL },
 };
 
 
@@ -920,6 +960,42 @@ static void finish_nw(gpointer vp)
 }
 
 
+static void update_fsmenu(NarrativeWindow *nw)
+{
+    GMenu *m;
+    GListModel *monitors;
+    GdkMonitor *mon;
+    int i = 0;
+
+    monitors = gdk_display_get_monitors(gdk_display_get_default());
+    if ( monitors == NULL ) {
+        fprintf(stderr, "Failed to enumerate monitors\n");
+        return;
+    }
+
+    m = gtk_application_get_menu_by_id(GTK_APPLICATION(nw->app), "fsslide");
+
+    g_menu_remove_all(m);
+
+    while ( (mon = g_list_model_get_item(monitors, i)) != NULL ) {
+
+        GMenuItem *item = g_menu_item_new(gdk_monitor_get_description(mon), NULL);
+        g_menu_item_set_action_and_target(item, "win.fsslide", "u", i, NULL);
+        g_menu_append_item(m, item);
+
+        i++;
+
+    }
+}
+
+
+static void monitors_changed_sig(GListModel *monitors, guint pos, guint rem, guint add,
+                                 NarrativeWindow *nw)
+{
+    update_fsmenu(nw);
+}
+
+
 NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *app)
 {
     NarrativeWindow *nw;
@@ -928,6 +1004,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     GtkWidget *button;
     GtkEventController *evc;
     GtkDropTarget *drop;
+    GListModel *monitors;
 
     nw = g_object_new(COLLOQUIUM_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
 
@@ -1041,7 +1118,11 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_widget_set_focus_child(GTK_WIDGET(vbox), GTK_WIDGET(scroll));
 
     update_titlebar(nw);
+    update_fsmenu(nw);
     g_idle_add_once(finish_nw, nw);
+
+    monitors = gdk_display_get_monitors(gdk_display_get_default());
+    g_signal_connect(G_OBJECT(monitors), "items-changed", G_CALLBACK(monitors_changed_sig), nw);
 
     return nw;
 }

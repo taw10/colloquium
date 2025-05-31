@@ -128,6 +128,10 @@
           <attribute name="label" translatable="yes">Open new slide window</attribute>
           <attribute name="action">win.openslide</attribute>
         </item>
+        <submenu id="fsslide">
+          <attribute name="label" translatable="yes">Open full-screen slide window on display</attribute>
+          <attribute name="action">win.fsslidem</attribute>
+        </submenu>
       </section>
     </submenu>
     <submenu>

@@ -67,5 +67,6 @@ extern void slide_window_update_titlebar(SlideWindow *sw);
 extern void slide_window_set_slide(SlideWindow *sw, Slide *s);
 extern void slide_window_set_laser(SlideWindow *sw, double x, double y);
 extern void slide_window_set_laser_off(SlideWindow *sw);
+extern void slide_window_fullscreen_on_monitor(SlideWindow *sw, GdkMonitor *mon);
 
 #endif	/* SLIDEWINDOW_H */

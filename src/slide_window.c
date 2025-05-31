@@ -79,6 +79,13 @@ static void colloquium_slide_window_init(SlideWindow *sw)
 }
 
 
+void slide_window_fullscreen_on_monitor(SlideWindow *sw, GdkMonitor *mon)
+{
+    gtk_window_fullscreen_on_monitor(GTK_WINDOW(sw), mon);
+    gtk_widget_set_cursor_from_name(GTK_WIDGET(sw->sv), "none");
+}
+
+
 static void slide_click_sig(GtkGestureClick *self, int n_press,
                             gdouble x, gdouble y, gpointer vp)
 {

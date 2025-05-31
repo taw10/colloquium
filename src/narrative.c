@@ -427,7 +427,7 @@ static int wordcount(char *text)
 }
 
 
-void narrative_update_timing(GtkTextView *nv, Narrative *n)
+void narrative_update_timing(GtkTextView *nv, Narrative *n, double wpm)
 {
     GtkTextIter start;
     int i = 0;
@@ -443,7 +443,7 @@ void narrative_update_timing(GtkTextView *nv, Narrative *n)
         gtk_text_iter_forward_line(&end);
         gtk_text_view_get_line_yrange(nv, &start, &y, &h);
         txt = gtk_text_iter_get_slice(&start, &end);
-        total_minutes += wordcount(txt)/120.0;
+        total_minutes += wordcount(txt)/wpm;
         g_free(txt);
 
         if ( total_minutes - last_mark >= 1.0 ) {

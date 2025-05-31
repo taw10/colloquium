@@ -48,14 +48,14 @@ static void colloquium_prefs_window_init(PrefsWindow *pw)
 }
 
 
-static GtkWidget *narrative_prefs()
+static GtkWidget *narrative_prefs(GSettings *settings)
 {
-	GtkWidget *box;
-	GtkWidget *hbox;
-	GtkFontDialog *fc;
-	GtkWidget *fb;
+    GtkWidget *box;
+    GtkWidget *hbox;
+    GtkFontDialog *fc;
+    GtkWidget *fb;
 
-	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_set_margin_top(box, 8);
     gtk_widget_set_margin_bottom(box, 8);
     gtk_widget_set_margin_start(box, 8);
@@ -84,12 +84,21 @@ static GtkWidget *narrative_prefs()
 }
 
 
-static GtkWidget *presentation_prefs()
+static void wpm_sig(GtkEntry *self, GSettings *settings)
 {
-	GtkWidget *box;
-	GtkWidget *hbox;
+    const char *txt = gtk_editable_get_text(GTK_EDITABLE(self));
+    g_settings_set_double(settings, "words-per-minute", atof(txt));
+}
 
-	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+
+static GtkWidget *presentation_prefs(GSettings *settings)
+{
+    GtkWidget *box;
+    GtkWidget *hbox;
+    GtkWidget *entry;
+    char tmp[64];
+
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_set_margin_top(box, 8);
     gtk_widget_set_margin_bottom(box, 8);
     gtk_widget_set_margin_start(box, 8);
@@ -98,6 +107,11 @@ static GtkWidget *presentation_prefs()
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_append(GTK_BOX(box), hbox);
     gtk_box_append(GTK_BOX(hbox), gtk_label_new(_("Words per minute:")));
+    entry = gtk_entry_new();
+    gtk_box_append(GTK_BOX(hbox), entry);
+    snprintf(tmp, 63, "%.0f", g_settings_get_double(settings, "words-per-minute"));
+    gtk_editable_set_text(GTK_EDITABLE(entry), tmp);
+    g_signal_connect(G_OBJECT(entry), "activate", G_CALLBACK(wpm_sig), settings);
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_append(GTK_BOX(box), hbox);
@@ -118,23 +132,26 @@ PrefsWindow *prefs_window_new()
     GtkWidget *box;
     GtkWidget *hbox;
     GtkWidget *button;
+    GSettings *settings;
 
     pw = g_object_new(COLLOQUIUM_TYPE_PREFS_WINDOW, NULL);
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_window_set_child(GTK_WINDOW(pw), box);
 
+    settings = g_settings_new("uk.me.bitwiz.colloquium");
+
     notebook = gtk_notebook_new();
     gtk_box_append(GTK_BOX(box), notebook);
     gtk_widget_set_vexpand(notebook, TRUE);
-	gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_TOP);
+    gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_TOP);
 
-	gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
-	                         narrative_prefs(),
-	                         gtk_label_new(_("Narrative")));
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+                             narrative_prefs(settings),
+                             gtk_label_new(_("Narrative")));
 
-	gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
-	                         presentation_prefs(),
-	                         gtk_label_new(_("Presentation")));
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+                             presentation_prefs(settings),
+                             gtk_label_new(_("Presentation")));
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_append(GTK_BOX(box), hbox);

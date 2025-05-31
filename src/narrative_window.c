@@ -442,6 +442,14 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
+static void settings_wpm_changed_sig(GSettings *self, gchar *key, NarrativeWindow *nw)
+{
+    double wpm = g_settings_get_double(nw->settings, "words-per-minute");
+    narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n, wpm);
+    gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
+}
+
+
 static void modified_changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
     update_titlebar(nw);
@@ -450,7 +458,8 @@ static void modified_changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 
 static void changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
-    narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n);
+    double wpm = g_settings_get_double(nw->settings, "words-per-minute");
+    narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n, wpm);
     gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
 }
 
@@ -956,7 +965,8 @@ static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, doubl
 static void finish_nw(gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n);
+    double wpm = g_settings_get_double(nw->settings, "words-per-minute");
+    narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n, wpm);
     gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
 }
 
@@ -1024,6 +1034,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
                                     G_N_ELEMENTS(nw_entries), nw);
 
     nw->settings = g_settings_new("uk.me.bitwiz.colloquium");
+    g_signal_connect(G_OBJECT(nw->settings), "changed::words-per-minute",
+                     G_CALLBACK(settings_wpm_changed_sig), nw);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_window_set_child(GTK_WINDOW(nw), vbox);

@@ -1007,6 +1007,18 @@ static void monitors_changed_sig(GListModel *monitors, guint pos, guint rem, gui
 }
 
 
+static void apply_settings(GSettings *settings, gchar *key, NarrativeWindow *nw)
+{
+    char *highlight = g_settings_get_string(settings, "highlight");
+    GtkTextTag *tag = lookup_tag(nw->n->textbuf, "highlight");
+    g_object_set(G_OBJECT(tag), "background", highlight, NULL);
+    g_free(highlight);
+
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(nw->timing_ruler),
+                                       g_settings_get_uint(settings, "gutter-width"));
+}
+
+
 NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *app)
 {
     NarrativeWindow *nw;
@@ -1036,6 +1048,10 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->settings = g_settings_new("uk.me.bitwiz.colloquium");
     g_signal_connect(G_OBJECT(nw->settings), "changed::words-per-minute",
                      G_CALLBACK(settings_wpm_changed_sig), nw);
+    g_signal_connect(G_OBJECT(nw->settings), "changed::highlight",
+                     G_CALLBACK(apply_settings), nw);
+    g_signal_connect(G_OBJECT(nw->settings), "changed::gutter-width",
+                     G_CALLBACK(apply_settings), nw);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_window_set_child(GTK_WINDOW(nw), vbox);
@@ -1046,6 +1062,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     add_thumbnails(GTK_TEXT_VIEW(nw->nv), nw);
     gtk_text_buffer_set_modified(n->textbuf, FALSE);
 
+    apply_settings(nw->settings, NULL, nw);
+
     gtk_widget_add_css_class(nw->nv, "narrative");
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(nw->nv), GTK_WRAP_WORD);
     gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(nw->nv), 10);
@@ -1055,7 +1073,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
 
     nw->timing_ruler = gtk_drawing_area_new();
     gtk_text_view_set_gutter(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_LEFT, nw->timing_ruler);
-    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(nw->timing_ruler), 100);
+    gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(nw->timing_ruler),
+                                       g_settings_get_uint(nw->settings, "gutter-width"));
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(nw->timing_ruler), draw_timing_ruler, nw, NULL);
 
     nw->toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

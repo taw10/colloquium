@@ -247,6 +247,66 @@ static void colloquium_open(GApplication  *papp, GFile **files, gint n_files,
 }
 
 
+static const char *pango_style_to_text(PangoFontDescription *fd)
+{
+    switch ( pango_font_description_get_style(fd) ) {
+        case PANGO_STYLE_NORMAL : return "normal";
+        case PANGO_STYLE_ITALIC : return "italic";
+        case PANGO_STYLE_OBLIQUE : return "oblique";
+        default : return "normal";
+    }
+}
+
+
+static const char *pango_stretch_to_text(PangoFontDescription *fd)
+{
+    switch ( pango_font_description_get_stretch(fd) ) {
+        case PANGO_STRETCH_ULTRA_CONDENSED : return "ultra-condensed";
+        case PANGO_STRETCH_EXTRA_CONDENSED : return "extra-condensed";
+        case PANGO_STRETCH_CONDENSED : return "condensed";
+        case PANGO_STRETCH_SEMI_CONDENSED : return "semi-condensed";
+        case PANGO_STRETCH_ULTRA_EXPANDED : return "ultra-expanded";
+        case PANGO_STRETCH_EXTRA_EXPANDED : return "extra-expanded";
+        case PANGO_STRETCH_EXPANDED : return "expanded";
+        case PANGO_STRETCH_SEMI_EXPANDED : return "semi-expanded";
+        default : return "normal";
+    }
+}
+
+
+
+static void update_css(GSettings *settings, gchar *key, GtkCssProvider *provider)
+{
+    char css1[2048], css2[1024] = "";
+    char *font;
+    char *fgcol;
+    char *bgcol;
+    PangoFontDescription *fd;
+
+    font = g_settings_get_string(settings, "narrative-font");
+    fd = pango_font_description_from_string(font);
+    fgcol = g_settings_get_string(settings, "narrative-fg");
+    bgcol = g_settings_get_string(settings, "narrative-bg");
+    snprintf(css1, 1023, ".narrative { font-family: %s; font-style: %s;"
+                         " font-weight: %i;  font-stretch: %s; font-size: %ip%c; }",
+            pango_font_description_get_family(fd),
+            pango_style_to_text(fd),
+            pango_font_description_get_weight(fd),
+            pango_stretch_to_text(fd),
+            pango_font_description_get_size(fd)/PANGO_SCALE,
+            pango_font_description_get_size_is_absolute(fd)?'x':'t');
+    pango_font_description_free(fd);
+
+    if ( !g_settings_get_boolean(settings, "narrative-use-theme") ) {
+        snprintf(css2, 1023, ".narrative { color: %s; background-color: %s; }"
+                             ".thumbnail { background-color: %s; }", fgcol, bgcol, bgcol);
+    }
+
+    strcat(css1, css2);
+    gtk_css_provider_load_from_string(provider, css1);
+}
+
+
 static void colloquium_startup(GApplication *papp)
 {
     Colloquium *app = COLLOQUIUM(papp);
@@ -265,7 +325,17 @@ static void colloquium_startup(GApplication *papp)
             (const char *[]){"<Control>q", NULL});
 
     provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_resource(provider, "/uk/me/bitwiz/colloquium/colloquium.css");
+    app->settings = g_settings_new("uk.me.bitwiz.colloquium");
+    update_css(app->settings, NULL, provider);
+    g_signal_connect(G_OBJECT(app->settings), "changed::narrative-fg",
+                     G_CALLBACK(update_css), provider);
+    g_signal_connect(G_OBJECT(app->settings), "changed::narrative-bg",
+                     G_CALLBACK(update_css), provider);
+    g_signal_connect(G_OBJECT(app->settings), "changed::narrative-use-theme",
+                     G_CALLBACK(update_css), provider);
+    g_signal_connect(G_OBJECT(app->settings), "changed::narrative-font",
+                     G_CALLBACK(update_css), provider);
+
     gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                                GTK_STYLE_PROVIDER(provider),
                                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);

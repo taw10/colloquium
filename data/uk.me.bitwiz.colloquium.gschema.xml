@@ -9,6 +9,42 @@
       <description>Estimate of talking speed in words per minute</description>
     </key>
 
+    <key name="narrative-font" type="s">
+      <default>"Cantarell 16"</default>
+      <summary>Narrative font</summary>
+      <description>Base font for narrative text</description>
+    </key>
+
+    <key name="narrative-use-theme" type="b">
+      <default>true</default>
+      <summary>Use theme colours</summary>
+      <description>Use system theme colours for narrative text</description>
+    </key>
+
+    <key name="narrative-fg" type="s">
+      <default>"#000000"</default>
+      <summary>Narrative foreground colour</summary>
+      <description>Foreground colour for narrative text</description>
+    </key>
+
+    <key name="narrative-bg" type="s">
+      <default>"#ffffff"</default>
+      <summary>Narrative background colour</summary>
+      <description>Background colour for narrative text</description>
+    </key>
+
+    <key name="gutter-width" type="u">
+      <default>100</default>
+      <summary>Narrative margin width</summary>
+      <description>Width of the timing margin</description>
+    </key>
+
+    <key name="highlight" type="s">
+      <default>"#ddddff"</default>
+      <summary>Narrative margin width</summary>
+      <description>Width of the timing margin</description>
+    </key>
+
   </schema>
 
 </schemalist>

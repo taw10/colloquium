@@ -44,6 +44,7 @@ struct _colloquium
     char *mydir;
     int first_run;
     int hidepointer;
+    GSettings *settings;
 };
 
 struct _colloquiumclass

@@ -62,11 +62,13 @@ Narrative *narrative_new()
     n->time_marks[0].y = 300.0;
 
     gtk_text_buffer_create_tag(n->textbuf, "segstart",
-                               "font", "Sans Bold 18",
+                               "scale", 1.25,
+                               "weight", PANGO_WEIGHT_BOLD,
                                NULL);
 
     gtk_text_buffer_create_tag(n->textbuf, "prestitle",
-                               "font", "Sans Bold 24",
+                               "scale", 1.50,
+                               "weight", PANGO_WEIGHT_HEAVY,
                                NULL);
 
     gtk_text_buffer_create_tag(n->textbuf, "bulletpoint",

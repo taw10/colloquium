@@ -59,15 +59,13 @@ static void colloquium_class_init(ColloquiumClass *klass)
 
 static void colloquium_init(Colloquium *app)
 {
-    app->hidepointer = 0;
-    app->first_run = 0;
 }
 
 
 static void colloquium_activate(GApplication *papp)
 {
     Colloquium *app = COLLOQUIUM(papp);
-    if ( !app->first_run ) {
+    if ( !g_settings_get_boolean(app->settings, "first-run") ) {
         NarrativeWindow *nw;
         Narrative *n = narrative_new();
         nw = narrative_window_new(n, NULL, papp);
@@ -339,6 +337,11 @@ static void colloquium_startup(GApplication *papp)
     gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                                GTK_STYLE_PROVIDER(provider),
                                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    if ( g_settings_get_boolean(app->settings, "first-run") ) {
+        open_intro_doc(app);
+        g_settings_set_boolean(app->settings, "first-run", false);
+    }
 }
 
 

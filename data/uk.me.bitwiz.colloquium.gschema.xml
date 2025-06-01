@@ -3,6 +3,11 @@
 
   <schema id="uk.me.bitwiz.colloquium" path="/uk/me/bitwiz/colloquium/">
 
+    <key name="first-run" type="b">
+      <default>true</default>
+      <summary>First run</summary>
+      <description>Whether the demo document should be shown</description>
+    </key>
     <key name="words-per-minute" type="d">
       <default>120.0</default>
       <summary>Words per minute</summary>

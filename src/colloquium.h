@@ -40,10 +40,6 @@ struct _colloquium
     GtkApplication parent_instance;
 
     /*< private >*/
-    GtkBuilder *builder;
-    char *mydir;
-    int first_run;
-    int hidepointer;
     GSettings *settings;
 };
 

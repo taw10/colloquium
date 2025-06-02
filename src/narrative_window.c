@@ -442,10 +442,21 @@ static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 }
 
 
+static void update_statusbar(NarrativeWindow *nw)
+{
+    char tmp[128];
+    snprintf(tmp, 127, _("Estimated time: %.1f minutes at %.0f words/min"),
+             nw->n->total_minutes,
+             g_settings_get_double(nw->settings, "words-per-minute"));
+    gtk_label_set_text(GTK_LABEL(nw->status_text), tmp);
+}
+
+
 static void settings_wpm_changed_sig(GSettings *self, gchar *key, NarrativeWindow *nw)
 {
     double wpm = g_settings_get_double(nw->settings, "words-per-minute");
     narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n, wpm);
+    update_statusbar(nw);
     gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
 }
 
@@ -460,6 +471,7 @@ static void changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
     double wpm = g_settings_get_double(nw->settings, "words-per-minute");
     narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n, wpm);
+    update_statusbar(nw);
     gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
 }
 
@@ -964,6 +976,7 @@ static void finish_nw(gpointer vp)
     NarrativeWindow *nw = vp;
     double wpm = g_settings_get_double(nw->settings, "words-per-minute");
     narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n, wpm);
+    update_statusbar(nw);
     gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
 }
 
@@ -1025,6 +1038,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     GtkEventController *evc;
     GtkDropTarget *drop;
     GListModel *monitors;
+    GtkWidget *statusbar;
 
     nw = g_object_new(COLLOQUIUM_TYPE_NARRATIVE_WINDOW, "application", app, NULL);
 
@@ -1147,6 +1161,11 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_box_append(GTK_BOX(vbox), scroll);
     gtk_widget_set_focus_child(GTK_WIDGET(scroll), GTK_WIDGET(nw->nv));
     gtk_widget_set_focus_child(GTK_WIDGET(vbox), GTK_WIDGET(scroll));
+
+    statusbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_append(GTK_BOX(vbox), GTK_WIDGET(statusbar));
+    nw->status_text = gtk_label_new("");
+    gtk_box_append(GTK_BOX(statusbar), GTK_WIDGET(nw->status_text));
 
     update_titlebar(nw);
     update_fsmenu(nw);

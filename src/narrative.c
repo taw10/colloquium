@@ -60,6 +60,7 @@ Narrative *narrative_new()
     n->time_marks = malloc(60*sizeof(struct time_mark));
     n->time_marks[0].minutes = 1.0;
     n->time_marks[0].y = 300.0;
+    n->total_minutes = 0.0;
 
     gtk_text_buffer_create_tag(n->textbuf, "segstart",
                                "scale", 1.25,
@@ -458,6 +459,7 @@ void narrative_update_timing(GtkTextView *nv, Narrative *n, double wpm)
         start = end;
     } while ( !gtk_text_iter_is_end(&start) );
     n->n_time_marks = i;
+    n->total_minutes = total_minutes;
 }
 
 

@@ -52,6 +52,7 @@ struct _narrative
 
     struct time_mark *time_marks;
     int n_time_marks;
+    double total_minutes;
 };
 
 

@@ -59,6 +59,7 @@ struct _narrativewindow
     GtkWidget           *presenting_label;
     Slide               *presenting_slide;
     GSettings           *settings;
+    GtkWidget           *status_text;
 };
 
 

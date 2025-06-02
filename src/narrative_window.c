@@ -1059,8 +1059,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     add_thumbnails(GTK_TEXT_VIEW(nw->nv), nw);
     gtk_text_buffer_set_modified(n->textbuf, FALSE);
 
-    apply_settings(nw->settings, NULL, nw);
-
     gtk_widget_add_css_class(nw->nv, "narrative");
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(nw->nv), GTK_WRAP_WORD);
     gtk_text_view_set_pixels_above_lines(GTK_TEXT_VIEW(nw->nv), 10);
@@ -1073,6 +1071,8 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(nw->timing_ruler),
                                        g_settings_get_uint(nw->settings, "gutter-width"));
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(nw->timing_ruler), draw_timing_ruler, nw, NULL);
+
+    apply_settings(nw->settings, NULL, nw);
 
     nw->toolbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(GTK_WIDGET(nw->toolbar), "toolbar");

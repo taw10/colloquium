@@ -24,16 +24,11 @@ glib_dep = dependency('glib-2.0', required : true)
 gio_dep = dependency('gio-2.0', required : true)
 cairo_dep = dependency('cairo', required : true)
 pango_dep = dependency('pango', required : true)
-pangocairo_dep = dependency('pangocairo', required : true)
 gdkpixbuf_dep = dependency('gdk-pixbuf-2.0', required : true)
 poppler_dep = dependency('poppler-glib', required : true)
 md4c_dep = dependency('md4c', required: false)
 cc = meson.get_compiler('c')
 mdep = cc.find_library('m', required : false)
-
-if pangocairo_dep.found()
-  add_project_arguments('-DHAVE_PANGO', language : 'c')
-endif
 
 if md4c_dep.found()
   add_project_arguments('-DHAVE_MD4C', language: 'c')

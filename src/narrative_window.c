@@ -38,7 +38,6 @@
 #include "colloquium.h"
 #include "narrative_window.h"
 #include "slide_window.h"
-#include "testcard.h"
 #include "pr_clock.h"
 #include "print.h"
 #include "thumbnailwidget.h"
@@ -382,7 +381,10 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
                          gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    show_testcard(nw->n);
+    Slide *s = slide_new();
+    slide_set_ext_filename(s, "resource:///uk/me/bitwiz/colloquium/test-card.svg");
+    slide_set_ext_number(s, 0);
+    set_presenting_slide(nw, s);
 }
 
 

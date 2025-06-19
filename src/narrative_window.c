@@ -38,7 +38,8 @@
 #include "colloquium.h"
 #include "narrative_window.h"
 #include "slide_window.h"
-#include "pr_clock.h"
+#include "timer.h"
+#include "timer_window.h"
 #include "print.h"
 #include "thumbnailwidget.h"
 
@@ -251,9 +252,7 @@ static void add_eop_sig(GSimpleAction *action, GVariant *parameter,
 static void set_clock_pos(NarrativeWindow *nw)
 {
     int pos = get_cursor_para(GTK_TEXT_VIEW(nw->nv));
-    int end = num_items_to_eop(nw->n);
-    if ( pos >= end ) pos = end-1;
-    pr_clock_set_pos(nw->pr_clock, pos, end);
+    colloquium_timer_set_progress(nw->timer, pos);
 }
 
 
@@ -372,8 +371,7 @@ static void underline_sig(GSimpleAction *action, GVariant *parameter,
 static void open_clock_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     NarrativeWindow *nw = vp;
-    if ( nw->pr_clock != NULL ) return;
-    nw->pr_clock = pr_clock_new(&nw->pr_clock);
+    nw->timer_window = colloquium_timer_window_new(nw->timer);
 }
 
 
@@ -632,7 +630,7 @@ static void openslide_sig(GSimpleAction *action, GVariant *parameter,
 
 static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
-    if ( nw->pr_clock != NULL ) pr_clock_destroy(nw->pr_clock);
+    if ( nw->timer_window != NULL ) gtk_window_close(GTK_WINDOW(nw->timer_window));
     g_object_unref(nw->settings);
     return FALSE;
 }
@@ -672,6 +670,8 @@ static void start_presenting(NarrativeWindow *nw)
     gtk_button_set_child(GTK_BUTTON(nw->presenting_label), label);
     gtk_box_append(GTK_BOX(nw->toolbar), nw->presenting_label);
     g_signal_connect(G_OBJECT(nw->presenting_label), "clicked", G_CALLBACK(presenting_click_sig), nw);
+
+    colloquium_timer_set_progress_target(nw->timer, num_items_to_eop(nw->n));
 
     update_highlight(nw);
     gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
@@ -1051,6 +1051,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->slide_sorter = NULL;
     nw->presenting = 0;
     nw->presenting_slide = NULL;
+    nw->timer = colloquium_timer_new();
     if ( file != NULL ) g_object_ref(file);
 
     gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(nw), TRUE);

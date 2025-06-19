@@ -35,7 +35,8 @@ typedef struct _narrativewindowclass NarrativeWindowClass;
 #define COLLOQUIUM_NARRATIVE_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
                                           COLLOQUIUM_TYPE_NARRATIVE_WINDOW, NarrativeWindow))
 
-#include "pr_clock.h"
+#include "timer.h"
+#include "timer_window.h"
 #include "slide_window.h"
 #include "narrative.h"
 #include "slide_sorter.h"
@@ -49,7 +50,8 @@ struct _narrativewindow
     GApplication        *app;
     Narrative           *n;
     GFile               *file;
-    PRClock             *pr_clock;
+    Timer               *timer;
+    TimerWindow         *timer_window;
     SlideWindow         *slidewindows[16];
     int                  n_slidewindows;
     GtkWidget           *timing_ruler;

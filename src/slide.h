@@ -34,7 +34,8 @@ enum slide_filetype
 {
     SLIDE_FTYPE_UNKNOWN,
     SLIDE_FTYPE_IMAGE,
-    SLIDE_FTYPE_PDF
+    SLIDE_FTYPE_PDF,
+    SLIDE_FTYPE_SVG
 };
 
 

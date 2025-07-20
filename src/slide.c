@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <cairo.h>
 #include <poppler.h>
+#include <librsvg/rsvg.h>
 
 #include <libintl.h>
 #define _(x) gettext(x)
@@ -83,6 +84,47 @@ void slide_set_ext_filename(Slide *s, char *filename)
 void slide_set_ext_number(Slide *s, int num)
 {
     s->ext_slidenumber = num;
+}
+
+
+static float get_aspect_svg(Slide *s)
+{
+    RsvgHandle *h;
+    GError *error;
+    RsvgLength width, height;
+    RsvgRectangle viewbox;
+    gboolean has_viewbox, has_width, has_height;
+
+    error = NULL;
+    h = rsvg_handle_new_from_gfile_sync(s->ext_file, RSVG_HANDLE_FLAGS_NONE,
+                                        NULL, &error);
+    if ( h == NULL ) {
+        fprintf(stderr, _("Failed to read SVG (aspect): %s\n"), error->message);
+        return 1;
+    }
+
+    rsvg_handle_get_intrinsic_dimensions(h, &has_width, &width,
+                                         &has_height, &height,
+                                         &has_viewbox, &viewbox);
+    g_object_unref(h);
+
+    if ( has_viewbox ) {
+        return viewbox.width/viewbox.height;
+    } else {
+        if ( !has_width || !has_height ) {
+            fprintf(stderr, _("Failed to determine SVG aspect ratio - no width/height\n"));
+            return 1;
+        }
+        if ( width.unit != height.unit ) {
+            fprintf(stderr, _("Failed to determine SVG aspect ratio - units not the same\n"));
+            return 1;
+        }
+        if ( width.unit == RSVG_UNIT_PERCENT ) {
+            fprintf(stderr, _("Failed to determine SVG aspect ratio - no viewbox and percent size\n"));
+            return 1;
+        }
+        return width.length / height.length;
+    }
 }
 
 
@@ -218,6 +260,31 @@ static int render_cairo_pdf(Slide *s, cairo_t *cr, float w)
 }
 
 
+static int render_cairo_svg(Slide *s, cairo_t *cr, float w)
+{
+    RsvgHandle *h;
+    GError *error;
+    RsvgRectangle viewport;
+
+    error = NULL;
+    h = rsvg_handle_new_from_gfile_sync(s->ext_file, RSVG_HANDLE_FLAGS_NONE,
+                                        NULL, &error);
+    if ( h == NULL ) {
+        fprintf(stderr, _("Failed to read SVG (render): %s\n"), error->message);
+        return 1;
+    }
+
+    viewport.x = 0;
+    viewport.y = 0;
+    viewport.width = w;
+    viewport.height = w/s->aspect;
+    error = NULL;
+    rsvg_handle_render_document(h, cr, &viewport, &error);
+    g_object_unref(h);
+    return 0;
+}
+
+
 static int ensure_ftype(Slide *s)
 {
     if ( s->file_type == SLIDE_FTYPE_UNKNOWN ) {
@@ -241,7 +308,7 @@ static int ensure_ftype(Slide *s)
         } else if ( g_content_type_equals(type, "image/jpeg") ) {
             s->file_type = SLIDE_FTYPE_IMAGE;
         } else if ( g_content_type_equals(type, "image/svg+xml") ) {
-            s->file_type = SLIDE_FTYPE_IMAGE;
+            s->file_type = SLIDE_FTYPE_SVG;
         } else {
             fprintf(stderr, "File format not recognised: %s\n", type);
             s->file_type = SLIDE_FTYPE_UNKNOWN;
@@ -272,6 +339,10 @@ float slide_get_aspect(Slide *s)
             s->aspect = get_aspect_image(s);
             return s->aspect;
 
+            case SLIDE_FTYPE_SVG:
+            s->aspect = get_aspect_svg(s);
+            return s->aspect;
+
             default:
             return 1.0; /* Don't know! */
         }
@@ -292,6 +363,9 @@ int slide_render_cairo(Slide *s, cairo_t *cr, float w)
 
         case SLIDE_FTYPE_IMAGE:
         return render_cairo_image(s, cr, w);
+
+        case SLIDE_FTYPE_SVG:
+        return render_cairo_svg(s, cr, w);
 
         default:
         return 1;

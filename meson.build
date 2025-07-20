@@ -25,6 +25,7 @@ gio_dep = dependency('gio-2.0', required : true)
 cairo_dep = dependency('cairo', required : true)
 pango_dep = dependency('pango', required : true)
 gdkpixbuf_dep = dependency('gdk-pixbuf-2.0', required : true)
+rsvg_dep = dependency('librsvg-2.0', required : true)
 poppler_dep = dependency('poppler-glib', required : true)
 md4c_dep = dependency('md4c', required: false)
 cc = meson.get_compiler('c')
@@ -55,7 +56,7 @@ executable('colloquium',
             'src/prefswindow.c',
            ],
            gresources,
-           dependencies : [gtk_dep, mdep, md4c_dep, poppler_dep],
+           dependencies : [gtk_dep, mdep, md4c_dep, poppler_dep, rsvg_dep],
            install : true)
 
 

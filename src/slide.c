@@ -187,7 +187,6 @@ static int render_cairo_image(Slide *s, cairo_t *cr, float w)
     GdkPixbuf *pixbuf;
     int pw;
     double scale;
-    int iw, ih;
 
     error = NULL;
     stream = g_file_read(s->ext_file, NULL, &error);
@@ -196,18 +195,9 @@ static int render_cairo_image(Slide *s, cairo_t *cr, float w)
         return 1;
     }
 
-    cairo_surface_t *surf = cairo_get_target(cr);
-    if ( cairo_surface_get_type(surf) == CAIRO_SURFACE_TYPE_IMAGE ) {
-        iw = cairo_image_surface_get_width(surf);
-        ih = cairo_image_surface_get_height(surf);
-    } else {
-        iw = 1024;
-        ih = 768;
-    }
-
     error = NULL;
     pixbuf = gdk_pixbuf_new_from_stream_at_scale(G_INPUT_STREAM(stream),
-                                                 iw, ih, TRUE, NULL, &error);
+                                                 w, w/s->aspect, TRUE, NULL, &error);
     g_object_unref(G_OBJECT(stream));
     if ( pixbuf == NULL ) {
         fprintf(stderr, _("Failed to load image: %s\n"), error->message);

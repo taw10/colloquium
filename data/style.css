@@ -1,0 +1,30 @@
+#timer-remaining {
+    font-size: 120%;
+}
+
+#timer-start-button {
+    font-weight: bold;
+    font-size: 150%;
+}
+
+#timer-start-button:not(:disabled) {
+    background: #00dd00;
+}
+
+#timer-discussion-button {
+    font-weight: bold;
+    font-size: 150%;
+}
+
+#timer-discussion-button:not(:disabled) {
+    background: #f09000;
+}
+
+#timer-stop-button {
+    font-weight: bold;
+    font-size: 150%;
+}
+
+#timer-stop-button:not(:disabled) {
+    background: #dd0000;
+}

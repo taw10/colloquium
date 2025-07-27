@@ -52,7 +52,7 @@ static void colloquium_timer_window_init(TimerWindow *e)
 static char *format_span(int n)
 {
     char tmp[32];
-    int hours, mins, sec;
+    int mins, sec;
     char *s;
 
     if ( n < 0 ) {
@@ -64,9 +64,8 @@ static char *format_span(int n)
 
     sec = n % 60;
     mins = ((n-sec) % (60*60))/60;
-    hours = (n-sec-mins) / (60*60);
 
-    snprintf(tmp, 31, "%s%i:%02i:%02i", s, hours, mins, sec);
+    snprintf(tmp, 31, "%s%02i:%02i", s, mins, sec);
 
     return strdup(tmp);
 }
@@ -111,7 +110,8 @@ static gboolean update_clock(gpointer data)
     double time_remaining;
     double time_used;
     double progress_time;
-    char *tmp;
+    char *tmp1, *tmp2;
+    char tmp[1024];
 
     time_used = colloquium_timer_get_elapsed_main_time(n->timer);
     time_remaining = colloquium_timer_get_main_time(n->timer)
@@ -119,17 +119,19 @@ static gboolean update_clock(gpointer data)
     progress_time = colloquium_timer_get_main_time(n->timer)
                       * colloquium_timer_get_max_progress_fraction(n->timer);
 
-    tmp = format_span(time_used);
-    gtk_label_set_text(GTK_LABEL(n->elapsed), tmp);
-    free(tmp);
-
-    tmp = format_span(time_remaining);
+    tmp1 = format_span_nice(progress_time - time_used);
+    tmp2 = format_span(time_remaining);
+    snprintf(tmp, 1023, "%s.  %s remaining", tmp1, tmp2);
     gtk_label_set_text(GTK_LABEL(n->remaining), tmp);
-    free(tmp);
+    snprintf(tmp, 1023, "<b>%s</b>.  %s remaining", tmp1, tmp2);
+    gtk_label_set_markup(GTK_LABEL(n->remaining), tmp);
+    free(tmp1);
+    free(tmp2);
 
-    tmp = format_span_nice(progress_time - time_used);
-    gtk_label_set_text(GTK_LABEL(n->status), tmp);
-    free(tmp);
+    tmp1 = format_span(time_used);
+    snprintf(tmp, 1023, "%s elapsed", tmp1);
+    gtk_label_set_text(GTK_LABEL(n->elapsed), tmp);
+    free(tmp1);
 
     return TRUE;
 }
@@ -164,17 +166,39 @@ static void set_sig(GtkEditable *w, TimerWindow *n)
 
     colloquium_timer_set_main_time(n->timer, t1);
     colloquium_timer_set_discussion_time(n->timer, t2);
+}
 
-    update_clock(n);
+
+static void set_buttons(TimerWindow *n)
+{
+    if ( colloquium_timer_get_running(n->timer) ) {
+
+        switch ( colloquium_timer_get_running_mode(n->timer) ) {
+
+            case TIMER_MAIN:
+            gtk_widget_set_sensitive(n->startbutton, FALSE);
+            gtk_widget_set_sensitive(n->discussionbutton, TRUE);
+            gtk_widget_set_sensitive(n->pausebutton, TRUE);
+            break;
+
+            case TIMER_DISCUSSION:
+            gtk_widget_set_sensitive(n->startbutton, TRUE);
+            gtk_widget_set_sensitive(n->discussionbutton, FALSE);
+            gtk_widget_set_sensitive(n->pausebutton, TRUE);
+            break;
+
+        }
+    } else {
+        gtk_widget_set_sensitive(n->startbutton, TRUE);
+        gtk_widget_set_sensitive(n->discussionbutton, TRUE);
+        gtk_widget_set_sensitive(n->pausebutton, FALSE);
+    }
 }
 
 
 static gboolean reset_sig(GtkWidget *w, TimerWindow *n)
 {
     colloquium_timer_reset(n->timer);
-    gtk_label_set_text(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(n->startbutton))),
-                       _("Start"));
-    update_clock(n);
     return FALSE;
 }
 
@@ -182,49 +206,85 @@ static gboolean reset_sig(GtkWidget *w, TimerWindow *n)
 static gboolean setpos_sig(GtkWidget *w, TimerWindow *n)
 {
     colloquium_timer_reset_max_progress(n->timer);
-    update_clock(n);
+    return FALSE;
+}
+
+
+static gboolean pause_sig(GtkWidget *w, TimerWindow *n)
+{
+    colloquium_timer_pause(n->timer);
     return FALSE;
 }
 
 
 static gboolean start_sig(GtkWidget *w, TimerWindow *n)
 {
-    if ( colloquium_timer_get_running(n->timer) ) {
-        colloquium_timer_pause(n->timer);
-        gtk_label_set_text(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(w))),
-                           _("Start"));
-    } else {
-        colloquium_timer_start(n->timer, TIMER_MAIN);
-        gtk_label_set_text(GTK_LABEL(gtk_button_get_child(GTK_BUTTON(w))),
-                           _("Stop"));
-    }
-
-    update_clock(n);
-
+    colloquium_timer_start(n->timer, TIMER_MAIN);
     return FALSE;
 }
 
 
-TimerWindow *colloquium_timer_window_new(Timer *timer)
+static gboolean discussion_sig(GtkWidget *w, TimerWindow *n)
 {
-    TimerWindow *n;
-    GtkWidget *vbox;
-    GtkWidget *hbox;
+    colloquium_timer_start(n->timer, TIMER_DISCUSSION);
+    return FALSE;
+}
+
+
+static void clock_event_sig(Timer *t, TimerWindow *n)
+{
+    update_clock(n);
+    set_buttons(n);
+}
+
+
+static GtkWidget *timer_buttons(TimerWindow *n)
+{
+    GtkWidget *grid;
     GtkWidget *resetbutton;
     GtkWidget *setposbutton;
-    GtkWidget *grid;
+
+    grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 8);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid), TRUE);
+
+    n->startbutton = gtk_button_new_with_label(_("Start"));
+    gtk_widget_set_name(n->startbutton, "timer-start-button");
+    gtk_grid_attach(GTK_GRID(grid), n->startbutton, 0, 0, 1, 1);
+
+    n->pausebutton = gtk_button_new_with_label(_("Pause"));
+    gtk_widget_set_name(n->pausebutton, "timer-stop-button");
+    gtk_grid_attach(GTK_GRID(grid), n->pausebutton, 0, 1, 1, 1);
+
+    n->discussionbutton = gtk_button_new_with_label(_("Discussion"));
+    gtk_widget_set_name(n->discussionbutton, "timer-discussion-button");
+    gtk_grid_attach(GTK_GRID(grid), n->discussionbutton, 0, 2, 1, 1);
+
+    resetbutton = gtk_button_new_with_label(_("Reset"));
+    gtk_widget_set_name(resetbutton, "timer-reset-button");
+    gtk_grid_attach(GTK_GRID(grid), resetbutton, 1, 0, 1, 1);
+
+    setposbutton = gtk_button_new_with_label(_("Set position"));
+    gtk_grid_attach(GTK_GRID(grid), setposbutton, 1, 1, 1, 1);
+
+    g_signal_connect(G_OBJECT(n->startbutton), "clicked", G_CALLBACK(start_sig), n);
+    g_signal_connect(G_OBJECT(n->pausebutton), "clicked", G_CALLBACK(pause_sig), n);
+    g_signal_connect(G_OBJECT(n->discussionbutton), "clicked", G_CALLBACK(discussion_sig), n);
+    g_signal_connect(G_OBJECT(resetbutton), "clicked", G_CALLBACK(reset_sig), n);
+    g_signal_connect(G_OBJECT(setposbutton), "clicked", G_CALLBACK(setpos_sig), n);
+
+    return grid;
+}
+
+
+static GtkWidget *timer_entries(TimerWindow *n)
+{
+    GtkWidget *vbox;
+    GtkWidget *hbox;
     GtkWidget *label;
 
-    n = g_object_new(COLLOQUIUM_TYPE_TIMER_WINDOW, NULL);
-    gtk_window_set_default_size(GTK_WINDOW(n), 600, 150);
-    n->timer = timer;
-
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-    gtk_window_set_child(GTK_WINDOW(n), vbox);
-    gtk_widget_set_margin_top(vbox, 8);
-    gtk_widget_set_margin_bottom(vbox, 8);
-    gtk_widget_set_margin_start(vbox, 8);
-    gtk_widget_set_margin_end(vbox, 8);
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_box_append(GTK_BOX(vbox), hbox);
@@ -238,6 +298,10 @@ TimerWindow *colloquium_timer_window_new(Timer *timer)
     n->entry = gtk_entry_new();
     gtk_box_append(GTK_BOX(hbox), n->entry);
 
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(vbox), hbox);
+    gtk_box_set_spacing(GTK_BOX(hbox), 4);
+
     label = gtk_label_new(_("Discussion time (mins):"));
     gtk_label_set_markup(GTK_LABEL(label), _("<b>Discussion time (mins):</b>"));
     g_object_set(G_OBJECT(label), "halign", GTK_ALIGN_END, NULL);
@@ -246,47 +310,52 @@ TimerWindow *colloquium_timer_window_new(Timer *timer)
     n->qentry = gtk_entry_new();
     gtk_box_append(GTK_BOX(hbox), n->qentry);
 
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_box_append(GTK_BOX(vbox), hbox);
-    gtk_box_set_spacing(GTK_BOX(hbox), 4);
+    g_signal_connect(G_OBJECT(n->entry), "changed", G_CALLBACK(set_sig), n);
+    g_signal_connect(G_OBJECT(n->qentry), "changed", G_CALLBACK(set_sig), n);
 
-    n->startbutton = gtk_button_new_with_label(_("Start"));
-    gtk_box_append(GTK_BOX(hbox), n->startbutton);
+    return vbox;
+}
 
-    resetbutton = gtk_button_new_with_label(_("Reset"));
-    gtk_box_append(GTK_BOX(hbox), resetbutton);
 
-    setposbutton = gtk_button_new_with_label(_("Set position"));
-    gtk_box_append(GTK_BOX(hbox), setposbutton);
+TimerWindow *colloquium_timer_window_new(Timer *timer)
+{
+    TimerWindow *n;
+    GtkWidget *vbox;
+    GtkWidget *hbox;
+
+    n = g_object_new(COLLOQUIUM_TYPE_TIMER_WINDOW, NULL);
+    gtk_window_set_default_size(GTK_WINDOW(n), 600, 150);
+    n->timer = timer;
+
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_window_set_child(GTK_WINDOW(n), vbox);
+    gtk_widget_set_margin_top(vbox, 8);
+    gtk_widget_set_margin_bottom(vbox, 8);
+    gtk_widget_set_margin_start(vbox, 8);
+    gtk_widget_set_margin_end(vbox, 8);
 
     n->bar = colloquium_timer_bar_new(timer);
     gtk_box_append(GTK_BOX(vbox), n->bar);
     gtk_widget_set_vexpand(GTK_WIDGET(n->bar), TRUE);
 
-    grid = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
-    gtk_grid_set_column_homogeneous(GTK_GRID(grid), TRUE);
-    gtk_box_append(GTK_BOX(vbox), grid);
-    label = gtk_label_new(_("Time elapsed"));
-    gtk_label_set_markup(GTK_LABEL(label), _("<b>Time elapsed</b>"));
-    gtk_grid_attach(GTK_GRID(grid), label, 0, 0, 1, 1);
-    label = gtk_label_new(_("Time remaining"));
-    gtk_label_set_markup(GTK_LABEL(label), _("<b>Time remaining</b>"));
-    gtk_grid_attach(GTK_GRID(grid), label, 1, 0, 1, 1);
-    n->status = gtk_label_new("<status>");
-    gtk_grid_attach(GTK_GRID(grid), n->status, 2, 0, 1, 1);
-    n->elapsed = gtk_label_new("<elapsed>");
-    gtk_grid_attach(GTK_GRID(grid), n->elapsed, 0, 1, 1, 1);
     n->remaining = gtk_label_new("<remaining>");
-    gtk_grid_attach(GTK_GRID(grid), n->remaining, 1, 1, 1, 1);
+    gtk_box_append(GTK_BOX(vbox), n->remaining);
+    gtk_widget_set_name(n->remaining, "timer-remaining");
+    n->elapsed = gtk_label_new(_("Timer is not running"));
+    gtk_box_append(GTK_BOX(vbox), n->elapsed);
 
-    g_signal_connect(G_OBJECT(n->startbutton), "clicked", G_CALLBACK(start_sig), n);
-    g_signal_connect(G_OBJECT(resetbutton), "clicked", G_CALLBACK(reset_sig), n);
-    g_signal_connect(G_OBJECT(setposbutton), "clicked", G_CALLBACK(setpos_sig), n);
-    g_signal_connect(G_OBJECT(n->entry), "changed", G_CALLBACK(set_sig), n);
-    g_signal_connect(G_OBJECT(n->qentry), "changed", G_CALLBACK(set_sig), n);
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(vbox), hbox);
+    gtk_box_set_spacing(GTK_BOX(hbox), 8);
+
+    gtk_box_append(GTK_BOX(hbox), timer_buttons(n));
+    gtk_box_append(GTK_BOX(hbox), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(hbox), timer_entries(n));
 
     n->timer_id = g_timeout_add_seconds(1, update_clock, n);
+    g_signal_connect(G_OBJECT(n->timer), "clock-event", G_CALLBACK(clock_event_sig), n);
+    update_clock(n);
+    set_buttons(n);
 
     gtk_window_set_title(GTK_WINDOW(n), _("Presentation clock"));
     g_signal_connect(G_OBJECT(n), "destroy", G_CALLBACK(close_clock_sig), n);

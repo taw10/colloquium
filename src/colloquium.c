@@ -338,6 +338,12 @@ static void colloquium_startup(GApplication *papp)
                                                GTK_STYLE_PROVIDER(provider),
                                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
+    provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_resource(provider, "/uk/me/bitwiz/colloquium/gtk/style.css");
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(),
+                                               GTK_STYLE_PROVIDER(provider),
+                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
     if ( g_settings_get_boolean(app->settings, "first-run") ) {
         open_intro_doc(app);
         g_settings_set_boolean(app->settings, "first-run", false);

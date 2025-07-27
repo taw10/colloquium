@@ -9,5 +9,6 @@
   </gresource>
   <gresource prefix="/uk/me/bitwiz/colloquium/gtk">
     <file>menus.ui</file>
+    <file>style.css</file>
   </gresource>
 </gresources>

@@ -46,10 +46,11 @@ struct _colloquiumtimerwindow
     GtkWidget *entry;
     GtkWidget *qentry;
     GtkWidget *startbutton;
+    GtkWidget *discussionbutton;
+    GtkWidget *pausebutton;
     GtkWidget *da;
     GtkWidget *elapsed;
     GtkWidget *remaining;
-    GtkWidget *status;
     GtkWidget *bar;
     Timer *timer;
     guint timer_id;

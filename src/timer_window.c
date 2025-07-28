@@ -110,7 +110,8 @@ static gboolean update_clock(gpointer data)
     double time_remaining;
     double time_used;
     double progress_time;
-    char *tmp1, *tmp2;
+    double dtime_remaining;
+    char *tmp1, *tmp2, *tmp3;
     char tmp[1024];
 
     time_used = colloquium_timer_get_elapsed_main_time(n->timer);
@@ -118,20 +119,26 @@ static gboolean update_clock(gpointer data)
                       - colloquium_timer_get_elapsed_main_time(n->timer);
     progress_time = colloquium_timer_get_main_time(n->timer)
                       * colloquium_timer_get_max_progress_fraction(n->timer);
+    dtime_remaining = colloquium_timer_get_discussion_time(n->timer)
+                      - colloquium_timer_get_elapsed_discussion_time(n->timer);
 
     tmp1 = format_span_nice(progress_time - time_used);
     tmp2 = format_span(time_remaining);
-    snprintf(tmp, 1023, "%s.  %s remaining", tmp1, tmp2);
+    tmp3 = format_span(dtime_remaining);
+    snprintf(tmp, 1023, "%s.  %s remaining (+%s for discussion)", tmp1, tmp2, tmp3);
     gtk_label_set_text(GTK_LABEL(n->remaining), tmp);
-    snprintf(tmp, 1023, "<b>%s</b>.  %s remaining", tmp1, tmp2);
+    snprintf(tmp, 1023, "<b>%s</b>.  %s remaining (+%s for discussion)", tmp1, tmp2, tmp3);
     gtk_label_set_markup(GTK_LABEL(n->remaining), tmp);
     free(tmp1);
     free(tmp2);
+    free(tmp3);
 
     tmp1 = format_span(time_used);
-    snprintf(tmp, 1023, "%s elapsed", tmp1);
+    tmp2 = format_span(colloquium_timer_get_elapsed_discussion_time(n->timer));
+    snprintf(tmp, 1023, "%s elapsed (+%s of discussion)", tmp1, tmp2);
     gtk_label_set_text(GTK_LABEL(n->elapsed), tmp);
     free(tmp1);
+    free(tmp2);
 
     return TRUE;
 }

@@ -58,7 +58,8 @@ static void timer_bar_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     TimerBar *b = COLLOQUIUM_TIMER_BAR(da);
     int w, h;
     cairo_t *cr;
-    double total_time;
+    double main_time;
+    double disc_time;
     double progress_time;
     double elapsed_time;
 
@@ -71,12 +72,22 @@ static void timer_bar_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
 
     cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(0,0,w,h));
 
-    total_time = colloquium_timer_get_main_time(b->timer);
-    progress_time = total_time * colloquium_timer_get_max_progress_fraction(b->timer);
+    main_time = colloquium_timer_get_main_time(b->timer);
+    disc_time = colloquium_timer_get_discussion_time(b->timer);
+    progress_time = main_time * colloquium_timer_get_max_progress_fraction(b->timer);
     elapsed_time = colloquium_timer_get_elapsed_main_time(b->timer);
 
     /* x-coordinates are seconds, y-coordinates are fraction of height */
-    cairo_scale(cr, w/total_time, h);
+    cairo_scale(cr, w/(main_time+disc_time), h);
+
+    cairo_rectangle(cr, main_time+disc_time, 0.0, -disc_time, 1.0);
+    cairo_set_source_rgb(cr, 0.9, 0.9, 0.9);
+    cairo_fill(cr);
+
+    cairo_rectangle(cr, main_time+disc_time, 0.0,
+                    -colloquium_timer_get_elapsed_discussion_time(b->timer), 1.0);
+    cairo_set_source_rgb(cr, 1.0, 0.5, 0.0);
+    cairo_fill(cr);
 
     cairo_rectangle(cr, 0.0, 0.0, elapsed_time, 1.0);
     cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
@@ -94,16 +105,18 @@ static void timer_bar_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
         cairo_fill(cr);
     }
 
+    /* Current position marker (even if behind high water mark) */
+    cairo_set_source_rgb(cr, 0.6, 0.0, 0.8);
+    cairo_move_to(cr, main_time*colloquium_timer_get_progress_fraction(b->timer), 0.0);
+    cairo_line_to(cr, main_time*colloquium_timer_get_progress_fraction(b->timer), 1.0);
+    double dummy, line_width = 2.0;
+    cairo_device_to_user(cr, &line_width, &dummy);
+    cairo_set_line_width(cr, line_width);
+    cairo_stroke(cr);
+
     cairo_destroy(cr);
 
     cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(0,0,w,h));
-
-    /* Current position marker (even if behind high water mark) */
-    cairo_set_source_rgb(cr, 0.6, 0.0, 0.8);
-    cairo_move_to(cr, w*colloquium_timer_get_progress_fraction(b->timer), 0.0);
-    cairo_line_to(cr, w*colloquium_timer_get_progress_fraction(b->timer), h);
-    cairo_set_line_width(cr, 2.0);
-    cairo_stroke(cr);
 
     if ( !colloquium_timer_get_running(b->timer) ) {
         cairo_move_to(cr, 0.0, 0.8*h);

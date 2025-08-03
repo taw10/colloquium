@@ -256,6 +256,9 @@ static int render_cairo_svg(Slide *s, cairo_t *cr, float w)
     GError *error;
     RsvgRectangle viewport;
 
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
+
     error = NULL;
     h = rsvg_handle_new_from_gfile_sync(s->ext_file, RSVG_HANDLE_FLAGS_NONE,
                                         NULL, &error);

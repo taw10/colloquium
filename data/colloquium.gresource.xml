@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/uk/me/bitwiz/colloquium">
-    <file>sky.png</file>
-    <file>canvas.png</file>
     <file>demo.md</file>
+    <file>banner.svg</file>
+    <file>slide.svg</file>
+    <file>timer-guide.svg</file>
     <file>test-card.svg</file>
+    <file>timer.png</file>
     <file>uk.me.bitwiz.colloquium.svg</file>
   </gresource>
   <gresource prefix="/uk/me/bitwiz/colloquium/gtk">

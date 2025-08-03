@@ -28,3 +28,12 @@
 #timer-stop-button:not(:disabled) {
     background: #dd0000;
 }
+
+#stop-presenting {
+    font-weight: bold;
+    background: #55ff44;
+}
+
+#stop-presenting:hover {
+    background: #22ee22;
+}

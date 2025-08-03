@@ -661,16 +661,11 @@ static gboolean presenting_click_sig(GtkWidget *da, NarrativeWindow *nw)
 
 static void start_presenting(NarrativeWindow *nw)
 {
-    GtkWidget *label;
-
     if ( nw->presenting ) return;
     nw->presenting = 1;
 
-    label = gtk_label_new("Presenting (click to stop)");
-    gtk_label_set_markup(GTK_LABEL(label),
-                "<span background='#33ff33'><b>Presenting (click to stop)</b></span>");
-    nw->presenting_label = gtk_button_new();
-    gtk_button_set_child(GTK_BUTTON(nw->presenting_label), label);
+    nw->presenting_label = gtk_button_new_with_label("Presenting (click to stop)");
+    gtk_widget_set_name(nw->presenting_label, "stop-presenting");
     gtk_box_append(GTK_BOX(nw->toolbar), nw->presenting_label);
     g_signal_connect(G_OBJECT(nw->presenting_label), "clicked", G_CALLBACK(presenting_click_sig), nw);
 

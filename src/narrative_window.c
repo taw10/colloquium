@@ -601,7 +601,6 @@ static SlideWindow *open_slide_window(NarrativeWindow *nw, Slide *slide)
         g_signal_connect(G_OBJECT(sw), "laser-on", G_CALLBACK(nw_laser_on_sig), nw);
         g_signal_connect(G_OBJECT(sw), "laser-off", G_CALLBACK(nw_laser_off_sig), nw);
         g_signal_connect(G_OBJECT(sw), "laser-moved", G_CALLBACK(nw_laser_move_sig), nw);
-        g_signal_connect_swapped(G_OBJECT(nw), "destroy", G_CALLBACK(gtk_window_close), sw);
         gtk_window_present(GTK_WINDOW(sw));
         return sw;
     } else {
@@ -630,7 +629,11 @@ static void openslide_sig(GSimpleAction *action, GVariant *parameter,
 
 static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
 {
+    int i;
     if ( nw->timer_window != NULL ) gtk_window_close(GTK_WINDOW(nw->timer_window));
+    for ( i=0; i<nw->n_slidewindows; i++ ) {
+        gtk_window_close(GTK_WINDOW(nw->slidewindows[i]));
+    }
     g_object_unref(nw->settings);
     return FALSE;
 }

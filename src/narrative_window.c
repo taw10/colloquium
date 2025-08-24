@@ -200,22 +200,58 @@ static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
     gtk_window_present(GTK_WINDOW(nw->slide_sorter));
 }
 
+
 static void add_heading(NarrativeWindow *nw, const char *name, const char *placeholder)
 {
-    GtkTextMark *cursor;
-    GtkTextIter iter, end;
+    GtkTextMark *cursor_mark;
+    GtkTextMark *selection_bound_mark;
+    GtkTextIter cursor, selection_bound;
+    GtkTextMark *m1, *m2;
+    GtkTextIter i1, i2;
+    int r;
 
-    cursor = gtk_text_buffer_get_insert(nw->n->textbuf);
-    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    gtk_text_iter_forward_line(&iter);
-    gtk_text_buffer_insert(nw->n->textbuf, &iter, placeholder, -1);
+    cursor_mark = gtk_text_buffer_get_insert(nw->n->textbuf);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &cursor, cursor_mark);
+    selection_bound_mark = gtk_text_buffer_get_mark(nw->n->textbuf, "selection_bound");
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &selection_bound, selection_bound_mark);
+    r = gtk_text_iter_compare(&cursor, &selection_bound);
 
-    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &iter, cursor);
-    gtk_text_iter_forward_line(&iter);
-    end = iter;
-    gtk_text_iter_forward_chars(&end, 16);
+    if ( r > 0 ) {
+        m1 = selection_bound_mark;
+        m2 = cursor_mark;
+    } else if ( r < 0 ) {
+        m1 = cursor_mark;
+        m2 = selection_bound_mark;
+    } else {
+        m1 = cursor_mark;
+        m2 = cursor_mark;
+    }
 
-    gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, name, &iter, &end);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &i1, m1);
+    gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &i2, m2);
+
+    if ( !gtk_text_iter_starts_line(&i1) ) {
+        gtk_text_buffer_insert(nw->n->textbuf, &i1, "\n", -1);
+        gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &i1, m1);
+        gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &i2, m2);
+    }
+
+    if ( !gtk_text_iter_ends_line(&i2) ) {
+        gtk_text_buffer_insert(nw->n->textbuf, &i2, "\n", -1);
+        gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &i1, m1);
+        gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &i2, m2);
+        gtk_text_iter_backward_cursor_position(&i2);
+    }
+
+    if ( r == 0 ) {
+        /* Nothing selected - insert placeholder */
+        gtk_text_buffer_insert_with_tags_by_name(nw->n->textbuf, &i2,
+                                                 placeholder, -1,
+                                                 name, NULL);
+    } else {
+        gtk_text_buffer_apply_tag_by_name(nw->n->textbuf, name, &i1, &i2);
+        gtk_text_buffer_place_cursor(nw->n->textbuf, &i2);
+    }
 
     gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
 }

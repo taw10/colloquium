@@ -62,6 +62,7 @@ struct _narrativewindow
     Slide               *presenting_slide;
     GSettings           *settings;
     GtkWidget           *status_text;
+    guint                monitor_update_timeout;
 };
 
 

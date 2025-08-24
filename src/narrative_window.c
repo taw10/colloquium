@@ -635,6 +635,9 @@ static gboolean nw_destroy_sig(GtkWidget *da, NarrativeWindow *nw)
         gtk_window_close(GTK_WINDOW(nw->slidewindows[i]));
     }
     g_object_unref(nw->settings);
+    if ( nw->monitor_update_timeout > 0 ) {
+        g_source_remove(nw->monitor_update_timeout);
+    }
     return FALSE;
 }
 
@@ -1010,10 +1013,20 @@ static void update_fsmenu(NarrativeWindow *nw)
 }
 
 
+static gboolean monitor_update_timeout(gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    update_fsmenu(nw);
+    nw->monitor_update_timeout = 0;
+    return G_SOURCE_REMOVE;
+}
+
+
 static void monitors_changed_sig(GListModel *monitors, guint pos, guint rem, guint add,
                                  NarrativeWindow *nw)
 {
     update_fsmenu(nw);
+    nw->monitor_update_timeout = g_timeout_add_seconds(1, monitor_update_timeout, nw);
 }
 
 
@@ -1050,6 +1063,7 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->presenting = 0;
     nw->presenting_slide = NULL;
     nw->timer = colloquium_timer_new();
+    nw->monitor_update_timeout = 0;
     if ( file != NULL ) g_object_ref(file);
 
     gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(nw), TRUE);

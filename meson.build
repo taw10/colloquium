@@ -2,6 +2,7 @@
 project('colloquium', 'c',
         version : '0.9.0',
         license : 'GPL3+',
+        meson_version : '>=0.59.0',
         default_options : ['buildtype=debugoptimized'])
 
 datadir=join_paths(get_option('datadir'), 'colloquium')

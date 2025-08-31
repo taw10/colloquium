@@ -1,14 +1,18 @@
-name: CI Meson
+name: Basic build test
 
 on:
   push:
+    branches:
+      - master
   pull_request:
+    - master
+
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out code
         uses: actions/checkout@v4
       - name: Install dependencies
         run: |
@@ -16,22 +20,22 @@ jobs:
           sudo apt-get install -y gettext libgtk-4-dev libmd4c-dev libpoppler-glib-dev librsvg2-dev desktop-file-utils
       - name: Install Meson
         run: pip install meson ninja
-      - name: Set up Meson build
+      - name: Meson setup
         run: meson setup build
-      - name: Compile
+      - name: Meson compile
         run: meson compile -C build
 
   build-macos:
     runs-on: macos-latest
     steps:
-      - name: Checkout
+      - name: Check out code
         uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           brew install gettext gtk4 poppler md4c librsvg desktop-file-utils
       - name: Install Meson
         run: pip install meson ninja
-      - name: Set up Meson build
+      - name: Meson setup
         run: meson setup build
-      - name: Compile
+      - name: Meson compile
         run: meson compile -C build

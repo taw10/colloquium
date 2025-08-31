@@ -20,3 +20,18 @@ jobs:
         run: meson setup build
       - name: Compile
         run: meson compile -C build
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          brew install gettext gtk4 poppler md4c librsvg desktop-file-utils
+      - name: Install Meson
+        run: pip install meson ninja
+      - name: Set up Meson build
+        run: meson setup build
+      - name: Compile
+        run: meson compile -C build

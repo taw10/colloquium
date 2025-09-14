@@ -112,7 +112,7 @@ static void addfile(gpointer sv, gpointer vp)
         GtkWidget *th;
 
         s = slide_new();
-        slide_set_ext_filename(s, filename);
+        slide_set_ext_file(s, file);
         slide_set_ext_number(s, i+1);
         th = thumbnail_new(s, NULL);
         thumbnail_set_slide_height(COLLOQUIUM_THUMBNAIL(th), 128);

@@ -416,7 +416,9 @@ static void testcard_sig(GSimpleAction *action, GVariant *parameter,
 {
     NarrativeWindow *nw = vp;
     Slide *s = slide_new();
-    slide_set_ext_filename(s, "resource:///uk/me/bitwiz/colloquium/test-card.svg");
+    GFile *f = g_file_new_for_uri("resource:///uk/me/bitwiz/colloquium/test-card.svg");
+    slide_set_ext_file(s, f);
+    g_object_unref(f);
     slide_set_ext_number(s, 0);
     set_presenting_slide(nw, s);
 }

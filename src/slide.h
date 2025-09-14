@@ -55,7 +55,7 @@ extern Slide *slide_new(void);
 extern Slide *slide_copy(const Slide *s);
 extern void slide_free(Slide *s);
 
-extern void slide_set_ext_filename(Slide *s, char *filename);
+extern void slide_set_ext_file(Slide *s, GFile *file);
 extern void slide_set_ext_number(Slide *s, int num);
 
 extern int slide_set_aspect(Slide *s, float aspect);

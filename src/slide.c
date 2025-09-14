@@ -71,13 +71,9 @@ Slide *slide_copy(const Slide *s)
 }
 
 
-void slide_set_ext_filename(Slide *s, char *filename)
+void slide_set_ext_file(Slide *s, GFile *file)
 {
-    if ( strstr(filename, "://") == NULL ) {
-        s->ext_file = g_file_new_for_path(filename);
-    } else {
-        s->ext_file = g_file_new_for_uri(filename);
-    }
+    s->ext_file = g_file_dup(file);
 }
 
 
@@ -285,6 +281,8 @@ static int ensure_ftype(Slide *s)
         GFileInfo *info;
         const char *type;
         GError *error;
+
+        if ( s->ext_file == NULL ) return 1;
 
         error = NULL;
         info = g_file_query_info(s->ext_file, "standard::", G_FILE_QUERY_INFO_NONE, NULL, &error);

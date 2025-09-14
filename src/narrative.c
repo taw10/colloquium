@@ -467,6 +467,7 @@ void narrative_update_timing(GtkTextView *nv, Narrative *n, double wpm)
 
 struct md_parse_ctx {
     Narrative *n;
+    GFile *nfile;
     enum narrative_item_type type;
     int bold;
     int italic;
@@ -578,6 +579,64 @@ void insert_slide_anchor(GtkTextBuffer *buf, Slide *slide, GtkTextIter start, in
 }
 
 
+static int g_file_exists(GFile *file)
+{
+    GFileInfo *info;
+    GError *error;
+
+    error = NULL;
+    info = g_file_query_info(file, "standard::", G_FILE_QUERY_INFO_NONE, NULL, &error);
+    if ( info == NULL ) {
+        if ( error->code == G_IO_ERROR_NOT_FOUND ) {
+            return 0;
+        } else {
+            fprintf(stderr, _("Failed to read info: %s\n"), error->message);
+            return -1;
+        }
+    }
+    g_object_unref(info);
+    return 1;
+}
+
+
+static GFile *find_file(const char *filename, GFile *narrfile)
+{
+    GFile *f;
+    GFile *parent_gfile;
+    char *parent;
+    int level;
+
+    if ( strstr(filename, "://") != NULL ) {
+        return g_file_new_for_uri(filename);
+    }
+
+    f = g_file_new_for_commandline_arg(filename);
+    if ( g_file_exists(f) ) return f;
+    g_object_unref(f);
+
+    parent_gfile = g_file_dup(narrfile);
+    for ( level=0; level<3; level++ ) {
+
+        GFile *old_parent = parent_gfile;
+        parent_gfile = g_file_get_parent(old_parent);
+        g_object_unref(old_parent);
+
+        parent = g_file_get_path(parent_gfile);
+        if ( parent != NULL ) {
+            f = g_file_new_for_commandline_arg_and_cwd(filename, parent);
+            if ( g_file_exists(f) ) return f;
+            g_object_unref(f);
+        }
+        g_free(parent);
+    }
+    g_object_unref(parent_gfile);
+
+    fprintf(stderr, "%s not found!\n", filename);
+
+    return NULL;
+}
+
+
 static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 {
     struct md_parse_ctx *ps = vp;
@@ -610,7 +669,7 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         }
         ps->n->slides[ps->n->n_slides++] = slide;
 
-        slide_set_ext_filename(slide, strdup(sc+2));
+        slide_set_ext_file(slide, find_file(sc+2, ps->nfile));
         slide_set_ext_number(slide, atoi(tx));
 
         GtkTextIter start;
@@ -672,7 +731,7 @@ const struct MD_PARSER md_parser =
 };
 
 
-static Narrative *parse_md_narrative(const char *text, size_t len)
+static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
 {
     struct md_parse_ctx pstate;
 
@@ -682,6 +741,7 @@ static Narrative *parse_md_narrative(const char *text, size_t len)
     pstate.underline = 0;
     pstate.type = NARRATIVE_ITEM_TEXT;
     pstate.need_newline = 0;
+    pstate.nfile = nfile;
 
     gtk_text_buffer_begin_irreversible_action(pstate.n->textbuf);
     md_parse(text, len, &md_parser, &pstate);
@@ -692,7 +752,7 @@ static Narrative *parse_md_narrative(const char *text, size_t len)
 
 #else  // HAVE_MD4C
 
-static Narrative *parse_md_narrative(const char *text, size_t len)
+static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
 {
     return NULL;
 }
@@ -711,7 +771,7 @@ Narrative *narrative_load(GFile *file)
     if ( bytes == NULL ) return NULL;
 
     text = g_bytes_get_data(bytes, &len);
-    n = parse_md_narrative(text, len);
+    n = parse_md_narrative(text, len, file);
     g_bytes_unref(bytes);
     if ( n == NULL ) return NULL;
 

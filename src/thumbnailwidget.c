@@ -136,7 +136,7 @@ static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, T
     GValue val = G_VALUE_INIT;
     g_value_init(&val, COLLOQUIUM_TYPE_THUMBNAIL);
     g_value_set_object(&val, G_OBJECT(th));
-    return  gdk_content_provider_new_for_value(&val);
+    return gdk_content_provider_new_for_value(&val);
 }
 
 

@@ -1041,7 +1041,16 @@ static void update_fsmenu(NarrativeWindow *nw)
 
     while ( (mon = g_list_model_get_item(monitors, i)) != NULL ) {
 
-        GMenuItem *item = g_menu_item_new(gdk_monitor_get_description(mon), NULL);
+        GMenuItem *item;
+        const char *desc = gdk_monitor_get_description(mon);
+        if ( desc != NULL ) {
+            item = g_menu_item_new(desc, NULL);
+        } else {
+            char ndesc[64];
+            snprintf(ndesc, 63, _("Monitor %i"), i);
+            item = g_menu_item_new(ndesc, NULL);
+        }
+
         g_menu_item_set_action_and_target(item, "win.fsslide", "u", i, NULL);
         g_menu_append_item(m, item);
 

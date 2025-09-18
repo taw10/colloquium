@@ -35,7 +35,7 @@ or:
 
 or:
 
-    $ brew install gettext gtk4 poppler md4c librsvg
+    $ brew install gettext gtk4 poppler md4c librsvg meson pkg-config desktop-file-utils adwaita-icon-theme
 
 This should pull in the other dependencies, which are GDK, GLib, GIO, Cairo, Pango and gdk-pixbuf.
 

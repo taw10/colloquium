@@ -300,6 +300,8 @@ static int ensure_ftype(Slide *s)
             s->file_type = SLIDE_FTYPE_IMAGE;
         } else if ( g_content_type_equals(type, "image/svg+xml") ) {
             s->file_type = SLIDE_FTYPE_SVG;
+        } else if ( g_content_type_equals(type, "public.svg-image") ) {
+            s->file_type = SLIDE_FTYPE_SVG;
         } else {
             fprintf(stderr, "File format not recognised: %s\n", type);
             s->file_type = SLIDE_FTYPE_UNKNOWN;

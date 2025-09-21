@@ -106,7 +106,9 @@ void open_about_dialog(GtkWidget *parent)
     };
 
     window = gtk_about_dialog_new();
-    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(parent));
+    if ( parent != NULL ) {
+        gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(parent));
+    }
 
     gtk_about_dialog_set_program_name(GTK_ABOUT_DIALOG(window),
         "Colloquium");
@@ -190,6 +192,12 @@ static void open_response_sig(GObject *d, GAsyncResult  *res, gpointer vp)
 }
 
 
+static void about_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    open_about_dialog(NULL);
+}
+
+
 static void prefs_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 {
     PrefsWindow *pw = prefs_window_new();
@@ -219,7 +227,8 @@ GActionEntry app_entries[] = {
     { "open", open_sig, NULL, NULL, NULL  },
     { "intro", intro_sig, NULL, NULL, NULL  },
     { "quit", quit_sig, NULL, NULL, NULL  },
-    { "prefs", prefs_sig, NULL, NULL, NULL  },
+    { "preferences", prefs_sig, NULL, NULL, NULL  },
+    { "about", about_sig, NULL, NULL, NULL  },
 };
 
 

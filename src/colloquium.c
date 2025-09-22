@@ -357,6 +357,11 @@ static void colloquium_startup(GApplication *papp)
         open_intro_doc(app);
         g_settings_set_boolean(app->settings, "first-run", false);
     }
+
+#ifndef __APPLE__
+    GMenuModel *m = gtk_application_get_menubar(GTK_APPLICATION(app));
+    g_menu_remove(G_MENU(m), 4);
+#endif
 }
 
 

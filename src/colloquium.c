@@ -364,12 +364,25 @@ static void colloquium_startup(GApplication *papp)
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries,
                                      G_N_ELEMENTS(app_entries), app);
 
+#ifdef __APPLE__
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.new",
+            (const char *[]){"<Meta>n", NULL});
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.open",
+            (const char *[]){"<Meta>o", NULL});
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.quit",
+            (const char *[]){"<Meta>q", NULL});
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "win.save",
+            (const char *[])  {"<Meta>s", NULL});
+#else
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.new",
             (const char *[]){"<Control>n", NULL});
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.open",
             (const char *[]){"<Control>o", NULL});
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.quit",
             (const char *[]){"<Control>q", NULL});
+    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "win.save",
+            (const char *[])  {"<Control>s", NULL});
+#endif
 
     provider = gtk_css_provider_new();
     app->settings = g_settings_new("uk.me.bitwiz.colloquium");

@@ -281,6 +281,46 @@ static const char *pango_stretch_to_text(PangoFontDescription *fd)
 }
 
 
+static int try_font(const char *fname, PangoFontMap *fm, GSettings *settings)
+{
+    PangoFontFamily *ff;
+    ff = pango_font_map_get_family(fm, fname);
+    if ( ff != NULL ) {
+        PangoFontDescription *fd = pango_font_description_new();
+        pango_font_description_set_family(fd, fname);
+        pango_font_description_set_weight(fd, PANGO_WEIGHT_NORMAL);
+        pango_font_description_set_size(fd, 16*PANGO_SCALE);
+        g_settings_set_string(settings, "narrative-font", pango_font_description_to_string(fd));
+        printf("Selected font: %s\n", pango_font_description_to_string(fd));
+        pango_font_description_free(fd);
+        return 1;
+    }
+    return 0;
+}
+
+
+static void choose_default_font(GSettings *settings)
+{
+    const char *f = g_settings_get_string(settings, "narrative-font");
+    if ( !((f==NULL) || ((f!=NULL) && (f[0] == '\0'))) ) {
+        return;
+    }
+
+    int r = 0;
+    PangoFontMap *fm = pango_cairo_font_map_get_default();
+
+    /* List of readable typefaces, in order of preference */
+    if ( !r ) r = try_font("Cantarell", fm, settings);
+    if ( !r ) r = try_font("Verdana", fm, settings);
+    if ( !r ) r = try_font("Arial", fm, settings);
+    if ( !r ) r = try_font("Geneva", fm, settings);
+
+    if ( !r ) {
+        /* Ultimate fallback */
+        g_settings_set_string(settings, "narrative-font", "Sans 16");
+    }
+}
+
 
 static void update_css(GSettings *settings, gchar *key, GtkCssProvider *provider)
 {
@@ -333,6 +373,7 @@ static void colloquium_startup(GApplication *papp)
 
     provider = gtk_css_provider_new();
     app->settings = g_settings_new("uk.me.bitwiz.colloquium");
+    choose_default_font(app->settings);
     update_css(app->settings, NULL, provider);
     g_signal_connect(G_OBJECT(app->settings), "changed::narrative-fg",
                      G_CALLBACK(update_css), provider);

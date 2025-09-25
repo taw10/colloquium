@@ -15,7 +15,7 @@
     </key>
 
     <key name="narrative-font" type="s">
-      <default>"Cantarell 16"</default>
+      <default>""</default>
       <summary>Narrative font</summary>
       <description>Base font for narrative text</description>
     </key>

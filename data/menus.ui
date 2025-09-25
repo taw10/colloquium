@@ -46,15 +46,15 @@
       <section>
         <item>
           <attribute name="label" translatable="yes">Cut</attribute>
-          <attribute name="action">win.cut</attribute>
+          <attribute name="action">clipboard.cut</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Copy</attribute>
-          <attribute name="action">win.copy</attribute>
+          <attribute name="action">clipboard.copy</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Paste</attribute>
-          <attribute name="action">win.paste</attribute>
+          <attribute name="action">clipboard.paste</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Delete</attribute>
@@ -64,17 +64,17 @@
       <section>
         <item>
           <attribute name="label" translatable="yes">Undo</attribute>
-          <attribute name="action">win.undo</attribute>
+          <attribute name="action">text.undo</attribute>
         </item>
         <item>
           <attribute name="label" translatable="yes">Redo</attribute>
-          <attribute name="action">win.redo</attribute>
+          <attribute name="action">text.redo</attribute>
         </item>
       </section>
       <section>
         <item>
           <attribute name="label" translatable="yes">Select all</attribute>
-	  <attribute name="action">win.select-all</attribute>
+	  <attribute name="action">selection.select-all</attribute>
         </item>
       </section>
       <section>

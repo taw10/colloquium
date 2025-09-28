@@ -20,6 +20,12 @@
       <description>Base font for narrative text</description>
     </key>
 
+    <key name="narrative-line-spacing" type="d">
+      <default>1.0</default>
+      <summary>Narrative line spacing</summary>
+      <description>Line spacing in narrative text</description>
+    </key>
+
     <key name="narrative-use-theme" type="b">
       <default>true</default>
       <summary>Use theme colours</summary>

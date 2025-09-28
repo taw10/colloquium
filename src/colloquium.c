@@ -335,13 +335,15 @@ static void update_css(GSettings *settings, gchar *key, GtkCssProvider *provider
     fgcol = g_settings_get_string(settings, "narrative-fg");
     bgcol = g_settings_get_string(settings, "narrative-bg");
     snprintf(css1, 1023, ".narrative { font-family: %s; font-style: %s;"
-                         " font-weight: %i;  font-stretch: %s; font-size: %ip%c; }",
+                         " font-weight: %i;  font-stretch: %s; font-size: %ip%c; "
+                         " line-height: %f; }",
             pango_font_description_get_family(fd),
             pango_style_to_text(fd),
             pango_font_description_get_weight(fd),
             pango_stretch_to_text(fd),
             pango_font_description_get_size(fd)/PANGO_SCALE,
-            pango_font_description_get_size_is_absolute(fd)?'x':'t');
+            pango_font_description_get_size_is_absolute(fd)?'x':'t',
+            g_settings_get_double(settings, "narrative-line-spacing"));
     pango_font_description_free(fd);
 
     if ( !g_settings_get_boolean(settings, "narrative-use-theme") ) {
@@ -395,6 +397,8 @@ static void colloquium_startup(GApplication *papp)
     g_signal_connect(G_OBJECT(app->settings), "changed::narrative-use-theme",
                      G_CALLBACK(update_css), provider);
     g_signal_connect(G_OBJECT(app->settings), "changed::narrative-font",
+                     G_CALLBACK(update_css), provider);
+    g_signal_connect(G_OBJECT(app->settings), "changed::narrative-line-spacing",
                      G_CALLBACK(update_css), provider);
 
     gtk_style_context_add_provider_for_display(gdk_display_get_default(),

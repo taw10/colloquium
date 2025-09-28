@@ -47,6 +47,12 @@ static void colloquium_prefs_window_init(PrefsWindow *pw)
 {
 }
 
+static void line_spacing_sig(GtkAdjustment *self, GSettings *settings)
+{
+    double v = gtk_adjustment_get_value(self);
+    g_settings_set_double(settings, "narrative-line-spacing", v);
+}
+
 
 static void font_sig(GObject *self, GParamSpec *spec, GSettings *settings)
 {
@@ -109,6 +115,7 @@ static GtkWidget *narrative_prefs(GSettings *settings)
     GtkWidget *box;
     GtkWidget *hbox;
     GtkWidget *fb;
+    GtkWidget *ls;
     PangoFontDescription *fontdesc;
     GtkWidget *cb;
     GdkRGBA rgba;
@@ -132,6 +139,21 @@ static GtkWidget *narrative_prefs(GSettings *settings)
     gtk_font_dialog_button_set_font_desc(GTK_FONT_DIALOG_BUTTON(fb), fontdesc);
     pango_font_description_free(fontdesc);
     g_signal_connect(G_OBJECT(fb), "notify::font-desc", G_CALLBACK(font_sig), settings);
+
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_append(GTK_BOX(box), hbox);
+    gtk_box_append(GTK_BOX(hbox), gtk_label_new(_("Line spacing:")));
+    ls = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 1.0, 2.0, 0.05);
+    gtk_scale_set_digits(GTK_SCALE(ls), 2);
+    gtk_scale_add_mark(GTK_SCALE(ls), 1.0, GTK_POS_BOTTOM, "Single");
+    gtk_scale_add_mark(GTK_SCALE(ls), 1.5, GTK_POS_BOTTOM, "1.5");
+    gtk_scale_add_mark(GTK_SCALE(ls), 2.0, GTK_POS_BOTTOM, "Double");
+    gtk_widget_set_hexpand(ls, TRUE);
+    gtk_widget_set_margin_start(ls, 15);
+    gtk_widget_set_margin_end(ls, 15);
+    gtk_box_append(GTK_BOX(hbox), ls);
+    g_signal_connect(G_OBJECT(gtk_range_get_adjustment(GTK_RANGE(ls))),
+                     "value-changed", G_CALLBACK(line_spacing_sig), settings);
 
     toggle = gtk_check_button_new_with_label(_("Use colours from system theme"));
     gtk_box_append(GTK_BOX(box), toggle);

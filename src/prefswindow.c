@@ -155,7 +155,7 @@ static GtkWidget *narrative_prefs(GSettings *settings)
     gtk_box_append(GTK_BOX(hbox), ls);
     adj = gtk_range_get_adjustment(GTK_RANGE(ls));
     gtk_adjustment_set_value(adj, g_settings_get_double(settings, "narrative-line-spacing"));
-    g_signal_connect(G_OBJECT(ls), "value-changed", G_CALLBACK(line_spacing_sig), settings);
+    g_signal_connect(G_OBJECT(adj), "value-changed", G_CALLBACK(line_spacing_sig), settings);
 
     toggle = gtk_check_button_new_with_label(_("Use colours from system theme"));
     gtk_box_append(GTK_BOX(box), toggle);

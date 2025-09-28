@@ -121,6 +121,7 @@ static GtkWidget *narrative_prefs(GSettings *settings)
     GdkRGBA rgba;
     GtkWidget *toggle;
     GtkWidget *entry;
+    GtkAdjustment *adj;
     char tmp[64];
 
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -152,8 +153,9 @@ static GtkWidget *narrative_prefs(GSettings *settings)
     gtk_widget_set_margin_start(ls, 15);
     gtk_widget_set_margin_end(ls, 15);
     gtk_box_append(GTK_BOX(hbox), ls);
-    g_signal_connect(G_OBJECT(gtk_range_get_adjustment(GTK_RANGE(ls))),
-                     "value-changed", G_CALLBACK(line_spacing_sig), settings);
+    adj = gtk_range_get_adjustment(GTK_RANGE(ls));
+    gtk_adjustment_set_value(adj, g_settings_get_double(settings, "narrative-line-spacing"));
+    g_signal_connect(G_OBJECT(ls), "value-changed", G_CALLBACK(line_spacing_sig), settings);
 
     toggle = gtk_check_button_new_with_label(_("Use colours from system theme"));
     gtk_box_append(GTK_BOX(box), toggle);

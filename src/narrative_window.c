@@ -508,6 +508,7 @@ static void modified_changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 static void changed_sig(GtkTextBuffer *buf, NarrativeWindow *nw)
 {
     double wpm = g_settings_get_double(nw->settings, "words-per-minute");
+    narrative_fixup_tags(nw->n);
     narrative_update_timing(GTK_TEXT_VIEW(nw->nv), nw->n, wpm);
     update_statusbar(nw);
     gtk_widget_queue_draw(GTK_WIDGET(nw->timing_ruler));
@@ -592,6 +593,10 @@ static gboolean nw_key_press_sig(GtkEventControllerKey *self,
             return TRUE;
         }
         break;
+
+        case GDK_KEY_F1 :
+        narrative_fixup_tags(nw->n);
+        return TRUE;
 
     }
 

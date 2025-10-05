@@ -811,3 +811,55 @@ Slide *narrative_get_first_slide(Narrative *nar)
     }
     return NULL;
 }
+
+
+void narrative_fixup_tags(Narrative *n)
+{
+    GtkTextIter pos;
+    const int n_line_only_tags = 3;
+    GtkTextTag *line_only_tags[n_line_only_tags];
+
+    GtkTextTagTable *table = gtk_text_buffer_get_tag_table(n->textbuf);
+    line_only_tags[0] = gtk_text_tag_table_lookup(table, "segstart");
+    line_only_tags[1] = gtk_text_tag_table_lookup(table, "prestitle");
+    line_only_tags[2] = gtk_text_tag_table_lookup(table, "bulletpoint");
+
+    gtk_text_buffer_get_start_iter(n->textbuf, &pos);
+
+    do {
+
+        int i;
+
+        for ( i=0; i<n_line_only_tags; i++ ) {
+
+            GtkTextTag *tag = line_only_tags[i];
+
+            if ( gtk_text_iter_starts_tag(&pos, tag) ) {
+
+                if ( !gtk_text_iter_starts_line(&pos) ) {
+                    /* Extend the tag to the start of the line */
+                    GtkTextIter line_start = pos;
+                    gtk_text_iter_set_line_offset(&line_start, 0);
+                    gtk_text_buffer_apply_tag(n->textbuf, tag, &line_start, &pos);
+                    pos = line_start;
+                }
+
+                /* Find the end of the tag */
+                GtkTextIter tag_end = pos;
+                GtkTextIter line_end = pos;
+                gtk_text_iter_forward_to_tag_toggle(&tag_end, tag);
+                gtk_text_iter_forward_to_line_end(&line_end);
+                int r = gtk_text_iter_compare(&tag_end, &line_end);
+                if ( r > 0 ) {
+                    /* Tag ends too late */
+                    gtk_text_buffer_remove_tag(n->textbuf, tag, &line_end, &tag_end);
+                } else if ( r < 0 ) {
+                    /* Tag ends too early */
+                    gtk_text_buffer_apply_tag(n->textbuf, tag, &line_end, &tag_end);
+                }
+
+            }
+        }
+
+    } while ( gtk_text_iter_forward_to_tag_toggle(&pos, NULL) );
+}

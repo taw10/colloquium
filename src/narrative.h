@@ -79,4 +79,6 @@ extern void narrative_update_timing(GtkTextView *nv, Narrative *n, double wpm);
 extern GtkTextTag *lookup_tag(GtkTextBuffer *buf, const char *name);
 extern Slide *narrative_get_first_slide(Narrative *nar);
 
+extern void narrative_fixup_tags(Narrative *n);
+
 #endif /* NARRATIVE_H */

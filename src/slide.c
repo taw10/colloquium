@@ -205,6 +205,8 @@ static int render_cairo_image(Slide *s, cairo_t *cr, float w)
 
     cairo_save(cr);
     cairo_scale(cr, scale, scale);
+    cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
     gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
     cairo_pattern_t *patt = cairo_get_source(cr);
     cairo_pattern_set_extend(patt, CAIRO_EXTEND_PAD);

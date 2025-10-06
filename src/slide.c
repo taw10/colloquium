@@ -298,7 +298,13 @@ static int ensure_ftype(Slide *s)
             s->file_type = SLIDE_FTYPE_PDF;
         } else if ( g_content_type_equals(type, "image/png") ) {
             s->file_type = SLIDE_FTYPE_IMAGE;
+        } else if ( g_content_type_equals(type, "com.adobe.pdf") ) {
+            s->file_type = SLIDE_FTYPE_IMAGE;
+        } else if ( g_content_type_equals(type, "public.png") ) {
+            s->file_type = SLIDE_FTYPE_IMAGE;
         } else if ( g_content_type_equals(type, "image/jpeg") ) {
+            s->file_type = SLIDE_FTYPE_IMAGE;
+        } else if ( g_content_type_equals(type, "public.jpeg") ) {
             s->file_type = SLIDE_FTYPE_IMAGE;
         } else if ( g_content_type_equals(type, "image/svg+xml") ) {
             s->file_type = SLIDE_FTYPE_SVG;

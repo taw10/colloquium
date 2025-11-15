@@ -38,6 +38,7 @@
 #include "narrative.h"
 #include "slide.h"
 #include "slideview.h"
+#include "laseroverlay.h"
 
 
 G_DEFINE_FINAL_TYPE(SlideView, colloquium_slide_view, GTK_TYPE_WIDGET)
@@ -72,8 +73,6 @@ static void gtksv_redraw(SlideView *e)
 
 static void slide_view_finalize(GObject *object)
 {
-    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(object);
-    g_source_remove(sv->laser_timeout_source_id);
     G_OBJECT_CLASS(colloquium_slide_view_parent_class)->finalize(object);
 }
 
@@ -81,14 +80,13 @@ static void slide_view_finalize(GObject *object)
 static void slide_view_dispose(GObject *object)
 {
     SlideView *sv = COLLOQUIUM_SLIDE_VIEW(object);
-    gtk_widget_unparent(sv->offload);
+    gtk_widget_unparent(sv->overlay);
 }
 
 
 static void slide_view_realize(GtkWidget *w)
 {
-    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(w);
-
+    //SlideView *sv = COLLOQUIUM_SLIDE_VIEW(w);
     GTK_WIDGET_CLASS(colloquium_slide_view_parent_class)->realize(w);
 }
 
@@ -132,35 +130,12 @@ static void update_sv_texture(SlideView *sv, int w)
     sv->widget_w_for_texture = w;
 }
 
-#if 0
-    if ( sv->show_laser ) {
-        int x = aw*sv->laser_x - 11;
-        int y = (aw/aspect)*sv->laser_y - 11;
-        cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(x,y,22,22));
-        cairo_arc(cr, aw*sv->laser_x, (aw/aspect)*sv->laser_y, 10.0, 0, 2*M_PI);
-        cairo_set_source_rgba(cr, 0.2, 1.0, 0.1, 0.8);
-        cairo_fill(cr);
-        cairo_destroy(cr);
-    }
-#endif
-
 
 void slide_view_set_slide(GtkWidget *widget, Slide *slide)
 {
     SlideView *e = COLLOQUIUM_SLIDE_VIEW(widget);
     e->slide = slide;
     gtksv_redraw(e);
-}
-
-
-static gboolean laser_timeout(gpointer vp)
-{
-    SlideView *sv = vp;
-    if ( !sv->show_laser ) return G_SOURCE_CONTINUE;
-    if ( g_get_monotonic_time() > 500000+sv->last_laser ) {
-        slide_view_set_laser_off(sv);
-    }
-    return G_SOURCE_CONTINUE;
 }
 
 
@@ -173,7 +148,12 @@ static void slide_view_size_allocate(GtkWidget *widget, int w, int h, int baseli
     alloc.y = 0;
     alloc.width = w;
     alloc.height = h;
-    gtk_widget_size_allocate(sv->offload, &alloc, -1);
+    gtk_widget_size_allocate(sv->overlay, &alloc, -1);
+
+    float aspect, bx, by, aw;
+    aspect = slide_get_aspect(sv->slide);
+    letterbox(w, h, aspect, &aw, &bx, &by);
+    laser_overlay_set_letterbox(COLLOQUIUM_LASER_OVERLAY(sv->laser), bx, by, aw, aw/aspect);
 
     if ( (sv->texture == NULL) || (sv->widget_w_for_texture != w) ) {
         update_sv_texture(sv, w);
@@ -190,37 +170,35 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
 
     sv->n = n;
     sv->slide = slide;
-    sv->show_laser = 0;
     sv->widget_w_for_texture = 0;
     sv->texture = NULL;
 
     sv->image = gtk_picture_new();
     sv->offload = gtk_graphics_offload_new(sv->image);
-    gtk_widget_set_parent(GTK_WIDGET(sv->offload), GTK_WIDGET(sv));
     gtk_graphics_offload_set_black_background(GTK_GRAPHICS_OFFLOAD(sv->offload), TRUE);
+    sv->overlay  = gtk_overlay_new();
+    gtk_overlay_add_overlay(GTK_OVERLAY(sv->overlay), sv->offload);
+    gtk_widget_set_parent(GTK_WIDGET(sv->overlay), GTK_WIDGET(sv));
+
+    sv->laser = laser_overlay_new();
+    gtk_overlay_add_overlay(GTK_OVERLAY(sv->overlay), sv->laser);
 
     gtk_widget_set_size_request(GTK_WIDGET(sv), 100, 100);
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
     gtk_widget_grab_focus(GTK_WIDGET(sv));
-    sv->laser_timeout_source_id = g_timeout_add_seconds(1, laser_timeout, sv);
     return GTK_WIDGET(sv);
 }
 
 
 void slide_view_set_laser(SlideView *sv, double x, double y)
 {
-    sv->show_laser = 1;
-    sv->laser_x = x;
-    sv->laser_y = y;
-    sv->last_laser = g_get_monotonic_time();
-    gtk_widget_queue_draw(GTK_WIDGET(sv));
+    laser_overlay_set_laser(COLLOQUIUM_LASER_OVERLAY(sv->laser), x, y);
 }
 
 
 void slide_view_set_laser_off(SlideView *sv)
 {
-    sv->show_laser = 0;
-    gtk_widget_queue_draw(GTK_WIDGET(sv));
+    laser_overlay_set_laser_off(COLLOQUIUM_LASER_OVERLAY(sv->laser));
 }
 
 

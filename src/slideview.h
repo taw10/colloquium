@@ -50,15 +50,13 @@ struct _colloquiumslideview
     /*< private >*/
     Narrative           *n;
     Slide               *slide;
-    int                  show_laser;
-    double               laser_x;
-    double               laser_y;
-    GdkTexture          *texture;
-    int                  widget_w_for_texture;
+    GtkWidget           *overlay;
     GtkWidget           *offload;
     GtkWidget           *image;
-    gint64               last_laser;
-    guint                laser_timeout_source_id;
+    GdkTexture          *texture;
+    int                  widget_w_for_texture;
+    GtkWidget           *laser;
+    GtkMediaStream      *mediastream;
 };
 
 struct _colloquiumslideviewclass

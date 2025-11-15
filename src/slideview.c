@@ -42,15 +42,19 @@
 
 G_DEFINE_FINAL_TYPE(SlideView, colloquium_slide_view, GTK_TYPE_WIDGET)
 
-static void slide_view_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
 static void slide_view_finalize(GObject *object);
+static void slide_view_realize(GtkWidget *w);
+static void slide_view_size_allocate(GtkWidget *widget, int w, int h, int baseline);
+static void slide_view_dispose(GObject *object);
 
 static void colloquium_slide_view_class_init(SlideViewClass *klass)
 {
     GtkWidgetClass *wklass = GTK_WIDGET_CLASS(klass);
     GObjectClass *oklass = G_OBJECT_CLASS(klass);
-    wklass->snapshot = slide_view_snapshot;
+    wklass->realize = slide_view_realize;
+    wklass->size_allocate = slide_view_size_allocate;
     oklass->finalize = slide_view_finalize;
+    oklass->dispose = slide_view_dispose;
 }
 
 
@@ -71,6 +75,21 @@ static void slide_view_finalize(GObject *object)
     SlideView *sv = COLLOQUIUM_SLIDE_VIEW(object);
     g_source_remove(sv->laser_timeout_source_id);
     G_OBJECT_CLASS(colloquium_slide_view_parent_class)->finalize(object);
+}
+
+
+static void slide_view_dispose(GObject *object)
+{
+    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(object);
+    gtk_widget_unparent(sv->offload);
+}
+
+
+static void slide_view_realize(GtkWidget *w)
+{
+    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(w);
+
+    GTK_WIDGET_CLASS(colloquium_slide_view_parent_class)->realize(w);
 }
 
 
@@ -113,33 +132,7 @@ static void update_sv_texture(SlideView *sv, int w)
     sv->widget_w_for_texture = w;
 }
 
-
-static void slide_view_snapshot(GtkWidget *widget, GtkSnapshot *snapshot)
-{
-    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(widget);
-    float aspect;
-    float aw;
-    float bx, by;
-    int w, h;
-
-    w = gtk_widget_get_width(widget);
-    h = gtk_widget_get_height(widget);
-
-    aspect = slide_get_aspect(sv->slide);
-    letterbox(w, h, aspect, &aw, &bx, &by);
-
-    /* Ultimate background */
-    GdkRGBA col = {0.0, 0.0, 0.0, 1.0};
-    gtk_snapshot_append_color(snapshot, &col, &GRAPHENE_RECT_INIT(0,0,w,h));
-
-    int awi = aw;
-    if ( (sv->texture == NULL) || (sv->widget_w_for_texture != awi) ) {
-        update_sv_texture(sv, awi);
-    }
-
-    gtk_snapshot_translate(snapshot, &GRAPHENE_POINT_INIT(bx, by));
-    gtk_snapshot_append_texture(snapshot, sv->texture, &GRAPHENE_RECT_INIT(0,0,aw,aw/aspect));
-
+#if 0
     if ( sv->show_laser ) {
         int x = aw*sv->laser_x - 11;
         int y = (aw/aspect)*sv->laser_y - 11;
@@ -149,7 +142,7 @@ static void slide_view_snapshot(GtkWidget *widget, GtkSnapshot *snapshot)
         cairo_fill(cr);
         cairo_destroy(cr);
     }
-}
+#endif
 
 
 void slide_view_set_slide(GtkWidget *widget, Slide *slide)
@@ -171,6 +164,24 @@ static gboolean laser_timeout(gpointer vp)
 }
 
 
+static void slide_view_size_allocate(GtkWidget *widget, int w, int h, int baseline)
+{
+    GtkAllocation alloc;
+    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(widget);
+
+    alloc.x = 0;
+    alloc.y = 0;
+    alloc.width = w;
+    alloc.height = h;
+    gtk_widget_size_allocate(sv->offload, &alloc, -1);
+
+    if ( (sv->texture == NULL) || (sv->widget_w_for_texture != w) ) {
+        update_sv_texture(sv, w);
+        gtk_picture_set_paintable(GTK_PICTURE(sv->image), GDK_PAINTABLE(sv->texture));
+    }
+}
+
+
 GtkWidget *slide_view_new(Narrative *n, Slide *slide)
 {
     SlideView *sv;
@@ -182,6 +193,11 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
     sv->show_laser = 0;
     sv->widget_w_for_texture = 0;
     sv->texture = NULL;
+
+    sv->image = gtk_picture_new();
+    sv->offload = gtk_graphics_offload_new(sv->image);
+    gtk_widget_set_parent(GTK_WIDGET(sv->offload), GTK_WIDGET(sv));
+    gtk_graphics_offload_set_black_background(GTK_GRAPHICS_OFFLOAD(sv->offload), TRUE);
 
     gtk_widget_set_size_request(GTK_WIDGET(sv), 100, 100);
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);

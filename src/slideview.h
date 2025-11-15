@@ -55,6 +55,8 @@ struct _colloquiumslideview
     double               laser_y;
     GdkTexture          *texture;
     int                  widget_w_for_texture;
+    GtkWidget           *offload;
+    GtkWidget           *image;
     gint64               last_laser;
     guint                laser_timeout_source_id;
 };

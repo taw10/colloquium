@@ -35,7 +35,8 @@ enum slide_filetype
     SLIDE_FTYPE_UNKNOWN,
     SLIDE_FTYPE_IMAGE,
     SLIDE_FTYPE_PDF,
-    SLIDE_FTYPE_SVG
+    SLIDE_FTYPE_SVG,
+    SLIDE_FTYPE_VIDEO
 };
 
 
@@ -46,6 +47,7 @@ struct _slide
     int ext_slidenumber;
     GtkTextChildAnchor *anchor;
     enum slide_filetype file_type;
+    GdkPaintable *paintable;
 };
 
 typedef struct _slide Slide;
@@ -61,6 +63,7 @@ extern void slide_set_ext_number(Slide *s, int num);
 extern int slide_set_aspect(Slide *s, float aspect);
 extern float slide_get_aspect(Slide *s);
 extern int slide_render_cairo(Slide *s, cairo_t *cr, float w);
+extern GdkPaintable *slide_get_paintable(Slide *s);
 
 extern void letterbox(float dw, float dh, float aspect,
                       float *sw, float *xoff, float *yoff);

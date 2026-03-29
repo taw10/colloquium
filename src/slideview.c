@@ -64,13 +64,6 @@ static void colloquium_slide_view_init(SlideView *e)
 }
 
 
-static void gtksv_redraw(SlideView *e)
-{
-    e->widget_w_for_texture = 0;
-    gtk_widget_queue_draw(GTK_WIDGET(e));
-}
-
-
 static void slide_view_finalize(GObject *object)
 {
     G_OBJECT_CLASS(colloquium_slide_view_parent_class)->finalize(object);
@@ -91,51 +84,11 @@ static void slide_view_realize(GtkWidget *w)
 }
 
 
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-#define MEMFORMAT GDK_MEMORY_B8G8R8X8
-#elif G_BYTE_ORDER == G_BIG_ENDIAN
-#define MEMFORMAT GDK_MEMORY_X8R8G8B8
-#else
-#define MEMFORMAT "unknown byte order"
-#endif
-
-static void update_sv_texture(SlideView *sv, int w)
-{
-    cairo_t *cr;
-    cairo_surface_t *surf;
-    GBytes *bytes;
-    float aspect = slide_get_aspect(sv->slide);
-    int h = w/aspect;
-
-    if ( sv->texture != NULL ) {
-        g_object_unref(sv->texture);
-        sv->texture = NULL;
-    }
-
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-    cr = cairo_create(surf);
-    slide_render_cairo(sv->slide, cr, w);
-    cairo_destroy(cr);
-
-    bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surf),
-                                       h*cairo_image_surface_get_stride(surf),
-                                       (GDestroyNotify)cairo_surface_destroy,
-                                       cairo_surface_reference(surf));
-
-    sv->texture = gdk_memory_texture_new(w, h, MEMFORMAT, bytes,
-                                         cairo_image_surface_get_stride(surf));
-
-    g_bytes_unref(bytes);
-    cairo_surface_destroy(surf);
-    sv->widget_w_for_texture = w;
-}
-
-
 void slide_view_set_slide(GtkWidget *widget, Slide *slide)
 {
     SlideView *e = COLLOQUIUM_SLIDE_VIEW(widget);
     e->slide = slide;
-    gtksv_redraw(e);
+    gtk_picture_set_paintable(GTK_PICTURE(e->picture), slide_get_paintable(slide));
 }
 
 
@@ -154,11 +107,6 @@ static void slide_view_size_allocate(GtkWidget *widget, int w, int h, int baseli
     aspect = slide_get_aspect(sv->slide);
     letterbox(w, h, aspect, &aw, &bx, &by);
     laser_overlay_set_letterbox(COLLOQUIUM_LASER_OVERLAY(sv->laser), bx, by, aw, aw/aspect);
-
-    if ( (sv->texture == NULL) || (sv->widget_w_for_texture != w) ) {
-        update_sv_texture(sv, w);
-        gtk_picture_set_paintable(GTK_PICTURE(sv->image), GDK_PAINTABLE(sv->texture));
-    }
 }
 
 
@@ -170,15 +118,11 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
 
     sv->n = n;
     sv->slide = slide;
-    sv->widget_w_for_texture = 0;
-    sv->texture = NULL;
 
-    sv->image = gtk_picture_new();
-    sv->offload = gtk_graphics_offload_new(sv->image);
-    gtk_graphics_offload_set_black_background(GTK_GRAPHICS_OFFLOAD(sv->offload), TRUE);
+    sv->picture = gtk_picture_new_for_paintable(slide_get_paintable(slide));
+
     sv->overlay  = gtk_overlay_new();
-    gtk_overlay_add_overlay(GTK_OVERLAY(sv->overlay), sv->offload);
-    gtk_widget_set_parent(GTK_WIDGET(sv->overlay), GTK_WIDGET(sv));
+    gtk_overlay_set_child(GTK_OVERLAY(sv->overlay), GTK_WIDGET(sv->picture));
 
     sv->laser = laser_overlay_new();
     gtk_overlay_add_overlay(GTK_OVERLAY(sv->overlay), sv->laser);
@@ -186,6 +130,7 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
     gtk_widget_set_size_request(GTK_WIDGET(sv), 100, 100);
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
     gtk_widget_grab_focus(GTK_WIDGET(sv));
+
     return GTK_WIDGET(sv);
 }
 

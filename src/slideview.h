@@ -51,12 +51,8 @@ struct _colloquiumslideview
     Narrative           *n;
     Slide               *slide;
     GtkWidget           *overlay;
-    GtkWidget           *offload;
-    GtkWidget           *image;
-    GdkTexture          *texture;
-    int                  widget_w_for_texture;
     GtkWidget           *laser;
-    GtkMediaStream      *mediastream;
+    GtkWidget           *picture;
 };
 
 struct _colloquiumslideviewclass

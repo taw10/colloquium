@@ -47,12 +47,15 @@ Slide *slide_new()
     s->ext_file = NULL;
     s->aspect = -1.0;
     s->file_type = SLIDE_FTYPE_UNKNOWN;
+    s->paintable = NULL;
     return s;
 }
+
 
 void slide_free(Slide *s)
 {
     if ( s->ext_file != NULL ) g_object_unref(s->ext_file);
+    if ( s->paintable != NULL ) g_object_unref(s->paintable);
     free(s);
 }
 
@@ -80,6 +83,60 @@ void slide_set_ext_file(Slide *s, GFile *file)
 void slide_set_ext_number(Slide *s, int num)
 {
     s->ext_slidenumber = num;
+}
+
+
+static GdkTexture *load_image(GFile *file)
+{
+    GFileInputStream *stream;
+    GError *error;
+    GdkPixbuf *pixbuf;
+
+    error = NULL;
+    stream = g_file_read(file, NULL, &error);
+    if ( stream == NULL ) {
+        fprintf(stderr, _("Failed to read image: %s\n"), error->message);
+        return NULL;
+    }
+
+    error = NULL;
+    pixbuf = gdk_pixbuf_new_from_stream_at_scale(G_INPUT_STREAM(stream),
+                                                 -1, -1, TRUE, NULL, &error);
+    g_object_unref(G_OBJECT(stream));
+    if ( pixbuf == NULL ) {
+        fprintf(stderr, _("Failed to load image (paintable): %s\n"), error->message);
+        return NULL;
+    }
+
+    return gdk_texture_new_for_pixbuf(pixbuf);
+}
+
+
+GdkPaintable *paintable_svg(Slide *s)
+{
+    return NULL;
+}
+
+
+GdkPaintable *paintable_pdf(Slide *s)
+{
+    return NULL;
+}
+
+
+GdkPaintable *paintable_image(Slide *s)
+{
+    if ( s->paintable == NULL ) {
+        s->paintable = GDK_PAINTABLE(load_image(s->ext_file));
+        printf("Loaded paintable %p\n", s->paintable);
+    }
+    return s->paintable;
+}
+
+
+static float get_aspect_video(Slide *s)
+{
+    return 2.0;
 }
 
 
@@ -121,102 +178,6 @@ static float get_aspect_svg(Slide *s)
         }
         return width.length / height.length;
     }
-}
-
-
-static float get_aspect_image(Slide *s)
-{
-    GFileInputStream *stream;
-    GError *error;
-    GdkPixbuf *pixbuf;
-    int pw, ph;
-
-    error = NULL;
-    stream = g_file_read(s->ext_file, NULL, &error);
-    if ( stream == NULL ) {
-        fprintf(stderr, _("Failed to open read (aspect): %s\n"), error->message);
-        return 1;
-    }
-
-    error = NULL;
-    pixbuf = gdk_pixbuf_new_from_stream(G_INPUT_STREAM(stream), NULL, &error);
-    g_object_unref(stream);
-    if ( pixbuf == NULL ) {
-        fprintf(stderr, _("Failed to load image (aspect): %s\n"), error->message);
-        return 1;
-    }
-
-    pw = gdk_pixbuf_get_width(pixbuf);
-    ph = gdk_pixbuf_get_height(pixbuf);
-    g_object_unref(pixbuf);
-
-    return (float)pw/ph;
-}
-
-
-static float get_aspect_pdf(Slide *s)
-{
-    PopplerDocument *doc;
-    PopplerPage *page;
-    double pw, ph;
-
-    doc = poppler_document_new_from_gfile(s->ext_file, NULL, NULL, NULL);
-    if ( doc == NULL ) return 1;
-
-    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
-    if ( page == NULL ) {
-        g_object_unref(G_OBJECT(doc));
-        return 1;
-    }
-
-    poppler_page_get_size(page, &pw, &ph);
-    g_object_unref(G_OBJECT(doc));
-    g_object_unref(G_OBJECT(page));
-    return pw/ph;
-}
-
-
-static int render_cairo_image(Slide *s, cairo_t *cr, float w)
-{
-    GFileInputStream *stream;
-    GError *error;
-    GdkPixbuf *pixbuf;
-    int pw;
-    double scale;
-
-    error = NULL;
-    stream = g_file_read(s->ext_file, NULL, &error);
-    if ( stream == NULL ) {
-        fprintf(stderr, _("Failed to read image: %s\n"), error->message);
-        return 1;
-    }
-
-    error = NULL;
-    pixbuf = gdk_pixbuf_new_from_stream_at_scale(G_INPUT_STREAM(stream),
-                                                 w, w/s->aspect, TRUE, NULL, &error);
-    g_object_unref(G_OBJECT(stream));
-    if ( pixbuf == NULL ) {
-        fprintf(stderr, _("Failed to load image: %s\n"), error->message);
-        return 1;
-    }
-
-    pw = gdk_pixbuf_get_width(pixbuf);
-    scale = w/pw;
-
-    cairo_save(cr);
-    cairo_scale(cr, scale, scale);
-    cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
-    cairo_paint(cr);
-    gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
-    cairo_pattern_t *patt = cairo_get_source(cr);
-    cairo_pattern_set_extend(patt, CAIRO_EXTEND_PAD);
-    cairo_pattern_set_filter(patt, CAIRO_FILTER_BEST);
-    cairo_paint(cr);
-    cairo_restore(cr);
-
-    g_object_unref(G_OBJECT(pixbuf));
-
-    return 0;
 }
 
 
@@ -310,6 +271,8 @@ static int ensure_ftype(Slide *s)
             s->file_type = SLIDE_FTYPE_SVG;
         } else if ( g_content_type_equals(type, "public.svg-image") ) {
             s->file_type = SLIDE_FTYPE_SVG;
+        } else if ( g_content_type_equals(type, "video/mpeg") ) {
+            s->file_type = SLIDE_FTYPE_VIDEO;
         } else {
             fprintf(stderr, "File format not recognised: %s\n", type);
             s->file_type = SLIDE_FTYPE_UNKNOWN;
@@ -324,55 +287,38 @@ static int ensure_ftype(Slide *s)
 }
 
 
-float slide_get_aspect(Slide *s)
+int slide_render_cairo(Slide *s, cairo_t *cr, float w)
 {
-    if ( s == NULL ) return 1.0;
-
-    if ( s->aspect < 0.0 ) {
-        if ( ensure_ftype(s) ) return 1.0;
-        switch ( s->file_type ) {
-
-            case SLIDE_FTYPE_PDF:
-            s->aspect = get_aspect_pdf(s);
-            return s->aspect;
-
-            case SLIDE_FTYPE_IMAGE:
-            s->aspect = get_aspect_image(s);
-            return s->aspect;
-
-            case SLIDE_FTYPE_SVG:
-            s->aspect = get_aspect_svg(s);
-            return s->aspect;
-
-            default:
-            return 1.0; /* Don't know! */
-        }
-    } else {
-        return s->aspect;
-    }
+    printf("Dummy slide_render_cairo\n");
+    return 1;
 }
 
 
-int slide_render_cairo(Slide *s, cairo_t *cr, float w)
+float slide_get_aspect(Slide *s)
 {
-    if ( ensure_ftype(s) ) return 1;
+    return 1.0;
+}
+
+
+GdkPaintable *slide_get_paintable(Slide *s)
+{
+    if ( ensure_ftype(s) ) return NULL;
 
     switch ( s->file_type ) {
 
         case SLIDE_FTYPE_PDF:
-        return render_cairo_pdf(s, cr, w);
+        return paintable_pdf(s);
 
         case SLIDE_FTYPE_IMAGE:
-        return render_cairo_image(s, cr, w);
+        return paintable_image(s);
 
         case SLIDE_FTYPE_SVG:
-        return render_cairo_svg(s, cr, w);
+        return paintable_svg(s);
 
         default:
-        return 1;
+        return NULL;
     }
 }
-
 
 void letterbox(float dw, float dh, float aspect,
                float *sw, float *xoff, float *yoff)

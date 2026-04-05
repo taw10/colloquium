@@ -86,6 +86,35 @@ void slide_set_ext_number(Slide *s, int num)
 }
 
 
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+#define MEMFORMAT GDK_MEMORY_B8G8R8X8
+#elif G_BYTE_ORDER == G_BIG_ENDIAN
+#define MEMFORMAT GDK_MEMORY_X8R8G8B8
+#else
+#define MEMFORMAT "unknown byte order"
+#endif
+
+
+static GdkTexture *surface_to_paintable(cairo_surface_t *surf, int w, int h)
+{
+    GBytes *bytes;
+    GdkTexture *tex;
+
+    bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surf),
+                                       h*cairo_image_surface_get_stride(surf),
+                                       (GDestroyNotify)cairo_surface_destroy,
+                                       cairo_surface_reference(surf));
+
+    tex = gdk_memory_texture_new(w, h, MEMFORMAT, bytes,
+                                 cairo_image_surface_get_stride(surf));
+
+    g_bytes_unref(bytes);
+    cairo_surface_destroy(surf);
+
+    return tex;
+}
+
+
 static GdkTexture *load_image(GFile *file)
 {
     GFileInputStream *stream;
@@ -112,128 +141,100 @@ static GdkTexture *load_image(GFile *file)
 }
 
 
-GdkPaintable *paintable_svg(Slide *s)
+GdkTexture *load_svg(GFile *file)
 {
-    return NULL;
-}
-
-
-GdkPaintable *paintable_pdf(Slide *s)
-{
-    return NULL;
-}
-
-
-GdkPaintable *paintable_image(Slide *s)
-{
-    if ( s->paintable == NULL ) {
-        s->paintable = GDK_PAINTABLE(load_image(s->ext_file));
-        printf("Loaded paintable %p\n", s->paintable);
-    }
-    return s->paintable;
-}
-
-
-static float get_aspect_video(Slide *s)
-{
-    return 2.0;
-}
-
-
-static float get_aspect_svg(Slide *s)
-{
-    RsvgHandle *h;
+    RsvgHandle *fh;
     GError *error;
     RsvgLength width, height;
     RsvgRectangle viewbox;
     gboolean has_viewbox, has_width, has_height;
+    RsvgRectangle viewport;
+    float aspect;
+    int w, h;
+    cairo_surface_t *surf;
+    cairo_t *cr;
 
     error = NULL;
-    h = rsvg_handle_new_from_gfile_sync(s->ext_file, RSVG_HANDLE_FLAGS_NONE,
+    fh = rsvg_handle_new_from_gfile_sync(file, RSVG_HANDLE_FLAGS_NONE,
                                         NULL, &error);
-    if ( h == NULL ) {
-        fprintf(stderr, _("Failed to read SVG (aspect): %s\n"), error->message);
-        return 1;
+    if ( fh == NULL ) {
+        fprintf(stderr, _("Failed to read SVG: %s\n"), error->message);
+        return NULL;
     }
 
-    rsvg_handle_get_intrinsic_dimensions(h, &has_width, &width,
+    rsvg_handle_get_intrinsic_dimensions(fh, &has_width, &width,
                                          &has_height, &height,
                                          &has_viewbox, &viewbox);
-    g_object_unref(h);
 
     if ( has_viewbox ) {
-        return viewbox.width/viewbox.height;
+        aspect = viewbox.width/viewbox.height;
     } else {
         if ( !has_width || !has_height ) {
-            fprintf(stderr, _("Failed to determine SVG aspect ratio - no width/height\n"));
-            return 1;
+            fprintf(stderr, _("Failed to load SVG - no width/height\n"));
+            g_object_unref(fh);
+            return NULL;
         }
         if ( width.unit != height.unit ) {
-            fprintf(stderr, _("Failed to determine SVG aspect ratio - units not the same\n"));
-            return 1;
+            fprintf(stderr, _("Failed to load SVG - units not the same\n"));
+            g_object_unref(fh);
+            return NULL;
         }
         if ( width.unit == RSVG_UNIT_PERCENT ) {
-            fprintf(stderr, _("Failed to determine SVG aspect ratio - no viewbox and percent size\n"));
-            return 1;
+            fprintf(stderr, _("Failed to load SVG - no viewbox and percent size\n"));
+            g_object_unref(fh);
+            return NULL;
         }
-        return width.length / height.length;
-    }
-}
-
-
-static int render_cairo_pdf(Slide *s, cairo_t *cr, float w)
-{
-    PopplerDocument *doc;
-    PopplerPage *page;
-    double pw, ph;
-
-    doc = poppler_document_new_from_gfile(s->ext_file, NULL, NULL, NULL);
-    if ( doc == NULL ) return 1;
-
-    page = poppler_document_get_page(doc, s->ext_slidenumber-1);
-    if ( page == NULL ) {
-        g_object_unref(G_OBJECT(doc));
-        return 1;
+        aspect = width.length / height.length;
     }
 
-    poppler_page_get_size(page, &pw, &ph);
-    cairo_save(cr);
-    cairo_scale(cr, w/pw, w/pw);
-    poppler_page_render(page, cr);
-    cairo_restore(cr);
-
-    g_object_unref(G_OBJECT(page));
-    g_object_unref(G_OBJECT(doc));
-
-    return 0;
-}
-
-
-static int render_cairo_svg(Slide *s, cairo_t *cr, float w)
-{
-    RsvgHandle *h;
-    GError *error;
-    RsvgRectangle viewport;
-
-    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_paint(cr);
-
-    error = NULL;
-    h = rsvg_handle_new_from_gfile_sync(s->ext_file, RSVG_HANDLE_FLAGS_NONE,
-                                        NULL, &error);
-    if ( h == NULL ) {
-        fprintf(stderr, _("Failed to read SVG (render): %s\n"), error->message);
-        return 1;
-    }
+    w = 1024;
+    h = w/aspect;
+    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+    cr = cairo_create(surf);
 
     viewport.x = 0;
     viewport.y = 0;
     viewport.width = w;
-    viewport.height = w/s->aspect;
+    viewport.height = h;
     error = NULL;
-    rsvg_handle_render_document(h, cr, &viewport, &error);
-    g_object_unref(h);
-    return 0;
+    rsvg_handle_render_document(fh, cr, &viewport, &error);
+    g_object_unref(fh);
+
+    return surface_to_paintable(surf, w, h);
+}
+
+
+GdkTexture *load_pdf(GFile *file, int pagenum)
+{
+    PopplerDocument *doc;
+    PopplerPage *page;
+    double pw, ph;
+    cairo_surface_t *surf;
+    cairo_t *cr;
+    int w, h;
+
+    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+    if ( doc == NULL ) return NULL;
+
+    page = poppler_document_get_page(doc, pagenum-1);
+    if ( page == NULL ) {
+        g_object_unref(G_OBJECT(doc));
+        return NULL;
+    }
+
+    poppler_page_get_size(page, &pw, &ph);
+
+    w = 1024;
+    h = w * ph/pw;
+    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+    cr = cairo_create(surf);
+    cairo_scale(cr, w/pw, w/pw);
+    poppler_page_render(page, cr);
+
+    g_object_unref(G_OBJECT(page));
+    g_object_unref(G_OBJECT(doc));
+
+    return surface_to_paintable(surf, w, h);
 }
 
 
@@ -287,38 +288,46 @@ static int ensure_ftype(Slide *s)
 }
 
 
-int slide_render_cairo(Slide *s, cairo_t *cr, float w)
+static void ensure_paintable(Slide *s)
 {
-    printf("Dummy slide_render_cairo\n");
-    return 1;
-}
+    if ( s->paintable != NULL ) return;
 
+    if ( ensure_ftype(s) ) return;
 
-float slide_get_aspect(Slide *s)
-{
-    return 1.0;
+    switch ( s->file_type ) {
+
+        case SLIDE_FTYPE_PDF:
+        s->paintable = GDK_PAINTABLE(load_pdf(s->ext_file, s->ext_slidenumber));
+        break;
+
+        case SLIDE_FTYPE_IMAGE:
+        s->paintable = GDK_PAINTABLE(load_image(s->ext_file));
+        break;
+
+        case SLIDE_FTYPE_SVG:
+        s->paintable = GDK_PAINTABLE(load_svg(s->ext_file));
+        break;
+
+        default:
+        fprintf(stderr, _("Unrecognised ile type (paintable): %i\n"), s->file_type);
+        return;
+    }
 }
 
 
 GdkPaintable *slide_get_paintable(Slide *s)
 {
-    if ( ensure_ftype(s) ) return NULL;
-
-    switch ( s->file_type ) {
-
-        case SLIDE_FTYPE_PDF:
-        return paintable_pdf(s);
-
-        case SLIDE_FTYPE_IMAGE:
-        return paintable_image(s);
-
-        case SLIDE_FTYPE_SVG:
-        return paintable_svg(s);
-
-        default:
-        return NULL;
-    }
+    ensure_paintable(s);
+    return s->paintable;
 }
+
+
+float slide_get_aspect(Slide *s)
+{
+    ensure_paintable(s);
+    return gdk_paintable_get_intrinsic_aspect_ratio(s->paintable);
+}
+
 
 void letterbox(float dw, float dh, float aspect,
                float *sw, float *xoff, float *yoff)

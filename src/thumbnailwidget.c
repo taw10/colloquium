@@ -41,11 +41,17 @@
 G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_WIDGET)
 
 
+static void thumbnail_dispose(GObject *obj);
+static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline);
 static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
+
 
 static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
 {
+    GObjectClass *oklass = G_OBJECT_CLASS(klass);
     GtkWidgetClass *wklass = GTK_WIDGET_CLASS(klass);
+    oklass->dispose = thumbnail_dispose;
+    wklass->size_allocate = thumbnail_size_allocate;
     wklass->snapshot = thumbnail_snapshot;
 }
 
@@ -55,41 +61,11 @@ static void colloquium_thumbnail_init(Thumbnail *e)
 }
 
 
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-#define MEMFORMAT GDK_MEMORY_B8G8R8X8
-#elif G_BYTE_ORDER == G_BIG_ENDIAN
-#define MEMFORMAT GDK_MEMORY_X8R8G8B8
-#else
-#define MEMFORMAT "unknown byte order"
-#endif
-
-static void update_thumbnail_texture(Thumbnail *th, int w, int h)
+static void thumbnail_dispose(GObject *obj)
 {
-    cairo_t *cr;
-    cairo_surface_t *surf;
-    GBytes *bytes;
-
-    if ( th->texture != NULL ) {
-        g_object_unref(th->texture);
-        th->texture = NULL;
-    }
-
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-    cr = cairo_create(surf);
-    slide_render_cairo(th->slide, cr, w);
-    cairo_destroy(cr);
-
-    bytes = g_bytes_new_with_free_func(cairo_image_surface_get_data(surf),
-                                       h*cairo_image_surface_get_stride(surf),
-                                       (GDestroyNotify)cairo_surface_destroy,
-                                       cairo_surface_reference(surf));
-
-    th->texture = gdk_memory_texture_new(w, h, MEMFORMAT, bytes,
-                                         cairo_image_surface_get_stride(surf));
-
-    g_bytes_unref(bytes);
-    cairo_surface_destroy(surf);
-    th->widget_w_for_texture = w;
+    Thumbnail *th = COLLOQUIUM_THUMBNAIL(obj);
+    gtk_widget_unparent(th->picture);
+    G_OBJECT_CLASS(colloquium_thumbnail_parent_class)->dispose(obj);
 }
 
 
@@ -101,7 +77,6 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     graphene_rect_t rect;
     float aw, ah;
     float border_offs_x, border_offs_y;
-    int awi;
     GdkRGBA color;
 
     aspect = slide_get_aspect(th->slide);
@@ -111,17 +86,11 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
     letterbox(w, h, aspect, &aw, &border_offs_x, &border_offs_y);
     ah = aw/aspect;
 
-    awi = aw;
-    if ( (th->texture == NULL) || (th->widget_w_for_texture != awi) ) {
-        update_thumbnail_texture(th, aw, ah);
-    }
-
     GskRoundedRect rrect;
     rect = GRAPHENE_RECT_INIT(border_offs_x, border_offs_y, aw, ah);
     gsk_rounded_rect_init_from_rect(&rrect, &rect, 3);
     gtk_snapshot_push_rounded_clip(snapshot, &rrect);
-    gtk_snapshot_translate(snapshot, &GRAPHENE_POINT_INIT(border_offs_x, border_offs_y));
-    gtk_snapshot_append_texture(snapshot, th->texture, &GRAPHENE_RECT_INIT(0,0,aw,ah));
+    gtk_widget_snapshot_child(da, th->picture, snapshot);
     gtk_snapshot_pop(snapshot);
 
     gtk_widget_get_color(da, &color);
@@ -140,6 +109,19 @@ static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, T
 }
 
 
+static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline)
+{
+    GtkAllocation alloc;
+    Thumbnail *th = COLLOQUIUM_THUMBNAIL(widget);
+
+    alloc.x = 0;
+    alloc.y = 0;
+    alloc.width = w;
+    alloc.height = h;
+    gtk_widget_size_allocate(th->picture, &alloc, -1);
+}
+
+
 GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 {
     Thumbnail *th;
@@ -148,10 +130,10 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
     th->nw = nw;
     th->slide = slide;
 
-    gtk_widget_set_size_request(GTK_WIDGET(th), 320*slide_get_aspect(th->slide), 320);
-    th->texture = NULL;
-
     gtk_widget_add_css_class(GTK_WIDGET(th), "thumbnail");
+
+    th->picture = gtk_picture_new_for_paintable(slide_get_paintable(th->slide));
+    gtk_widget_set_parent(th->picture, GTK_WIDGET(th));
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
     gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);

@@ -127,7 +127,7 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
     sv->laser = laser_overlay_new();
     gtk_overlay_add_overlay(GTK_OVERLAY(sv->overlay), sv->laser);
 
-    gtk_widget_set_size_request(GTK_WIDGET(sv), 100, 100);
+    gtk_widget_set_parent(GTK_WIDGET(sv->overlay), GTK_WIDGET(sv));
     gtk_widget_set_can_focus(GTK_WIDGET(sv), TRUE);
     gtk_widget_grab_focus(GTK_WIDGET(sv));
 

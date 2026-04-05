@@ -49,8 +49,7 @@ struct _colloquiumthumbnail
     Slide               *slide;
     NarrativeWindow     *nw;
     GdkCursor           *cursor;
-    GdkTexture          *texture;
-    int                  widget_w_for_texture;
+    GtkWidget           *picture;
     GtkDragSource       *drag_source;
 };
 

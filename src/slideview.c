@@ -119,6 +119,8 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
     sv->n = n;
     sv->slide = slide;
 
+    gtk_widget_add_css_class(GTK_WIDGET(sv), "slideview");
+
     sv->picture = gtk_picture_new_for_paintable(slide_get_paintable(slide));
 
     sv->overlay  = gtk_overlay_new();

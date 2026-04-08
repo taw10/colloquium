@@ -88,13 +88,17 @@ void slide_view_set_slide(GtkWidget *widget, Slide *slide)
 {
     SlideView *e = COLLOQUIUM_SLIDE_VIEW(widget);
     e->slide = slide;
-    gtk_picture_set_paintable(GTK_PICTURE(e->picture), slide_get_paintable(slide));
+
+    /* Slide is actually rendered on size_allocate */
+    e->need_render = 1;
+    gtk_widget_queue_allocate(widget);
 }
 
 
 static void slide_view_size_allocate(GtkWidget *widget, int w, int h, int baseline)
 {
     GtkAllocation alloc;
+    int old_w;
     SlideView *sv = COLLOQUIUM_SLIDE_VIEW(widget);
 
     alloc.x = 0;
@@ -102,6 +106,13 @@ static void slide_view_size_allocate(GtkWidget *widget, int w, int h, int baseli
     alloc.width = w;
     alloc.height = h;
     gtk_widget_size_allocate(sv->overlay, &alloc, -1);
+
+    old_w = gdk_paintable_get_intrinsic_width(gtk_picture_get_paintable(GTK_PICTURE(sv->picture)));
+    if ( alloc.width > old_w || sv->need_render ) {
+        gtk_picture_set_paintable(GTK_PICTURE(sv->picture),
+                                  slide_render(sv->slide, alloc.width));
+        sv->need_render = 0;
+    }
 
     float aspect, bx, by, aw;
     aspect = slide_get_aspect(sv->slide);
@@ -118,10 +129,12 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
 
     sv->n = n;
     sv->slide = slide;
+    sv->need_render = 1;
 
     gtk_widget_add_css_class(GTK_WIDGET(sv), "slideview");
 
-    sv->picture = gtk_picture_new_for_paintable(slide_get_paintable(slide));
+    /* Slide will be rendered in response to size_allocate */
+    sv->picture = gtk_picture_new();
 
     sv->overlay  = gtk_overlay_new();
     gtk_overlay_set_child(GTK_OVERLAY(sv->overlay), GTK_WIDGET(sv->picture));

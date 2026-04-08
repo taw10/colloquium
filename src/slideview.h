@@ -53,6 +53,7 @@ struct _colloquiumslideview
     GtkWidget           *overlay;
     GtkWidget           *laser;
     GtkWidget           *picture;
+    int                  need_render;
 };
 
 struct _colloquiumslideviewclass

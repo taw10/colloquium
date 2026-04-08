@@ -112,6 +112,7 @@ static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, T
 static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline)
 {
     GtkAllocation alloc;
+    int old_w;
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(widget);
 
     alloc.x = 0;
@@ -119,6 +120,13 @@ static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baselin
     alloc.width = w;
     alloc.height = h;
     gtk_widget_size_allocate(th->picture, &alloc, -1);
+
+    old_w = gdk_paintable_get_intrinsic_width(gtk_picture_get_paintable(GTK_PICTURE(th->picture)));
+    if ( alloc.width > old_w || th->need_render ) {
+        gtk_picture_set_paintable(GTK_PICTURE(th->picture),
+                                  slide_render(th->slide, alloc.width));
+        th->need_render = 0;
+    }
 }
 
 
@@ -129,10 +137,11 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
     th = g_object_new(COLLOQUIUM_TYPE_THUMBNAIL, NULL);
     th->nw = nw;
     th->slide = slide;
+    th->need_render = 1;
 
     gtk_widget_add_css_class(GTK_WIDGET(th), "thumbnail");
 
-    th->picture = gtk_picture_new_for_paintable(slide_get_paintable(th->slide));
+    th->picture = gtk_picture_new();
     gtk_widget_set_parent(th->picture, GTK_WIDGET(th));
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
@@ -149,6 +158,8 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
 Slide *thumbnail_get_slide(Thumbnail *th)
 {
+    gtk_widget_queue_allocate(GTK_WIDGET(th));
+    th->need_render = 1;
     return th->slide;
 }
 

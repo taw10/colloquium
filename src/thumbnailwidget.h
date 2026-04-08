@@ -51,6 +51,7 @@ struct _colloquiumthumbnail
     GdkCursor           *cursor;
     GtkWidget           *picture;
     GtkDragSource       *drag_source;
+    int                  need_render;
 };
 
 struct _colloquiumthumbnailclass

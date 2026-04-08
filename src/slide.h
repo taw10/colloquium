@@ -47,7 +47,6 @@ struct _slide
     int ext_slidenumber;
     GtkTextChildAnchor *anchor;
     enum slide_filetype file_type;
-    GdkPaintable *paintable;
 };
 
 typedef struct _slide Slide;
@@ -60,10 +59,8 @@ extern void slide_free(Slide *s);
 extern void slide_set_ext_file(Slide *s, GFile *file);
 extern void slide_set_ext_number(Slide *s, int num);
 
-extern int slide_set_aspect(Slide *s, float aspect);
 extern float slide_get_aspect(Slide *s);
-extern int slide_render_cairo(Slide *s, cairo_t *cr, float w);
-extern GdkPaintable *slide_get_paintable(Slide *s);
+extern GdkPaintable *slide_render(Slide *s, int w);
 
 extern void letterbox(float dw, float dh, float aspect,
                       float *sw, float *xoff, float *yoff);

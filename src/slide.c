@@ -47,7 +47,6 @@ Slide *slide_new()
     s->ext_file = NULL;
     s->aspect = -1.0;
     s->file_type = SLIDE_FTYPE_UNKNOWN;
-    s->paintable = NULL;
     return s;
 }
 
@@ -55,7 +54,6 @@ Slide *slide_new()
 void slide_free(Slide *s)
 {
     if ( s->ext_file != NULL ) g_object_unref(s->ext_file);
-    if ( s->paintable != NULL ) g_object_unref(s->paintable);
     free(s);
 }
 
@@ -115,7 +113,37 @@ static GdkTexture *surface_to_paintable(cairo_surface_t *surf, int w, int h)
 }
 
 
-static GdkTexture *load_image(GFile *file)
+static float get_aspect_image(GFile *file)
+{
+    GFileInputStream *stream;
+    GError *error;
+    GdkPixbuf *pixbuf;
+    int pw, ph;
+
+    error = NULL;
+    stream = g_file_read(file, NULL, &error);
+    if ( stream == NULL ) {
+        fprintf(stderr, _("Failed to open read (aspect): %s\n"), error->message);
+        return 1;
+    }
+
+    error = NULL;
+    pixbuf = gdk_pixbuf_new_from_stream(G_INPUT_STREAM(stream), NULL, &error);
+    g_object_unref(stream);
+    if ( pixbuf == NULL ) {
+        fprintf(stderr, _("Failed to load image (aspect): %s\n"), error->message);
+        return 1;
+    }
+
+    pw = gdk_pixbuf_get_width(pixbuf);
+    ph = gdk_pixbuf_get_height(pixbuf);
+    g_object_unref(pixbuf);
+
+    return (float)pw/ph;
+}
+
+
+static GdkTexture *load_image(GFile *file, int w)
 {
     GFileInputStream *stream;
     GError *error;
@@ -130,7 +158,7 @@ static GdkTexture *load_image(GFile *file)
 
     error = NULL;
     pixbuf = gdk_pixbuf_new_from_stream_at_scale(G_INPUT_STREAM(stream),
-                                                 -1, -1, TRUE, NULL, &error);
+                                                 w, -1, TRUE, NULL, &error);
     g_object_unref(G_OBJECT(stream));
     if ( pixbuf == NULL ) {
         fprintf(stderr, _("Failed to load image (paintable): %s\n"), error->message);
@@ -141,7 +169,51 @@ static GdkTexture *load_image(GFile *file)
 }
 
 
-GdkTexture *load_svg(GFile *file)
+static float get_aspect_svg(GFile *file)
+{
+    RsvgHandle *fh;
+    GError *error;
+    RsvgLength width, height;
+    RsvgRectangle viewbox;
+    gboolean has_viewbox, has_width, has_height;
+    float aspect;
+
+    error = NULL;
+    fh = rsvg_handle_new_from_gfile_sync(file, RSVG_HANDLE_FLAGS_NONE,
+                                        NULL, &error);
+    if ( fh == NULL ) {
+        fprintf(stderr, _("Failed to read SVG (aspect): %s\n"), error->message);
+        return 1.0;
+    }
+
+    rsvg_handle_get_intrinsic_dimensions(fh, &has_width, &width,
+                                         &has_height, &height,
+                                         &has_viewbox, &viewbox);
+
+    if ( has_viewbox ) {
+        aspect = viewbox.width/viewbox.height;
+    } else {
+        if ( !has_width || !has_height ) {
+            fprintf(stderr, _("Failed to load SVG - no width/height\n"));
+            aspect = 1.0;
+        }
+        if ( width.unit != height.unit ) {
+            fprintf(stderr, _("Failed to load SVG - units not the same\n"));
+            aspect = 1.0;
+        }
+        if ( width.unit == RSVG_UNIT_PERCENT ) {
+            fprintf(stderr, _("Failed to load SVG - no viewbox and percent size\n"));
+            aspect = 1.0;
+        }
+        aspect = width.length / height.length;
+    }
+
+    g_object_unref(fh);
+    return aspect;
+}
+
+
+GdkTexture *load_svg(GFile *file, int w)
 {
     RsvgHandle *fh;
     GError *error;
@@ -150,7 +222,7 @@ GdkTexture *load_svg(GFile *file)
     gboolean has_viewbox, has_width, has_height;
     RsvgRectangle viewport;
     float aspect;
-    int w, h;
+    int h;
     cairo_surface_t *surf;
     cairo_t *cr;
 
@@ -187,7 +259,6 @@ GdkTexture *load_svg(GFile *file)
         aspect = width.length / height.length;
     }
 
-    w = 1024;
     h = w/aspect;
     surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     cr = cairo_create(surf);
@@ -204,14 +275,38 @@ GdkTexture *load_svg(GFile *file)
 }
 
 
-GdkTexture *load_pdf(GFile *file, int pagenum)
+static float get_aspect_pdf(GFile *file, int pagenum)
+{
+    PopplerDocument *doc;
+    PopplerPage *page;
+    double pw, ph;
+
+    doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
+    if ( doc == NULL ) return 1.0;
+
+    page = poppler_document_get_page(doc, pagenum-1);
+    if ( page == NULL ) {
+        g_object_unref(G_OBJECT(doc));
+        return 1.0;
+    }
+
+    poppler_page_get_size(page, &pw, &ph);
+
+    g_object_unref(G_OBJECT(page));
+    g_object_unref(G_OBJECT(doc));
+
+    return pw/ph;
+}
+
+
+GdkTexture *load_pdf(GFile *file, int pagenum, int w)
 {
     PopplerDocument *doc;
     PopplerPage *page;
     double pw, ph;
     cairo_surface_t *surf;
     cairo_t *cr;
-    int w, h;
+    int h;
 
     doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
     if ( doc == NULL ) return NULL;
@@ -224,7 +319,6 @@ GdkTexture *load_pdf(GFile *file, int pagenum)
 
     poppler_page_get_size(page, &pw, &ph);
 
-    w = 1024;
     h = w * ph/pw;
     surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     cr = cairo_create(surf);
@@ -288,44 +382,63 @@ static int ensure_ftype(Slide *s)
 }
 
 
-static void ensure_paintable(Slide *s)
+GdkPaintable *slide_render(Slide *s, int w)
 {
-    if ( s->paintable != NULL ) return;
-
-    if ( ensure_ftype(s) ) return;
+    if ( ensure_ftype(s) ) return NULL;
 
     switch ( s->file_type ) {
 
         case SLIDE_FTYPE_PDF:
-        s->paintable = GDK_PAINTABLE(load_pdf(s->ext_file, s->ext_slidenumber));
-        break;
+        return GDK_PAINTABLE(load_pdf(s->ext_file, s->ext_slidenumber, w));
 
         case SLIDE_FTYPE_IMAGE:
-        s->paintable = GDK_PAINTABLE(load_image(s->ext_file));
-        break;
+        return GDK_PAINTABLE(load_image(s->ext_file, w));
 
         case SLIDE_FTYPE_SVG:
-        s->paintable = GDK_PAINTABLE(load_svg(s->ext_file));
-        break;
+        return GDK_PAINTABLE(load_svg(s->ext_file, w));
+
+        case SLIDE_FTYPE_VIDEO:
+        fprintf(stderr, "Dummy video load\n");
+        return NULL;
 
         default:
-        fprintf(stderr, _("Unrecognised ile type (paintable): %i\n"), s->file_type);
-        return;
+        fprintf(stderr, _("Unrecognised file type (paintable): %i\n"), s->file_type);
+        return NULL;
     }
-}
-
-
-GdkPaintable *slide_get_paintable(Slide *s)
-{
-    ensure_paintable(s);
-    return s->paintable;
 }
 
 
 float slide_get_aspect(Slide *s)
 {
-    ensure_paintable(s);
-    return gdk_paintable_get_intrinsic_aspect_ratio(s->paintable);
+    if ( s->aspect > 0 ) return s->aspect;
+
+    if ( ensure_ftype(s) ) return 1.0;
+
+    switch ( s->file_type ) {
+
+        case SLIDE_FTYPE_PDF:
+        s->aspect = get_aspect_pdf(s->ext_file, s->ext_slidenumber);
+        break;
+
+        case SLIDE_FTYPE_IMAGE:
+        s->aspect = get_aspect_image(s->ext_file);
+        break;
+
+        case SLIDE_FTYPE_SVG:
+        s->aspect = get_aspect_svg(s->ext_file);
+        break;
+
+        case SLIDE_FTYPE_VIDEO:
+        fprintf(stderr, "Dummy video aspect\n");
+        s->aspect = 1.0;
+        break;
+
+        default:
+        fprintf(stderr, _("Unrecognised file type (aspect): %i\n"), s->file_type);
+        return 1.0;
+    }
+
+    return s->aspect;
 }
 
 

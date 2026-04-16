@@ -213,7 +213,7 @@ static float get_aspect_svg(GFile *file)
 }
 
 
-GdkTexture *load_svg(GFile *file, int w)
+static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w)
 {
     RsvgHandle *fh;
     GError *error;
@@ -227,8 +227,8 @@ GdkTexture *load_svg(GFile *file, int w)
     cairo_t *cr;
 
     error = NULL;
-    fh = rsvg_handle_new_from_gfile_sync(file, RSVG_HANDLE_FLAGS_NONE,
-                                        NULL, &error);
+    fh = rsvg_handle_new_from_stream_sync(stream, file, RSVG_HANDLE_FLAGS_NONE,
+                                          NULL, &error);
     if ( fh == NULL ) {
         fprintf(stderr, _("Failed to read SVG: %s\n"), error->message);
         return NULL;
@@ -272,6 +272,19 @@ GdkTexture *load_svg(GFile *file, int w)
     g_object_unref(fh);
 
     return surface_to_paintable(surf, w, h);
+}
+
+
+static GdkTexture *load_svg(GFile *file, int w)
+{
+    GInputStream *stream;
+    GError *error = NULL;
+    stream = G_INPUT_STREAM(g_file_read(file, NULL, &error));
+    if ( stream == NULL ) {
+        fprintf(stderr, _("Failed to open SVG: %s\n"), error->message);
+        return NULL;
+    }
+    return load_svg_stream(stream, file, w);
 }
 
 

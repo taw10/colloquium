@@ -214,6 +214,7 @@ SlideWindow *slide_window_new(Narrative *n, Slide *slide,
 void slide_window_set_slide(SlideWindow *sw, Slide *s)
 {
     slide_view_set_slide(sw->sv, s);
+    sw->slide = s;
 }
 
 

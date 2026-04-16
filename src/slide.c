@@ -312,7 +312,7 @@ static float get_aspect_pdf(GFile *file, int pagenum)
 }
 
 
-GdkTexture *load_pdf(GFile *file, int pagenum, int w)
+static GdkTexture *load_pdf(GFile *file, int pagenum, int w)
 {
     PopplerDocument *doc;
     PopplerPage *page;

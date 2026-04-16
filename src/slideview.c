@@ -134,7 +134,7 @@ GtkWidget *slide_view_new(Narrative *n, Slide *slide)
     gtk_widget_add_css_class(GTK_WIDGET(sv), "slideview");
 
     /* Slide will be rendered in response to size_allocate */
-    sv->picture = gtk_picture_new();
+    sv->picture = gtk_picture_new_for_paintable(placeholder_image());
 
     sv->overlay  = gtk_overlay_new();
     gtk_overlay_set_child(GTK_OVERLAY(sv->overlay), GTK_WIDGET(sv->picture));

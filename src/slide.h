@@ -51,6 +51,7 @@ struct _slide
 
 typedef struct _slide Slide;
 
+extern GdkPaintable *placeholder_image(void);
 
 extern Slide *slide_new(void);
 extern Slide *slide_copy(const Slide *s);

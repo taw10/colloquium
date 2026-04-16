@@ -472,3 +472,19 @@ void letterbox(float dw, float dh, float aspect,
     *xoff = (dw - (*sw))/2.0;
     *yoff = (dh - (*sw)/aspect)/2.0;
 }
+
+
+GdkPaintable *the_placeholder = NULL;
+
+GdkPaintable *placeholder_image()
+{
+    GInputStream *stream;
+    GError *error = NULL;
+
+    if ( the_placeholder != NULL ) return the_placeholder;
+
+    stream = g_resources_open_stream("/uk/me/bitwiz/colloquium/uk.me.bitwiz.colloquium.svg",
+                                     G_RESOURCE_LOOKUP_FLAGS_NONE, &error);
+    the_placeholder = GDK_PAINTABLE(load_svg_stream(stream, NULL, 512));
+    return the_placeholder;
+}

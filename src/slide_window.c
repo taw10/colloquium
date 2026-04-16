@@ -116,6 +116,10 @@ static gboolean slide_key_press_sig(GtkEventControllerKey *self,
             gtk_widget_set_cursor_from_name(GTK_WIDGET(sw->sv), "default");
         }
         break;
+
+        case GDK_KEY_space :
+        slide_play_video(sw->slide);
+        break;
     }
 
     return FALSE;

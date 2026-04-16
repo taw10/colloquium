@@ -47,6 +47,7 @@ Slide *slide_new()
     s->ext_file = NULL;
     s->aspect = -1.0;
     s->file_type = SLIDE_FTYPE_UNKNOWN;
+    s->mediastream = NULL;
     return s;
 }
 
@@ -414,8 +415,10 @@ GdkPaintable *slide_render(Slide *s, int w)
         return GDK_PAINTABLE(load_svg(s->ext_file, w));
 
         case SLIDE_FTYPE_VIDEO:
-        fprintf(stderr, "Dummy video load\n");
-        return NULL;
+        if ( s->mediastream == NULL ) {
+            s->mediastream = gtk_media_file_new_for_file(s->ext_file);
+        }
+        return GDK_PAINTABLE(s->mediastream);
 
         default:
         fprintf(stderr, _("Unrecognised file type (paintable): %i\n"), s->file_type);
@@ -445,8 +448,13 @@ float slide_get_aspect(Slide *s)
         break;
 
         case SLIDE_FTYPE_VIDEO:
-        fprintf(stderr, "Dummy video aspect\n");
-        s->aspect = 1.0;
+        if ( s->mediastream == NULL ) {
+            s->mediastream = GTK_MEDIA_STREAM(gtk_media_file_new_for_file(s->ext_file));
+        }
+        s->aspect = gdk_paintable_get_intrinsic_aspect_ratio(GDK_PAINTABLE(s->mediastream));
+        if ( !gtk_media_stream_is_prepared(s->mediastream) ) {
+            s->aspect = 1.0;
+        }
         break;
 
         default:
@@ -455,6 +463,22 @@ float slide_get_aspect(Slide *s)
     }
 
     return s->aspect;
+}
+
+
+void slide_play_video(Slide *s)
+{
+    if ( s->file_type != SLIDE_FTYPE_VIDEO ) {
+        fprintf(stderr, "Not a video slide.\n");
+        return;
+    }
+
+    if ( s->mediastream == NULL ) {
+        fprintf(stderr, "Media not loaded.\n");
+        return;
+    }
+
+    gtk_media_stream_play(s->mediastream);
 }
 
 

@@ -79,8 +79,16 @@ static void slide_view_dispose(GObject *object)
 
 static void slide_view_realize(GtkWidget *w)
 {
-    //SlideView *sv = COLLOQUIUM_SLIDE_VIEW(w);
+    SlideView *sv = COLLOQUIUM_SLIDE_VIEW(w);
+
     GTK_WIDGET_CLASS(colloquium_slide_view_parent_class)->realize(w);
+
+    if ( sv->slide->file_type == SLIDE_FTYPE_VIDEO ) {
+        GdkSurface *surf;
+        surf = gtk_native_get_surface(gtk_widget_get_native(sv->picture));
+        gtk_media_stream_realize(GTK_MEDIA_STREAM(slide_render(sv->slide, 100)), surf);
+    }
+
 }
 
 

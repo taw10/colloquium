@@ -44,6 +44,7 @@ G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_WIDGET)
 static void thumbnail_dispose(GObject *obj);
 static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline);
 static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
+static void thumbnail_realize(GtkWidget *w);
 
 
 static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
@@ -53,6 +54,7 @@ static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
     oklass->dispose = thumbnail_dispose;
     wklass->size_allocate = thumbnail_size_allocate;
     wklass->snapshot = thumbnail_snapshot;
+    wklass->realize = thumbnail_realize;
 }
 
 
@@ -106,6 +108,20 @@ static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, T
     g_value_init(&val, COLLOQUIUM_TYPE_THUMBNAIL);
     g_value_set_object(&val, G_OBJECT(th));
     return gdk_content_provider_new_for_value(&val);
+}
+
+
+static void thumbnail_realize(GtkWidget *w)
+{
+    Thumbnail *th = COLLOQUIUM_THUMBNAIL(w);
+
+    GTK_WIDGET_CLASS(colloquium_thumbnail_parent_class)->realize(w);
+
+    if ( th->slide->file_type == SLIDE_FTYPE_VIDEO ) {
+        GdkSurface *surf;
+        surf = gtk_native_get_surface(gtk_widget_get_native(th->picture));
+        gtk_media_stream_realize(GTK_MEDIA_STREAM(slide_render(th->slide, 100)), surf);
+    }
 }
 
 

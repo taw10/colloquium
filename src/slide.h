@@ -47,6 +47,7 @@ struct _slide
     int ext_slidenumber;
     GtkTextChildAnchor *anchor;
     enum slide_filetype file_type;
+    GtkMediaStream *mediastream;
 };
 
 typedef struct _slide Slide;
@@ -62,6 +63,7 @@ extern void slide_set_ext_number(Slide *s, int num);
 
 extern float slide_get_aspect(Slide *s);
 extern GdkPaintable *slide_render(Slide *s, int w);
+extern void slide_play_video(Slide *s);
 
 extern void letterbox(float dw, float dh, float aspect,
                       float *sw, float *xoff, float *yoff);

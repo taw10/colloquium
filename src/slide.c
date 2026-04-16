@@ -263,6 +263,9 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w)
     surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     cr = cairo_create(surf);
 
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
+
     viewport.x = 0;
     viewport.y = 0;
     viewport.width = w;

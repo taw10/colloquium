@@ -125,6 +125,35 @@ static void thumbnail_realize(GtkWidget *w)
 }
 
 
+static void update_size_request(Thumbnail *th)
+{
+    GdkPaintable *p = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
+    float n = gdk_paintable_get_intrinsic_aspect_ratio(p);
+    if ( th->min_h*n > th->min_w ) {
+        gtk_widget_set_size_request(GTK_WIDGET(th), th->min_w, th->min_w/n);
+    } else {
+        gtk_widget_set_size_request(GTK_WIDGET(th), th->min_h*n, th->min_h);
+    }
+}
+
+
+void thumbnail_set_min_dims(Thumbnail *th, int w, int h)
+{
+    th->min_w = w;
+    th->min_h = h;
+    th->size_set = 1;
+    update_size_request(th);
+}
+
+
+static void paintable_resize_sig(GdkPaintable *p, Thumbnail *th)
+{
+    if ( th->size_set ) {
+        update_size_request(th);
+    }
+}
+
+
 static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline)
 {
     GtkAllocation alloc;
@@ -139,8 +168,14 @@ static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baselin
 
     old_w = gdk_paintable_get_intrinsic_width(gtk_picture_get_paintable(GTK_PICTURE(th->picture)));
     if ( alloc.width > old_w || th->need_render ) {
-        gtk_picture_set_paintable(GTK_PICTURE(th->picture),
-                                  slide_render(th->slide, alloc.width));
+        GdkPaintable *oldp = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
+        GdkPaintable *p = slide_render(th->slide, alloc.width);
+        if ( oldp != p ) {
+            g_signal_handlers_disconnect_by_func(G_OBJECT(p), paintable_resize_sig, th);
+            gtk_picture_set_paintable(GTK_PICTURE(th->picture), p);
+            update_size_request(th);
+            g_signal_connect(G_OBJECT(p), "invalidate-size", G_CALLBACK(paintable_resize_sig), th);
+        }
         th->need_render = 0;
     }
 }
@@ -154,6 +189,7 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
     th->nw = nw;
     th->slide = slide;
     th->need_render = 1;
+    th->size_set = 0;
 
     gtk_widget_add_css_class(GTK_WIDGET(th), "thumbnail");
 
@@ -177,16 +213,4 @@ Slide *thumbnail_get_slide(Thumbnail *th)
     gtk_widget_queue_allocate(GTK_WIDGET(th));
     th->need_render = 1;
     return th->slide;
-}
-
-
-void thumbnail_set_slide_height(Thumbnail *th, int h)
-{
-    gtk_widget_set_size_request(GTK_WIDGET(th), h*slide_get_aspect(th->slide), h);
-}
-
-
-void thumbnail_set_slide_width(Thumbnail *th, int w)
-{
-    gtk_widget_set_size_request(GTK_WIDGET(th), w, w/slide_get_aspect(th->slide));
 }

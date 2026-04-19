@@ -938,12 +938,7 @@ static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
         gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(evc));
         g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), th);
 
-        float asp = slide_get_aspect(nw->n->slides[i]);
-        if ( 320*asp > 512 ) {
-            thumbnail_set_slide_width(COLLOQUIUM_THUMBNAIL(th), 512);
-        } else {
-            thumbnail_set_slide_height(COLLOQUIUM_THUMBNAIL(th), 320);
-        }
+        thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(th), 512, 320);
         gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
                                           GTK_WIDGET(th),
                                           nw->n->slides[i]->anchor);

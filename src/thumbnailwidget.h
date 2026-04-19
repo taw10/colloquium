@@ -52,6 +52,9 @@ struct _colloquiumthumbnail
     GtkWidget           *picture;
     GtkDragSource       *drag_source;
     int                  need_render;
+    int                  min_w;
+    int                  min_h;
+    int                  size_set;
 };
 
 struct _colloquiumthumbnailclass
@@ -63,7 +66,6 @@ extern GType colloquium_thumbnail_get_type(void);
 
 extern GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw);
 extern Slide *thumbnail_get_slide(Thumbnail *th);
-extern void thumbnail_set_slide_height(Thumbnail *th, int h);
-extern void thumbnail_set_slide_width(Thumbnail *th, int w);
+extern void thumbnail_set_min_dims(Thumbnail *th, int w, int h);
 
 #endif  /* COLLOQUIUM_THUMBNAIL_H */

@@ -965,6 +965,7 @@ static gboolean drop_thumbnail(NarrativeWindow *nw, double x, double y, Thumbnai
     Slide *slide = slide_copy(th->slide);
     insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
     GtkWidget *thn = thumbnail_new(slide, nw);
+    thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(thn), 512, 320);
     gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
     GtkGesture *evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));
@@ -987,6 +988,7 @@ static gboolean drop_file(NarrativeWindow *nw, double x, double y, GFile *file)
     slide->ext_file = g_file_dup(file);
     insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
     GtkWidget *thn = thumbnail_new(slide, nw);
+    thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(thn), 512, 320);
     gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
     GtkGesture *evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));

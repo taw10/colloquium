@@ -453,7 +453,7 @@ float slide_get_aspect(Slide *s)
         }
         s->aspect = gdk_paintable_get_intrinsic_aspect_ratio(GDK_PAINTABLE(s->mediastream));
         if ( !gtk_media_stream_is_prepared(s->mediastream) ) {
-            s->aspect = 1.0;
+            return 1.0;  /* but don't set s->aspect */
         }
         break;
 

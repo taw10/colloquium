@@ -953,7 +953,7 @@ static void scroll_update(GtkAdjustment *adj, GtkDrawingArea *da)
 
 
 
-static gboolean drop_thumnail(NarrativeWindow *nw, double x, double y, Thumbnail *th)
+static gboolean drop_thumbnail(NarrativeWindow *nw, double x, double y, Thumbnail *th)
 {
     int bx, by;
     GtkTextIter iter;
@@ -1001,7 +1001,7 @@ static gboolean drop_sig(GtkDropTarget *drop, const GValue *val, double x, doubl
     NarrativeWindow *nw = vp;
 
     if ( G_VALUE_HOLDS(val, COLLOQUIUM_TYPE_THUMBNAIL) ) {
-        return drop_thumnail(nw, x, y, COLLOQUIUM_THUMBNAIL(g_value_get_object(val)));
+        return drop_thumbnail(nw, x, y, COLLOQUIUM_THUMBNAIL(g_value_get_object(val)));
     }
 
     if ( G_VALUE_HOLDS(val, G_TYPE_FILE) ) {

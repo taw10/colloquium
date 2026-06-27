@@ -149,6 +149,7 @@ static GdkTexture *load_image(GFile *file, int w)
     GFileInputStream *stream;
     GError *error;
     GdkPixbuf *pixbuf;
+    GdkPixbuf *withbg;
 
     error = NULL;
     stream = g_file_read(file, NULL, &error);
@@ -166,7 +167,14 @@ static GdkTexture *load_image(GFile *file, int w)
         return NULL;
     }
 
-    return gdk_texture_new_for_pixbuf(pixbuf);
+    withbg = gdk_pixbuf_composite_color_simple(pixbuf,
+                                               gdk_pixbuf_get_width(pixbuf),
+                                               gdk_pixbuf_get_height(pixbuf),
+                                               GDK_INTERP_NEAREST, 255, 64,
+                                               0xffffffff, 0xffffffff);
+    g_object_unref(G_OBJECT(pixbuf));
+
+    return gdk_texture_new_for_pixbuf(withbg);
 }
 
 

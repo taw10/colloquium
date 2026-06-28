@@ -375,26 +375,37 @@ static int ensure_ftype(Slide *s)
         }
 
         type = g_file_info_get_content_type(info);
+
+        /* PDF types */
         if ( g_content_type_equals(type, "application/pdf") ) {
             s->file_type = SLIDE_FTYPE_PDF;
-        } else if ( g_content_type_equals(type, "image/png") ) {
-            s->file_type = SLIDE_FTYPE_IMAGE;
-        } else if ( g_content_type_equals(type, "image/gif") ) {
-            s->file_type = SLIDE_FTYPE_VIDEO;
         } else if ( g_content_type_equals(type, "com.adobe.pdf") ) {
             s->file_type = SLIDE_FTYPE_PDF;
+
+        /* Bitmap images */
         } else if ( g_content_type_equals(type, "public.png") ) {
             s->file_type = SLIDE_FTYPE_IMAGE;
         } else if ( g_content_type_equals(type, "image/jpeg") ) {
             s->file_type = SLIDE_FTYPE_IMAGE;
         } else if ( g_content_type_equals(type, "public.jpeg") ) {
             s->file_type = SLIDE_FTYPE_IMAGE;
+        } else if ( g_content_type_equals(type, "image/png") ) {
+            s->file_type = SLIDE_FTYPE_IMAGE;
+
+        /* Vector images */
         } else if ( g_content_type_equals(type, "image/svg+xml") ) {
             s->file_type = SLIDE_FTYPE_SVG;
         } else if ( g_content_type_equals(type, "public.svg-image") ) {
             s->file_type = SLIDE_FTYPE_SVG;
+
+        /* Video types */
+        } else if ( g_content_type_equals(type, "image/gif") ) {
+            s->file_type = SLIDE_FTYPE_VIDEO;
+        } else if ( g_content_type_equals(type, "com.compuserve.gif") ) {
+            s->file_type = SLIDE_FTYPE_VIDEO;
         } else if ( g_content_type_equals(type, "video/mpeg") ) {
             s->file_type = SLIDE_FTYPE_VIDEO;
+
         } else {
             fprintf(stderr, "File format not recognised: %s\n", type);
             s->file_type = SLIDE_FTYPE_UNKNOWN;

@@ -450,6 +450,8 @@ GdkPaintable *slide_render(Slide *s, int w)
 
 float slide_get_aspect(Slide *s)
 {
+    float t;
+
     if ( s->aspect > 0 ) return s->aspect;
 
     if ( ensure_ftype(s) ) return 1.0;
@@ -472,10 +474,14 @@ float slide_get_aspect(Slide *s)
         if ( s->mediastream == NULL ) {
             s->mediastream = GTK_MEDIA_STREAM(gtk_media_file_new_for_file(s->ext_file));
         }
-        s->aspect = gdk_paintable_get_intrinsic_aspect_ratio(GDK_PAINTABLE(s->mediastream));
         if ( !gtk_media_stream_is_prepared(s->mediastream) ) {
             return 1.0;  /* but don't set s->aspect */
         }
+        t = gdk_paintable_get_intrinsic_aspect_ratio(GDK_PAINTABLE(s->mediastream));
+        if ( t == 0.0 ) {
+            return 1.0;  /* but don't set s->aspect */
+        }
+        s->aspect = t;
         break;
 
         default:

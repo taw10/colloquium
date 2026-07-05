@@ -129,7 +129,9 @@ static void update_size_request(Thumbnail *th)
 {
     GdkPaintable *p = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
     float n = gdk_paintable_get_intrinsic_aspect_ratio(p);
-    if ( th->min_h*n > th->min_w ) {
+    if ( n == 0.0 ) {
+        gtk_widget_set_size_request(GTK_WIDGET(th), th->min_w, th->min_h);
+    } else if ( th->min_h*n > th->min_w ) {
         gtk_widget_set_size_request(GTK_WIDGET(th), th->min_w, th->min_w/n);
     } else {
         gtk_widget_set_size_request(GTK_WIDGET(th), th->min_h*n, th->min_h);

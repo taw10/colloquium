@@ -505,7 +505,12 @@ void slide_play_video(Slide *s)
         return;
     }
 
-    gtk_media_stream_play(s->mediastream);
+    GError *err = gtk_media_stream_get_error(s->mediastream);
+    if ( err == NULL ) {
+        gtk_media_stream_play(s->mediastream);
+    } else {
+        fprintf(stderr, "Media stream error: %s\n", err->message);
+    }
 }
 
 

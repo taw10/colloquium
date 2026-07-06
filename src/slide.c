@@ -405,6 +405,8 @@ static int ensure_ftype(Slide *s)
             s->file_type = SLIDE_FTYPE_VIDEO;
         } else if ( g_content_type_equals(type, "video/mpeg") ) {
             s->file_type = SLIDE_FTYPE_VIDEO;
+        } else if ( g_content_type_equals(type, "public.mpeg") ) {
+            s->file_type = SLIDE_FTYPE_VIDEO;
 
         } else {
             fprintf(stderr, "File format not recognised: %s\n", type);

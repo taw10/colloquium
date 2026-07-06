@@ -980,6 +980,18 @@ static gboolean drop_file(NarrativeWindow *nw, double x, double y, GFile *file)
     int bx, by;
     GtkTextIter iter;
 
+    gchar *uri = g_file_get_uri(file);
+    gchar *path = g_file_get_path(file);
+    if ( (path == NULL) && (strncmp(uri, "file%3A", 7) == 0) ) {
+        gchar *uri2;
+        fprintf(stderr, "Applying workaround for MacOS drag/drop URI bug\n");
+        uri2 = g_strconcat("file:", uri+7, NULL);
+        file = g_file_new_for_uri(uri2);
+        g_free(uri2);
+    }
+    g_free(uri);
+    g_free(path);
+
     gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(nw->nv), GTK_TEXT_WINDOW_TEXT, x, y, &bx, &by);
     gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(nw->nv), &iter, bx, by);
     gtk_text_iter_forward_line(&iter);

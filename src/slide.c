@@ -424,7 +424,7 @@ static int ensure_ftype(Slide *s)
 
 GdkPaintable *slide_render(Slide *s, int w)
 {
-    if ( ensure_ftype(s) ) return NULL;
+    if ( ensure_ftype(s) ) return placeholder_image();
 
     switch ( s->file_type ) {
 

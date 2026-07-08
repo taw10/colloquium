@@ -197,7 +197,11 @@ static void write_tag_start(GOutputStream *fh,
             if ( ef == NULL ) {
                 ef = g_file_get_uri(slide->ext_file);
             }
-            write_string(fh, ef);
+            if ( ef != NULL ) {
+                write_string(fh, ef);
+            } else {
+                write_string(fh, "*** not found ***");
+            }
             g_free(ef);
         }
     }
@@ -633,7 +637,7 @@ static GFile *find_file(const char *filename, GFile *narrfile)
 
     fprintf(stderr, "%s not found!\n", filename);
 
-    return NULL;
+    return g_file_new_for_path(filename);
 }
 
 

@@ -147,12 +147,34 @@ static void clear_bit(int *bp, int bit)
 }
 
 
+static gchar *relativize(GFile *file, GFile *parents[2])
+{
+    gchar *ef = NULL;
+
+    /* Relative to markdown file? */
+    if ( parents[0] != NULL ) {
+        ef = g_file_get_relative_path(parents[0], file);
+    }
+
+    /* No?  Then relative to ImageStore? */
+    if ( (ef == NULL) && (parents[1] != NULL) ) {
+        ef = g_file_get_relative_path(parents[1], file);
+    }
+
+    /* Still not?  Fall back to absolute location */
+    if ( ef == NULL ) {
+        ef = g_file_get_uri(file);
+    }
+    return ef;
+}
+
+
 static void write_tag_start(GOutputStream *fh,
                             GtkTextTag *tag,
                             GtkTextIter *iter,
                             int *char_count,
                             int *tags_open,
-                            GFile *parent)
+                            GFile *parents[2])
 {
     gchar *name;
     g_object_get(G_OBJECT(tag), "name", &name, NULL);
@@ -193,10 +215,7 @@ static void write_tag_start(GOutputStream *fh,
             snprintf(tmp, 64, "%i", slide->ext_slidenumber);
             write_string(fh, tmp);
             write_string(fh, "; ");
-            ef = g_file_get_relative_path(parent, slide->ext_file);
-            if ( ef == NULL ) {
-                ef = g_file_get_uri(slide->ext_file);
-            }
+            ef = relativize(slide->ext_file, parents);
             if ( ef != NULL ) {
                 write_string(fh, ef);
             } else {
@@ -306,7 +325,7 @@ static int write_escaped_text(GOutputStream *fh, char *str)
 
 
 static void write_tags(GtkTextIter pos, int *char_count, GOutputStream *fh,
-                       int *tags_open, GFile *parent)
+                       int *tags_open, GFile *parents[2])
 {
     GSList *tag;
 
@@ -321,12 +340,12 @@ static void write_tags(GtkTextIter pos, int *char_count, GOutputStream *fh,
           tag != NULL;
           tag=g_slist_next(tag) )
     {
-        write_tag_start(fh, tag->data, &pos, char_count, tags_open, parent);
+        write_tag_start(fh, tag->data, &pos, char_count, tags_open, parents);
     }
 }
 
 
-static int write_markdown(GOutputStream *fh, Narrative *n, GFile *parent)
+static int write_markdown(GOutputStream *fh, Narrative *n, GFile *parents[2])
 {
     GtkTextIter start, end;
     int finished = 0;
@@ -336,7 +355,7 @@ static int write_markdown(GOutputStream *fh, Narrative *n, GFile *parent)
     gtk_text_buffer_get_start_iter(n->textbuf, &start);
     gtk_text_buffer_get_end_iter(n->textbuf, &end);
 
-    write_tags(start, &char_count, fh, &tags_open, parent);
+    write_tags(start, &char_count, fh, &tags_open, parents);
     do {
 
         GtkTextIter end_tag, end_para;
@@ -367,7 +386,7 @@ static int write_markdown(GOutputStream *fh, Narrative *n, GFile *parent)
         char *str = gtk_text_buffer_get_text(n->textbuf, &start, &nrl, TRUE);
         char_count += write_escaped_text(fh, str);
 
-        write_tags(nrl, &char_count, fh, &tags_open, parent);
+        write_tags(nrl, &char_count, fh, &tags_open, parents);
 
         if ( epara ) {
 
@@ -377,7 +396,7 @@ static int write_markdown(GOutputStream *fh, Narrative *n, GFile *parent)
             /* Sneakily move to start of the next paragraph */
             if ( gtk_text_iter_forward_line(&nrl) ) {
                 write_string(fh, "\n\n");
-                write_tags(nrl, &char_count, fh, &tags_open, parent);
+                write_tags(nrl, &char_count, fh, &tags_open, parents);
             } /* else no more lines */
 
         }
@@ -391,31 +410,44 @@ static int write_markdown(GOutputStream *fh, Narrative *n, GFile *parent)
 }
 
 
+static GFile *imagestore_as_gfile(GSettings *settings)
+{
+    char *s = g_settings_get_string(settings, "imagestore");
+    if ( s == NULL ) return NULL;
+    if ( s[0] == '\0' ) return NULL;
+    return g_file_new_for_uri(s);
+}
+
+
 int narrative_save(Narrative *n, GFile *file)
 {
     GFileOutputStream *fh;
     int r;
     GError *error = NULL;
-    GFile *parent;
+    GFile *parents[2];
 
     if ( file == NULL ) {
         fprintf(stderr, "Saving to NULL!\n");
         return 1;
     }
 
-    parent = g_file_get_parent(file);
+    GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");
+    parents[0] = g_file_get_parent(file);
+    parents[1] = imagestore_as_gfile(settings);
+    g_object_unref(settings);
 
     fh = g_file_replace(file, NULL, FALSE, G_FILE_CREATE_NONE, NULL, &error);
     if ( fh == NULL ) {
         fprintf(stderr, _("Open failed: %s\n"), error->message);
         return 1;
     }
-    r = write_markdown(G_OUTPUT_STREAM(fh), n, parent);
+    r = write_markdown(G_OUTPUT_STREAM(fh), n, parents);
     if ( r ) {
         fprintf(stderr, _("Couldn't save presentation\n"));
     }
     g_object_unref(fh);
-    g_object_unref(parent);
+    g_object_unref(parents[0]);
+    if ( parents[1] != NULL ) g_object_unref(parents[1]);
 
     gtk_text_buffer_set_modified(n->textbuf, FALSE);
     return 0;
@@ -477,6 +509,7 @@ struct md_parse_ctx {
     int italic;
     int underline;
     int need_newline;
+    GFile *imagestore;
 };
 
 
@@ -603,7 +636,7 @@ static int g_file_exists(GFile *file)
 }
 
 
-static GFile *find_file(const char *filename, GFile *narrfile)
+static GFile *find_file(const char *filename, GFile *narrfile, GFile *imagestore)
 {
     GFile *f;
     GFile *parent_gfile;
@@ -634,6 +667,12 @@ static GFile *find_file(const char *filename, GFile *narrfile)
         g_free(parent);
     }
     g_object_unref(parent_gfile);
+
+    if ( imagestore != NULL ) {
+        f = g_file_resolve_relative_path(imagestore, filename);
+        if ( g_file_exists(f) ) return f;
+        g_object_unref(f);
+    }
 
     fprintf(stderr, "%s not found!\n", filename);
 
@@ -673,7 +712,7 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         }
         ps->n->slides[ps->n->n_slides++] = slide;
 
-        slide_set_ext_file(slide, find_file(sc+2, ps->nfile));
+        slide_set_ext_file(slide, find_file(sc+2, ps->nfile, ps->imagestore));
         slide_set_ext_number(slide, atoi(tx));
 
         GtkTextIter start;
@@ -746,6 +785,10 @@ static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
     pstate.type = NARRATIVE_ITEM_TEXT;
     pstate.need_newline = 0;
     pstate.nfile = nfile;
+
+    GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");
+    pstate.imagestore = imagestore_as_gfile(settings);
+    g_object_unref(settings);
 
     gtk_text_buffer_begin_irreversible_action(pstate.n->textbuf);
     md_parse(text, len, &md_parser, &pstate);

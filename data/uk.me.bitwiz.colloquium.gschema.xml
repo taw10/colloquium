@@ -56,6 +56,12 @@
       <description>Width of the timing margin</description>
     </key>
 
+    <key name="imagestore" type="s">
+      <default>""</default>
+      <summary>Slide location</summary>
+      <description>Top-level location for slide/picture resources</description>
+    </key>
+
   </schema>
 
 </schemalist>

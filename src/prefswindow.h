@@ -40,6 +40,8 @@ struct _prefswindow
     GtkWindow parent_instance;
 
     /*< private >*/
+    GSettings *settings;
+    GtkWidget *imagestore_button;
 };
 
 struct _prefswindowclass

@@ -251,6 +251,121 @@ static GtkWidget *presentation_prefs(GSettings *settings)
 }
 
 
+static GFile *imagestore_as_gfile(GSettings *settings)
+{
+    char *s = g_settings_get_string(settings, "imagestore");
+    if ( s == NULL ) return NULL;
+    if ( s[0] == '\0' ) return NULL;
+    return g_file_new_for_uri(s);
+}
+
+
+static char *g_file_display_name(GFile *file)
+{
+    GFileInfo *info;
+    GError *error;
+    const gchar *name;
+    gchar *namecopy;
+
+    if ( file == NULL ) return g_strdup("(none)");
+
+    error = NULL;
+    info = g_file_query_info(file, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME,
+                             G_FILE_QUERY_INFO_NONE, NULL, &error);
+    if ( info == NULL ) {
+        if ( error->code == G_IO_ERROR_NOT_FOUND ) {
+            return g_strdup("(not found)");
+        } else {
+            fprintf(stderr, _("Failed to read info: %s\n"), error->message);
+            return g_strdup("(error)");
+        }
+    }
+    name = g_file_info_get_attribute_string(info, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME);
+    namecopy = g_strdup(name);
+    g_object_unref(info);
+    return namecopy;
+}
+
+
+static void set_imagestore_button(GtkWidget *fc, GSettings *settings)
+{
+    GFile *file = imagestore_as_gfile(settings);
+    gchar *name = g_file_display_name(file);
+    gtk_button_set_label(GTK_BUTTON(fc), name);
+    g_free(name);
+    if ( file != NULL ) g_object_unref(file);
+}
+
+
+static void imagestore_finish(GObject *chooser, GAsyncResult *res, gpointer data)
+{
+    PrefsWindow *pw = data;
+    GError *error = NULL;
+    GFile *loc;
+
+    loc = gtk_file_dialog_select_folder_finish(GTK_FILE_DIALOG(chooser), res, &error);
+    if ( error == NULL ) {
+        g_settings_set_string(pw->settings, "imagestore", g_file_get_uri(loc));
+        set_imagestore_button(pw->imagestore_button, pw->settings);
+    } else {
+        if ( error->code != GTK_DIALOG_ERROR_DISMISSED ) {
+            fprintf(stderr, "Error: %s\n", error->message);
+        }
+        g_error_free(error);
+    }
+}
+
+
+static void imagestore_sig(GtkButton *button, PrefsWindow *pw)
+{
+    GtkFileDialog *d = gtk_file_dialog_new();
+    GFile *file = imagestore_as_gfile(pw->settings);
+    if ( file != NULL ) gtk_file_dialog_set_initial_file(d, file);
+    gtk_file_dialog_select_folder(d, GTK_WINDOW(pw), NULL,
+                                  imagestore_finish, pw);
+    if ( file != NULL ) g_object_unref(file);
+}
+
+
+static void imagestore_clear_sig(GtkButton *button, PrefsWindow *pw)
+{
+    g_settings_set_string(pw->settings, "imagestore", "");
+    set_imagestore_button(pw->imagestore_button, pw->settings);
+}
+
+
+static GtkWidget *location_prefs(PrefsWindow *pw)
+{
+    GtkWidget *box;
+    GtkWidget *hbox;
+    GtkWidget *button;
+
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    gtk_widget_set_margin_top(box, 8);
+    gtk_widget_set_margin_bottom(box, 8);
+    gtk_widget_set_margin_start(box, 8);
+    gtk_widget_set_margin_end(box, 8);
+    gtk_box_set_spacing(GTK_BOX(box), 8);
+
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_append(GTK_BOX(box), hbox);
+    gtk_box_append(GTK_BOX(hbox), gtk_label_new(_("Location for slides/pictures:")));
+
+    pw->imagestore_button = gtk_button_new_with_label("");
+    set_imagestore_button(pw->imagestore_button, pw->settings);
+    gtk_box_append(GTK_BOX(hbox), pw->imagestore_button);
+
+    button = gtk_button_new_from_icon_name("edit-clear");
+    g_signal_connect(G_OBJECT(button), "clicked",
+                     G_CALLBACK(imagestore_clear_sig), pw);
+    gtk_box_append(GTK_BOX(hbox), button);
+
+    g_signal_connect(G_OBJECT(pw->imagestore_button), "clicked", G_CALLBACK(imagestore_sig), pw);
+
+    return box;
+}
+
+
 static void close_sig(GtkWidget *widget, PrefsWindow *pw)
 {
     gtk_window_close(GTK_WINDOW(pw));
@@ -264,13 +379,12 @@ PrefsWindow *prefs_window_new()
     GtkWidget *box;
     GtkWidget *hbox;
     GtkWidget *button;
-    GSettings *settings;
 
     pw = g_object_new(COLLOQUIUM_TYPE_PREFS_WINDOW, NULL);
+    pw->settings = g_settings_new("uk.me.bitwiz.colloquium");
+
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_window_set_child(GTK_WINDOW(pw), box);
-
-    settings = g_settings_new("uk.me.bitwiz.colloquium");
 
     notebook = gtk_notebook_new();
     gtk_box_append(GTK_BOX(box), notebook);
@@ -278,12 +392,16 @@ PrefsWindow *prefs_window_new()
     gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_TOP);
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
-                             narrative_prefs(settings),
+                             narrative_prefs(pw->settings),
                              gtk_label_new(_("Narrative")));
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
-                             presentation_prefs(settings),
+                             presentation_prefs(pw->settings),
                              gtk_label_new(_("Presentation")));
+
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
+                             location_prefs(pw),
+                             gtk_label_new(_("Directories")));
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_append(GTK_BOX(box), hbox);

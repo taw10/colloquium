@@ -56,17 +56,6 @@ struct _narrative
 };
 
 
-enum narrative_item_type
-{
-    NARRATIVE_ITEM_TEXT,
-    NARRATIVE_ITEM_SEGSTART,
-    NARRATIVE_ITEM_SEGEND,
-    NARRATIVE_ITEM_PRESTITLE,
-    NARRATIVE_ITEM_SLIDE,
-    NARRATIVE_ITEM_BP,
-    NARRATIVE_ITEM_EOP,
-};
-
 extern Narrative *narrative_new(void);
 extern void narrative_free(Narrative *n);
 

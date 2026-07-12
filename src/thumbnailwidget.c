@@ -44,7 +44,6 @@ G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_WIDGET)
 static void thumbnail_dispose(GObject *obj);
 static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline);
 static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
-static void thumbnail_realize(GtkWidget *w);
 
 
 static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
@@ -54,7 +53,6 @@ static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
     oklass->dispose = thumbnail_dispose;
     wklass->size_allocate = thumbnail_size_allocate;
     wklass->snapshot = thumbnail_snapshot;
-    wklass->realize = thumbnail_realize;
 }
 
 
@@ -111,23 +109,14 @@ static GdkContentProvider *drag_prepare(GtkDragSource *ds, double x, double y, T
 }
 
 
-static void thumbnail_realize(GtkWidget *w)
-{
-    Thumbnail *th = COLLOQUIUM_THUMBNAIL(w);
-
-    GTK_WIDGET_CLASS(colloquium_thumbnail_parent_class)->realize(w);
-
-    if ( th->slide->file_type == SLIDE_FTYPE_VIDEO ) {
-        GdkSurface *surf;
-        surf = gtk_native_get_surface(gtk_widget_get_native(th->picture));
-        gtk_media_stream_realize(GTK_MEDIA_STREAM(slide_render(th->slide, 100)), surf);
-    }
-}
-
-
 static void update_size_request(Thumbnail *th)
 {
-    GdkPaintable *p = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
+    GdkPaintable *p;
+    if ( slide_ftype(th->slide) == SLIDE_FTYPE_VIDEO ) {
+        p = GDK_PAINTABLE(gtk_video_get_media_stream(GTK_VIDEO(th->picture)));
+    } else {
+        p = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
+    }
     float n = gdk_paintable_get_intrinsic_aspect_ratio(p);
     if ( n == 0.0 ) {
         gtk_widget_set_size_request(GTK_WIDGET(th), th->min_w, th->min_h);
@@ -168,6 +157,12 @@ static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baselin
     alloc.height = h;
     gtk_widget_size_allocate(th->picture, &alloc, -1);
 
+    if ( th->slide->file_type == SLIDE_FTYPE_VIDEO ) {
+        update_size_request(th);
+        th->need_render = 0;
+        return;
+    }
+
     old_w = gdk_paintable_get_intrinsic_width(gtk_picture_get_paintable(GTK_PICTURE(th->picture)));
     if ( alloc.width > old_w || th->need_render ) {
         GdkPaintable *oldp = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
@@ -195,7 +190,11 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 
     gtk_widget_add_css_class(GTK_WIDGET(th), "thumbnail");
 
-    th->picture = gtk_picture_new_for_paintable(placeholder_image());
+    if ( slide_ftype(slide) == SLIDE_FTYPE_VIDEO ) {
+        th->picture = gtk_video_new_for_media_stream(GTK_MEDIA_STREAM(slide_render(slide, 128)));
+    } else {
+        th->picture = gtk_picture_new_for_paintable(placeholder_image());
+    }
     gtk_widget_set_parent(th->picture, GTK_WIDGET(th));
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);

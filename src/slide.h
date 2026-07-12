@@ -63,7 +63,7 @@ extern void slide_set_ext_number(Slide *s, int num);
 
 extern float slide_get_aspect(Slide *s);
 extern GdkPaintable *slide_render(Slide *s, int w);
-extern void slide_play_video(Slide *s);
+extern enum slide_filetype slide_ftype(Slide *s);
 
 extern void letterbox(float dw, float dh, float aspect,
                       float *sw, float *xoff, float *yoff);

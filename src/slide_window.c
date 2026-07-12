@@ -117,9 +117,6 @@ static gboolean slide_key_press_sig(GtkEventControllerKey *self,
         }
         break;
 
-        case GDK_KEY_space :
-        slide_play_video(sw->slide);
-        break;
     }
 
     return FALSE;

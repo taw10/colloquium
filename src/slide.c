@@ -422,6 +422,13 @@ static int ensure_ftype(Slide *s)
 }
 
 
+enum slide_filetype slide_ftype(Slide *s)
+{
+    ensure_ftype(s);
+    return s->file_type;
+}
+
+
 GdkPaintable *slide_render(Slide *s, int w)
 {
     if ( ensure_ftype(s) ) return placeholder_image();
@@ -492,27 +499,6 @@ float slide_get_aspect(Slide *s)
     }
 
     return s->aspect;
-}
-
-
-void slide_play_video(Slide *s)
-{
-    if ( s->file_type != SLIDE_FTYPE_VIDEO ) {
-        fprintf(stderr, "Not a video slide.\n");
-        return;
-    }
-
-    if ( s->mediastream == NULL ) {
-        fprintf(stderr, "Media not loaded.\n");
-        return;
-    }
-
-    const GError *err = gtk_media_stream_get_error(s->mediastream);
-    if ( err == NULL ) {
-        gtk_media_stream_play(s->mediastream);
-    } else {
-        fprintf(stderr, "Media stream error: %s\n", err->message);
-    }
 }
 
 

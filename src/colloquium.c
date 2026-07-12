@@ -336,7 +336,8 @@ static void update_css(GSettings *settings, gchar *key, GtkCssProvider *provider
     bgcol = g_settings_get_string(settings, "narrative-bg");
     snprintf(css1, 1023, ".narrative { font-family: %s; font-style: %s;"
                          " font-weight: %i;  font-stretch: %s; font-size: %ip%c; "
-                         " line-height: %f; }",
+                         " line-height: %f; }"
+                         "video.thumbnail { font-family: Sans; font-size: 13.3333px; }",
             pango_font_description_get_family(fd),
             pango_style_to_text(fd),
             pango_font_description_get_weight(fd),

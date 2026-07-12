@@ -196,6 +196,7 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
         th->picture = gtk_picture_new_for_paintable(placeholder_image());
     }
     gtk_widget_set_parent(th->picture, GTK_WIDGET(th));
+    gtk_widget_add_css_class(GTK_WIDGET(th->picture), "thumbnail");
 
     th->cursor = gdk_cursor_new_from_name("pointer", NULL);
     gtk_widget_set_cursor(GTK_WIDGET(th), th->cursor);

@@ -510,6 +510,7 @@ enum narrative_item_type
     NARRATIVE_ITEM_SLIDE,
     NARRATIVE_ITEM_BP,
     NARRATIVE_ITEM_EOP,
+    NARRATIVE_ITEM_CODE,
 };
 
 
@@ -522,6 +523,7 @@ struct md_parse_ctx {
     int underline;
     int need_newline;
     GFile *imagestore;
+    gchar *code;
 };
 
 
@@ -547,6 +549,10 @@ static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
         ps->type = NARRATIVE_ITEM_BP;
         break;
 
+        case MD_BLOCK_CODE:
+        ps->type = NARRATIVE_ITEM_CODE;
+        break;
+
         default :
         ps->type = NARRATIVE_ITEM_TEXT;
         break;
@@ -557,10 +563,21 @@ static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
 }
 
 
+static void handle_code_block(struct md_parse_ctx *ps)
+{
+    printf("```\n%s\n```\n", ps->code);
+}
+
+
 static int md_leave_block(MD_BLOCKTYPE type, void *detail, void *vp)
 {
     struct md_parse_ctx *ps = vp;
     if ( type == MD_BLOCK_DOC ) return 0;
+    if ( type == MD_BLOCK_CODE ) {
+        handle_code_block(ps);
+        g_free(ps->code);
+        ps->code = g_strdup("");
+    }
     ps->need_newline = 1;
     return 0;
 }
@@ -733,6 +750,14 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 
         free(tx);
 
+    } else if ( ps->type == NARRATIVE_ITEM_CODE ) {
+
+        gchar *tx = g_strndup(text, len);
+        gchar *ntx = g_strconcat(ps->code, tx, NULL);
+        g_free(tx);
+        g_free(ps->code);
+        ps->code = ntx;
+
     } else {
 
         GtkTextIter start_iter, end_iter;
@@ -797,6 +822,7 @@ static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
     pstate.type = NARRATIVE_ITEM_TEXT;
     pstate.need_newline = 0;
     pstate.nfile = nfile;
+    pstate.code = g_strdup("");
 
     GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");
     pstate.imagestore = imagestore_as_gfile(settings);

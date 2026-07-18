@@ -467,6 +467,10 @@ GdkPaintable *slide_render(Slide *s, int w)
     switch ( s->file_type ) {
 
         case SLIDE_FTYPE_PDF:
+        if ( s->ext_slidenumber == 0 ) {
+            fprintf(stderr, "PDF without page number\n");
+            return placeholder_image();
+        }
         return GDK_PAINTABLE(load_pdf(s->ext_file, s->ext_slidenumber, w));
 
         case SLIDE_FTYPE_IMAGE:
@@ -499,6 +503,10 @@ float slide_get_aspect(Slide *s)
     switch ( s->file_type ) {
 
         case SLIDE_FTYPE_PDF:
+        if ( s->ext_slidenumber == 0 ) {
+            fprintf(stderr, "PDF without page number\n");
+            return 1.0;
+        }
         s->aspect = get_aspect_pdf(s->ext_file, s->ext_slidenumber);
         break;
 

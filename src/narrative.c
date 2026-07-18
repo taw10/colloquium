@@ -211,16 +211,29 @@ static void write_tag_start(GOutputStream *fh,
             widgets = gtk_text_child_anchor_get_widgets(anc, &len);
             assert(len == 1);
             slide = thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(widgets[0]));
-            write_string(fh, "###### Slide ");
-            snprintf(tmp, 64, "%i", slide->ext_slidenumber);
-            write_string(fh, tmp);
-            write_string(fh, "; ");
+            write_string(fh, "```\n");
             ef = relativize(slide->ext_file, parents);
             if ( ef != NULL ) {
+                write_string(fh, "File ");
                 write_string(fh, ef);
+                write_string(fh, "\n");
             } else {
-                write_string(fh, "*** not found ***");
+                write_string(fh, "File *** not found ***\n");
             }
+            if ( slide->ext_slidenumber > 0 ) {
+                snprintf(tmp, 64, "Page %i\n", slide->ext_slidenumber);
+                write_string(fh, tmp);
+            }
+            if ( slide->hide_elements != NULL ) {
+                int i = 0;
+                while ( slide->hide_elements[i] != NULL ) {
+                    write_string(fh, "Hide ");
+                    write_string(fh, slide->hide_elements[i]);
+                    write_string(fh, "\n");
+                    i++;
+                }
+            }
+            write_string(fh, "```");
             g_free(ef);
         }
     }

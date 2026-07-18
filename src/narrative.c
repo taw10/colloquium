@@ -514,6 +514,35 @@ enum narrative_item_type
 };
 
 
+struct code_block {
+    int used;
+    char *filename;
+    int page;
+    char **hide_elements;
+    int n_hide;
+    int max_hide;
+};
+
+
+static void clear_code_block(struct code_block *cb)
+{
+    int i;
+
+    if ( cb->used == 1 ) {
+        fprintf(stderr, "Clearing a used code block\n");
+    }
+
+    for ( i=0; i<cb->n_hide; i++ ) {
+        free(cb->hide_elements[i]);
+    }
+    cb->n_hide = 0;
+
+    free(cb->filename);
+    cb->filename = NULL;
+    cb->page = 0;
+}
+
+
 struct md_parse_ctx {
     Narrative *n;
     GFile *nfile;
@@ -523,96 +552,8 @@ struct md_parse_ctx {
     int underline;
     int need_newline;
     GFile *imagestore;
-    gchar *code;
+    struct code_block cb;
 };
-
-
-static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
-{
-    struct md_parse_ctx *ps = vp;
-    MD_BLOCK_H_DETAIL *d;
-
-    switch ( type ) {
-
-        case MD_BLOCK_H:
-        d = detail;
-        if ( d->level == 1 ) {
-            ps->type = NARRATIVE_ITEM_PRESTITLE;
-        } else if ( d->level == 6 ) {
-            ps->type = NARRATIVE_ITEM_SLIDE;
-        } else {
-            ps->type = NARRATIVE_ITEM_SEGSTART;
-        }
-        break;
-
-        case MD_BLOCK_LI:
-        ps->type = NARRATIVE_ITEM_BP;
-        break;
-
-        case MD_BLOCK_CODE:
-        ps->type = NARRATIVE_ITEM_CODE;
-        break;
-
-        default :
-        ps->type = NARRATIVE_ITEM_TEXT;
-        break;
-
-    }
-
-    return 0;
-}
-
-
-static void handle_code_block(struct md_parse_ctx *ps)
-{
-    printf("```\n%s\n```\n", ps->code);
-}
-
-
-static int md_leave_block(MD_BLOCKTYPE type, void *detail, void *vp)
-{
-    struct md_parse_ctx *ps = vp;
-    if ( type == MD_BLOCK_DOC ) return 0;
-    if ( type == MD_BLOCK_CODE ) {
-        handle_code_block(ps);
-        g_free(ps->code);
-        ps->code = g_strdup("");
-    }
-    ps->need_newline = 1;
-    return 0;
-}
-
-
-static const char *block_tag_name(struct md_parse_ctx *ps)
-{
-    switch ( ps->type ) {
-        case NARRATIVE_ITEM_TEXT : return NULL;
-        case NARRATIVE_ITEM_SEGSTART : return "segstart";
-        case NARRATIVE_ITEM_PRESTITLE : return "prestitle";
-        case NARRATIVE_ITEM_BP : return "bulletpoint";
-        default: return NULL;
-    }
-}
-
-
-static int md_enter_span(MD_SPANTYPE type, void *detail, void *vp)
-{
-    struct md_parse_ctx *ps = vp;
-    if ( type == MD_SPAN_STRONG ) { ps->bold++; }
-    if ( type == MD_SPAN_EM ) { ps->italic++; }
-    if ( type == MD_SPAN_U ) { ps->underline++; }
-    return 0;
-}
-
-
-static int md_leave_span(MD_SPANTYPE type, void *detail, void *vp)
-{
-    struct md_parse_ctx *ps = vp;
-    if ( type == MD_SPAN_STRONG ) { ps->bold--; }
-    if ( type == MD_SPAN_EM ) { ps->italic--; }
-    if ( type == MD_SPAN_U ) { ps->underline--; }
-    return 0;
-}
 
 
 void insert_slide_anchor(GtkTextBuffer *buf, Slide *slide, GtkTextIter start, int newline)
@@ -709,6 +650,178 @@ static GFile *find_file(const char *filename, GFile *narrfile, GFile *imagestore
 }
 
 
+static int add_slide(Narrative *n, Slide *slide)
+{
+    GtkTextIter start;
+
+    if ( n->n_slides == n->max_slides ) {
+        int nmax_slides = n->max_slides*2;
+        Slide **nslides = realloc(n->slides, nmax_slides*sizeof(Slide *));
+        if ( nslides == NULL ) {
+            fprintf(stderr, "Failed to add slide\n");
+            return 1;
+        }
+        n->max_slides = nmax_slides;
+        n->slides = nslides;
+    }
+    n->slides[n->n_slides++] = slide;
+
+    gtk_text_buffer_get_end_iter(n->textbuf, &start);
+    insert_slide_anchor(n->textbuf, slide, start, 0);
+    return 0;
+}
+
+
+static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    MD_BLOCK_H_DETAIL *d;
+
+    switch ( type ) {
+
+        case MD_BLOCK_H:
+        d = detail;
+        if ( d->level == 1 ) {
+            ps->type = NARRATIVE_ITEM_PRESTITLE;
+        } else if ( d->level == 6 ) {
+            ps->type = NARRATIVE_ITEM_SLIDE;
+        } else {
+            ps->type = NARRATIVE_ITEM_SEGSTART;
+        }
+        break;
+
+        case MD_BLOCK_LI:
+        ps->type = NARRATIVE_ITEM_BP;
+        break;
+
+        case MD_BLOCK_CODE:
+        ps->type = NARRATIVE_ITEM_CODE;
+        clear_code_block(&ps->cb);
+        break;
+
+        default :
+        ps->type = NARRATIVE_ITEM_TEXT;
+        break;
+
+    }
+
+    return 0;
+}
+
+
+static void handle_code_line(const char *text, struct code_block *cb)
+{
+    char *arg;
+
+    if ( strlen(text) > 6 ) {
+        const char *nl = strchr(text+5, '\n');
+        if ( nl == NULL ) {
+            fprintf(stderr, "No newline found in code block\n");
+            return;
+        }
+        arg = strndup(text+5, nl-text-5);
+    } else {
+        arg = NULL;
+    }
+
+    cb->used = 1;
+
+    if ( strncmp(text, "File ", 5) == 0 ) {
+        if ( arg == NULL ) {
+            fprintf(stderr, "Argument missing\n");
+            return;
+        }
+        cb->filename = arg;
+    }
+
+    if ( strncmp(text, "Page ", 5) == 0 ) {
+        if ( arg == NULL ) {
+            fprintf(stderr, "Argument missing\n");
+            return;
+        }
+        cb->page = atoi(arg);
+        free(arg);
+    }
+
+    if ( strncmp(text, "Hide ", 5) == 0 ) {
+        if ( arg == NULL ) {
+            fprintf(stderr, "Argument missing\n");
+            return;
+        }
+        if ( cb->n_hide >= cb->max_hide ) {
+            fprintf(stderr, "Too many hidden objects (max %i)\n", cb->max_hide);
+            return;
+        }
+        cb->hide_elements[cb->n_hide++] = arg;
+    }
+}
+
+
+static void handle_code_block(struct md_parse_ctx *ps)
+{
+    struct code_block *cb = &ps->cb;
+
+    if ( cb->filename != NULL ) {
+
+        Slide *slide = slide_new();
+        slide_set_ext_file(slide, find_file(cb->filename, ps->nfile, ps->imagestore));
+        slide_set_ext_number(slide, cb->page);
+        slide_set_hidden_elements(slide, cb->hide_elements, cb->n_hide);
+        if ( add_slide(ps->n, slide) ) {
+            fprintf(stderr, "Failed to add slide\n");
+            return;
+        }
+    }
+
+    ps->cb.used = 0;
+}
+
+
+static int md_leave_block(MD_BLOCKTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    if ( type == MD_BLOCK_DOC ) return 0;
+    if ( type == MD_BLOCK_CODE ) {
+        handle_code_block(ps);
+        clear_code_block(&ps->cb);
+    }
+    ps->need_newline = 1;
+    return 0;
+}
+
+
+static const char *block_tag_name(struct md_parse_ctx *ps)
+{
+    switch ( ps->type ) {
+        case NARRATIVE_ITEM_TEXT : return NULL;
+        case NARRATIVE_ITEM_SEGSTART : return "segstart";
+        case NARRATIVE_ITEM_PRESTITLE : return "prestitle";
+        case NARRATIVE_ITEM_BP : return "bulletpoint";
+        default: return NULL;
+    }
+}
+
+
+static int md_enter_span(MD_SPANTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    if ( type == MD_SPAN_STRONG ) { ps->bold++; }
+    if ( type == MD_SPAN_EM ) { ps->italic++; }
+    if ( type == MD_SPAN_U ) { ps->underline++; }
+    return 0;
+}
+
+
+static int md_leave_span(MD_SPANTYPE type, void *detail, void *vp)
+{
+    struct md_parse_ctx *ps = vp;
+    if ( type == MD_SPAN_STRONG ) { ps->bold--; }
+    if ( type == MD_SPAN_EM ) { ps->italic--; }
+    if ( type == MD_SPAN_U ) { ps->underline--; }
+    return 0;
+}
+
+
 static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 {
     struct md_parse_ctx *ps = vp;
@@ -729,34 +842,19 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
         if ( strlen(sc) < 3 ) return 1;
 
         Slide *slide = slide_new();
-        if ( ps->n->n_slides == ps->n->max_slides ) {
-            int nmax_slides = ps->n->max_slides*2;
-            Slide **nslides = realloc(ps->n->slides, nmax_slides*sizeof(Slide *));
-            if ( nslides == NULL ) {
-                fprintf(stderr, "Failed to add slide\n");
-                return 1;
-            }
-            ps->n->max_slides = nmax_slides;
-            ps->n->slides = nslides;
-        }
-        ps->n->slides[ps->n->n_slides++] = slide;
-
         slide_set_ext_file(slide, find_file(sc+2, ps->nfile, ps->imagestore));
         slide_set_ext_number(slide, atoi(tx));
 
-        GtkTextIter start;
-        gtk_text_buffer_get_end_iter(ps->n->textbuf, &start);
-        insert_slide_anchor(ps->n->textbuf, slide, start, 0);
+        if ( add_slide(ps->n, slide) ) {
+            fprintf(stderr, "Failed to add slide\n");
+            return 1;
+        }
 
         free(tx);
 
     } else if ( ps->type == NARRATIVE_ITEM_CODE ) {
 
-        gchar *tx = g_strndup(text, len);
-        gchar *ntx = g_strconcat(ps->code, tx, NULL);
-        g_free(tx);
-        g_free(ps->code);
-        ps->code = ntx;
+        handle_code_line(text, &ps->cb);
 
     } else {
 
@@ -822,7 +920,12 @@ static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
     pstate.type = NARRATIVE_ITEM_TEXT;
     pstate.need_newline = 0;
     pstate.nfile = nfile;
-    pstate.code = g_strdup("");
+    pstate.cb.filename = NULL;
+    pstate.cb.max_hide = 16;
+    pstate.cb.hide_elements = malloc(pstate.cb.max_hide*sizeof(char *));
+    pstate.cb.n_hide = 0;
+    pstate.cb.page = 0;
+    pstate.cb.used = 0;
 
     GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");
     pstate.imagestore = imagestore_as_gfile(settings);

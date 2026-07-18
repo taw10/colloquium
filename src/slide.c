@@ -48,6 +48,7 @@ Slide *slide_new()
     s->aspect = -1.0;
     s->file_type = SLIDE_FTYPE_UNKNOWN;
     s->mediastream = NULL;
+    s->hide_elements = NULL;
     return s;
 }
 
@@ -82,6 +83,18 @@ void slide_set_ext_file(Slide *s, GFile *file)
 void slide_set_ext_number(Slide *s, int num)
 {
     s->ext_slidenumber = num;
+}
+
+
+void slide_set_hidden_elements(Slide *s, char **elements, int n)
+{
+    int i;
+
+    s->hide_elements = malloc((n+1)*sizeof(char *));
+    for ( i=0; i<n; i++ ) {
+        s->hide_elements[i] = g_strdup(elements[i]);
+    }
+    s->hide_elements[n] = NULL;
 }
 
 
@@ -222,7 +235,7 @@ static float get_aspect_svg(GFile *file)
 }
 
 
-static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w)
+static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, char **hide_elements)
 {
     RsvgHandle *fh;
     GError *error;
@@ -275,6 +288,22 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w)
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_paint(cr);
 
+    if ( hide_elements != NULL ) {
+        gchar *css = g_strdup("");
+        int i = 0;
+        while ( hide_elements[i] != NULL ) {
+            gchar *ncss = g_strconcat(css, "#", hide_elements[i], "{opacity: 0.0;}", NULL);
+            g_free(css);
+            css = ncss;
+            i++;
+        }
+        error = NULL;
+        if ( !rsvg_handle_set_stylesheet(fh, (const guint8 *)css, strlen(css), &error) ) {
+            fprintf(stderr, "CSS error: %s\n", error->message);
+        }
+        g_free(css);
+    }
+
     viewport.x = 0;
     viewport.y = 0;
     viewport.width = w;
@@ -287,7 +316,7 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w)
 }
 
 
-static GdkTexture *load_svg(GFile *file, int w)
+static GdkTexture *load_svg(GFile *file, int w, char **hide_elements)
 {
     GInputStream *stream;
     GError *error = NULL;
@@ -296,7 +325,7 @@ static GdkTexture *load_svg(GFile *file, int w)
         fprintf(stderr, _("Failed to open SVG: %s\n"), error->message);
         return NULL;
     }
-    return load_svg_stream(stream, file, w);
+    return load_svg_stream(stream, file, w, hide_elements);
 }
 
 
@@ -442,7 +471,7 @@ GdkPaintable *slide_render(Slide *s, int w)
         return GDK_PAINTABLE(load_image(s->ext_file, w));
 
         case SLIDE_FTYPE_SVG:
-        return GDK_PAINTABLE(load_svg(s->ext_file, w));
+        return GDK_PAINTABLE(load_svg(s->ext_file, w, s->hide_elements));
 
         case SLIDE_FTYPE_VIDEO:
         if ( s->mediastream == NULL ) {
@@ -529,6 +558,6 @@ GdkPaintable *placeholder_image()
 
     stream = g_resources_open_stream("/uk/me/bitwiz/colloquium/uk.me.bitwiz.colloquium.svg",
                                      G_RESOURCE_LOOKUP_FLAGS_NONE, &error);
-    the_placeholder = GDK_PAINTABLE(load_svg_stream(stream, NULL, 512));
+    the_placeholder = GDK_PAINTABLE(load_svg_stream(stream, NULL, 512, NULL));
     return the_placeholder;
 }

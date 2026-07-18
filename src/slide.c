@@ -208,6 +208,7 @@ static float get_aspect_svg(GFile *file)
         return 1.0;
     }
 
+    rsvg_handle_set_dpi(fh, 96);
     rsvg_handle_get_intrinsic_dimensions(fh, &has_width, &width,
                                          &has_height, &height,
                                          &has_viewbox, &viewbox);
@@ -256,6 +257,7 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
         return NULL;
     }
 
+    rsvg_handle_set_dpi(fh, 96);
     rsvg_handle_get_intrinsic_dimensions(fh, &has_width, &width,
                                          &has_height, &height,
                                          &has_viewbox, &viewbox);

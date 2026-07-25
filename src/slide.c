@@ -191,6 +191,35 @@ static GdkTexture *load_image(GFile *file, int w)
 }
 
 
+static void load_image_cairo(GFile *file, int w, cairo_t *cr)
+{
+    GFileInputStream *stream;
+    GError *error;
+    GdkPixbuf *pixbuf;
+
+    error = NULL;
+    stream = g_file_read(file, NULL, &error);
+    if ( stream == NULL ) {
+        fprintf(stderr, _("Failed to read image: %s\n"), error->message);
+        return;
+    }
+
+    error = NULL;
+    pixbuf = gdk_pixbuf_new_from_stream_at_scale(G_INPUT_STREAM(stream),
+                                                 w, -1, TRUE, NULL, &error);
+    g_object_unref(G_OBJECT(stream));
+    if ( pixbuf == NULL ) {
+        fprintf(stderr, _("Failed to load image (paintable): %s\n"), error->message);
+        return;
+    }
+
+    gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
+    cairo_paint(cr);
+
+    g_object_unref(G_OBJECT(pixbuf));
+}
+
+
 static float get_aspect_svg(GFile *file)
 {
     RsvgHandle *fh;
@@ -236,7 +265,8 @@ static float get_aspect_svg(GFile *file)
 }
 
 
-static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, char **hide_elements)
+static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, char **hide_elements,
+                                   cairo_t *in_cr)
 {
     RsvgHandle *fh;
     GError *error;
@@ -282,10 +312,14 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
         }
         aspect = width.length / height.length;
     }
-
     h = w/aspect;
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-    cr = cairo_create(surf);
+
+    if ( in_cr == NULL ) {
+        surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+        cr = cairo_create(surf);
+    } else {
+        cr = in_cr;
+    }
 
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_paint(cr);
@@ -314,11 +348,15 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
     rsvg_handle_render_document(fh, cr, &viewport, &error);
     g_object_unref(fh);
 
-    return surface_to_paintable(surf, w, h);
+    if ( in_cr == NULL ) {
+        return surface_to_paintable(surf, w, h);
+    } else {
+        return NULL;
+    }
 }
 
 
-static GdkTexture *load_svg(GFile *file, int w, char **hide_elements)
+static GdkTexture *load_svg(GFile *file, int w, char **hide_elements, cairo_t *cr)
 {
     GInputStream *stream;
     GError *error = NULL;
@@ -327,7 +365,7 @@ static GdkTexture *load_svg(GFile *file, int w, char **hide_elements)
         fprintf(stderr, _("Failed to open SVG: %s\n"), error->message);
         return NULL;
     }
-    return load_svg_stream(stream, file, w, hide_elements);
+    return load_svg_stream(stream, file, w, hide_elements, cr);
 }
 
 
@@ -355,7 +393,7 @@ static float get_aspect_pdf(GFile *file, int pagenum)
 }
 
 
-static GdkTexture *load_pdf(GFile *file, int pagenum, int w)
+static GdkTexture *load_pdf(GFile *file, int pagenum, int w, cairo_t *in_cr)
 {
     PopplerDocument *doc;
     PopplerPage *page;
@@ -375,16 +413,25 @@ static GdkTexture *load_pdf(GFile *file, int pagenum, int w)
 
     poppler_page_get_size(page, &pw, &ph);
 
-    h = w * ph/pw;
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-    cr = cairo_create(surf);
+    if ( in_cr == NULL ) {
+        h = w * ph/pw;
+        surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+        cr = cairo_create(surf);
+    } else {
+        cr = in_cr;
+    }
+
     cairo_scale(cr, w/pw, w/pw);
     poppler_page_render(page, cr);
 
     g_object_unref(G_OBJECT(page));
     g_object_unref(G_OBJECT(doc));
 
-    return surface_to_paintable(surf, w, h);
+    if ( in_cr == NULL ) {
+        return surface_to_paintable(surf, w, h);
+    } else {
+        return NULL;
+    }
 }
 
 
@@ -471,13 +518,13 @@ GdkPaintable *slide_render(Slide *s, int w)
             fprintf(stderr, "PDF without page number\n");
             return placeholder_image();
         }
-        return GDK_PAINTABLE(load_pdf(s->ext_file, s->ext_slidenumber, w));
+        return GDK_PAINTABLE(load_pdf(s->ext_file, s->ext_slidenumber, w, NULL));
 
         case SLIDE_FTYPE_IMAGE:
         return GDK_PAINTABLE(load_image(s->ext_file, w));
 
         case SLIDE_FTYPE_SVG:
-        return GDK_PAINTABLE(load_svg(s->ext_file, w, s->hide_elements));
+        return GDK_PAINTABLE(load_svg(s->ext_file, w, s->hide_elements, NULL));
 
         case SLIDE_FTYPE_VIDEO:
         if ( s->mediastream == NULL ) {
@@ -488,6 +535,38 @@ GdkPaintable *slide_render(Slide *s, int w)
         default:
         fprintf(stderr, _("Unrecognised file type (paintable): %i\n"), s->file_type);
         return NULL;
+    }
+}
+
+
+void slide_render_cairo(Slide *s, int w, cairo_t *cr)
+{
+    if ( ensure_ftype(s) ) return;
+
+    switch ( s->file_type ) {
+
+        case SLIDE_FTYPE_PDF:
+        if ( s->ext_slidenumber == 0 ) {
+            fprintf(stderr, "PDF without page number\n");
+            return;
+        }
+        load_pdf(s->ext_file, s->ext_slidenumber, w, cr);
+        break;
+
+        case SLIDE_FTYPE_IMAGE:
+        load_image_cairo(s->ext_file, w, cr);
+        break;
+
+        case SLIDE_FTYPE_SVG:
+        load_svg(s->ext_file, w, s->hide_elements, cr);
+        break;
+
+        case SLIDE_FTYPE_VIDEO:
+        return;
+
+        default:
+        fprintf(stderr, _("Unrecognised file type (Cairo): %i\n"), s->file_type);
+        return;
     }
 }
 
@@ -568,6 +647,6 @@ GdkPaintable *placeholder_image()
 
     stream = g_resources_open_stream("/uk/me/bitwiz/colloquium/uk.me.bitwiz.colloquium.svg",
                                      G_RESOURCE_LOOKUP_FLAGS_NONE, &error);
-    the_placeholder = GDK_PAINTABLE(load_svg_stream(stream, NULL, 512, NULL));
+    the_placeholder = GDK_PAINTABLE(load_svg_stream(stream, NULL, 512, NULL, NULL));
     return the_placeholder;
 }

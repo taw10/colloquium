@@ -1,7 +1,7 @@
 /*
- * print.h
+ * pdfexport.h
  *
- * Copyright © 2016-2025 Thomas White <taw@bitwiz.me.uk>
+ * Copyright © 2019-2025 Thomas White <taw@bitwiz.me.uk>
  *
  * This file is part of Colloquium.
  *
@@ -20,15 +20,17 @@
  *
  */
 
-#ifndef PRINT_H
-#define PRINT_H
+#ifndef PDFEXPORT_H
+#define PDFEXPORT_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <gio/gio.h>
+
 #include "narrative.h"
 
-extern void run_printing(Narrative *n, GtkWidget *parent);
+extern int export_pdf(Narrative *n, GFile *file);
 
-#endif /* PRINT_H */
+#endif /* PDFEXPORT_H */

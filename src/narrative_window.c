@@ -38,9 +38,9 @@
 #include "colloquium.h"
 #include "narrative_window.h"
 #include "slide_window.h"
+#include "pdfexport.h"
 #include "timer.h"
 #include "timer_window.h"
-#include "print.h"
 #include "thumbnailwidget.h"
 
 G_DEFINE_FINAL_TYPE(NarrativeWindow, colloquium_narrative_window, GTK_TYPE_APPLICATION_WINDOW)
@@ -166,6 +166,35 @@ static void saveas_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
 
     gtk_file_dialog_save(d, GTK_WINDOW(nw),
                          NULL, saveas_response_sig, nw);
+}
+
+
+static void exportpdf_response_sig(GObject *d, GAsyncResult *res, gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    GFile *file;
+
+    file = gtk_file_dialog_save_finish(GTK_FILE_DIALOG(d), res, NULL);
+    if ( file == NULL ) return;
+
+    if ( export_pdf(nw->n, file) ) {
+        show_error(nw, _("Failed to save presentation"));
+    }
+}
+
+
+static void exportpdf_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
+{
+    GtkFileDialog *d;
+    NarrativeWindow *nw = vp;
+
+    d = gtk_file_dialog_new();
+
+    gtk_file_dialog_set_title(d, _("Export as PDF"));
+    gtk_file_dialog_set_accept_label(d, _("Save"));
+
+    gtk_file_dialog_save(d, GTK_WINDOW(nw),
+                         NULL, exportpdf_response_sig, nw);
 }
 
 
@@ -470,13 +499,6 @@ static void selectall_sig(GSimpleAction *action, GVariant *parameter, gpointer v
 {
     NarrativeWindow *nw = vp;
     gtk_widget_activate_action(nw->nv, "selection.select-all", NULL);
-}
-
-
-static void print_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    run_printing(nw->n, GTK_WIDGET(nw));
 }
 
 
@@ -877,6 +899,7 @@ GActionEntry nw_entries[] = {
     { "about", nw_about_sig, NULL, NULL, NULL },
     { "save", save_sig, NULL, NULL, NULL },
     { "saveas", saveas_sig, NULL, NULL, NULL },
+    { "exportpdf", exportpdf_sig, NULL, NULL, NULL },
     { "slide", add_slide_sig, NULL, NULL, NULL },
     { "eop", add_eop_sig, NULL, NULL, NULL },
     { "prestitle", add_prestitle_sig, NULL, NULL, NULL },
@@ -890,7 +913,6 @@ GActionEntry nw_entries[] = {
     { "bold", bold_sig, NULL, NULL, NULL },
     { "italic", italic_sig, NULL, NULL, NULL },
     { "underline", underline_sig, NULL, NULL, NULL },
-    { "print", print_sig, NULL, NULL, NULL  },
     { "undo", undo_sig, NULL, NULL, NULL  },
     { "redo", redo_sig, NULL, NULL, NULL  },
     { "cut", cut_sig, NULL, NULL, NULL  },

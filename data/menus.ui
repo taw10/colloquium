@@ -26,10 +26,6 @@
       </section>
       <section>
         <item>
-          <attribute name="label" translatable="yes">Print...</attribute>
-          <attribute name="action">win.print</attribute>
-        </item>
-        <item>
           <attribute name="label" translatable="yes">Export slides as PDF...</attribute>
           <attribute name="action">win.exportpdf</attribute>
         </item>

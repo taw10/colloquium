@@ -65,6 +65,7 @@ extern void slide_set_hidden_elements(Slide *s, char **elements, int n);
 
 extern float slide_get_aspect(Slide *s);
 extern GdkPaintable *slide_render(Slide *s, int w);
+extern void slide_render_cairo(Slide *s, int w, cairo_t *cr);
 extern enum slide_filetype slide_ftype(Slide *s);
 
 extern void letterbox(float dw, float dh, float aspect,

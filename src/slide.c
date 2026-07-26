@@ -187,7 +187,9 @@ static GdkTexture *load_image(GFile *file, int w)
                                                0xffffffff, 0xffffffff);
     g_object_unref(G_OBJECT(pixbuf));
 
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     return gdk_texture_new_for_pixbuf(withbg);
+    G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 
@@ -213,7 +215,10 @@ static void load_image_cairo(GFile *file, int w, cairo_t *cr)
         return;
     }
 
+    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
+    G_GNUC_END_IGNORE_DEPRECATIONS
+
     cairo_paint(cr);
 
     g_object_unref(G_OBJECT(pixbuf));

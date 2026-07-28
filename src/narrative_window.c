@@ -942,7 +942,11 @@ static void thumbnail_click_sig(GtkGestureClick *self, int n_press,
 
     if ( n_press != 2 ) return;
 
-    if ( !th->nw->presenting ) {
+    int mode = g_settings_get_enum(th->nw->settings, "thumbnail-dc-action");
+
+    if ( (th->nw->n_slidewindows == 0)
+      || (!th->nw->presenting && (mode == 0)) )
+    {
         open_slide_window(th->nw, th->slide);
     } else {
         set_presenting_slide(th->nw, th->slide);

@@ -89,6 +89,13 @@ static void bgcol_sig(GObject *self, GParamSpec *spec, GSettings *settings)
 }
 
 
+static void doubleclick_sig(GObject *self, GParamSpec *spec, GSettings *settings)
+{
+    int pos = gtk_drop_down_get_selected(GTK_DROP_DOWN(self));
+    g_settings_set_enum(settings, "thumbnail-dc-action", pos);
+}
+
+
 static void inv_maybe_disable(GtkWidget *toggle, GtkWidget *victim)
 {
     gtk_widget_set_sensitive(victim, !gtk_check_button_get_active(GTK_CHECK_BUTTON(toggle)));
@@ -122,6 +129,7 @@ static GtkWidget *narrative_prefs(GSettings *settings)
     GtkWidget *toggle;
     GtkWidget *entry;
     GtkAdjustment *adj;
+    GtkWidget *combo;
     char tmp[64];
 
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -191,6 +199,17 @@ static GtkWidget *narrative_prefs(GSettings *settings)
     snprintf(tmp, 63, "%i", g_settings_get_uint(settings, "gutter-width"));
     gtk_editable_set_text(GTK_EDITABLE(entry), tmp);
     g_signal_connect(G_OBJECT(entry), "activate", G_CALLBACK(gutter_sig), settings);
+
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_append(GTK_BOX(box), hbox);
+    gtk_box_append(GTK_BOX(hbox), gtk_label_new(_("Double-clicking a slide:")));
+    const char *strings[] = {_("Opens a new slide window"),
+                             _("Sets the slide for all slide windows"),
+                             NULL};
+    combo = gtk_drop_down_new_from_strings(strings);
+    gtk_box_append(GTK_BOX(hbox), combo);
+    g_signal_connect(G_OBJECT(combo), "notify::selected", G_CALLBACK(doubleclick_sig), settings);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(combo), g_settings_get_enum(settings, "thumbnail-dc-action"));
 
     return box;
 }

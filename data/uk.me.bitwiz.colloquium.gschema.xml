@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="colloquium">
 
+  <enum id="uk.me.bitwiz.colloquium.thumbnailaction">
+    <value nick="new-window" value="0"/>
+    <value nick="set-slide" value="1"/>
+  </enum>
+
   <schema id="uk.me.bitwiz.colloquium" path="/uk/me/bitwiz/colloquium/">
 
     <key name="first-run" type="b">
@@ -60,6 +65,12 @@
       <default>""</default>
       <summary>Slide location</summary>
       <description>Top-level location for slide/picture resources</description>
+    </key>
+
+    <key name="thumbnail-dc-action" enum="uk.me.bitwiz.colloquium.thumbnailaction">
+      <default>"set-slide"</default>
+      <summary>Slide double-click action</summary>
+      <description>Action to take when double-clicking a slide thumbnail in the narrative</description>
     </key>
 
   </schema>

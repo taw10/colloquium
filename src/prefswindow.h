@@ -35,6 +35,15 @@ typedef struct _prefswindowclass PrefsWindowClass;
 
 #define COLLOQUIUM_TYPE_PREFS_WINDOW (colloquium_prefs_window_get_type())
 
+#define N_POINTERS (2)
+
+struct pointer
+{
+    char *uri;
+    char *name;
+    GtkWidget *check;
+};
+
 struct _prefswindow
 {
     GtkWindow parent_instance;
@@ -42,6 +51,9 @@ struct _prefswindow
     /*< private >*/
     GSettings *settings;
     GtkWidget *imagestore_button;
+    GtkWidget *pointer_button;
+    struct pointer pointers[N_POINTERS];
+    GFile *custom_pointer;
 };
 
 struct _prefswindowclass

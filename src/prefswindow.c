@@ -47,6 +47,34 @@ static void colloquium_prefs_window_init(PrefsWindow *pw)
 {
 }
 
+
+static char *g_file_display_name(GFile *file)
+{
+    GFileInfo *info;
+    GError *error;
+    const gchar *name;
+    gchar *namecopy;
+
+    if ( file == NULL ) return g_strdup("(none)");
+
+    error = NULL;
+    info = g_file_query_info(file, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME,
+                             G_FILE_QUERY_INFO_NONE, NULL, &error);
+    if ( info == NULL ) {
+        if ( error->code == G_IO_ERROR_NOT_FOUND ) {
+            return g_strdup("(not found)");
+        } else {
+            fprintf(stderr, _("Failed to read info: %s\n"), error->message);
+            return g_strdup("(error)");
+        }
+    }
+    name = g_file_info_get_attribute_string(info, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME);
+    namecopy = g_strdup(name);
+    g_object_unref(info);
+    return namecopy;
+}
+
+
 static void line_spacing_sig(GtkAdjustment *self, GSettings *settings)
 {
     double v = gtk_adjustment_get_value(self);
@@ -106,6 +134,19 @@ static void maybe_disable(GtkWidget *widget, GtkWidget *toggle)
 {
     g_signal_connect(G_OBJECT(toggle), "toggled", G_CALLBACK(inv_maybe_disable), widget);
 	inv_maybe_disable(toggle, widget);
+}
+
+
+static void maybe_enable_sig(GtkWidget *toggle, GtkWidget *victim)
+{
+    gtk_widget_set_sensitive(victim, gtk_check_button_get_active(GTK_CHECK_BUTTON(toggle)));
+}
+
+
+static void maybe_enable(GtkWidget *widget, GtkWidget *toggle)
+{
+    g_signal_connect(G_OBJECT(toggle), "toggled", G_CALLBACK(maybe_enable_sig), widget);
+	maybe_enable_sig(toggle, widget);
 }
 
 
@@ -232,13 +273,96 @@ static void wpm_sig(GtkEntry *self, GSettings *settings)
 }
 
 
-static GtkWidget *presentation_prefs(GSettings *settings)
+static GFile *pointer_as_gfile(GSettings *settings)
+{
+    char *s = g_settings_get_string(settings, "laser-pointer");
+    if ( s == NULL ) return NULL;
+    if ( s[0] == '\0' ) return NULL;
+    return g_file_new_for_uri(s);
+}
+
+
+static void set_pointer_button(GtkWidget *fc, PrefsWindow *pw)
+{
+    GFile *file = pointer_as_gfile(pw->settings);
+    gchar *name = g_file_display_name(file);
+    gtk_button_set_label(GTK_BUTTON(fc), name);
+    if ( pw->custom_pointer != NULL ) {
+        g_object_unref(pw->custom_pointer);
+    }
+    pw->custom_pointer = file;
+    g_free(name);
+}
+
+
+static void pointer_finish(GObject *chooser, GAsyncResult *res, gpointer data)
+{
+    PrefsWindow *pw = data;
+    GError *error = NULL;
+    GFile *loc;
+
+    loc = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(chooser), res, &error);
+    if ( error == NULL ) {
+        g_settings_set_string(pw->settings, "laser-pointer", g_file_get_uri(loc));
+        set_pointer_button(pw->pointer_button, pw);
+    } else {
+        if ( error->code != GTK_DIALOG_ERROR_DISMISSED ) {
+            fprintf(stderr, "Error: %s\n", error->message);
+        }
+        g_error_free(error);
+    }
+}
+
+
+static void pointer_sig(GtkButton *button, PrefsWindow *pw)
+{
+    GtkFileDialog *d = gtk_file_dialog_new();
+    GFile *file = pointer_as_gfile(pw->settings);
+    if ( file != NULL ) gtk_file_dialog_set_initial_file(d, file);
+    gtk_file_dialog_open(d, GTK_WINDOW(pw), NULL, pointer_finish, pw);
+    if ( file != NULL ) g_object_unref(file);
+}
+
+
+static void pointer_size_sig(GtkAdjustment *self, GSettings *settings)
+{
+    double v = gtk_adjustment_get_value(self);
+    g_settings_set_int(settings, "laser-pointer-size", v);
+}
+
+
+static void pointer_sel_sig(GtkWidget *self, PrefsWindow *pw)
+{
+    int i;
+    int found = 0;
+    for ( i=0; i<N_POINTERS; i++ ) {
+        if ( gtk_check_button_get_active(GTK_CHECK_BUTTON(pw->pointers[i].check)) ) {
+            g_settings_set_string(pw->settings, "laser-pointer",
+                                  pw->pointers[i].uri);
+            found = 1;
+        }
+    }
+
+    if ( !found ) {
+        if ( pw->custom_pointer != NULL ) {
+            char *uri = g_file_get_uri(pw->custom_pointer);
+            g_settings_set_string(pw->settings, "laser-pointer", uri);
+            g_free(uri);
+        } /* else wait for user to click + set filename, keep old pointer for now */
+    }
+}
+
+
+static GtkWidget *presentation_prefs(GSettings *settings, PrefsWindow *pw)
 {
     GtkWidget *box;
     GtkWidget *hbox;
     GtkWidget *entry;
     char tmp[64];
     GtkWidget *cb;
+    GtkAdjustment *adj;
+    GtkWidget *ls;
+    GtkWidget *cr;
     GdkRGBA rgba;
 
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -266,6 +390,62 @@ static GtkWidget *presentation_prefs(GSettings *settings)
     gtk_color_dialog_button_set_rgba(GTK_COLOR_DIALOG_BUTTON(cb), &rgba);
     g_signal_connect(G_OBJECT(cb), "notify::rgba", G_CALLBACK(highlight_sig), settings);
 
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_append(GTK_BOX(box), hbox);
+    gtk_box_append(GTK_BOX(hbox), gtk_label_new(_("Pointer shape:")));
+
+    pw->pointers[0].uri = "resource://uk/me/bitwiz/colloquium/pointer-green.svg";
+    pw->pointers[0].name = _("Green dot");
+    pw->pointers[1].uri = "resource://uk/me/bitwiz/colloquium/pointer-ro.svg";
+    pw->pointers[1].name = _("Blue arrow");
+
+    int i;
+    int found = 0;
+    char *ch = g_settings_get_string(pw->settings, "laser-pointer");
+    for ( i=0; i<N_POINTERS; i++ ) {
+        pw->pointers[i].check = gtk_check_button_new_with_label(pw->pointers[i].name);
+        gtk_box_append(GTK_BOX(hbox), pw->pointers[i].check);
+        if ( strcmp(ch, pw->pointers[i].uri) == 0 ) {
+            gtk_check_button_set_active(GTK_CHECK_BUTTON(pw->pointers[i].check), TRUE);
+            found = 1;
+        }
+        if ( i > 0 ) {
+            gtk_check_button_set_group(GTK_CHECK_BUTTON(pw->pointers[i].check),
+                                       GTK_CHECK_BUTTON(pw->pointers[0].check));
+        }
+        g_signal_connect(G_OBJECT(pw->pointers[i].check), "toggled", G_CALLBACK(pointer_sel_sig), pw);
+    }
+
+    cr = gtk_check_button_new_with_label(_("Custom:"));
+    gtk_box_append(GTK_BOX(hbox), cr);
+    gtk_check_button_set_group(GTK_CHECK_BUTTON(cr), GTK_CHECK_BUTTON(pw->pointers[0].check));
+    if ( !found ) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(cr), TRUE);
+    }
+    g_signal_connect(G_OBJECT(cr), "toggled", G_CALLBACK(pointer_sel_sig), pw);
+
+    pw->pointer_button = gtk_button_new_with_label("");
+    set_pointer_button(pw->pointer_button, pw);
+    gtk_box_append(GTK_BOX(hbox), pw->pointer_button);
+    g_signal_connect(G_OBJECT(pw->pointer_button), "clicked", G_CALLBACK(pointer_sig), pw);
+    maybe_enable(pw->pointer_button, cr);
+
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_append(GTK_BOX(box), hbox);
+    gtk_box_append(GTK_BOX(hbox), gtk_label_new(_("Pointer size:")));
+    ls = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 10.0, 50.0, 1.0);
+    gtk_scale_set_digits(GTK_SCALE(ls), 2);
+    gtk_scale_add_mark(GTK_SCALE(ls), 10, GTK_POS_BOTTOM, "Small");
+    gtk_scale_add_mark(GTK_SCALE(ls), 25, GTK_POS_BOTTOM, "Medium");
+    gtk_scale_add_mark(GTK_SCALE(ls), 50, GTK_POS_BOTTOM, "Large");
+    gtk_widget_set_hexpand(ls, TRUE);
+    gtk_widget_set_margin_start(ls, 15);
+    gtk_widget_set_margin_end(ls, 15);
+    gtk_box_append(GTK_BOX(hbox), ls);
+    adj = gtk_range_get_adjustment(GTK_RANGE(ls));
+    gtk_adjustment_set_value(adj, g_settings_get_int(settings, "laser-pointer-size"));
+    g_signal_connect(G_OBJECT(adj), "value-changed", G_CALLBACK(pointer_size_sig), settings);
+
     return box;
 }
 
@@ -276,33 +456,6 @@ static GFile *imagestore_as_gfile(GSettings *settings)
     if ( s == NULL ) return NULL;
     if ( s[0] == '\0' ) return NULL;
     return g_file_new_for_uri(s);
-}
-
-
-static char *g_file_display_name(GFile *file)
-{
-    GFileInfo *info;
-    GError *error;
-    const gchar *name;
-    gchar *namecopy;
-
-    if ( file == NULL ) return g_strdup("(none)");
-
-    error = NULL;
-    info = g_file_query_info(file, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME,
-                             G_FILE_QUERY_INFO_NONE, NULL, &error);
-    if ( info == NULL ) {
-        if ( error->code == G_IO_ERROR_NOT_FOUND ) {
-            return g_strdup("(not found)");
-        } else {
-            fprintf(stderr, _("Failed to read info: %s\n"), error->message);
-            return g_strdup("(error)");
-        }
-    }
-    name = g_file_info_get_attribute_string(info, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME);
-    namecopy = g_strdup(name);
-    g_object_unref(info);
-    return namecopy;
 }
 
 
@@ -415,7 +568,7 @@ PrefsWindow *prefs_window_new()
                              gtk_label_new(_("Narrative")));
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),
-                             presentation_prefs(pw->settings),
+                             presentation_prefs(pw->settings, pw),
                              gtk_label_new(_("Presentation")));
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook),

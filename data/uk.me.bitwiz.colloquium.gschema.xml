@@ -73,6 +73,18 @@
       <description>Action to take when double-clicking a slide thumbnail in the narrative</description>
     </key>
 
+    <key name="laser-pointer" type="s">
+      <default>"resource://uk/me/bitwiz/colloquium/pointer-ro.svg"</default>
+      <summary>Laser pointer image</summary>
+      <description>URI for picture to use as the "laser" pointer when presenting</description>
+    </key>
+
+    <key name="laser-pointer-size" type="i">
+      <default>30</default>
+      <summary>Laser pointer size</summary>
+      <description>Size for laser pointer image</description>
+    </key>
+
   </schema>
 
 </schemalist>

@@ -29,6 +29,7 @@
 
 #include <gtk/gtk.h>
 #include <glib-object.h>
+#include <librsvg/rsvg.h>
 
 typedef struct _colloquiumlaseroverlay LaserOverlay;
 typedef struct _colloquiumlaseroverlayclass LaserOverlayClass;
@@ -52,6 +53,8 @@ struct _colloquiumlaseroverlay
     double               offs_y;
     double               image_w;
     double               image_h;
+    RsvgHandle          *svg;
+    double               ptr_size;
 };
 
 struct _colloquiumlaseroverlayclass

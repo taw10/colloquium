@@ -8,6 +8,8 @@
     <file>test-card.svg</file>
     <file>timer.png</file>
     <file>uk.me.bitwiz.colloquium.svg</file>
+    <file>pointer-green.svg</file>
+    <file>pointer-ro.svg</file>
   </gresource>
   <gresource prefix="/uk/me/bitwiz/colloquium/gtk">
     <file>menus.ui</file>

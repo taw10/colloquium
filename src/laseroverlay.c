@@ -60,12 +60,15 @@ static void laser_overlay_snapshot(GtkWidget *wi, GtkSnapshot *snapshot)
     LaserOverlay *lo = COLLOQUIUM_LASER_OVERLAY(wi);
 
     if ( lo->show_laser ) {
-        float x = lo->offs_x + lo->image_w*lo->laser_x - 11;
-        float y = lo->offs_y + lo->image_h*lo->laser_y - 11;
-        cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(x,y,22,22));
-        cairo_arc(cr, x+11, y+11, 10.0, 0, 2*M_PI);
-        cairo_set_source_rgba(cr, 0.2, 1.0, 0.1, 0.8);
-        cairo_fill(cr);
+        RsvgRectangle viewport;
+        float x = lo->offs_x + lo->image_w*lo->laser_x;
+        float y = lo->offs_y + lo->image_h*lo->laser_y;
+        viewport.x = x;
+        viewport.y = y;
+        viewport.width = lo->ptr_size;
+        viewport.height = lo->ptr_size;
+        cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(x,y,lo->ptr_size,lo->ptr_size));
+        rsvg_handle_render_document(lo->svg, cr, &viewport, NULL);
         cairo_destroy(cr);
     }
 }
@@ -101,6 +104,11 @@ static gboolean laser_timeout(gpointer vp)
 GtkWidget *laser_overlay_new()
 {
     LaserOverlay *lo;
+    GError *error;
+    RsvgLength width, height;
+    RsvgRectangle viewbox;
+    gboolean has_viewbox, has_width, has_height;
+    GFile *file;
 
     lo = g_object_new(COLLOQUIUM_TYPE_LASER_OVERLAY, NULL);
     lo->offs_x = 0;
@@ -109,6 +117,25 @@ GtkWidget *laser_overlay_new()
     lo->image_h = 100;
     lo->show_laser = 0;
     lo->laser_timeout_source_id = g_timeout_add_seconds(1, laser_timeout, lo);
+
+    GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");
+    char *ptr_uri = g_settings_get_string(settings, "laser-pointer");
+    lo->ptr_size = g_settings_get_int(settings, "laser-pointer-size");
+    g_object_unref(settings);
+    file = g_file_new_for_uri(ptr_uri);
+    g_free(ptr_uri);
+
+    error = NULL;
+    lo->svg = rsvg_handle_new_from_gfile_sync(file, RSVG_HANDLE_FLAGS_NONE, NULL, &error);
+    if ( lo->svg == NULL ) {
+        fprintf(stderr, _("Failed to read pointer SVG: %s\n"), error->message);
+    }
+
+    rsvg_handle_set_dpi(lo->svg, 96);
+    rsvg_handle_get_intrinsic_dimensions(lo->svg, &has_width, &width,
+                                         &has_height, &height,
+                                         &has_viewbox, &viewbox);
+
     return GTK_WIDGET(lo);
 }
 

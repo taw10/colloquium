@@ -61,17 +61,19 @@ static void laser_overlay_snapshot(GtkWidget *wi, GtkSnapshot *snapshot)
 
     if ( lo->show_laser ) {
         RsvgRectangle viewport;
-        float x = lo->offs_x + lo->image_w*lo->laser_x;
-        float y = lo->offs_y + lo->image_h*lo->laser_y;
+        float x = lo->offs_x + lo->image_w*lo->laser_x - lo->ax;
+        float y = lo->offs_y + lo->image_h*lo->laser_y - lo->ay;
         viewport.x = x;
         viewport.y = y;
-        viewport.width = lo->ptr_size;
-        viewport.height = lo->ptr_size;
-        cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &GRAPHENE_RECT_INIT(x,y,lo->ptr_size,lo->ptr_size));
+        viewport.width = lo->ptr_width;
+        viewport.height = lo->ptr_height;
+        cairo_t *cr = gtk_snapshot_append_cairo(snapshot,
+                &GRAPHENE_RECT_INIT(x,y,lo->ptr_width,lo->ptr_height));
         rsvg_handle_render_document(lo->svg, cr, &viewport, NULL);
         cairo_destroy(cr);
     }
 }
+
 
 void laser_overlay_set_letterbox(LaserOverlay *lo, double x, double y, double w, double h)
 {
@@ -101,6 +103,54 @@ static gboolean laser_timeout(gpointer vp)
 }
 
 
+static void get_active_point(RsvgHandle *svg, double ptr_width, double ptr_height,
+                             double *ax, double *ay)
+{
+    GError *error;
+    RsvgRectangle viewport;
+    RsvgRectangle rect;
+    RsvgRectangle irect;
+
+    viewport.x = 0;
+    viewport.y = 0;
+    viewport.width = ptr_width;
+    viewport.height = ptr_height;
+
+    error = NULL;
+    if ( !rsvg_handle_get_geometry_for_layer(svg, "#activepoint",
+            &viewport, NULL, &rect, &error) )
+    {
+        fprintf(stderr, "CSS active point error: %s\n", error->message);
+        *ax = 0.0;
+        *ay = 0.0;
+        return;
+
+    }
+
+    error = NULL;
+    if ( !rsvg_handle_get_geometry_for_layer(svg, NULL,
+            &viewport, NULL, &irect, &error) )
+    {
+        fprintf(stderr, "CSS active point error: %s\n", error->message);
+        *ax = 0.0;
+        *ay = 0.0;
+        return;
+
+    }
+
+    *ax = ptr_width * (rect.x + rect.width/2.0)/(irect.width+irect.x);
+    *ay = ptr_height * (rect.y + rect.height/2.0)/(irect.height+irect.y);
+
+    /* Make the active point invisible */
+    gchar *css = "#activepoint {opacity: 0.0;}";
+    error = NULL;
+    if ( !rsvg_handle_set_stylesheet(svg, (const guint8 *)css, strlen(css), &error) ) {
+        fprintf(stderr, "CSS error: %s\n", error->message);
+    }
+
+}
+
+
 GtkWidget *laser_overlay_new()
 {
     LaserOverlay *lo;
@@ -120,7 +170,7 @@ GtkWidget *laser_overlay_new()
 
     GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");
     char *ptr_uri = g_settings_get_string(settings, "laser-pointer");
-    lo->ptr_size = g_settings_get_int(settings, "laser-pointer-size");
+    lo->ptr_height = g_settings_get_int(settings, "laser-pointer-size");
     g_object_unref(settings);
     file = g_file_new_for_uri(ptr_uri);
     g_free(ptr_uri);
@@ -135,6 +185,16 @@ GtkWidget *laser_overlay_new()
     rsvg_handle_get_intrinsic_dimensions(lo->svg, &has_width, &width,
                                          &has_height, &height,
                                          &has_viewbox, &viewbox);
+    if ( has_viewbox ) {
+        lo->ptr_width = lo->ptr_height*viewbox.width/viewbox.height;
+    } else if ( has_width && has_height  && (width.unit == height.unit) ) {
+        lo->ptr_width = lo->ptr_height*width.length/height.length;
+    } else {
+        fprintf(stderr, _("Failed to determine pointer size\n"));
+        lo->ptr_width = lo->ptr_height;
+    }
+
+    get_active_point(lo->svg, lo->ptr_width, lo->ptr_height, &lo->ax, &lo->ay);
 
     return GTK_WIDGET(lo);
 }

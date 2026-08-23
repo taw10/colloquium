@@ -54,7 +54,10 @@ struct _colloquiumlaseroverlay
     double               image_w;
     double               image_h;
     RsvgHandle          *svg;
-    double               ptr_size;
+    double               ptr_width;
+    double               ptr_height;
+    double               ax;   /* Active point relative to top left corner */
+    double               ay;
 };
 
 struct _colloquiumlaseroverlayclass

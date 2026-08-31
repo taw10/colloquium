@@ -53,54 +53,12 @@ static void colloquium_slide_sorter_init(SlideSorter *sw)
 }
 
 
-static void sr_destroy_sig(GtkWidget *self, NarrativeWindow *nw)
+static void addfile(SlideSorter *ss, GFile *file)
 {
-    printf("slide sorter closed for real\n");
-    nw->slide_sorter = NULL;
-}
-
-
-static GSList *files_in_narrative(Narrative *n)
-{
-    GSList *list = NULL;
-    GtkTextIter iter;
-    GtkTextTagTable *table = gtk_text_buffer_get_tag_table(n->textbuf);
-    GtkTextTag *tag = gtk_text_tag_table_lookup(table, "slide");
-    gboolean more;
-
-    gtk_text_buffer_get_start_iter(n->textbuf, &iter);
-    do {
-        GtkTextChildAnchor *anc;
-        more = gtk_text_iter_forward_to_tag_toggle(&iter, tag);
-        anc = gtk_text_iter_get_child_anchor(&iter);
-        if ( anc != NULL ) {
-            Slide *slide;
-            guint nc;
-            char *ef;
-            GtkWidget **th = gtk_text_child_anchor_get_widgets(anc, &nc);
-            assert(nc == 1);
-            slide = thumbnail_get_slide(COLLOQUIUM_THUMBNAIL(th[0]));
-            ef = g_file_get_uri(slide->ext_file);
-            if ( g_slist_find_custom(list, ef, (GCompareFunc)g_strcmp0) == NULL ) {
-                list = g_slist_prepend(list, ef);
-            }
-            g_free(th);
-        }
-    } while ( more );
-    return list;
-}
-
-
-static void addfile(gpointer sv, gpointer vp)
-{
-    char *filename = sv;
-    GtkWidget *flowbox = vp;
-    GFile *file;
     PopplerDocument *doc;
     int np;
     int i;
 
-    file = g_file_new_for_uri(filename);
     doc = poppler_document_new_from_gfile(file, NULL, NULL, NULL);
     if ( doc == NULL ) return;
 
@@ -116,31 +74,25 @@ static void addfile(gpointer sv, gpointer vp)
         slide_set_ext_number(s, i+1);
         th = thumbnail_new(s, NULL);
         gtk_widget_set_size_request(GTK_WIDGET(th), 128, -1);
-        gtk_flow_box_append(GTK_FLOW_BOX(flowbox), GTK_WIDGET(th));
+        gtk_flow_box_append(GTK_FLOW_BOX(ss->flowbox), GTK_WIDGET(th));
 
     }
 
     g_object_unref(doc);
-    g_object_unref(file);
 }
 
 
-SlideSorter *slide_sorter_new(NarrativeWindow *nw)
+SlideSorter *slide_sorter_new(GFile *file)
 {
     SlideSorter *sr;
     GtkWidget *vbox;
-    GtkWidget *label;
     GtkWidget *scroll;
 
     sr = g_object_new(COLLOQUIUM_TYPE_SLIDE_SORTER, NULL);
-    sr->parent = nw;
     sr->flowbox = gtk_flow_box_new();
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_window_set_child(GTK_WINDOW(sr), vbox);
-
-    label = gtk_label_new(_("This is a temporary staging area.  Contents are not saved."));
-    gtk_box_append(GTK_BOX(vbox), label);
 
     scroll = gtk_scrolled_window_new();
     gtk_box_append(GTK_BOX(vbox), scroll);
@@ -149,13 +101,11 @@ SlideSorter *slide_sorter_new(NarrativeWindow *nw)
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), GTK_WIDGET(sr->flowbox));
     gtk_widget_set_vexpand(GTK_WIDGET(scroll), TRUE);
 
-    /* Scan the current state of the narrative, and pull out all the
-     * filenames being referred to. */
-    sr->source_files = files_in_narrative(nw->n);
-    g_slist_foreach(sr->source_files, addfile, sr->flowbox);
+    addfile(sr, file);
+    sr->source_file = file;
+    g_object_ref(file);
 
     gtk_window_set_hide_on_close(GTK_WINDOW(sr), TRUE);
-    g_signal_connect(G_OBJECT(nw), "destroy", G_CALLBACK(sr_destroy_sig), nw);
     gtk_window_set_default_size(GTK_WINDOW(sr), 512, 768);
 
     return sr;

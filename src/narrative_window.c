@@ -42,8 +42,11 @@
 #include "timer.h"
 #include "timer_window.h"
 #include "thumbnailwidget.h"
+#include "slide_sorter.h"
 
 G_DEFINE_FINAL_TYPE(NarrativeWindow, colloquium_narrative_window, GTK_TYPE_APPLICATION_WINDOW)
+
+static void add_slide_sig(GSimpleAction *action, GVariant *parameter, gpointer vp);
 
 static int get_cursor_para(GtkTextView *nv)
 {
@@ -216,17 +219,6 @@ static void save_sig(GSimpleAction *action, GVariant *parameter, gpointer vp)
     if ( narrative_save(nw->n, nw->file) ) {
         show_error(nw, _("Failed to save presentation"));
     }
-}
-
-
-static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
-                          gpointer vp)
-{
-    NarrativeWindow *nw = vp;
-    if ( nw->slide_sorter == NULL ) {
-        nw->slide_sorter = slide_sorter_new(nw);
-    }
-    gtk_window_present(GTK_WINDOW(nw->slide_sorter));
 }
 
 
@@ -1001,6 +993,20 @@ static gboolean drop_thumbnail(NarrativeWindow *nw, double x, double y, Thumbnai
 }
 
 
+static void insert_file_slide(NarrativeWindow *nw, GFile *file, GtkTextIter iter)
+{
+    Slide *slide = slide_new();
+    slide->ext_file = g_file_dup(file);
+    insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
+    GtkWidget *thn = thumbnail_new(slide, nw);
+    thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(thn), 512, 320);
+    gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
+    GtkGesture *evc = gtk_gesture_click_new();
+    gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));
+    g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), thn);
+}
+
+
 static gboolean drop_file(NarrativeWindow *nw, double x, double y, GFile *file)
 {
     int bx, by;
@@ -1022,15 +1028,7 @@ static gboolean drop_file(NarrativeWindow *nw, double x, double y, GFile *file)
     gtk_text_view_get_iter_at_location(GTK_TEXT_VIEW(nw->nv), &iter, bx, by);
     gtk_text_iter_forward_line(&iter);
 
-    Slide *slide = slide_new();
-    slide->ext_file = g_file_dup(file);
-    insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
-    GtkWidget *thn = thumbnail_new(slide, nw);
-    thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(thn), 512, 320);
-    gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
-    GtkGesture *evc = gtk_gesture_click_new();
-    gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));
-    g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), thn);
+    insert_file_slide(nw, file, iter);
 
     return TRUE;
 }
@@ -1150,7 +1148,6 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     nw->n = n;
     nw->n_slidewindows = 0;
     nw->file = file;
-    nw->slide_sorter = NULL;
     nw->presenting = 0;
     nw->presenting_slide = NULL;
     nw->timer = colloquium_timer_new();
@@ -1278,4 +1275,46 @@ NarrativeWindow *narrative_window_new(Narrative *n, GFile *file, GApplication *a
     g_signal_connect(G_OBJECT(monitors), "items-changed", G_CALLBACK(monitors_changed_sig), nw);
 
     return nw;
+}
+
+
+static void add_slide_response_sig(GObject *d, GAsyncResult *res, gpointer vp)
+{
+    GFile *file;
+    enum slide_filetype t;
+
+    file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(d), res, NULL);
+    if ( file == NULL ) return;
+
+    t = query_file_type(file);
+    if ( t == SLIDE_FTYPE_PDF ) {
+        SlideSorter *ss;
+        ss = slide_sorter_new(file);
+        gtk_window_present(GTK_WINDOW(ss));
+    } else {
+        NarrativeWindow *nw = vp;
+        GtkTextMark *cursor_mark;
+        GtkTextIter cursor;
+
+        cursor_mark = gtk_text_buffer_get_insert(nw->n->textbuf);
+        gtk_text_buffer_get_iter_at_mark(nw->n->textbuf, &cursor, cursor_mark);
+        insert_file_slide(nw, file, cursor);
+    }
+
+}
+
+
+static void add_slide_sig(GSimpleAction *action, GVariant *parameter,
+                          gpointer vp)
+{
+    NarrativeWindow *nw = vp;
+    GtkFileDialog *d;
+
+    d = gtk_file_dialog_new();
+
+    gtk_file_dialog_set_title(d, _("Add slide"));
+    gtk_file_dialog_set_accept_label(d, _("Open"));
+
+    gtk_file_dialog_open(d, GTK_WINDOW(nw),
+                         NULL, add_slide_response_sig, nw);
 }

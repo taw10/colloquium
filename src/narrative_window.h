@@ -39,7 +39,6 @@ typedef struct _narrativewindowclass NarrativeWindowClass;
 #include "timer_window.h"
 #include "slide_window.h"
 #include "narrative.h"
-#include "slide_sorter.h"
 
 struct _narrativewindow
 {
@@ -55,7 +54,6 @@ struct _narrativewindow
     SlideWindow         *slidewindows[16];
     int                  n_slidewindows;
     GtkWidget           *timing_ruler;
-    SlideSorter         *slide_sorter;
     GtkWidget           *toolbar;
     int                  presenting;
     GtkWidget           *presenting_label;

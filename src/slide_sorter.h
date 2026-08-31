@@ -1,7 +1,7 @@
 /*
  * slide_sorter.h
  *
- * Copyright © 2025 Thomas White <taw@bitwiz.me.uk>
+ * Copyright © 2026 Thomas White <taw@bitwiz.me.uk>
  *
  * This file is part of Colloquium.
  *
@@ -30,8 +30,6 @@
 typedef struct _slidesorter SlideSorter;
 typedef struct _slidesorterclass SlideSorterClass;
 
-#include "narrative_window.h"
-
 #define COLLOQUIUM_SLIDE_SORTER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
                                       COLLOQUIUM_TYPE_SLIDE_SORTER, SlideSorter))
 
@@ -42,9 +40,8 @@ struct _slidesorter
     GtkWindow parent_instance;
 
     /*< private >*/
-    NarrativeWindow     *parent;
     GtkWidget           *flowbox;
-    GSList              *source_files;
+    GFile               *source_file;
 };
 
 struct _slidesorterclass
@@ -52,6 +49,6 @@ struct _slidesorterclass
     GtkWindowClass parent_class;
 };
 
-extern SlideSorter *slide_sorter_new(NarrativeWindow *parent);
+extern SlideSorter *slide_sorter_new(GFile *file);
 
 #endif	/* SLIDESORTER_H */

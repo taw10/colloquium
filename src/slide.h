@@ -30,15 +30,7 @@
 #include <stddef.h>
 #include <gtk/gtk.h>
 
-enum slide_filetype
-{
-    SLIDE_FTYPE_UNKNOWN,
-    SLIDE_FTYPE_IMAGE,
-    SLIDE_FTYPE_PDF,
-    SLIDE_FTYPE_SVG,
-    SLIDE_FTYPE_VIDEO
-};
-
+#include "file_types.h"
 
 struct _slide
 {

@@ -443,61 +443,7 @@ static GdkTexture *load_pdf(GFile *file, int pagenum, int w, cairo_t *in_cr)
 static int ensure_ftype(Slide *s)
 {
     if ( s->file_type == SLIDE_FTYPE_UNKNOWN ) {
-
-        GFileInfo *info;
-        const char *type;
-        GError *error;
-
-        if ( s->ext_file == NULL ) return 1;
-
-        error = NULL;
-        info = g_file_query_info(s->ext_file, "standard::", G_FILE_QUERY_INFO_NONE, NULL, &error);
-        if ( info == NULL ) {
-            fprintf(stderr, _("Failed to read info: %s\n"), error->message);
-            return 1;
-        }
-
-        type = g_file_info_get_content_type(info);
-
-        /* PDF types */
-        if ( g_content_type_equals(type, "application/pdf") ) {
-            s->file_type = SLIDE_FTYPE_PDF;
-        } else if ( g_content_type_equals(type, "com.adobe.pdf") ) {
-            s->file_type = SLIDE_FTYPE_PDF;
-
-        /* Bitmap images */
-        } else if ( g_content_type_equals(type, "public.png") ) {
-            s->file_type = SLIDE_FTYPE_IMAGE;
-        } else if ( g_content_type_equals(type, "image/jpeg") ) {
-            s->file_type = SLIDE_FTYPE_IMAGE;
-        } else if ( g_content_type_equals(type, "public.jpeg") ) {
-            s->file_type = SLIDE_FTYPE_IMAGE;
-        } else if ( g_content_type_equals(type, "image/png") ) {
-            s->file_type = SLIDE_FTYPE_IMAGE;
-
-        /* Vector images */
-        } else if ( g_content_type_equals(type, "image/svg+xml") ) {
-            s->file_type = SLIDE_FTYPE_SVG;
-        } else if ( g_content_type_equals(type, "public.svg-image") ) {
-            s->file_type = SLIDE_FTYPE_SVG;
-
-        /* Video types */
-        } else if ( g_content_type_equals(type, "image/gif") ) {
-            s->file_type = SLIDE_FTYPE_VIDEO;
-        } else if ( g_content_type_equals(type, "com.compuserve.gif") ) {
-            s->file_type = SLIDE_FTYPE_VIDEO;
-        } else if ( g_content_type_equals(type, "video/mpeg") ) {
-            s->file_type = SLIDE_FTYPE_VIDEO;
-        } else if ( g_content_type_equals(type, "public.mpeg") ) {
-            s->file_type = SLIDE_FTYPE_VIDEO;
-
-        } else {
-            fprintf(stderr, "File format not recognised: %s\n", type);
-            s->file_type = SLIDE_FTYPE_UNKNOWN;
-        }
-
-        g_object_unref(G_OBJECT(info));
-
+        s->file_type = query_file_type(s->ext_file);
     }
 
     if ( s->file_type == SLIDE_FTYPE_UNKNOWN ) return 1;

@@ -230,19 +230,3 @@ float slide_get_aspect(Slide *s)
 
     return s->aspect;
 }
-
-
-void letterbox(float dw, float dh, float aspect,
-               float *sw, float *xoff, float *yoff)
-{
-    if ( aspect > dw/dh ) {
-        /* Slide is too wide.  Letterboxing top/bottom */
-        *sw = dw;
-    } else {
-        /* Letterboxing at sides */
-        *sw = dh * aspect;
-    }
-
-    *xoff = (dw - (*sw))/2.0;
-    *yoff = (dh - (*sw)/aspect)/2.0;
-}

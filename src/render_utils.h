@@ -31,5 +31,7 @@
 #include <cairo.h>
 
 extern GdkTexture *surface_to_paintable(cairo_surface_t *surf, int w, int h);
+extern void letterbox(float dw, float dh, float aspect,
+                      float *sw, float *xoff, float *yoff);
 
 #endif /* RENDER_UTILS_H */

@@ -36,6 +36,7 @@
 #include "narrative_window.h"
 #include "slide.h"
 #include "slide_window.h"
+#include "render_utils.h"
 
 
 G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_WIDGET)

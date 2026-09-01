@@ -60,7 +60,4 @@ extern GdkPaintable *slide_render(Slide *s, int w);
 extern void slide_render_cairo(Slide *s, int w, cairo_t *cr);
 extern enum slide_filetype slide_ftype(Slide *s);
 
-extern void letterbox(float dw, float dh, float aspect,
-                      float *sw, float *xoff, float *yoff);
-
 #endif /* SLIDE_H */

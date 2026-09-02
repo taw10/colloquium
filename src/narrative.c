@@ -1018,7 +1018,7 @@ void narrative_fixup_tags(Narrative *n)
 {
     GtkTextIter pos;
     const int n_line_only_tags = 3;
-    GtkTextTag *line_only_tags[n_line_only_tags];
+    GtkTextTag *line_only_tags[3];
 
     GtkTextTagTable *table = gtk_text_buffer_get_tag_table(n->textbuf);
     line_only_tags[0] = gtk_text_tag_table_lookup(table, "segstart");

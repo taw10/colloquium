@@ -40,6 +40,7 @@
 #include "slide_pdf.h"
 #include "slide_svg.h"
 #include "slide_bitmap.h"
+#include "render_utils.h"
 
 
 Slide *slide_new()
@@ -126,9 +127,67 @@ enum slide_filetype slide_ftype(Slide *s)
 }
 
 
+static GdkPaintable *slide_render_with_background(Slide *s, int w)
+{
+    cairo_surface_t *surf;
+    cairo_t *cr;
+    double rect[4];
+    float sw, xoffs, yoffs;
+    double real_aspect;
+    int h = w/get_aspect_svg(s->background);
+    char *hide_content[2] = {"content", NULL};
+
+    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+
+    cr = cairo_create(surf);
+    load_svg(s->background, w, hide_content, cr, rect);
+
+    switch ( s->file_type ) {
+
+        case SLIDE_FTYPE_PDF:
+        if ( s->ext_slidenumber == 0 ) {
+            fprintf(stderr, "PDF without page number\n");
+            return NULL;
+        }
+        real_aspect = get_aspect_pdf(s->ext_file, s->ext_slidenumber);
+        break;
+
+        case SLIDE_FTYPE_IMAGE:
+        real_aspect = get_aspect_image(s->ext_file);
+        break;
+
+        case SLIDE_FTYPE_SVG:
+        real_aspect = get_aspect_svg(s->ext_file);
+        break;
+
+    }
+
+    letterbox(w*rect[2], h*rect[3], real_aspect, &sw, &xoffs, &yoffs);
+    cairo_translate(cr, w*rect[0], h*rect[1]);
+    cairo_translate(cr, xoffs, yoffs);
+    slide_render_cairo(s, sw, cr);
+
+    cairo_destroy(cr);
+
+    return GDK_PAINTABLE(surface_to_paintable(surf, w, h));
+}
+
+
 GdkPaintable *slide_render(Slide *s, int w)
 {
     if ( ensure_ftype(s) ) return placeholder_image();
+
+    if ( s->background != NULL ) {
+        if ( s->file_type == SLIDE_FTYPE_VIDEO ) {
+            fprintf(stderr, _("Cannot render video with background\n"));
+            if ( s->mediastream == NULL ) {
+                s->mediastream = gtk_media_file_new_for_file(s->ext_file);
+            }
+            return GDK_PAINTABLE(s->mediastream);
+        } else {
+            return GDK_PAINTABLE(slide_render_with_background(s, w));
+        }
+    }
 
     switch ( s->file_type ) {
 
@@ -143,7 +202,7 @@ GdkPaintable *slide_render(Slide *s, int w)
         return GDK_PAINTABLE(load_image(s->ext_file, w));
 
         case SLIDE_FTYPE_SVG:
-        return GDK_PAINTABLE(load_svg(s->ext_file, w, s->hide_elements, NULL));
+        return GDK_PAINTABLE(load_svg(s->ext_file, w, s->hide_elements, NULL, NULL));
 
         case SLIDE_FTYPE_VIDEO:
         if ( s->mediastream == NULL ) {
@@ -177,7 +236,7 @@ void slide_render_cairo(Slide *s, int w, cairo_t *cr)
         break;
 
         case SLIDE_FTYPE_SVG:
-        load_svg(s->ext_file, w, s->hide_elements, cr);
+        load_svg(s->ext_file, w, s->hide_elements, cr, NULL);
         break;
 
         case SLIDE_FTYPE_VIDEO:
@@ -190,11 +249,17 @@ void slide_render_cairo(Slide *s, int w, cairo_t *cr)
 }
 
 
+/* Returns the aspect ratio of the slide, including backgrounds, headers etc */
 float slide_get_aspect(Slide *s)
 {
     float t;
 
     if ( s->aspect > 0 ) return s->aspect;
+
+    if ( s->background != NULL ) {
+        s->aspect = get_aspect_svg(s->background);
+        return s->aspect;
+    }
 
     if ( ensure_ftype(s) ) return 1.0;
 

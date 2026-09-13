@@ -92,7 +92,7 @@ float get_aspect_svg(GFile *file)
 
 
 static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, char **hide_elements,
-                                   cairo_t *in_cr)
+                                   cairo_t *in_cr, double *content_rect)
 {
     RsvgHandle *fh;
     GError *error;
@@ -147,6 +147,36 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
     viewport.height = h;
     error = NULL;
     rsvg_handle_render_document(fh, cr, &viewport, &error);
+
+    if ( content_rect != NULL ) {
+
+        GError *error;
+        RsvgRectangle rect;
+
+        error = NULL;
+        if ( !rsvg_handle_get_geometry_for_layer(fh, "#content", &viewport, NULL,
+                                                 &rect, &error) )
+        {
+            fprintf(stderr, "Content area: %s\n", error->message);
+            content_rect[0] = 0.0;
+            content_rect[1] = 0.0;
+            content_rect[2] = 1.0;
+            content_rect[3] = 1.0;
+
+        } else {
+
+            gdouble width, height;
+
+            rsvg_handle_get_intrinsic_size_in_pixels(fh, &width, &height);
+
+            content_rect[0] = rect.x/width;
+            content_rect[1] = rect.y/height;
+            content_rect[2] = rect.width/width;
+            content_rect[3] = rect.height/height;
+
+        }
+
+    }
     g_object_unref(fh);
 
     if ( in_cr == NULL ) {
@@ -157,7 +187,8 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
 }
 
 
-GdkTexture *load_svg(GFile *file, int w, char **hide_elements, cairo_t *cr)
+GdkTexture *load_svg(GFile *file, int w, char **hide_elements, cairo_t *cr,
+                     double *content_rect)
 {
     GInputStream *stream;
     GError *error = NULL;
@@ -166,7 +197,7 @@ GdkTexture *load_svg(GFile *file, int w, char **hide_elements, cairo_t *cr)
         fprintf(stderr, _("Failed to open SVG: %s\n"), error->message);
         return NULL;
     }
-    return load_svg_stream(stream, file, w, hide_elements, cr);
+    return load_svg_stream(stream, file, w, hide_elements, cr, content_rect);
 }
 
 
@@ -181,6 +212,6 @@ GdkPaintable *placeholder_image()
 
     stream = g_resources_open_stream("/uk/me/bitwiz/colloquium/uk.me.bitwiz.colloquium.svg",
                                      G_RESOURCE_LOOKUP_FLAGS_NONE, &error);
-    the_placeholder = GDK_PAINTABLE(load_svg_stream(stream, NULL, 512, NULL, NULL));
+    the_placeholder = GDK_PAINTABLE(load_svg_stream(stream, NULL, 512, NULL, NULL, NULL));
     return the_placeholder;
 }

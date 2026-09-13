@@ -534,6 +534,7 @@ struct code_block {
     char **hide_elements;
     int n_hide;
     int max_hide;
+    char *background;
 };
 
 
@@ -553,6 +554,7 @@ static void clear_code_block(struct code_block *cb)
     free(cb->filename);
     cb->filename = NULL;
     cb->page = 0;
+    cb->background = NULL;
 }
 
 
@@ -767,6 +769,14 @@ static void handle_code_line(const char *text, struct code_block *cb)
         }
         cb->hide_elements[cb->n_hide++] = arg;
     }
+
+    if ( strncmp(text, "Back ", 5) == 0 ) {
+        if ( arg == NULL ) {
+            fprintf(stderr, "Argument missing\n");
+            return;
+        }
+        cb->background = arg;
+    }
 }
 
 
@@ -778,6 +788,9 @@ static void handle_code_block(struct md_parse_ctx *ps)
 
         Slide *slide = slide_new();
         slide_set_ext_file(slide, find_file(cb->filename, ps->nfile, ps->imagestore));
+        if ( cb->background != NULL ) {
+            slide_set_background_file(slide, find_file(cb->background, ps->nfile, ps->imagestore));
+        }
         slide_set_ext_number(slide, cb->page);
         slide_set_hidden_elements(slide, cb->hide_elements, cb->n_hide);
         if ( add_slide(ps->n, slide) ) {

@@ -52,6 +52,7 @@ Slide *slide_new()
     s->file_type = SLIDE_FTYPE_UNKNOWN;
     s->mediastream = NULL;
     s->hide_elements = NULL;
+    s->background = NULL;
     return s;
 }
 
@@ -80,6 +81,12 @@ Slide *slide_copy(const Slide *s)
 void slide_set_ext_file(Slide *s, GFile *file)
 {
     s->ext_file = g_file_dup(file);
+}
+
+
+void slide_set_background_file(Slide *s, GFile *file)
+{
+    s->background = g_file_dup(file);
 }
 
 

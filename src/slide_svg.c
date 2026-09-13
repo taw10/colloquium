@@ -40,13 +40,40 @@
 #include "render_utils.h"
 
 
+static float get_aspect_svg_handle(RsvgHandle *fh)
+{
+    RsvgLength width, height;
+    RsvgRectangle viewbox;
+    gboolean has_viewbox, has_width, has_height;
+
+    rsvg_handle_get_intrinsic_dimensions(fh, &has_width, &width,
+                                         &has_height, &height,
+                                         &has_viewbox, &viewbox);
+
+    if ( has_viewbox ) {
+        return viewbox.width/viewbox.height;
+    } else {
+        if ( !has_width || !has_height ) {
+            fprintf(stderr, _("Failed to load SVG - no width/height\n"));
+            return 1.0;
+        }
+        if ( width.unit != height.unit ) {
+            fprintf(stderr, _("Failed to load SVG - units not the same\n"));
+            return 1.0;
+        }
+        if ( width.unit == RSVG_UNIT_PERCENT ) {
+            fprintf(stderr, _("Failed to load SVG - no viewbox and percent size\n"));
+            return 1.0;
+        }
+        return width.length / height.length;
+    }
+}
+
+
 float get_aspect_svg(GFile *file)
 {
     RsvgHandle *fh;
     GError *error;
-    RsvgLength width, height;
-    RsvgRectangle viewbox;
-    gboolean has_viewbox, has_width, has_height;
     float aspect;
 
     error = NULL;
@@ -57,30 +84,9 @@ float get_aspect_svg(GFile *file)
         return 1.0;
     }
 
-    rsvg_handle_set_dpi(fh, 96);
-    rsvg_handle_get_intrinsic_dimensions(fh, &has_width, &width,
-                                         &has_height, &height,
-                                         &has_viewbox, &viewbox);
-
-    if ( has_viewbox ) {
-        aspect = viewbox.width/viewbox.height;
-    } else {
-        if ( !has_width || !has_height ) {
-            fprintf(stderr, _("Failed to load SVG - no width/height\n"));
-            aspect = 1.0;
-        }
-        if ( width.unit != height.unit ) {
-            fprintf(stderr, _("Failed to load SVG - units not the same\n"));
-            aspect = 1.0;
-        }
-        if ( width.unit == RSVG_UNIT_PERCENT ) {
-            fprintf(stderr, _("Failed to load SVG - no viewbox and percent size\n"));
-            aspect = 1.0;
-        }
-        aspect = width.length / height.length;
-    }
-
+    aspect = get_aspect_svg_handle(fh);
     g_object_unref(fh);
+
     return aspect;
 }
 
@@ -90,9 +96,6 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
 {
     RsvgHandle *fh;
     GError *error;
-    RsvgLength width, height;
-    RsvgRectangle viewbox;
-    gboolean has_viewbox, has_width, has_height;
     RsvgRectangle viewport;
     float aspect;
     int h;
@@ -108,30 +111,8 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
     }
 
     rsvg_handle_set_dpi(fh, 96);
-    rsvg_handle_get_intrinsic_dimensions(fh, &has_width, &width,
-                                         &has_height, &height,
-                                         &has_viewbox, &viewbox);
 
-    if ( has_viewbox ) {
-        aspect = viewbox.width/viewbox.height;
-    } else {
-        if ( !has_width || !has_height ) {
-            fprintf(stderr, _("Failed to load SVG - no width/height\n"));
-            g_object_unref(fh);
-            return NULL;
-        }
-        if ( width.unit != height.unit ) {
-            fprintf(stderr, _("Failed to load SVG - units not the same\n"));
-            g_object_unref(fh);
-            return NULL;
-        }
-        if ( width.unit == RSVG_UNIT_PERCENT ) {
-            fprintf(stderr, _("Failed to load SVG - no viewbox and percent size\n"));
-            g_object_unref(fh);
-            return NULL;
-        }
-        aspect = width.length / height.length;
-    }
+    aspect = get_aspect_svg_handle(fh);
     h = w/aspect;
 
     if ( in_cr == NULL ) {

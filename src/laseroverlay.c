@@ -109,16 +109,23 @@ static void get_active_point(RsvgHandle *svg, double ptr_width, double ptr_heigh
     GError *error;
     RsvgRectangle viewport;
     RsvgRectangle rect;
-    RsvgRectangle irect;
+    gdouble width, height;
+
+    rsvg_handle_set_dpi(svg, 96);
+    if ( !rsvg_handle_get_intrinsic_size_in_pixels(svg, &width, &height) ) {
+        fprintf(stderr, _("Pointer doesn't have width and height in pixels\n"));
+        g_object_unref(svg);
+        return;
+    }
 
     viewport.x = 0;
     viewport.y = 0;
-    viewport.width = ptr_width;
-    viewport.height = ptr_height;
+    viewport.width = width;
+    viewport.height = height;
 
     error = NULL;
     if ( !rsvg_handle_get_geometry_for_layer(svg, "#activepoint",
-            &viewport, NULL, &rect, &error) )
+                                             &viewport, NULL, &rect, &error) )
     {
         fprintf(stderr, "CSS active point error: %s\n", error->message);
         *ax = 0.0;
@@ -126,20 +133,8 @@ static void get_active_point(RsvgHandle *svg, double ptr_width, double ptr_heigh
         return;
 
     }
-
-    error = NULL;
-    if ( !rsvg_handle_get_geometry_for_layer(svg, NULL,
-            &viewport, NULL, &irect, &error) )
-    {
-        fprintf(stderr, "CSS active point error: %s\n", error->message);
-        *ax = 0.0;
-        *ay = 0.0;
-        return;
-
-    }
-
-    *ax = ptr_width * (rect.x + rect.width/2.0)/(irect.width+irect.x);
-    *ay = ptr_height * (rect.y + rect.height/2.0)/(irect.height+irect.y);
+    *ax = ptr_width * (rect.x + rect.width/2.0)/width;
+    *ay = ptr_height * (rect.y + rect.height/2.0)/height;
 
     /* Make the active point invisible */
     gchar *css = "#activepoint {opacity: 0.0;}";
@@ -147,7 +142,6 @@ static void get_active_point(RsvgHandle *svg, double ptr_width, double ptr_heigh
     if ( !rsvg_handle_set_stylesheet(svg, (const guint8 *)css, strlen(css), &error) ) {
         fprintf(stderr, "CSS error: %s\n", error->message);
     }
-
 }
 
 

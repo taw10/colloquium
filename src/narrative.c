@@ -724,45 +724,40 @@ static int md_enter_block(MD_BLOCKTYPE type, void *detail, void *vp)
 }
 
 
-static void handle_code_line(const char *text, struct code_block *cb)
+static int check_arg(const char *text, size_t len, const char *cmd, char **arg)
+{
+    size_t cmdlen = strlen(cmd);
+
+    if ( len < cmdlen ) return 0;
+    if ( strncmp(text, cmd, cmdlen) != 0 ) return 0;
+
+    *arg = NULL;
+    if ( len < cmdlen+2 ) return 1;
+    if ( text[cmdlen] != ' ' ) return 1;
+
+    const char *nl = strchr(text+cmdlen, '\n');
+    if ( nl == NULL ) return 1;
+    *arg = strndup(text+cmdlen+1, nl-text-cmdlen-1);
+    return 1;
+}
+
+
+static void handle_code_line(const char *text, size_t len, struct code_block *cb)
 {
     char *arg;
 
-    if ( strlen(text) > 6 ) {
-        const char *nl = strchr(text+5, '\n');
-        if ( nl == NULL ) {
-            fprintf(stderr, "No newline found in code block\n");
-            return;
-        }
-        arg = strndup(text+5, nl-text-5);
-    } else {
-        arg = NULL;
-    }
-
     cb->used = 1;
 
-    if ( strncmp(text, "File ", 5) == 0 ) {
-        if ( arg == NULL ) {
-            fprintf(stderr, "Argument missing\n");
-            return;
-        }
+    if ( check_arg(text, len, "File", &arg) ) {
         cb->filename = arg;
     }
 
-    if ( strncmp(text, "Page ", 5) == 0 ) {
-        if ( arg == NULL ) {
-            fprintf(stderr, "Argument missing\n");
-            return;
-        }
+    if ( check_arg(text, len, "Page", &arg) ) {
         cb->page = atoi(arg);
         free(arg);
     }
 
-    if ( strncmp(text, "Hide ", 5) == 0 ) {
-        if ( arg == NULL ) {
-            fprintf(stderr, "Argument missing\n");
-            return;
-        }
+    if ( check_arg(text, len, "Hide", &arg) ) {
         if ( cb->n_hide >= cb->max_hide ) {
             fprintf(stderr, "Too many hidden objects (max %i)\n", cb->max_hide);
             return;
@@ -770,11 +765,7 @@ static void handle_code_line(const char *text, struct code_block *cb)
         cb->hide_elements[cb->n_hide++] = arg;
     }
 
-    if ( strncmp(text, "Back ", 5) == 0 ) {
-        if ( arg == NULL ) {
-            fprintf(stderr, "Argument missing\n");
-            return;
-        }
+    if ( check_arg(text, len, "Background", &arg) ) {
         cb->background = arg;
     }
 }
@@ -880,7 +871,7 @@ static int md_text(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE len, void *vp)
 
     } else if ( ps->type == NARRATIVE_ITEM_CODE ) {
 
-        handle_code_line(text, &ps->cb);
+        handle_code_line(text, len, &ps->cb);
 
     } else {
 

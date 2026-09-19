@@ -127,27 +127,26 @@ enum slide_filetype slide_ftype(Slide *s)
 }
 
 
-static GdkPaintable *slide_render_with_background(Slide *s, int w)
+/* Draw the slide background with width 'w' onto 'cr'.
+ * Set up the Cairo context for drawing the slide contents, and return
+ * the width at which the contents should be rendered. */
+static float setup_background(Slide *s, int w, cairo_t *cr)
 {
-    cairo_surface_t *surf;
-    cairo_t *cr;
     double rect[4];
     float sw, xoffs, yoffs;
     double real_aspect;
-    int h = w/get_aspect_svg(s->background);
+    int h;
+
     char *hide_content[2] = {"content", NULL};
-
-    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
-
-    cr = cairo_create(surf);
     load_svg(s->background, w, hide_content, cr, rect);
 
+    /* Get the real aspect, not that of the "slide" (which is set by the background) */
     switch ( s->file_type ) {
 
         case SLIDE_FTYPE_PDF:
         if ( s->ext_slidenumber == 0 ) {
             fprintf(stderr, "PDF without page number\n");
-            return NULL;
+            real_aspect = 1.0;
         }
         real_aspect = get_aspect_pdf(s->ext_file, s->ext_slidenumber);
         break;
@@ -160,12 +159,65 @@ static GdkPaintable *slide_render_with_background(Slide *s, int w)
         real_aspect = get_aspect_svg(s->ext_file);
         break;
 
+        default:
+        fprintf(stderr, _("Unrecognised slide type in setup_background\n"));
+        real_aspect = 1.0;
+        break;
+
     }
 
+    h = w/get_aspect_svg(s->background);
     letterbox(w*rect[2], h*rect[3], real_aspect, &sw, &xoffs, &yoffs);
     cairo_translate(cr, w*rect[0], h*rect[1]);
     cairo_translate(cr, xoffs, yoffs);
-    slide_render_cairo(s, sw, cr);
+    return sw;
+}
+
+
+static void draw_slide_without_background(Slide *s, int w, cairo_t *cr)
+{
+    switch ( s->file_type ) {
+
+        case SLIDE_FTYPE_PDF:
+        if ( s->ext_slidenumber == 0 ) {
+            fprintf(stderr, "PDF without page number\n");
+            return;
+        }
+        load_pdf(s->ext_file, s->ext_slidenumber, w, cr);
+        break;
+
+        case SLIDE_FTYPE_IMAGE:
+        load_image_cairo(s->ext_file, w, cr);
+        break;
+
+        case SLIDE_FTYPE_SVG:
+        load_svg(s->ext_file, w, s->hide_elements, cr, NULL);
+        break;
+
+        case SLIDE_FTYPE_VIDEO:
+        fprintf(stderr, _("Video cannot be rendered this way.\n"));
+        return;
+
+        default:
+        fprintf(stderr, _("Unrecognised file type (Cairo): %i\n"), s->file_type);
+        return;
+    }
+}
+
+
+static GdkPaintable *slide_render_with_background(Slide *s, int w)
+{
+    cairo_surface_t *surf;
+    cairo_t *cr;
+    float sw;
+    int h;
+
+    h = w/get_aspect_svg(s->background);
+    surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+    cr = cairo_create(surf);
+
+    sw = setup_background(s, w, cr);
+    draw_slide_without_background(s, sw, cr);
 
     cairo_destroy(cr);
 
@@ -221,30 +273,20 @@ void slide_render_cairo(Slide *s, int w, cairo_t *cr)
 {
     if ( ensure_ftype(s) ) return;
 
-    switch ( s->file_type ) {
-
-        case SLIDE_FTYPE_PDF:
-        if ( s->ext_slidenumber == 0 ) {
-            fprintf(stderr, "PDF without page number\n");
+    if ( s->background != NULL ) {
+        if ( s->file_type == SLIDE_FTYPE_VIDEO ) {
+            fprintf(stderr, _("Cannot render video with background\n"));
             return;
+        } else {
+            cairo_save(cr);
+            w = setup_background(s, w, cr);
         }
-        load_pdf(s->ext_file, s->ext_slidenumber, w, cr);
-        break;
+    }
 
-        case SLIDE_FTYPE_IMAGE:
-        load_image_cairo(s->ext_file, w, cr);
-        break;
+    draw_slide_without_background(s, w, cr);
 
-        case SLIDE_FTYPE_SVG:
-        load_svg(s->ext_file, w, s->hide_elements, cr, NULL);
-        break;
-
-        case SLIDE_FTYPE_VIDEO:
-        return;
-
-        default:
-        fprintf(stderr, _("Unrecognised file type (Cairo): %i\n"), s->file_type);
-        return;
+    if ( s->background != NULL ) {
+        cairo_restore(cr);
     }
 }
 

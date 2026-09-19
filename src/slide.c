@@ -137,6 +137,9 @@ static float setup_background(Slide *s, int w, cairo_t *cr)
     double real_aspect;
     int h;
 
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
+
     char *hide_content[2] = {"content", NULL};
     load_svg(s->background, w, hide_content, cr, rect);
 
@@ -215,6 +218,9 @@ static GdkPaintable *slide_render_with_background(Slide *s, int w)
     h = w/get_aspect_svg(s->background);
     surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
     cr = cairo_create(surf);
+
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
 
     sw = setup_background(s, w, cr);
     draw_slide_without_background(s, sw, cr);

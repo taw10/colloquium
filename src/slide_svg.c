@@ -118,12 +118,12 @@ static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, cha
     if ( in_cr == NULL ) {
         surf = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
         cr = cairo_create(surf);
+        cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+        cairo_paint(cr);
+
     } else {
         cr = in_cr;
     }
-
-    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_paint(cr);
 
     if ( hide_elements != NULL ) {
         gchar *css = g_strdup("");

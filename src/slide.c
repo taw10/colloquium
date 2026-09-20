@@ -41,6 +41,7 @@
 #include "slide_svg.h"
 #include "slide_bitmap.h"
 #include "render_utils.h"
+#include "templatefilter.h"
 
 
 Slide *slide_new()
@@ -155,8 +156,13 @@ static float setup_background(Slide *s, int w, cairo_t *cr)
         fprintf(stderr, _("Failed to open SVG: %s\n"), error->message);
     } else {
 
+        TemplateFilter *filt = template_filter_new(s->title);
+        GInputStream *stream2 = g_converter_input_stream_new(stream, G_CONVERTER(filt));
         char *hide_content[2] = {"content", NULL};
         load_svg_stream(stream, s->background, w, hide_content, cr, rect);
+        g_object_unref(stream2);
+        g_object_unref(filt);
+        g_object_unref(stream);
 
     }
 

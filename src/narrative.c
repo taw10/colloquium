@@ -243,6 +243,11 @@ static void write_tag_start(GOutputStream *fh,
                     write_string(fh, "Background file *** not found ***\n");
                 }
             }
+            if ( slide->title != NULL ) {
+                write_string(fh, "Title ");
+                write_string(fh, slide->title);
+                write_string(fh, "\n");
+            }
             write_string(fh, "```");
             g_free(ef);
         }

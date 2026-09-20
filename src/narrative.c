@@ -535,6 +535,7 @@ struct code_block {
     int n_hide;
     int max_hide;
     char *background;
+    char *title;
 };
 
 
@@ -555,6 +556,7 @@ static void clear_code_block(struct code_block *cb)
     cb->filename = NULL;
     cb->page = 0;
     cb->background = NULL;
+    cb->title = NULL;
 }
 
 
@@ -768,6 +770,10 @@ static void handle_code_line(const char *text, size_t len, struct code_block *cb
     if ( check_arg(text, len, "Background", &arg) ) {
         cb->background = arg;
     }
+
+    if ( check_arg(text, len, "Title", &arg) ) {
+        cb->title = arg;
+    }
 }
 
 
@@ -788,6 +794,10 @@ static void handle_code_block(struct md_parse_ctx *ps)
             fprintf(stderr, "Failed to add slide\n");
             return;
         }
+        if ( cb->title != NULL ) {
+            slide_set_title(slide, cb->title);
+        }
+        free(cb->title);
     }
 
     ps->cb.used = 0;
@@ -943,6 +953,7 @@ static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
     pstate.cb.n_hide = 0;
     pstate.cb.page = 0;
     pstate.cb.used = 0;
+    pstate.cb.title = NULL;
 
     GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");
     pstate.imagestore = imagestore_as_gfile(settings);

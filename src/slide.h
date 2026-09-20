@@ -42,6 +42,7 @@ struct _slide
     GtkMediaStream *mediastream;
     char **hide_elements;
     GFile *background;
+    char *title;
 };
 
 typedef struct _slide Slide;
@@ -56,6 +57,7 @@ extern void slide_set_ext_file(Slide *s, GFile *file);
 extern void slide_set_ext_number(Slide *s, int num);
 extern void slide_set_hidden_elements(Slide *s, char **elements, int n);
 extern void slide_set_background_file(Slide *s, GFile *file);
+extern void slide_set_title(Slide *s, const char *title);
 
 extern float slide_get_aspect(Slide *s);
 extern GdkPaintable *slide_render(Slide *s, int w);

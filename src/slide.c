@@ -54,6 +54,7 @@ Slide *slide_new()
     s->mediastream = NULL;
     s->hide_elements = NULL;
     s->background = NULL;
+    s->title = NULL;
     return s;
 }
 
@@ -88,6 +89,12 @@ void slide_set_ext_file(Slide *s, GFile *file)
 void slide_set_background_file(Slide *s, GFile *file)
 {
     s->background = g_file_dup(file);
+}
+
+
+void slide_set_title(Slide *s, const char *title)
+{
+    s->title = strdup(title);
 }
 
 

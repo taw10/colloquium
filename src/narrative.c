@@ -233,6 +233,16 @@ static void write_tag_start(GOutputStream *fh,
                     i++;
                 }
             }
+            if ( slide->background != NULL ) {
+                ef = relativize(slide->background, parents);
+                if ( ef != NULL ) {
+                    write_string(fh, "Background ");
+                    write_string(fh, ef);
+                    write_string(fh, "\n");
+                } else {
+                    write_string(fh, "Background file *** not found ***\n");
+                }
+            }
             write_string(fh, "```");
             g_free(ef);
         }
@@ -953,6 +963,7 @@ static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
     pstate.cb.n_hide = 0;
     pstate.cb.page = 0;
     pstate.cb.used = 0;
+    pstate.cb.background = NULL;
     pstate.cb.title = NULL;
 
     GSettings *settings = g_settings_new("uk.me.bitwiz.colloquium");

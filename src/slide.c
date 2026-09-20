@@ -143,12 +143,22 @@ static float setup_background(Slide *s, int w, cairo_t *cr)
     float sw, xoffs, yoffs;
     double real_aspect;
     int h;
+    GError *error;
+    GInputStream *stream;
 
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_paint(cr);
 
-    char *hide_content[2] = {"content", NULL};
-    load_svg(s->background, w, hide_content, cr, rect);
+    error = NULL;
+    stream = G_INPUT_STREAM(g_file_read(s->background, NULL, &error));
+    if ( stream == NULL ) {
+        fprintf(stderr, _("Failed to open SVG: %s\n"), error->message);
+    } else {
+
+        char *hide_content[2] = {"content", NULL};
+        load_svg_stream(stream, s->background, w, hide_content, cr, rect);
+
+    }
 
     /* Get the real aspect, not that of the "slide" (which is set by the background) */
     switch ( s->file_type ) {

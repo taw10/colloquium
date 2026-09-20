@@ -91,8 +91,8 @@ float get_aspect_svg(GFile *file)
 }
 
 
-static GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, char **hide_elements,
-                                   cairo_t *in_cr, double *content_rect)
+GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, char **hide_elements,
+                            cairo_t *in_cr, double *content_rect)
 {
     RsvgHandle *fh;
     GError *error;

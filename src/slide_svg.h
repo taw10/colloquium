@@ -36,6 +36,8 @@
 extern float get_aspect_svg(GFile *file);
 extern GdkTexture *load_svg(GFile *file, int w, char **hide_elements, cairo_t *cr,
                             double *content_rect);
+extern GdkTexture *load_svg_stream(GInputStream *stream, GFile *file, int w, char **hide_elements,
+                                   cairo_t *in_cr, double *content_rect);
 extern GdkPaintable *placeholder_image(void);
 
 #endif /* SLIDE_SVG_H */

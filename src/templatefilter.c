@@ -72,10 +72,11 @@ TemplateFilter *template_filter_new(const char *title)
     TemplateFilter *tf;
 
     tf = g_object_new(COLLOQUIUM_TYPE_TEMPLATE_FILTER, NULL);
+
     if ( title != NULL ) {
         tf->title = strdup(title);
     } else {
-        tf->title = NULL;
+        tf->title = strdup("");
     }
 
     return tf;

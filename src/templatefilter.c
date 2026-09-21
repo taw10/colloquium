@@ -26,6 +26,7 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <glib-object.h>
@@ -89,5 +90,51 @@ static GConverterResult convert_func(GConverter *conv,
                                      GConverterFlags flags,
                                      gsize *pread, gsize *pwritten, GError **error)
 {
-    return G_CONVERTER_FINISHED;
+    TemplateFilter *tf = COLLOQUIUM_TEMPLATE_FILTER(conv);
+    gchar *pos;
+
+    if ( (inbuf_size < 9) && !(flags & G_CONVERTER_INPUT_AT_END) ) {
+        return G_IO_ERROR_PARTIAL_INPUT;
+    }
+
+    printf("flags %i, in %lu, out %lu\n", flags, inbuf_size, outbuf_size);
+    pos = g_strstr_len(inbuf, inbuf_size, "##TITLE##");
+
+    if ( pos == inbuf ) {
+        gsize tlen = strlen(tf->title);
+        printf("got it at start\n");
+        if ( outbuf_size < tlen ) return G_IO_ERROR_NO_SPACE;
+        memcpy(outbuf, tf->title, strlen(tf->title));
+        *pread = 9;
+        *pwritten = strlen(tf->title);
+        printf("out %lu, read %lu\n", *pwritten, *pread);
+        return G_CONVERTER_CONVERTED;
+    }
+
+    if ( pos != NULL ) {
+        gsize len = (void *)pos - inbuf;
+        printf("got it at offset %lu\n", len);
+        if ( outbuf_size < len ) return G_IO_ERROR_NO_SPACE;
+        memcpy(outbuf, inbuf, len);
+        *pread = len;
+        *pwritten = len;
+        printf("out %lu, read %lu\n", *pwritten, *pread);
+        return G_CONVERTER_CONVERTED;
+    }
+
+    if ( flags & G_CONVERTER_INPUT_AT_END ) {
+        if ( outbuf_size < inbuf_size ) return G_IO_ERROR_NO_SPACE;
+        memcpy(outbuf, inbuf, inbuf_size);
+        *pread = inbuf_size;
+        *pwritten = inbuf_size;
+        printf("finished out %lu, read %lu\n", *pwritten, *pread);
+        return G_CONVERTER_FINISHED;
+    }
+
+    if ( outbuf_size < inbuf_size-0 ) return G_IO_ERROR_NO_SPACE;
+    memcpy(outbuf, inbuf, inbuf_size-0);
+    *pread = inbuf_size - 0;
+    *pwritten = inbuf_size - 0;
+    printf("out %lu, read %lu\n", *pwritten, *pread);
+    return G_CONVERTER_CONVERTED;
 }

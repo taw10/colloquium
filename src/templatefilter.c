@@ -85,56 +85,76 @@ TemplateFilter *template_filter_new(const char *title)
 
 
 static GConverterResult convert_func(GConverter *conv,
-                                     const void *inbuf, gsize inbuf_size,
+                                     const void *inbufv, gsize inbuf_size,
                                      void *outbuf, gsize outbuf_size,
                                      GConverterFlags flags,
                                      gsize *pread, gsize *pwritten, GError **error)
 {
     TemplateFilter *tf = COLLOQUIUM_TEMPLATE_FILTER(conv);
-    gchar *pos;
+    gsize pos = 0;
+    gsize npos = 0;
+    const char *needle = "##TITLE##";
+    gsize nlen = strlen(needle);
+    gsize found_offs = 0;
+    gsize nothing = 0;
+    const char *inbuf = inbufv;
 
-    if ( (inbuf_size < 9) && !(flags & G_CONVERTER_INPUT_AT_END) ) {
-        return G_IO_ERROR_PARTIAL_INPUT;
+    while ( pos < inbuf_size ) {
+        if ( inbuf[pos] == needle[npos] ) {
+            npos++;
+            if ( npos == nlen ) {
+                found_offs = pos - nlen + 1;
+                npos = 0;
+                if ( found_offs == 0 ) {
+                    /* Found at start */
+                    if ( outbuf_size < nlen ) {
+                        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NO_SPACE, "No space");
+                        return G_CONVERTER_ERROR;;
+                    }
+                    memcpy(outbuf, tf->title, strlen(tf->title));
+                    *pread = nlen;
+                    *pwritten = strlen(tf->title);
+                    return G_CONVERTER_CONVERTED;
+                } else {
+                    /* Found in the middle somewhere.
+                     * Pass the bytes up to the start of the match, then handle
+                     * the substitution (now at the start) on the next call. */
+                    if ( outbuf_size < found_offs ) {
+                        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NO_SPACE, "No space");
+                        return G_CONVERTER_ERROR;;
+                    }
+                    memcpy(outbuf, inbuf, found_offs);
+                    *pread = found_offs;
+                    *pwritten = found_offs;
+                    return G_CONVERTER_CONVERTED;
+                }
+            }
+        } else {
+            nothing += npos + 1;
+            npos = 0;
+        }
+        pos++;
     }
 
-    printf("flags %i, in %lu, out %lu\n", flags, inbuf_size, outbuf_size);
-    pos = g_strstr_len(inbuf, inbuf_size, "##TITLE##");
-
-    if ( pos == inbuf ) {
-        gsize tlen = strlen(tf->title);
-        printf("got it at start\n");
-        if ( outbuf_size < tlen ) return G_IO_ERROR_NO_SPACE;
-        memcpy(outbuf, tf->title, strlen(tf->title));
-        *pread = 9;
-        *pwritten = strlen(tf->title);
-        printf("out %lu, read %lu\n", *pwritten, *pread);
-        return G_CONVERTER_CONVERTED;
+    if ( (nothing == 0) && (npos > 0) && !(flags & G_CONVERTER_INPUT_AT_END) ) {
+        /* Match begins at the start and doesn't stop matching by the end
+         * of the input.  But doesn't match completely.  Need more input to
+         * find out if this becomes a real match or not. */
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_PARTIAL_INPUT, "Need more input");
+        return G_CONVERTER_ERROR;
     }
 
-    if ( pos != NULL ) {
-        gsize len = (void *)pos - inbuf;
-        printf("got it at offset %lu\n", len);
-        if ( outbuf_size < len ) return G_IO_ERROR_NO_SPACE;
-        memcpy(outbuf, inbuf, len);
-        *pread = len;
-        *pwritten = len;
-        printf("out %lu, read %lu\n", *pwritten, *pread);
-        return G_CONVERTER_CONVERTED;
+    /* Pass through everything up to the start of a possible match */
+    if ( outbuf_size < nothing ) {
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NO_SPACE, "No space");
+        return G_CONVERTER_ERROR;;
     }
-
+    memcpy(outbuf, inbuf, nothing);
+    *pread = nothing;
+    *pwritten = nothing;
     if ( flags & G_CONVERTER_INPUT_AT_END ) {
-        if ( outbuf_size < inbuf_size ) return G_IO_ERROR_NO_SPACE;
-        memcpy(outbuf, inbuf, inbuf_size);
-        *pread = inbuf_size;
-        *pwritten = inbuf_size;
-        printf("finished out %lu, read %lu\n", *pwritten, *pread);
         return G_CONVERTER_FINISHED;
+    } else {
+        return G_CONVERTER_CONVERTED;
     }
-
-    if ( outbuf_size < inbuf_size-0 ) return G_IO_ERROR_NO_SPACE;
-    memcpy(outbuf, inbuf, inbuf_size-0);
-    *pread = inbuf_size - 0;
-    *pwritten = inbuf_size - 0;
-    printf("out %lu, read %lu\n", *pwritten, *pread);
-    return G_CONVERTER_CONVERTED;
 }

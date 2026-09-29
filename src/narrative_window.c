@@ -945,6 +945,47 @@ static void thumbnail_click_sig(GtkGestureClick *self, int n_press,
     }
 }
 
+static void slide_setbg_sig(GSimpleAction *act, GVariant *param, gpointer vp)
+{
+    Thumbnail *th = vp;
+    printf("set bg\n");
+}
+
+
+static void slide_hidestuff_sig(GSimpleAction *act, GVariant *param, gpointer vp)
+{
+    Thumbnail *th = vp;
+    printf("hide\n");
+}
+
+
+static void add_thumbnail_menu(Thumbnail *th)
+{
+    GMenu *menu;
+    GSimpleActionGroup *actiongroup;
+    GSimpleAction *action;
+
+    actiongroup = g_simple_action_group_new();
+    menu = g_menu_new();
+
+    action = g_simple_action_new("setbg", NULL);
+    g_signal_connect(action, "activate", G_CALLBACK(slide_setbg_sig), th);
+    g_action_map_add_action(G_ACTION_MAP(actiongroup), G_ACTION(action));
+    g_object_unref(action);
+    g_menu_append(menu, _("Set background..."), "slide.setbg");
+
+    action = g_simple_action_new("hidestuff", NULL);
+    g_signal_connect(action, "activate", G_CALLBACK(slide_hidestuff_sig), th);
+    g_action_map_add_action(G_ACTION_MAP(actiongroup), G_ACTION(action));
+    g_object_unref(action);
+    g_menu_append(menu, _("Hide objects..."), "slide.hidestuff");
+
+    gtk_widget_insert_action_group(GTK_WIDGET(th), "slide", G_ACTION_GROUP(actiongroup));
+    g_object_unref(actiongroup);
+
+    thumbnail_set_context_menu(th, G_MENU_MODEL(menu));
+}
+
 
 static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
 {
@@ -957,6 +998,7 @@ static void add_thumbnails(GtkTextView *tv, NarrativeWindow *nw)
         g_signal_connect(G_OBJECT(evc), "pressed", G_CALLBACK(thumbnail_click_sig), th);
 
         thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(th), 512, 320);
+        add_thumbnail_menu(COLLOQUIUM_THUMBNAIL(th));
         gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(tv),
                                           GTK_WIDGET(th),
                                           nw->n->slides[i]->anchor);
@@ -984,6 +1026,7 @@ static gboolean drop_thumbnail(NarrativeWindow *nw, double x, double y, Thumbnai
     insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
     GtkWidget *thn = thumbnail_new(slide, nw);
     thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(thn), 512, 320);
+    add_thumbnail_menu(COLLOQUIUM_THUMBNAIL(th));
     gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
     GtkGesture *evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));
@@ -1000,6 +1043,7 @@ static void insert_file_slide(NarrativeWindow *nw, GFile *file, GtkTextIter iter
     insert_slide_anchor(nw->n->textbuf, slide, iter, 1);
     GtkWidget *thn = thumbnail_new(slide, nw);
     thumbnail_set_min_dims(COLLOQUIUM_THUMBNAIL(thn), 512, 320);
+    add_thumbnail_menu(COLLOQUIUM_THUMBNAIL(thn));
     gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(nw->nv), GTK_WIDGET(thn), slide->anchor);
     GtkGesture *evc = gtk_gesture_click_new();
     gtk_widget_add_controller(GTK_WIDGET(thn), GTK_EVENT_CONTROLLER(evc));

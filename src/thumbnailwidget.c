@@ -57,16 +57,51 @@ static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
 }
 
 
-static void colloquium_thumbnail_init(Thumbnail *e)
+static void clicked_sig(GtkGestureClick *gesture, int, double x, double y, gpointer vp)
 {
+    Thumbnail *th = vp;
+    if ( th->context_menu != NULL ) {
+        gtk_popover_set_pointing_to(GTK_POPOVER(th->context_menu),
+                                    &(const GdkRectangle){x,y,1,1});
+        gtk_popover_popup(GTK_POPOVER(th->context_menu));
+    }
+}
+
+
+static void colloquium_thumbnail_init(Thumbnail *th)
+{
+    GtkGesture *gesture = gtk_gesture_click_new();
+    th->context_menu = NULL;
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), 3);
+    gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(gesture));
+    g_signal_connect(gesture, "pressed", G_CALLBACK(clicked_sig), th);
+}
+
+
+void thumbnail_set_context_menu(Thumbnail *th, GMenuModel *menu)
+{
+    if ( th->context_menu != NULL ) {
+        g_object_unref(G_OBJECT(th->context_menu));
+    }
+
+    th->context_menu = gtk_popover_menu_new_from_model_full(G_MENU_MODEL(menu),
+                                                           GTK_POPOVER_MENU_NESTED);
+    gtk_popover_set_has_arrow(GTK_POPOVER(th->context_menu), FALSE);
+    gtk_widget_set_halign(th->context_menu, GTK_ALIGN_START);
+    gtk_widget_set_parent(th->context_menu, GTK_WIDGET(th));
 }
 
 
 static void thumbnail_dispose(GObject *obj)
 {
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(obj);
+
     gtk_widget_unparent(th->picture);
     G_OBJECT_CLASS(colloquium_thumbnail_parent_class)->dispose(obj);
+
+    if ( th->context_menu != NULL ) {
+        gtk_widget_unparent(th->context_menu);
+    }
 }
 
 
@@ -175,6 +210,10 @@ static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baselin
             g_signal_connect(G_OBJECT(p), "invalidate-size", G_CALLBACK(paintable_resize_sig), th);
         }
         th->need_render = 0;
+    }
+
+    if ( th->context_menu != NULL ) {
+        gtk_popover_present(GTK_POPOVER(th->context_menu));
     }
 }
 

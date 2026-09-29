@@ -55,6 +55,7 @@ struct _colloquiumthumbnail
     int                  min_w;
     int                  min_h;
     int                  size_set;
+    GtkWidget           *context_menu;
 };
 
 struct _colloquiumthumbnailclass
@@ -67,5 +68,6 @@ extern GType colloquium_thumbnail_get_type(void);
 extern GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw);
 extern Slide *thumbnail_get_slide(Thumbnail *th);
 extern void thumbnail_set_min_dims(Thumbnail *th, int w, int h);
+extern void thumbnail_set_context_menu(Thumbnail *th, GMenuModel *menu);
 
 #endif  /* COLLOQUIUM_THUMBNAIL_H */

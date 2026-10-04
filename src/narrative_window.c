@@ -44,6 +44,7 @@
 #include "thumbnailwidget.h"
 #include "slide_sorter.h"
 #include "slide_background_window.h"
+#include "slide_hidestuff_window.h"
 
 G_DEFINE_FINAL_TYPE(NarrativeWindow, colloquium_narrative_window, GTK_TYPE_APPLICATION_WINDOW)
 
@@ -967,7 +968,10 @@ static void slide_setbg_sig(GSimpleAction *act, GVariant *param, gpointer vp)
 static void slide_hidestuff_sig(GSimpleAction *act, GVariant *param, gpointer vp)
 {
     struct thumbnail_data *d = vp;
-    printf("hide stuff\n");
+    SlideHideStuffWindow *hdw = slide_hidestuff_window_new(thumbnail_get_slide(d->th), d->nw->n);
+    gtk_window_set_transient_for(GTK_WINDOW(hdw), GTK_WINDOW(d->nw));
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(hdw), TRUE);
+    gtk_window_present(GTK_WINDOW(hdw));
 }
 
 

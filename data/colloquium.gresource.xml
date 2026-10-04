@@ -10,6 +10,7 @@
     <file>uk.me.bitwiz.colloquium.svg</file>
     <file>pointer-green.svg</file>
     <file>pointer-ro.svg</file>
+    <file>backgrounds/none.svg</file>
   </gresource>
   <gresource prefix="/uk/me/bitwiz/colloquium/gtk">
     <file>menus.ui</file>

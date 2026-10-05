@@ -57,35 +57,36 @@ static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
 }
 
 
-static void clicked_sig(GtkGestureClick *gesture, int, double x, double y, gpointer vp)
+static void clicked_sig(GtkGestureClick *gesture, int np, double x, double y, gpointer vp)
 {
     Thumbnail *th = vp;
-    if ( th->context_menu != NULL ) {
-        gtk_popover_set_pointing_to(GTK_POPOVER(th->context_menu),
-                                    &(const GdkRectangle){x,y,1,1});
-        gtk_popover_popup(GTK_POPOVER(th->context_menu));
+    GdkEvent *ev = gtk_event_controller_get_current_event(GTK_EVENT_CONTROLLER(gesture));
+    if ( gdk_event_triggers_context_menu(ev) ) {
+        if ( th->context_menu != NULL ) {
+            gtk_popover_set_pointing_to(GTK_POPOVER(th->context_menu),
+                                        &(const GdkRectangle){x,y,1,1});
+            gtk_popover_popup(GTK_POPOVER(th->context_menu));
+        }
     }
 }
 
 
 static void colloquium_thumbnail_init(Thumbnail *th)
 {
-    GtkGesture *gesture = gtk_gesture_click_new();
     th->context_menu = NULL;
-    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), 3);
-    gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(gesture));
-    g_signal_connect(gesture, "pressed", G_CALLBACK(clicked_sig), th);
+    th->need_render = 1;
+    th->size_set = 0;
+    th->context_menu = NULL;
 }
 
 
 void thumbnail_set_context_menu(Thumbnail *th, GMenuModel *menu)
 {
     if ( th->context_menu != NULL ) {
-        g_object_unref(G_OBJECT(th->context_menu));
+        gtk_widget_unparent(th->context_menu);
     }
 
-    th->context_menu = gtk_popover_menu_new_from_model_full(G_MENU_MODEL(menu),
-                                                           GTK_POPOVER_MENU_NESTED);
+    th->context_menu = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
     gtk_popover_set_has_arrow(GTK_POPOVER(th->context_menu), FALSE);
     gtk_widget_set_halign(th->context_menu, GTK_ALIGN_START);
     gtk_widget_set_parent(th->context_menu, GTK_WIDGET(th));
@@ -97,11 +98,12 @@ static void thumbnail_dispose(GObject *obj)
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(obj);
 
     gtk_widget_unparent(th->picture);
-    G_OBJECT_CLASS(colloquium_thumbnail_parent_class)->dispose(obj);
 
     if ( th->context_menu != NULL ) {
         gtk_widget_unparent(th->context_menu);
     }
+
+    G_OBJECT_CLASS(colloquium_thumbnail_parent_class)->dispose(obj);
 }
 
 
@@ -221,12 +223,11 @@ static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baselin
 GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
 {
     Thumbnail *th;
+    GtkGesture *gesture;
 
     th = g_object_new(COLLOQUIUM_TYPE_THUMBNAIL, NULL);
     th->nw = nw;
     th->slide = slide;
-    th->need_render = 1;
-    th->size_set = 0;
 
     gtk_widget_add_css_class(GTK_WIDGET(th), "thumbnail");
 
@@ -245,6 +246,11 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
     gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(th->drag_source));
     g_signal_connect(G_OBJECT(th->drag_source), "prepare",
                      G_CALLBACK(drag_prepare), th);
+
+    gesture = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), 0);
+    gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(gesture));
+    g_signal_connect(gesture, "pressed", G_CALLBACK(clicked_sig), th);
 
     return GTK_WIDGET(th);
 }

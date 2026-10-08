@@ -55,6 +55,28 @@ static void close_sig(GtkWidget *widget, SlideHideStuffWindow *hw)
 }
 
 
+static void apply_sig(GtkWidget *widget, SlideHideStuffWindow *hw)
+{
+    GtkTextIter start, end;
+    char *txt;
+
+    gtk_text_buffer_get_bounds(hw->buf, &start, &end);
+    txt = gtk_text_buffer_get_text(hw->buf, &start, &end, FALSE);
+
+    if ( hw->s->hide_elements != NULL ) {
+        int i = 0;
+        while ( hw->s->hide_elements[i] != NULL ) {
+            g_free(hw->s->hide_elements[i]);
+            i++;
+        }
+        g_free(hw->s->hide_elements);
+    }
+    hw->s->hide_elements = g_strsplit_set(txt, ",\n", -1);
+
+    g_free(txt);
+}
+
+
 SlideHideStuffWindow *slide_hidestuff_window_new(Slide *s, Narrative *n)
 {
     SlideHideStuffWindow *sr;
@@ -67,6 +89,8 @@ SlideHideStuffWindow *slide_hidestuff_window_new(Slide *s, Narrative *n)
     sr = g_object_new(COLLOQUIUM_TYPE_SLIDE_HIDESTUFFWINDOW, NULL);
     gtk_window_set_title(GTK_WINDOW(sr), _("Hide items"));
     gtk_window_set_default_size(GTK_WINDOW(sr), 320, 320);
+
+    sr->s = s;
 
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_window_set_child(GTK_WINDOW(sr), box);
@@ -85,6 +109,7 @@ SlideHideStuffWindow *slide_hidestuff_window_new(Slide *s, Narrative *n)
     gtk_widget_set_margin_end(textview, 8);
     gtk_widget_set_margin_top(textview, 8);
     gtk_widget_set_margin_bottom(textview, 8);
+    sr->buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview));
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_append(GTK_BOX(box), hbox);
@@ -96,8 +121,23 @@ SlideHideStuffWindow *slide_hidestuff_window_new(Slide *s, Narrative *n)
     gtk_box_prepend(GTK_BOX(hbox), button);
     g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(close_sig), sr);
 
+    if ( s->hide_elements != NULL ) {
+        int i = 0;
+        while ( s->hide_elements[i] != NULL ) {
+            GtkTextIter iter;
+            if ( i > 0 ) {
+                gtk_text_buffer_get_end_iter(sr->buf, &iter);
+                gtk_text_buffer_insert(sr->buf, &iter, "\n", -1);
+            }
+            gtk_text_buffer_get_end_iter(sr->buf, &iter);
+            gtk_text_buffer_insert(sr->buf, &iter, s->hide_elements[i], -1);
+            i++;
+        }
+    }
+
     button = gtk_button_new_with_label(_("Apply"));
     gtk_box_prepend(GTK_BOX(hbox), button);
+    g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(apply_sig), sr);
 
     return sr;
 }

@@ -40,6 +40,10 @@ typedef struct _slidehidestuffwindowclass SlideHideStuffWindowClass;
 struct _slidehidestuffwindow
 {
     GtkWindow parent_instance;
+
+    /*< private >*/
+    GtkTextBuffer *buf;
+    Slide *s;
 };
 
 struct _slidehidestuffwindowclass

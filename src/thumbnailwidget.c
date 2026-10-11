@@ -80,15 +80,16 @@ static void colloquium_thumbnail_init(Thumbnail *th)
 }
 
 
-void thumbnail_set_context_menu(Thumbnail *th, GMenuModel *menu)
+void thumbnail_set_context_menu(Thumbnail *th, GtkWidget *popover)
 {
     if ( th->context_menu != NULL ) {
         gtk_widget_unparent(th->context_menu);
     }
 
-    th->context_menu = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
+    th->context_menu = popover;
     gtk_popover_set_has_arrow(GTK_POPOVER(th->context_menu), FALSE);
     gtk_widget_set_halign(th->context_menu, GTK_ALIGN_START);
+    gtk_popover_set_position(GTK_POPOVER(th->context_menu), GTK_POS_BOTTOM);
     gtk_widget_set_parent(th->context_menu, GTK_WIDGET(th));
 }
 

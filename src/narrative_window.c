@@ -955,23 +955,35 @@ struct thumbnail_data
 };
 
 
-static void slide_setbg_sig(GSimpleAction *act, GVariant *param, gpointer vp)
+static void slide_setbg_sig(GtkWidget *item, gpointer vp)
 {
     struct thumbnail_data *d = vp;
-    SlideBgWindow *bgw = slide_background_window_new(thumbnail_get_slide(d->th), d->nw->n);
+    SlideBgWindow *bgw;
+
+    bgw = slide_background_window_new(thumbnail_get_slide(d->th), d->nw->n);
     gtk_window_set_transient_for(GTK_WINDOW(bgw), GTK_WINDOW(d->nw));
     gtk_window_set_destroy_with_parent(GTK_WINDOW(bgw), TRUE);
     gtk_window_present(GTK_WINDOW(bgw));
+
+    if ( item ) {
+        gtk_popover_popdown(GTK_POPOVER(gtk_widget_get_ancestor(item, GTK_TYPE_POPOVER)));
+    }
 }
 
 
-static void slide_hidestuff_sig(GSimpleAction *act, GVariant *param, gpointer vp)
+static void slide_hidestuff_sig(GtkWidget *item, gpointer vp)
 {
     struct thumbnail_data *d = vp;
-    SlideHideStuffWindow *hdw = slide_hidestuff_window_new(thumbnail_get_slide(d->th), d->nw->n);
+    SlideHideStuffWindow *hdw;
+
+    hdw = slide_hidestuff_window_new(thumbnail_get_slide(d->th), d->nw->n);
     gtk_window_set_transient_for(GTK_WINDOW(hdw), GTK_WINDOW(d->nw));
     gtk_window_set_destroy_with_parent(GTK_WINDOW(hdw), TRUE);
     gtk_window_present(GTK_WINDOW(hdw));
+
+    if ( item ) {
+        gtk_popover_popdown(GTK_POPOVER(gtk_widget_get_ancestor(item, GTK_TYPE_POPOVER)));
+    }
 }
 
 
@@ -981,41 +993,46 @@ void free_th_data(gpointer vp, GClosure *cl)
 }
 
 
+static GtkWidget *make_menu_item(GtkWidget *box, const char *txt)
+{
+    GtkWidget *item = gtk_button_new();
+    GtkWidget *label = gtk_label_new(txt);
+    gtk_button_set_child(GTK_BUTTON(item), label);
+    gtk_button_set_has_frame(GTK_BUTTON(item), FALSE);
+    gtk_widget_set_halign(item, GTK_ALIGN_FILL);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_label_set_xalign(GTK_LABEL(label), 0);
+    gtk_box_append(GTK_BOX(box), item);
+    return item;
+}
+
+
 static void add_thumbnail_menu(Thumbnail *th, NarrativeWindow *nw)
 {
-    GMenu *menu;
-    GSimpleActionGroup *actiongroup;
-    GSimpleAction *action;
+    GtkWidget *menu;
+    GtkWidget *box;
+    GtkWidget *item;
     struct thumbnail_data *d;
     struct thumbnail_data *d2;
 
-    actiongroup = g_simple_action_group_new();
-    menu = g_menu_new();
+    menu = gtk_popover_new();
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_popover_set_child(GTK_POPOVER(menu), box);
+    gtk_widget_add_css_class(menu, "menu");
 
-    action = g_simple_action_new("setbg", NULL);
+    item = make_menu_item(box, _("Set background..."));
     d = g_malloc0(sizeof(struct thumbnail_data));
-    d->th = th;
-    d->nw = nw;
-    g_signal_connect_data(action, "activate", G_CALLBACK(slide_setbg_sig), d,
-                         free_th_data, G_CONNECT_DEFAULT);
-    g_action_map_add_action(G_ACTION_MAP(actiongroup), G_ACTION(action));
-    g_object_unref(action);
-    g_menu_append(menu, _("Set background..."), "slide.setbg");
-
-    action = g_simple_action_new("hidestuff", NULL);
-    d2 = g_malloc0(sizeof(struct thumbnail_data));
-    d2->th = th;
-    d2->nw = nw;
-    g_signal_connect_data(action, "activate", G_CALLBACK(slide_hidestuff_sig), d2,
+    d->th = th;  d->nw = nw;
+    g_signal_connect_data(item, "clicked", G_CALLBACK(slide_setbg_sig), d,
                           free_th_data, G_CONNECT_DEFAULT);
-    g_action_map_add_action(G_ACTION_MAP(actiongroup), G_ACTION(action));
-    g_object_unref(action);
-    g_menu_append(menu, _("Hide objects..."), "slide.hidestuff");
 
-    gtk_widget_insert_action_group(GTK_WIDGET(th), "slide", G_ACTION_GROUP(actiongroup));
-    g_object_unref(actiongroup);
+    item = make_menu_item(box, _("Hide items..."));
+    d2 = g_malloc0(sizeof(struct thumbnail_data));
+    d2->th = th;  d2->nw = nw;
+    g_signal_connect_data(item, "clicked", G_CALLBACK(slide_hidestuff_sig), d2,
+                          free_th_data, G_CONNECT_DEFAULT);
 
-    thumbnail_set_context_menu(th, G_MENU_MODEL(menu));
+    thumbnail_set_context_menu(th, menu);
 }
 
 

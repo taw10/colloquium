@@ -40,6 +40,7 @@
 #include "slideview.h"
 #include "laseroverlay.h"
 #include "render_utils.h"
+#include "slide_svg.h"
 
 
 G_DEFINE_FINAL_TYPE(SlideView, colloquium_slide_view, GTK_TYPE_WIDGET)

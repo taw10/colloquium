@@ -27,13 +27,23 @@
 #include <config.h>
 #endif
 
-#include <stddef.h>
+#include <glib.h>
 #include <gtk/gtk.h>
 
 #include "file_types.h"
 
+typedef struct _slide Slide;
+typedef struct _slideclass SlideClass;
+
+#define COLLOQUIUM_SLIDE(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+                               COLLOQUIUM_TYPE_SLIDE, Slide))
+
+#define COLLOQUIUM_TYPE_SLIDE (colloquium_slide_get_type())
+
 struct _slide
 {
+    GObject *parent_instance;
+
     float aspect;  /* Width divided by height */
     GFile *ext_file;
     int ext_slidenumber;
@@ -45,9 +55,10 @@ struct _slide
     char *title;
 };
 
-typedef struct _slide Slide;
-
-extern GdkPaintable *placeholder_image(void);
+struct _slideclass
+{
+    GObjectClass parent_class;
+};
 
 extern Slide *slide_new(void);
 extern Slide *slide_copy(const Slide *s);

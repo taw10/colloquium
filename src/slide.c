@@ -44,11 +44,25 @@
 #include "templatefilter.h"
 
 
+G_DEFINE_FINAL_TYPE(Slide, colloquium_slide, G_TYPE_OBJECT)
+
+
+static void colloquium_slide_class_init(SlideClass *klass)
+{
+}
+
+
+static void colloquium_slide_init(Slide *s)
+{
+}
+
+
 Slide *slide_new()
 {
     Slide *s;
-    s = malloc(sizeof(*s));
-    if ( s == NULL ) return NULL;
+
+    s = g_object_new(COLLOQUIUM_TYPE_SLIDE, NULL);
+
     s->ext_file = NULL;
     s->aspect = -1.0;
     s->file_type = SLIDE_FTYPE_UNKNOWN;
@@ -56,6 +70,7 @@ Slide *slide_new()
     s->hide_elements = NULL;
     s->background = NULL;
     s->title = NULL;
+
     return s;
 }
 

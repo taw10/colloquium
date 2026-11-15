@@ -49,6 +49,9 @@ G_DEFINE_FINAL_TYPE(Slide, colloquium_slide, G_TYPE_OBJECT)
 
 static void colloquium_slide_class_init(SlideClass *klass)
 {
+    g_signal_new("changed", COLLOQUIUM_TYPE_SLIDE,
+                 G_SIGNAL_RUN_LAST, 0,
+                 NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
 
@@ -104,13 +107,22 @@ void slide_set_ext_file(Slide *s, GFile *file)
 
 void slide_set_background_file(Slide *s, GFile *file)
 {
-    s->background = g_file_dup(file);
+    if ( s->background != NULL ) {
+        g_object_unref(s->background);
+    }
+    if ( file != NULL ) {
+        s->background = g_file_dup(file);
+    } else {
+        s->background = NULL;
+    }
+    g_signal_emit_by_name(G_OBJECT(s), "changed");
 }
 
 
 void slide_set_title(Slide *s, const char *title)
 {
     s->title = strdup(title);
+    g_signal_emit_by_name(G_OBJECT(s), "changed");
 }
 
 
@@ -129,6 +141,8 @@ void slide_set_hidden_elements(Slide *s, char **elements, int n)
         s->hide_elements[i] = g_strdup(elements[i]);
     }
     s->hide_elements[n] = NULL;
+
+    g_signal_emit_by_name(G_OBJECT(s), "changed");
 }
 
 

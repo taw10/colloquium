@@ -67,13 +67,10 @@ static void activate_sig(GtkListView  *list, guint pos, gpointer vp)
 {
     Slide *s = vp;
     GFile *bg = g_list_model_get_item(G_LIST_MODEL(gtk_list_view_get_model(list)), pos);
-    if ( s->background != NULL ) {
-        g_object_unref(s->background);
-    }
     if ( is_no_bg(bg) ) {
-        s->background = NULL;
+        slide_set_background_file(s, NULL);
     } else {
-        s->background = g_file_dup(bg);
+        slide_set_background_file(s, bg);
     }
 }
 

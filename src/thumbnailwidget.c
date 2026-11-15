@@ -46,6 +46,9 @@ G_DEFINE_FINAL_TYPE(Thumbnail, colloquium_thumbnail, GTK_TYPE_WIDGET)
 static void thumbnail_dispose(GObject *obj);
 static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline);
 static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot);
+static void paintable_resize_sig(GdkPaintable *p, Thumbnail *th);
+static void update_size_request(Thumbnail *th);
+static void slide_changed_sig(Slide *widget, Thumbnail *th);
 
 
 static void colloquium_thumbnail_class_init(ThumbnailClass *klass)
@@ -109,6 +112,20 @@ static void thumbnail_dispose(GObject *obj)
 }
 
 
+static int replace_paintable(Thumbnail *th, int w)
+{
+    GdkPaintable *oldp = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
+    GdkPaintable *p = slide_render(th->slide, w);
+    if ( oldp != p ) {
+        g_signal_handlers_disconnect_by_func(G_OBJECT(p), paintable_resize_sig, th);
+        gtk_picture_set_paintable(GTK_PICTURE(th->picture), p);
+        g_signal_connect(G_OBJECT(p), "invalidate-size", G_CALLBACK(paintable_resize_sig), th);
+        return 1;
+    }
+    return 0;
+}
+
+
 static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
 {
     Thumbnail *th = COLLOQUIUM_THUMBNAIL(da);
@@ -125,6 +142,11 @@ static void thumbnail_snapshot(GtkWidget *da, GtkSnapshot *snapshot)
 
     letterbox(w, h, aspect, &aw, &border_offs_x, &border_offs_y);
     ah = aw/aspect;
+
+    if ( th->need_render ) {
+        replace_paintable(th, aw);
+        th->need_render = 0;
+    }
 
     GskRoundedRect rrect;
     rect = GRAPHENE_RECT_INIT(border_offs_x, border_offs_y, aw, ah);
@@ -185,6 +207,13 @@ static void paintable_resize_sig(GdkPaintable *p, Thumbnail *th)
 }
 
 
+static void slide_changed_sig(Slide *widget, Thumbnail *th)
+{
+    th->need_render = 1;
+    gtk_widget_queue_allocate(GTK_WIDGET(th));
+}
+
+
 static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baseline)
 {
     GtkAllocation alloc;
@@ -205,13 +234,8 @@ static void thumbnail_size_allocate(GtkWidget *widget, int w, int h, int baselin
 
     old_w = gdk_paintable_get_intrinsic_width(gtk_picture_get_paintable(GTK_PICTURE(th->picture)));
     if ( alloc.width > old_w || th->need_render ) {
-        GdkPaintable *oldp = gtk_picture_get_paintable(GTK_PICTURE(th->picture));
-        GdkPaintable *p = slide_render(th->slide, alloc.width);
-        if ( oldp != p ) {
-            g_signal_handlers_disconnect_by_func(G_OBJECT(p), paintable_resize_sig, th);
-            gtk_picture_set_paintable(GTK_PICTURE(th->picture), p);
+        if ( replace_paintable(th, alloc.width) ) {
             update_size_request(th);
-            g_signal_connect(G_OBJECT(p), "invalidate-size", G_CALLBACK(paintable_resize_sig), th);
         }
         th->need_render = 0;
     }
@@ -253,6 +277,8 @@ GtkWidget *thumbnail_new(Slide *slide, NarrativeWindow *nw)
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), 0);
     gtk_widget_add_controller(GTK_WIDGET(th), GTK_EVENT_CONTROLLER(gesture));
     g_signal_connect(gesture, "pressed", G_CALLBACK(clicked_sig), th);
+
+    g_signal_connect(G_OBJECT(th->slide), "changed", G_CALLBACK(slide_changed_sig), th);
 
     return GTK_WIDGET(th);
 }

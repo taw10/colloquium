@@ -780,6 +780,7 @@ static void handle_code_line(const char *text, size_t len, struct code_block *cb
             return;
         }
         cb->hide_elements[cb->n_hide++] = arg;
+        cb->hide_elements[cb->n_hide] = NULL;
     }
 
     if ( check_arg(text, len, "Background", &arg) ) {
@@ -804,7 +805,7 @@ static void handle_code_block(struct md_parse_ctx *ps)
             slide_set_background_file(slide, find_file(cb->background, ps->nfile, ps->imagestore));
         }
         slide_set_ext_number(slide, cb->page);
-        slide_set_hidden_elements(slide, cb->hide_elements, cb->n_hide);
+        slide_set_hidden_elements(slide, cb->hide_elements);
         if ( add_slide(ps->n, slide) ) {
             fprintf(stderr, "Failed to add slide\n");
             return;
@@ -964,7 +965,7 @@ static Narrative *parse_md_narrative(const char *text, size_t len, GFile *nfile)
     pstate.nfile = nfile;
     pstate.cb.filename = NULL;
     pstate.cb.max_hide = 16;
-    pstate.cb.hide_elements = malloc(pstate.cb.max_hide*sizeof(char *));
+    pstate.cb.hide_elements = malloc((pstate.cb.max_hide+1)*sizeof(char *));
     pstate.cb.n_hide = 0;
     pstate.cb.page = 0;
     pstate.cb.used = 0;

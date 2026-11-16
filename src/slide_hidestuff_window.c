@@ -63,15 +63,9 @@ static void apply_sig(GtkWidget *widget, SlideHideStuffWindow *hw)
     gtk_text_buffer_get_bounds(hw->buf, &start, &end);
     txt = gtk_text_buffer_get_text(hw->buf, &start, &end, FALSE);
 
-    if ( hw->s->hide_elements != NULL ) {
-        int i = 0;
-        while ( hw->s->hide_elements[i] != NULL ) {
-            g_free(hw->s->hide_elements[i]);
-            i++;
-        }
-        g_free(hw->s->hide_elements);
-    }
-    hw->s->hide_elements = g_strsplit_set(txt, ",\n", -1);
+    gchar **arr = g_strsplit_set(txt, ",\n", -1);
+    slide_set_hidden_elements(hw->s, arr);
+    g_strfreev(arr);
 
     g_free(txt);
 }

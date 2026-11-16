@@ -132,16 +132,14 @@ void slide_set_ext_number(Slide *s, int num)
 }
 
 
-void slide_set_hidden_elements(Slide *s, char **elements, int n)
+void slide_set_hidden_elements(Slide *s, char **elements)
 {
-    int i;
-
-    s->hide_elements = malloc((n+1)*sizeof(char *));
-    for ( i=0; i<n; i++ ) {
-        s->hide_elements[i] = g_strdup(elements[i]);
+    if ( s->hide_elements != NULL ) g_strfreev(s->hide_elements);
+    if ( (elements == NULL) || (elements[0] == NULL) ) {
+        s->hide_elements = NULL;
+    } else {
+        s->hide_elements = g_strdupv(elements);
     }
-    s->hide_elements[n] = NULL;
-
     g_signal_emit_by_name(G_OBJECT(s), "changed");
 }
 

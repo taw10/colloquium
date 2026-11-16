@@ -66,7 +66,7 @@ extern void slide_free(Slide *s);
 
 extern void slide_set_ext_file(Slide *s, GFile *file);
 extern void slide_set_ext_number(Slide *s, int num);
-extern void slide_set_hidden_elements(Slide *s, char **elements, int n);
+extern void slide_set_hidden_elements(Slide *s, char **elements);
 extern void slide_set_background_file(Slide *s, GFile *file);
 extern void slide_set_title(Slide *s, const char *title);
 

@@ -121,7 +121,11 @@ void slide_set_background_file(Slide *s, GFile *file)
 
 void slide_set_title(Slide *s, const char *title)
 {
-    s->title = strdup(title);
+    if ( (title != NULL) && (title[0] != '\0')  ) {
+        s->title = strdup(title);
+    } else {
+        s->title = NULL;
+    }
     g_signal_emit_by_name(G_OBJECT(s), "changed");
 }
 

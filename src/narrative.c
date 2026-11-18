@@ -810,9 +810,7 @@ static void handle_code_block(struct md_parse_ctx *ps)
             fprintf(stderr, "Failed to add slide\n");
             return;
         }
-        if ( cb->title != NULL ) {
-            slide_set_title(slide, cb->title);
-        }
+        slide_set_title(slide, cb->title);
         free(cb->title);
     }
 

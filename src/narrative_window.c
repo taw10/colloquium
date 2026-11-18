@@ -45,6 +45,7 @@
 #include "slide_sorter.h"
 #include "slide_background_window.h"
 #include "slide_hidestuff_window.h"
+#include "slide_title_window.h"
 
 G_DEFINE_FINAL_TYPE(NarrativeWindow, colloquium_narrative_window, GTK_TYPE_APPLICATION_WINDOW)
 
@@ -971,6 +972,22 @@ static void slide_setbg_sig(GtkWidget *item, gpointer vp)
 }
 
 
+static void slide_settitle_sig(GtkWidget *item, gpointer vp)
+{
+    struct thumbnail_data *d = vp;
+    SlideTitleWindow *tlw;
+
+    tlw = slide_title_window_new(thumbnail_get_slide(d->th));
+    gtk_window_set_transient_for(GTK_WINDOW(tlw), GTK_WINDOW(d->nw));
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(tlw), TRUE);
+    gtk_window_present(GTK_WINDOW(tlw));
+
+    if ( item ) {
+        gtk_popover_popdown(GTK_POPOVER(gtk_widget_get_ancestor(item, GTK_TYPE_POPOVER)));
+    }
+}
+
+
 static void slide_hidestuff_sig(GtkWidget *item, gpointer vp)
 {
     struct thumbnail_data *d = vp;
@@ -1014,6 +1031,7 @@ static void add_thumbnail_menu(Thumbnail *th, NarrativeWindow *nw)
     GtkWidget *item;
     struct thumbnail_data *d;
     struct thumbnail_data *d2;
+    struct thumbnail_data *d3;
 
     menu = gtk_popover_new();
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -1026,10 +1044,16 @@ static void add_thumbnail_menu(Thumbnail *th, NarrativeWindow *nw)
     g_signal_connect_data(item, "clicked", G_CALLBACK(slide_setbg_sig), d,
                           free_th_data, G_CONNECT_DEFAULT);
 
-    item = make_menu_item(box, _("Hide items..."));
+    item = make_menu_item(box, _("Set title..."));
     d2 = g_malloc0(sizeof(struct thumbnail_data));
     d2->th = th;  d2->nw = nw;
-    g_signal_connect_data(item, "clicked", G_CALLBACK(slide_hidestuff_sig), d2,
+    g_signal_connect_data(item, "clicked", G_CALLBACK(slide_settitle_sig), d2,
+                          free_th_data, G_CONNECT_DEFAULT);
+
+    item = make_menu_item(box, _("Hide items..."));
+    d3 = g_malloc0(sizeof(struct thumbnail_data));
+    d3->th = th;  d3->nw = nw;
+    g_signal_connect_data(item, "clicked", G_CALLBACK(slide_hidestuff_sig), d3,
                           free_th_data, G_CONNECT_DEFAULT);
 
     thumbnail_set_context_menu(th, menu);

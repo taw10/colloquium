@@ -565,6 +565,7 @@ static void clear_code_block(struct code_block *cb)
     for ( i=0; i<cb->n_hide; i++ ) {
         free(cb->hide_elements[i]);
     }
+    cb->hide_elements[0] = NULL;
     cb->n_hide = 0;
 
     free(cb->filename);

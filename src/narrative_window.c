@@ -710,6 +710,8 @@ static void stop_presenting(NarrativeWindow *nw)
     gtk_widget_unparent(nw->presenting_label);
     nw->presenting_slide = NULL;
 
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(nw->nv), TRUE);
+
     /* Put focus back in editor (not the toolbar) */
     gtk_widget_grab_focus(GTK_WIDGET(nw->nv));
 }
@@ -796,6 +798,8 @@ static void start_presenting_sig(GSimpleAction *action, GVariant *parameter,
             set_presenting_slide(nw, slide);
         }
     } /* Else we are in presentation mode, but no slides */
+
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(nw->nv), FALSE);
 }
 
 
